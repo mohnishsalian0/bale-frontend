@@ -107,3 +107,5 @@ npm run build
 ## Development guildelines
 
 Refer to TODO.md file for list of completed and pending tasks
+
+Always update the TODO.md file before proceeding to the next task

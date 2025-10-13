@@ -38,7 +38,7 @@ CREATE TABLE users (
     -- Personal information
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
-    phone_number VARCHAR(15) NOT NULL,
+    phone_number VARCHAR(15),
     email VARCHAR(100),
     profile_image_url TEXT,
     additional_notes TEXT,
@@ -56,9 +56,7 @@ CREATE TABLE users (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by UUID,
     modified_by UUID,
-    deleted_at TIMESTAMPTZ,
-    
-    UNIQUE(company_id, phone_number)
+    deleted_at TIMESTAMPTZ
 );
 
 -- =====================================================

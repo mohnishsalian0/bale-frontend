@@ -14,23 +14,34 @@
 - [x] Review and update migration schema (dispatch/receipt types, stock status)
 - [x] Create TypeScript database type definitions (enums)
 - [x] Initialize Supabase locally (Docker + migrations copied)
-- [ ] Fix Supabase services startup and verify all containers running
-- [ ] Get local Supabase credentials (API URL, anon key, service key)
-- [ ] Update .env.local with credentials
-- [ ] Access Supabase Studio UI (localhost:54323) and verify migrations
-- [ ] Test database connection from Next.js app
+- [x] Fix Supabase services startup and verify all containers running
+- [x] Get local Supabase credentials (API URL, anon key, service key)
+- [x] Update .env.local with credentials
+- [x] Fix Tailwind CSS PostCSS configuration (@tailwindcss/postcss)
+- [x] Test database connection from Next.js app (test page at /test)
+- [x] Generate complete TypeScript types from Supabase schema
+- [ ] Apply full 19 migrations from migrations/ folder (currently using 4 from migrations_temp/)
 - [ ] Create test seed data (company, user, warehouse)
-- [ ] Generate complete TypeScript types from Supabase schema
 - [ ] Set up storage buckets for images/files
 
 ## Phase 3: Authentication & Core Layout
-- [ ] Build auth system (login/register with Supabase Auth)
-- [ ] Create role detection (Admin vs Staff)
-- [ ] Set up protected route middleware and authorization helpers
+- [x] Build auth system (Google OAuth with Supabase Auth)
+- [x] Create role detection (Admin vs Staff) - session utilities created
+- [x] Create user profile from invite on first login
+- [x] Build invite acceptance page (/invite/[code])
+- [x] Create auth callback handler with profile creation (/auth/callback)
+- [x] Build dev admin script to generate test invites
+- [x] Create placeholder dashboard page
+- [x] Fix phone_number nullable constraint in database
+- [x] Test complete OAuth flow (invite → Google login → profile creation → dashboard)
+- [ ] Set up protected route middleware for all routes
 - [ ] Build base layouts (dashboard, mobile navigation)
+- [ ] Create warehouse-scoped routes (/warehouse/[id]/...)
 
 ## Phase 4: Core UI Components
-- [ ] Install and configure shadcn/ui components
+- [x] Install and configure shadcn/ui components (button, input, label, form, select, textarea, card, dialog, table)
+- [x] Configure shadcn with exact Figma color palette (primary, grays, background)
+- [x] Implement 3D button effect from Figma design (4px shadow, active state)
 - [ ] Build custom components (DataTable, FileUpload, SearchInput, StatusBadge)
 - [ ] Create form components with validation (Zod + React Hook Form)
 
