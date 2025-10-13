@@ -34,6 +34,9 @@
 - [x] Create placeholder dashboard page
 - [x] Fix phone_number nullable constraint in database
 - [x] Test complete OAuth flow (invite → Google login → profile creation → dashboard)
+- [x] Style invite acceptance page with Figma design (mascot, layout, colors)
+- [x] Add grid background pattern to app (24px grid with gray lines)
+- [x] Install and configure icon libraries (Tabler Icons, Lucide React)
 - [ ] Set up protected route middleware for all routes
 - [ ] Build base layouts (dashboard, mobile navigation)
 - [ ] Create warehouse-scoped routes (/warehouse/[id]/...)
@@ -42,6 +45,8 @@
 - [x] Install and configure shadcn/ui components (button, input, label, form, select, textarea, card, dialog, table)
 - [x] Configure shadcn with exact Figma color palette (primary, grays, background)
 - [x] Implement 3D button effect from Figma design (4px shadow, active state)
+- [x] Configure Tailwind v4 with Inter font and theme colors
+- [x] Create custom icon components (WarehouseIcon wrapper)
 - [ ] Build custom components (DataTable, FileUpload, SearchInput, StatusBadge)
 - [ ] Create form components with validation (Zod + React Hook Form)
 

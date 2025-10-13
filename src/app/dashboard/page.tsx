@@ -4,10 +4,6 @@ import { redirect } from 'next/navigation';
 export default async function DashboardPage() {
   const user = await getCurrentUser();
 
-  if (!user) {
-    redirect('/login');
-  }
-
   return (
     <div className="min-h-screen bg-background-100 p-8">
       <div className="max-w-4xl mx-auto">
@@ -15,7 +11,7 @@ export default async function DashboardPage() {
           Welcome to Bale Inventory!
         </h1>
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        {/* <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-2xl font-semibold mb-4">Your Profile</h2>
           <div className="space-y-2">
             <p><strong>Name:</strong> {user.first_name} {user.last_name}</p>
@@ -26,7 +22,7 @@ export default async function DashboardPage() {
               <p><strong>Warehouse ID:</strong> {user.warehouse_id}</p>
             )}
           </div>
-        </div>
+        </div> */}
 
         <div className="bg-green-50 border border-green-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-green-800 mb-2">
