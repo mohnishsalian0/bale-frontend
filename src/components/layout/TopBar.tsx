@@ -1,6 +1,6 @@
 'use client';
 
-import { IconMenu2, IconChevronDown } from '@tabler/icons-react';
+import { IconMenu2, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 
@@ -10,6 +10,7 @@ interface TopBarProps {
   onMenuClick?: () => void;
   onWarehouseClick?: () => void;
   onProfileClick?: () => void;
+  isWarehouseSelectorOpen?: boolean;
 }
 
 export default function TopBar({
@@ -18,9 +19,12 @@ export default function TopBar({
   onMenuClick,
   onWarehouseClick,
   onProfileClick,
+  isWarehouseSelectorOpen = false,
 }: TopBarProps) {
   return (
-    <div className="fixed top-0 left-0 right-0 bg-background-100 shadow-[0px_1px_3px_0px_rgba(16,24,40,0.1),0px_1px_2px_0px_rgba(16,24,40,0.06)] z-50">
+    <div className={`fixed top-0 left-0 right-0 bg-background-100 z-50 transition-shadow ${
+      isWarehouseSelectorOpen ? '' : 'shadow-sm'
+    }`}>
       <div className="flex items-center justify-between pl-2 pr-4 py-3">
         {/* Left side - Menu + Warehouse selector */}
         <div className="flex items-center gap-2">
@@ -42,7 +46,11 @@ export default function TopBar({
             <span className="text-sm font-medium text-gray-700">
               {warehouseName}
             </span>
-            <IconChevronDown className="w-5 h-5 text-gray-700" />
+            {isWarehouseSelectorOpen ? (
+              <IconChevronUp className="w-5 h-5 text-gray-700" />
+            ) : (
+              <IconChevronDown className="w-5 h-5 text-gray-700" />
+            )}
           </button>
         </div>
 
