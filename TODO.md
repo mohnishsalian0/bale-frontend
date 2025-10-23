@@ -20,7 +20,10 @@
 - [x] Fix Tailwind CSS PostCSS configuration (@tailwindcss/postcss)
 - [x] Test database connection from Next.js app (test page at /test)
 - [x] Generate complete TypeScript types from Supabase schema
-- [ ] Apply full 19 migrations from migrations/ folder (currently using 4 from migrations_temp/)
+- [x] Copy all 22 migrations to supabase/migrations/ (0001-0022)
+- [x] Uncomment generate_sequence_number() and helper functions in 0001
+- [x] Run migrations in Supabase (reset database and apply all 22 migrations)
+- [x] Regenerate TypeScript types from full schema
 - [ ] Create test seed data (company, user, warehouse)
 - [ ] Set up storage buckets for images/files
 
@@ -47,7 +50,8 @@
 - [x] Configure sidebar styling (text-base, size-5 icons, 16px padding, 12px gap)
 - [x] Add sidebar header with app branding (Bale Inventory v1.0.0)
 - [x] Implement sidebar toggle functionality with offcanvas collapsible mode
-- [ ] Set up protected route middleware for all routes
+- [x] Set up protected route middleware for all routes
+- [x] Handle redirectTo parameter in auth callback for post-login redirects
 - [ ] Create warehouse-scoped routes (/warehouse/[id]/...)
 - [ ] Fetch warehouses from Supabase and implement warehouse context/state management
 

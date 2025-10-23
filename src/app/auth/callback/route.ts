@@ -1,10 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
   const inviteCode = requestUrl.searchParams.get('invite_code');
+  const redirectTo = requestUrl.searchParams.get('redirectTo') || '/dashboard';
 
   console.log('🔍 Auth callback received');
   console.log('Code:', code);
@@ -44,9 +46,9 @@ export async function GET(request: Request) {
     console.log('User check error:', userCheckError);
 
     if (existingUser) {
-      // Profile exists, redirect to dashboard
-      console.log('✅ Profile exists, redirecting to dashboard...');
-      return NextResponse.redirect(`${requestUrl.origin}/dashboard`);
+      // Profile exists, redirect to original destination or dashboard
+      console.log('✅ Profile exists, redirecting to', redirectTo);
+      return NextResponse.redirect(`${requestUrl.origin}${redirectTo}`);
     }
 
     // New user - need invite code to create profile
@@ -71,9 +73,20 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${requestUrl.origin}/error?message=invalid_invite`);
     }
 
-    // Create user profile
+    // Create user profile using service role (bypasses RLS)
     console.log('📝 Creating user profile...');
-    const { data: newUser, error: createError } = await supabase
+    const supabaseAdmin = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+
+    const { data: newUser, error: createError } = await supabaseAdmin
       .from('users')
       .insert({
         auth_user_id: authUser.id,
@@ -100,7 +113,7 @@ export async function GET(request: Request) {
 
     // Mark invite as used
     console.log('✅ Marking invite as used...');
-    await supabase
+    await supabaseAdmin
       .from('invites')
       .update({
         used_at: new Date().toISOString(),
@@ -108,9 +121,9 @@ export async function GET(request: Request) {
       })
       .eq('id', invite.id);
 
-    // Redirect to dashboard
-    console.log('🎉 Success! Redirecting to dashboard...');
-    return NextResponse.redirect(`${requestUrl.origin}/dashboard`);
+    // Redirect to original destination or dashboard
+    console.log('🎉 Success! Redirecting to', redirectTo);
+    return NextResponse.redirect(`${requestUrl.origin}${redirectTo}`);
   }
 
   // No code provided, redirect to home

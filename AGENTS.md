@@ -57,6 +57,9 @@ npm run lint
 
 # Type checking
 npx tsc --noEmit
+
+# Create test invite links
+npx tsx scripts/create-invite.ts
 ```
 
 ### Supabase

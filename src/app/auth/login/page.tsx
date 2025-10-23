@@ -1,36 +1,27 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { IconBrandGoogleFilled, IconBuildingWarehouse } from '@tabler/icons-react';
+import { IconBrandGoogleFilled } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
+import { useSearchParams } from 'next/navigation';
 
-interface InviteAcceptanceProps {
-	inviteCode: string;
-	companyName: string;
-	warehouseName: string;
-	role: string;
-}
-
-export default function InviteAcceptance({
-	inviteCode,
-	companyName,
-	warehouseName,
-	role,
-}: InviteAcceptanceProps) {
+export default function LoginPage() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
+	const searchParams = useSearchParams();
+	const redirectTo = searchParams.get('redirectTo') || '/dashboard';
 
-	const handleAccept = async () => {
+	const handleLogin = async () => {
 		setLoading(true);
 		setError('');
 
 		try {
 			const supabase = createClient();
 
-			// Initiate Google OAuth - redirect to callback with invite code
-			const callbackUrl = `${window.location.origin}/auth/callback?invite_code=${inviteCode}`;
+			// Initiate Google OAuth - redirect to callback with redirectTo parameter
+			const callbackUrl = `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`;
 
 			const { error: authError } = await supabase.auth.signInWithOAuth({
 				provider: 'google',
@@ -45,20 +36,10 @@ export default function InviteAcceptance({
 
 			// OAuth redirect will happen automatically
 		} catch (err: any) {
-			console.error('Error accepting invite:', err);
+			console.error('Error logging in:', err);
 			setError(err.message || 'Failed to sign in with Google');
 			setLoading(false);
 		}
-	};
-
-	// Get company initials for avatar
-	const getInitials = (name: string) => {
-		return name
-			.split(' ')
-			.map(word => word[0])
-			.join('')
-			.toUpperCase()
-			.slice(0, 2);
 	};
 
 	return (
@@ -85,32 +66,6 @@ export default function InviteAcceptance({
 					</p>
 				</div>
 
-				{/* Registration Info */}
-				<div className="flex flex-col gap-1 w-full">
-					<p className="text-base text-gray-500">
-						You are registering with...
-					</p>
-					<div className="bg-background-100 border-2 border-gray-200 rounded-2xl p-4 flex gap-3 items-start">
-						{/* Company Avatar */}
-						<div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center shrink-0">
-							<span className="text-lg font-medium text-gray-700">
-								{getInitials(companyName)}
-							</span>
-						</div>
-
-						{/* Company & Warehouse Info */}
-						<div className="flex-1 min-w-0 flex flex-col gap-1">
-							<p className="text-base font-medium text-gray-900">
-								{companyName}
-							</p>
-							<div className="flex items-center gap-1.5 text-gray-500">
-								<IconBuildingWarehouse className="w-4 h-4" />
-								<span className="text-sm font-normal">{warehouseName}</span>
-							</div>
-						</div>
-					</div>
-				</div>
-
 				{/* Error Message */}
 				{error && (
 					<div className="bg-red-50 border border-red-200 rounded-lg p-4 w-full">
@@ -118,21 +73,21 @@ export default function InviteAcceptance({
 					</div>
 				)}
 
-				{/* Register Button */}
+				{/* Login Button */}
 				<Button
-					onClick={handleAccept}
+					onClick={handleLogin}
 					disabled={loading}
 					className="w-full"
 				>
 					{loading ? (
 						<>
 							<div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-							<span>Registering...</span>
+							<span>Signing in...</span>
 						</>
 					) : (
 						<>
 							<IconBrandGoogleFilled className="w-6 h-6 text-white" />
-							<span>Register with Google</span>
+							<span>Sign in with Google</span>
 						</>
 					)}
 				</Button>

@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { IconMapPin, IconPhone, IconPlus, IconSearch } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import type { Database } from '@/types/database/supabase';
 
-type PartnerType = 'customer' | 'supplier' | 'vendor' | 'agent';
+type PartnerType = 'Customer' | 'Supplier' | 'Vendor' | 'Agent';
+type PartnerRow = Database['public']['Tables']['partners']['Row'];
 
 interface Partner {
 	id: string;
@@ -19,49 +22,11 @@ interface Partner {
 	phone?: string;
 }
 
-// Mock data
-const PARTNERS: Partner[] = [
-	{
-		id: '1',
-		name: 'Loom & Layer',
-		type: 'supplier',
-		amount: 21203,
-		transactionType: 'purchase',
-		address: '17, Cotton Market Road',
-		phone: '9876543210',
-	},
-	{
-		id: '2',
-		name: 'Urban Drape',
-		type: 'customer',
-		amount: 46439,
-		transactionType: 'sales',
-		address: '17, Cotton Market Road',
-		phone: '9876543210',
-	},
-	{
-		id: '3',
-		name: 'WeaveWorks',
-		type: 'vendor',
-		amount: 31933,
-		transactionType: 'purchase',
-		address: '17, Cotton Market Road',
-		phone: '9876543210',
-	},
-	{
-		id: '4',
-		name: 'Ankit Swadesh',
-		type: 'agent',
-		address: undefined,
-		phone: undefined,
-	},
-];
-
 const PARTNER_TYPES: { value: PartnerType; label: string }[] = [
-	{ value: 'customer', label: 'Customer' },
-	{ value: 'supplier', label: 'Supplier' },
-	{ value: 'vendor', label: 'Vendor' },
-	{ value: 'agent', label: 'Agent' },
+	{ value: 'Customer', label: 'Customer' },
+	{ value: 'Supplier', label: 'Supplier' },
+	{ value: 'Vendor', label: 'Vendor' },
+	{ value: 'Agent', label: 'Agent' },
 ];
 
 function getInitials(name: string): string {
@@ -86,14 +51,92 @@ function getActionLabel(type: PartnerType): string {
 }
 
 export default function PartnersPage() {
-	const [selectedType, setSelectedType] = useState<PartnerType>('customer');
+	const [selectedType, setSelectedType] = useState<PartnerType>('Customer');
 	const [searchQuery, setSearchQuery] = useState('');
+	const [partners, setPartners] = useState<Partner[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 
-	const filteredPartners = PARTNERS.filter((partner) => {
-		const matchesType = partner.type === selectedType;
+	const supabase = createClient();
+
+	useEffect(() => {
+		async function fetchPartners() {
+			try {
+				setLoading(true);
+				setError(null);
+
+				const { data, error: fetchError } = await supabase
+					.from('partners')
+					.select('*')
+					.eq('partner_type', selectedType)
+					.order('first_name', { ascending: true });
+
+				if (fetchError) throw fetchError;
+
+				// Transform data to match Partner interface
+				const transformedPartners: Partner[] = (data || []).map((p: PartnerRow) => ({
+					id: p.id,
+					name: `${p.first_name} ${p.last_name}`.trim(),
+					type: p.partner_type as PartnerType,
+					address: [p.address_line1, p.city, p.state]
+						.filter(Boolean)
+						.join(', ') || undefined,
+					phone: p.phone_number || undefined,
+					// TODO: Fetch transaction amounts from orders/receipts
+					amount: undefined,
+					transactionType: undefined,
+				}));
+
+				setPartners(transformedPartners);
+			} catch (err) {
+				console.error('Error fetching partners:', err);
+				setError(err instanceof Error ? err.message : 'Failed to load partners');
+			} finally {
+				setLoading(false);
+			}
+		}
+
+		fetchPartners();
+	}, [selectedType]);
+
+	const filteredPartners = partners.filter((partner) => {
 		const matchesSearch = partner.name.toLowerCase().includes(searchQuery.toLowerCase());
-		return matchesType && matchesSearch;
+		return matchesSearch;
 	});
+
+	// Loading state
+	if (loading) {
+		return (
+			<div className="relative flex flex-col min-h-screen bg-background-100 pb-16">
+				<div className="flex items-center justify-center h-screen">
+					<div className="flex flex-col items-center gap-3">
+						<div className="size-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+						<p className="text-sm text-gray-600">Loading partners...</p>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	// Error state
+	if (error) {
+		return (
+			<div className="relative flex flex-col min-h-screen bg-background-100 pb-16">
+				<div className="flex items-center justify-center h-screen p-4">
+					<div className="flex flex-col items-center gap-3 text-center max-w-md">
+						<div className="size-12 rounded-full bg-red-100 flex items-center justify-center">
+							<span className="text-2xl">⚠️</span>
+						</div>
+						<h2 className="text-lg font-semibold text-gray-900">Failed to load partners</h2>
+						<p className="text-sm text-gray-600">{error}</p>
+						<Button onClick={() => window.location.reload()} variant="outline" size="sm">
+							Try again
+						</Button>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="relative flex flex-col min-h-screen bg-background-100 pb-16">
@@ -152,7 +195,17 @@ export default function PartnersPage() {
 
 			{/* Partner Cards */}
 			<div className="flex flex-col gap-4 p-4">
-				{filteredPartners.map((partner) => (
+				{filteredPartners.length === 0 ? (
+					<div className="flex flex-col items-center justify-center py-12 text-center">
+						<p className="text-gray-600 mb-2">No partners found</p>
+						<p className="text-sm text-gray-500">
+							{searchQuery
+								? 'Try adjusting your search'
+								: `Add your first ${selectedType.toLowerCase()}`}
+						</p>
+					</div>
+				) : (
+					filteredPartners.map((partner) => (
 					<Card
 						key={partner.id}
 						className="shadow-gray-md border-gray-300"
@@ -221,13 +274,14 @@ export default function PartnersPage() {
 							</Button>
 						</CardFooter>
 					</Card>
-				))}
+				))
+				)}
 			</div>
 
 			{/* Floating Action Button */}
 			<Button
 				size="icon"
-				className="fixed bottom-20 right-4 size-14 rounded-full bg-primary-700 border-primary-800 border shadow-dark-primary-md active:shadow-dark-primary-sm active:translate-y-0.5 transition-all hover:bg-primary-700"
+				className="fixed bottom-20 right-4 size-14 rounded-full"
 			>
 				<IconPlus className="size-6 text-base-white" />
 			</Button>
