@@ -37,15 +37,26 @@
 - [x] Style invite acceptance page with Figma design (mascot, layout, colors)
 - [x] Add grid background pattern to app (24px grid with gray lines)
 - [x] Install and configure icon libraries (Tabler Icons, Lucide React)
+- [x] Build TopBar component with warehouse selector button
+- [x] Build BottomNav component for mobile navigation
+- [x] Create WarehouseSelector dropdown component with Figma design (warehouse icon, address, location pin)
+- [x] Integrate WarehouseSelector with TopBar (toggle dropdown, chevron up/down animation)
+- [x] Implement slide-down animation for WarehouseSelector dropdown (translate-y with smooth transition)
+- [x] Install and configure shadcn/ui Sidebar component with proper inset variant
+- [x] Build AppSidebar with navigation items (Job work, QR codes, Partners, Staff, Reports, Settings, Online store)
+- [x] Configure sidebar styling (text-base, size-5 icons, 16px padding, 12px gap)
+- [x] Add sidebar header with app branding (Bale Inventory v1.0.0)
+- [x] Implement sidebar toggle functionality with offcanvas collapsible mode
 - [ ] Set up protected route middleware for all routes
-- [ ] Build base layouts (dashboard, mobile navigation)
 - [ ] Create warehouse-scoped routes (/warehouse/[id]/...)
+- [ ] Fetch warehouses from Supabase and implement warehouse context/state management
 
 ## Phase 4: Core UI Components
-- [x] Install and configure shadcn/ui components (button, input, label, form, select, textarea, card, dialog, table)
+- [x] Install and configure shadcn/ui components (button, input, label, form, select, textarea, card, dialog, table, sidebar)
 - [x] Configure shadcn with exact Figma color palette (primary, grays, background)
 - [x] Implement 3D button effect from Figma design (4px shadow, active state)
-- [x] Configure Tailwind v4 with Inter font and theme colors
+- [x] Create tailwind.config.ts for v4 compatibility
+- [x] Add border and ring color definitions to @theme
 - [x] Create custom icon components (WarehouseIcon wrapper)
 - [ ] Build custom components (DataTable, FileUpload, SearchInput, StatusBadge)
 - [ ] Create form components with validation (Zod + React Hook Form)

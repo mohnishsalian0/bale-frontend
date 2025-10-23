@@ -1,39 +1,50 @@
-import { getCurrentUser } from '@/lib/auth/session';
-import { redirect } from 'next/navigation';
+import { AppSidebar } from "@/components/layouts/AppSidebar"
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
+import {
+	SidebarInset,
+	SidebarProvider,
+	SidebarTrigger,
+} from "@/components/ui/sidebar"
 
-export default async function DashboardPage() {
-  const user = await getCurrentUser();
-
-  return (
-    <div className="min-h-screen bg-background-100 p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">
-          Welcome to Bale Inventory!
-        </h1>
-
-        {/* <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-2xl font-semibold mb-4">Your Profile</h2>
-          <div className="space-y-2">
-            <p><strong>Name:</strong> {user.first_name} {user.last_name}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Role:</strong> <span className="capitalize">{user.role}</span></p>
-            <p><strong>Company ID:</strong> {user.company_id}</p>
-            {user.warehouse_id && (
-              <p><strong>Warehouse ID:</strong> {user.warehouse_id}</p>
-            )}
-          </div>
-        </div> */}
-
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-green-800 mb-2">
-            🎉 Authentication Successful!
-          </h3>
-          <p className="text-green-700">
-            You have successfully signed in with Google and your profile has been created.
-            The full application features will be built in the next phases.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+export default function Page() {
+	// return (
+	// 	<SidebarProvider>
+	// 		<AppSidebar />
+	// 		<SidebarInset>
+	// 			<header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+	// 				<SidebarTrigger className="-ml-1" />
+	// 				<Separator orientation="vertical" className="mr-2 h-4" />
+	// 				<Breadcrumb>
+	// 					<BreadcrumbList>
+	// 						<BreadcrumbItem className="hidden md:block">
+	// 							<BreadcrumbLink href="#">
+	// 								Building Your Application
+	// 							</BreadcrumbLink>
+	// 						</BreadcrumbItem>
+	// 						<BreadcrumbSeparator className="hidden md:block" />
+	// 						<BreadcrumbItem>
+	// 							<BreadcrumbPage>Data Fetching</BreadcrumbPage>
+	// 						</BreadcrumbItem>
+	// 					</BreadcrumbList>
+	// 				</Breadcrumb>
+	// 			</header>
+	// 			<div className="flex flex-1 flex-col gap-4 p-4">
+	// 				<div className="grid auto-rows-min gap-4 md:grid-cols-3">
+	// 					<div className="aspect-video rounded-xl bg-muted/50" />
+	// 					<div className="aspect-video rounded-xl bg-muted/50" />
+	// 					<div className="aspect-video rounded-xl bg-muted/50" />
+	// 				</div>
+	// 				<div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
+	// 			</div>
+	// 		</SidebarInset>
+	// 	</SidebarProvider>
+	// )
 }
