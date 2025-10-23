@@ -109,3 +109,7 @@ npm run build
 Refer to TODO.md file for list of completed and pending tasks
 
 Always update the TODO.md file before proceeding to the next task
+
+Refer to globals.css for theme
+
+Use shadcn components wherever possible

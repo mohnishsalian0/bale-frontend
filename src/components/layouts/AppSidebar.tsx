@@ -96,7 +96,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent>
-				<SidebarMenu>
+				<SidebarMenu className="gap-0">
 					{NAV_ITEMS.map((item) => {
 						const isActive = pathname === item.href;
 						const TrailingIcon = item.trailingIcon;
@@ -113,7 +113,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 										href={item.href}
 										target={item.external ? '_blank' : undefined}
 										rel={item.external ? 'noreferrer' : undefined}
-										className='flex items-center'
+										className='flex items-center rounded-none'
 									>
 										<item.icon />
 										<span className='flex-1'>{item.label}</span>

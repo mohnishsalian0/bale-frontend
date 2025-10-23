@@ -69,6 +69,7 @@
 ## Phase 6: Iteration 2 - Products/Partners
 - [ ] Product master CRUD with fabric attributes (admin CRUD, staff read)
 - [ ] Product images upload (max 5, 2MB each)
+- [x] Partners page UI with filter tabs, search, and partner cards
 - [ ] Partner CRUD (customers, vendors, suppliers, agents)
 
 ## Phase 7: Iteration 3 - Receipt/Stock/Inventory

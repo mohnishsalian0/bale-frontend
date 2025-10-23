@@ -3,6 +3,7 @@
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import Image from 'next/image';
 import { SidebarTrigger } from '../ui/sidebar';
+import { Button } from '../ui/button';
 
 interface TopBarProps {
 	warehouseName: string;
@@ -21,7 +22,7 @@ export default function TopBar({
 	isWarehouseSelectorOpen = false,
 }: TopBarProps) {
 	return (
-		<div className={`sticky top-0 bg-background-100 ${isWarehouseSelectorOpen ? '' : 'border-b border-gray-200'
+		<div className={`z-30 sticky top-0 bg-background-100 ${isWarehouseSelectorOpen ? '' : 'border-b border-gray-200'
 			}`}>
 			<div className="flex items-center justify-between pl-2 pr-4 py-3">
 				{/* Left side - Menu + Warehouse selector */}
@@ -30,9 +31,10 @@ export default function TopBar({
 					<SidebarTrigger className='w-10 h-10 text-gray-700' />
 
 					{/* Warehouse Selector */}
-					<button
+					<Button
+						variant="ghost"
 						onClick={onWarehouseClick}
-						className="flex items-center gap-2 h-10 hover:bg-gray-50 rounded-lg px-2 transition-colors"
+						className="h-10 px-2"
 					>
 						<span className="text-sm font-medium text-gray-700">
 							{warehouseName}
@@ -42,13 +44,15 @@ export default function TopBar({
 						) : (
 							<IconChevronDown className="w-5 h-5 text-gray-700" />
 						)}
-					</button>
+					</Button>
 				</div>
 
 				{/* Right side - Profile */}
-				<button
+				<Button
+					variant="ghost"
+					size="icon"
 					onClick={onProfileClick}
-					className="relative w-10 h-10 rounded-full overflow-hidden hover:ring-2 hover:ring-primary-700 transition-all"
+					className="relative w-10 h-10 rounded-full overflow-hidden hover:ring-2 hover:ring-primary-700 transition-all p-0"
 				>
 					{profileImage ? (
 						<Image
@@ -64,7 +68,7 @@ export default function TopBar({
 							</span>
 						</div>
 					)}
-				</button>
+				</Button>
 			</div>
 		</div >
 	);
