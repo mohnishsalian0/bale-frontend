@@ -68,8 +68,6 @@ const NAV_ITEMS: NavItem[] = [
 		label: 'Online store',
 		href: '/catalog',
 		icon: IconBuildingStore,
-		trailingIcon: IconExternalLink,
-		external: true,
 	},
 ];
 

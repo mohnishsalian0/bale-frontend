@@ -1,9 +1,9 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { Session } from "@supabase/supabase-js";
 import { UserRole } from '@/types/database/enums';
-import type { Database } from '@/types/database/supabase';
+import type { Tables } from '@/types/database/supabase';
 
-type User = Database['public']['Tables']['users']['Row'];
+type User = Tables<'users'>;
 
 /**
  * Creates a Supabase client for use in Client Components

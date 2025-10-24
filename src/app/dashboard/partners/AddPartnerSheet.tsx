@@ -6,12 +6,12 @@ import { IconUser, IconPhone, IconChevronDown, IconBuildingFactory2, IconBuildin
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group-pills';
 import { Sheet, SheetContent, SheetFooter, SheetHeader } from '@/components/ui/sheet';
 import { validateImageFile, uploadPartnerImage } from '@/lib/storage';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
-
-type PartnerType = 'Customer' | 'Supplier' | 'Vendor' | 'Agent';
+import type { TablesInsert } from '@/types/database/supabase';
+import type { PartnerType } from '@/types/database/enums';
 
 interface AddPartnerSheetProps {
 	open: boolean;
@@ -40,7 +40,7 @@ interface PartnerFormData {
 
 export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartnerSheetProps) {
 	const [formData, setFormData] = useState<PartnerFormData>({
-		partnerType: 'Customer',
+		partnerType: 'customer',
 		firstName: '',
 		lastName: '',
 		phoneNumber: '',
@@ -102,29 +102,31 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 				throw new Error('User not found');
 			}
 
+			// Prepare typed insert data
+			const partnerInsert: TablesInsert<'partners'> = {
+				company_id: currentUser.company_id,
+				partner_type: formData.partnerType,
+				first_name: formData.firstName,
+				last_name: formData.lastName,
+				phone_number: formData.phoneNumber,
+				email: null,
+				company_name: formData.companyName || null,
+				address_line1: formData.addressLine1 || null,
+				address_line2: formData.addressLine2 || null,
+				city: formData.city || null,
+				state: formData.state || null,
+				country: formData.country || null,
+				pin_code: formData.pinCode || null,
+				gst_number: formData.gstNumber || null,
+				pan_number: formData.panNumber || null,
+				notes: formData.notes || null,
+				created_by: currentUser.id,
+			};
+
 			// Insert partner record
 			const { data: partner, error: insertError } = await supabase
 				.from('partners')
-				.insert({
-					company_id: currentUser.company_id,
-					partner_type: formData.partnerType,
-					first_name: formData.firstName,
-					last_name: formData.lastName,
-					phone_number: formData.phoneNumber || null,
-					email: null, // Email not in form yet
-					company_name: formData.companyName || null,
-					business_type: formData.businessType || null,
-					address_line1: formData.addressLine1 || null,
-					address_line2: formData.addressLine2 || null,
-					city: formData.city || null,
-					state: formData.state || null,
-					country: formData.country || null,
-					pin_code: formData.pinCode || null,
-					gst_number: formData.gstNumber || null,
-					pan_number: formData.panNumber || null,
-					additional_notes: formData.notes || null,
-					created_by: currentUser.id,
-				})
+				.insert(partnerInsert)
 				.select()
 				.single();
 
@@ -156,7 +158,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 	const handleCancel = () => {
 		// Reset form
 		setFormData({
-			partnerType: 'Customer',
+			partnerType: 'customer',
 			firstName: '',
 			lastName: '',
 			phoneNumber: '',
@@ -195,7 +197,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 							<div className="flex justify-center">
 								<label
 									htmlFor="partner-image"
-									className="relative flex flex-col items-center justify-center size-40 rounded-full border-[1px_3px_4px_1px] border-neutral-200 bg-neutral-100 cursor-pointer hover:bg-neutral-200 transition-colors"
+									className="relative flex flex-col items-center justify-center size-40 rounded-full border-shadow-gray bg-neutral-100 cursor-pointer hover:bg-neutral-200 transition-colors"
 								>
 									{imagePreview ? (
 										<Image
@@ -233,10 +235,10 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 									}
 									name="partner-type"
 								>
-									<RadioGroupItem value="Customer">Customer</RadioGroupItem>
-									<RadioGroupItem value="Supplier">Supplier</RadioGroupItem>
-									<RadioGroupItem value="Vendor">Vendor</RadioGroupItem>
-									<RadioGroupItem value="Agent">Agent</RadioGroupItem>
+									<RadioGroupItem value="customer">Customer</RadioGroupItem>
+									<RadioGroupItem value="supplier">Supplier</RadioGroupItem>
+									<RadioGroupItem value="vendor">Vendor</RadioGroupItem>
+									<RadioGroupItem value="agent">Agent</RadioGroupItem>
 								</RadioGroup>
 							</div>
 
@@ -310,13 +312,6 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 											className="pl-12"
 										/>
 									</div>
-									<Input
-										placeholder="Company name"
-										value={formData.companyName}
-										onChange={(e) =>
-											setFormData({ ...formData, companyName: e.target.value })
-										}
-									/>
 								</div>
 							)}
 						</div>
@@ -441,7 +436,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 									placeholder="Enter a note..."
 									value={formData.notes}
 									onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-									className="min-h-[128px]"
+									className="min-h-32"
 								/>
 							)}
 						</div>

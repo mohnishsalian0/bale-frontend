@@ -153,7 +153,7 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			created_by: createdBy,
-			partner_type: 'Customer',
+			partner_type: 'customer',
 			first_name: 'Rajesh',
 			last_name: 'Kumar',
 			company_name: 'Kumar Textiles',
@@ -167,7 +167,7 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			created_by: createdBy,
-			partner_type: 'Customer',
+			partner_type: 'customer',
 			first_name: 'Priya',
 			last_name: 'Sharma',
 			company_name: 'Sharma Fabrics',
@@ -181,7 +181,7 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			created_by: createdBy,
-			partner_type: 'Customer',
+			partner_type: 'customer',
 			first_name: 'Amit',
 			last_name: 'Patel',
 			phone_number: '+91 98765 43212',
@@ -194,7 +194,7 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			created_by: createdBy,
-			partner_type: 'Supplier',
+			partner_type: 'supplier',
 			first_name: 'Suresh',
 			last_name: 'Reddy',
 			company_name: 'Reddy Cotton Mills',
@@ -208,7 +208,7 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			created_by: createdBy,
-			partner_type: 'Supplier',
+			partner_type: 'supplier',
 			first_name: 'Lakshmi',
 			last_name: 'Naidu',
 			company_name: 'Naidu Silk House',
@@ -222,9 +222,9 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			created_by: createdBy,
-			partner_type: 'Vendor',
+			partner_type: 'vendor',
 			first_name: 'Arjun',
-			last_name: 'Singh',
+			last_name: 'singh',
 			company_name: 'Singh Processing Unit',
 			phone_number: '+91 98765 43215',
 			email: 'arjun@singhprocessing.com',
@@ -236,7 +236,7 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			created_by: createdBy,
-			partner_type: 'Vendor',
+			partner_type: 'vendor',
 			first_name: 'Meera',
 			last_name: 'Desai',
 			company_name: 'Desai Dyeing Works',
@@ -250,7 +250,7 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			created_by: createdBy,
-			partner_type: 'Agent',
+			partner_type: 'agent',
 			first_name: 'Vikram',
 			last_name: 'Mehta',
 			phone_number: '+91 98765 43217',
@@ -263,7 +263,7 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			created_by: createdBy,
-			partner_type: 'Agent',
+			partner_type: 'agent',
 			first_name: 'Anjali',
 			last_name: 'Gupta',
 			phone_number: '+91 98765 43218',
@@ -286,8 +286,7 @@ async function createTestPartners() {
 			console.error(`   Error: ${error.message}`);
 		} else {
 			console.log(
-				`✅ Created ${partner.partner_type}: ${partner.first_name} ${partner.last_name} ${
-					partner.company_name ? `(${partner.company_name})` : ''
+				`✅ Created ${partner.partner_type}: ${partner.first_name} ${partner.last_name} ${partner.company_name ? `(${partner.company_name})` : ''
 				}`
 			);
 		}
@@ -349,9 +348,9 @@ async function createTestPartners() {
 	console.log(`   Warehouse ID: ${warehouseId}\n`);
 	console.log('🔗 Invite Links (valid for 7 days):\n');
 	console.log('👤 Admin Invite:');
-	console.log(`   http://localhost:3001/invite/${adminToken}\n`);
+	console.log(`   http://localhost:3000/invite/${adminToken}\n`);
 	console.log('👷 Staff Invite:');
-	console.log(`   http://localhost:3001/invite/${staffToken}\n`);
+	console.log(`   http://localhost:3000/invite/${staffToken}\n`);
 	console.log('💡 Use these invite links to create users for the test company with partners data');
 	console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 }

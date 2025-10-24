@@ -6,12 +6,12 @@ import { IconMapPin, IconPhone, IconPlus, IconSearch } from '@tabler/icons-react
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AddPartnerSheet } from './AddPartnerSheet';
+import { AddPartnerSheet } from './AddProductSheet';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
 import type { PartnerType } from '@/types/database/enums';
 
-type PartnerRow = Tables<'partners'>;
+type ProductRow = Tables<'products'>;
 
 interface Partner {
 	id: string;
@@ -51,10 +51,10 @@ function getActionLabel(type: PartnerType): string {
 	}
 }
 
-export default function PartnersPage() {
+export default function InventoryPage() {
 	const [selectedType, setSelectedType] = useState<PartnerType>('customer');
 	const [searchQuery, setSearchQuery] = useState('');
-	const [partners, setPartners] = useState<Partner[]>([]);
+	const [products, setProducts] = useState<Partner[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [showAddPartner, setShowAddPartner] = useState(false);
@@ -285,7 +285,7 @@ export default function PartnersPage() {
 			<Button
 				size="icon"
 				onClick={() => setShowAddPartner(true)}
-				className="fixed bottom-20 right-4 size-14 rounded-full shadow-none border-shadow-primary"
+				className="fixed bottom-20 right-4 size-14 rounded-full"
 			>
 				<IconPlus className="size-6 text-base-white" />
 			</Button>

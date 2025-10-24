@@ -18,7 +18,7 @@ CREATE TABLE partners (
     
     -- Partner type
     partner_type VARCHAR(20) NOT NULL 
-        CHECK (partner_type IN ('Customer', 'Supplier', 'Vendor', 'Agent')),
+        CHECK (partner_type IN ('customer', 'supplier', 'vendor', 'agent')),
     
     -- Tax information
     gst_number VARCHAR(15),

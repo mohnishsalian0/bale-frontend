@@ -1,71 +1,44 @@
-'use client';
+"use client"
 
-import * as React from 'react';
-import { cn } from '@/lib/utils';
+import * as React from "react"
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
+import { Circle } from "lucide-react"
 
-interface RadioGroupProps {
-	value: string;
-	onValueChange: (value: string) => void;
-	name: string;
-	className?: string;
-	children: React.ReactNode;
-}
+import { cn } from "@/lib/utils"
 
-interface RadioGroupItemProps {
-	value: string;
-	children: React.ReactNode;
-	className?: string;
-}
-
-const RadioGroupContext = React.createContext<{
-	value: string;
-	onValueChange: (value: string) => void;
-	name: string;
-} | null>(null);
-
-function RadioGroup({ value, onValueChange, name, className, children }: RadioGroupProps) {
+const RadioGroup = React.forwardRef<
+	React.ElementRef<typeof RadioGroupPrimitive.Root>,
+	React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>
+>(({ className, ...props }, ref) => {
 	return (
-		<RadioGroupContext.Provider value={{ value, onValueChange, name }}>
-			<div className={cn('flex gap-2', className)} role="radiogroup">
-				{children}
-			</div>
-		</RadioGroupContext.Provider>
-	);
-}
+		<RadioGroupPrimitive.Root
+			className={cn("grid gap-2", className)}
+			{...props}
+			ref={ref}
+		/>
+	)
+})
+RadioGroup.displayName = RadioGroupPrimitive.Root.displayName
 
-function RadioGroupItem({ value, children, className }: RadioGroupItemProps) {
-	const context = React.useContext(RadioGroupContext);
-
-	if (!context) {
-		throw new Error('RadioGroupItem must be used within RadioGroup');
-	}
-
-	const isSelected = context.value === value;
-	const id = `${context.name}-${value}`;
-
+const RadioGroupItem = React.forwardRef<
+	React.ElementRef<typeof RadioGroupPrimitive.Item>,
+	React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>
+>(({ className, ...props }, ref) => {
 	return (
-		<label
-			htmlFor={id}
+		<RadioGroupPrimitive.Item
+			ref={ref}
 			className={cn(
-				'px-3 py-1 text-sm font-medium rounded-2xl border transition-colors cursor-pointer',
-				isSelected
-					? 'bg-primary-200 border-primary-700 text-gray-700'
-					: 'bg-neutral-100 border-transparent text-gray-700',
+				"aspect-square h-4 w-4 rounded-full border-2 border-gray-300 text-primary focus:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-primary-600",
 				className
 			)}
+			{...props}
 		>
-			<input
-				type="radio"
-				id={id}
-				name={context.name}
-				value={value}
-				checked={isSelected}
-				onChange={(e) => context.onValueChange(e.target.value)}
-				className="sr-only"
-			/>
-			{children}
-		</label>
-	);
-}
+			<RadioGroupPrimitive.Indicator className="flex items-center justify-center margin-auto">
+				<Circle className="h-2.5 w-2.5 fill-primary-600" />
+			</RadioGroupPrimitive.Indicator>
+		</RadioGroupPrimitive.Item>
+	)
+})
+RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName
 
-export { RadioGroup, RadioGroupItem };
+export { RadioGroup, RadioGroupItem }

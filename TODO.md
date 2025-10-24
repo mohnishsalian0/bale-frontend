@@ -72,14 +72,20 @@
 ## Phase 5: Iteration 1 - Company/Warehouse/Staff
 - [ ] Company profile management
 - [ ] Warehouse CRUD (admin only)
-- [ ] Staff CRUD with warehouse assignment (admin only)
+- [x] Staff page with 2-column grid layout showing staff cards
+- [x] Add staff form with role selection and warehouse assignment
+- [ ] Edit staff functionality
+- [ ] Delete staff functionality
 
 ## Phase 6: Iteration 2 - Products/Partners
 - [ ] Product master CRUD with fabric attributes (admin CRUD, staff read)
 - [ ] Product images upload (max 5, 2MB each)
 - [x] Partners page UI with filter tabs, search, and partner cards
 - [x] Connect partners page to Supabase database (fetch, loading, error states)
-- [ ] Partner CRUD (customers, vendors, suppliers, agents)
+- [x] Add partner form with typed insert (image upload, business details, address, tax details)
+- [ ] Edit partner form
+- [ ] Delete partner functionality
+- [ ] Partner detail view
 
 ## Phase 7: Iteration 3 - Receipt/Stock/Inventory
 - [ ] Goods receipt form with automatic stock unit creation
