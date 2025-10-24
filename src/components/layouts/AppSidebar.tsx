@@ -8,6 +8,7 @@ import {
 	IconClipboardList,
 	IconExternalLink,
 	IconIdBadge2,
+	IconPhotoScan,
 	IconQrcode,
 	IconSettings,
 	IconUsers,
@@ -23,7 +24,6 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 } from "@/components/ui/sidebar"
-import { GalleryVerticalEnd } from "lucide-react";
 
 type NavItem = {
 	label: string;
@@ -84,7 +84,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						<SidebarMenuButton asChild className='p-2 h-auto'>
 							<a href="#">
 								<div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-11 items-center justify-center rounded-lg">
-									<GalleryVerticalEnd className="size-4" />
+									<IconPhotoScan className="size-6" />
 								</div>
 								<div className="flex flex-col leading-none">
 									<span className="text-lg font-medium">Bale Inventory</span>

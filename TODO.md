@@ -24,8 +24,12 @@
 - [x] Uncomment generate_sequence_number() and helper functions in 0001
 - [x] Run migrations in Supabase (reset database and apply all 22 migrations)
 - [x] Regenerate TypeScript types from full schema
-- [ ] Create test seed data (company, user, warehouse)
-- [ ] Set up storage buckets for images/files
+- [x] Create test seed data (company, user, warehouse, partners)
+- [x] Create test data script with invite generation (scripts/create-test-partners.ts)
+- [x] Fix auth callback RLS issue (use service role for profile creation)
+- [x] Set up storage buckets for images/files (company-logos, profile-images, product-images)
+- [x] Configure storage policies with RLS (multi-tenant access control)
+- [x] Create storage utility functions (upload, delete, get URLs)
 
 ## Phase 3: Authentication & Core Layout
 - [x] Build auth system (Google OAuth with Supabase Auth)
@@ -74,6 +78,7 @@
 - [ ] Product master CRUD with fabric attributes (admin CRUD, staff read)
 - [ ] Product images upload (max 5, 2MB each)
 - [x] Partners page UI with filter tabs, search, and partner cards
+- [x] Connect partners page to Supabase database (fetch, loading, error states)
 - [ ] Partner CRUD (customers, vendors, suppliers, agents)
 
 ## Phase 7: Iteration 3 - Receipt/Stock/Inventory

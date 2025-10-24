@@ -39,11 +39,7 @@ export default function TopBar({
 						<span className="text-sm font-medium text-gray-700">
 							{warehouseName}
 						</span>
-						{isWarehouseSelectorOpen ? (
-							<IconChevronUp className="w-5 h-5 text-gray-700" />
-						) : (
-							<IconChevronDown className="w-5 h-5 text-gray-700" />
-						)}
+						<IconChevronDown className={`w-5 h-5 text-gray-700 ${isWarehouseSelectorOpen ? 'rotate-180' : 'rotate-0'}`} />
 					</Button>
 				</div>
 

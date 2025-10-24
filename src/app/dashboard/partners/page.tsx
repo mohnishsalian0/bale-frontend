@@ -6,6 +6,7 @@ import { IconMapPin, IconPhone, IconPlus, IconSearch } from '@tabler/icons-react
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { AddPartnerSheet } from '@/components/partners/AddPartnerSheet';
 import { createClient } from '@/lib/supabase/client';
 import type { Database } from '@/types/database/supabase';
 
@@ -40,10 +41,10 @@ function getInitials(name: string): string {
 
 function getActionLabel(type: PartnerType): string {
 	switch (type) {
-		case 'customer':
+		case 'Customer':
 			return 'Sales order';
-		case 'supplier':
-		case 'vendor':
+		case 'Supplier':
+		case 'Vendor':
 			return 'Goods receipt';
 		default:
 			return 'Job work';
@@ -56,46 +57,47 @@ export default function PartnersPage() {
 	const [partners, setPartners] = useState<Partner[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [showAddPartner, setShowAddPartner] = useState(false);
 
 	const supabase = createClient();
 
-	useEffect(() => {
-		async function fetchPartners() {
-			try {
-				setLoading(true);
-				setError(null);
+	const fetchPartners = async () => {
+		try {
+			setLoading(true);
+			setError(null);
 
-				const { data, error: fetchError } = await supabase
-					.from('partners')
-					.select('*')
-					.eq('partner_type', selectedType)
-					.order('first_name', { ascending: true });
+			const { data, error: fetchError } = await supabase
+				.from('partners')
+				.select('*')
+				.eq('partner_type', selectedType)
+				.order('first_name', { ascending: true });
 
-				if (fetchError) throw fetchError;
+			if (fetchError) throw fetchError;
 
-				// Transform data to match Partner interface
-				const transformedPartners: Partner[] = (data || []).map((p: PartnerRow) => ({
-					id: p.id,
-					name: `${p.first_name} ${p.last_name}`.trim(),
-					type: p.partner_type as PartnerType,
-					address: [p.address_line1, p.city, p.state]
-						.filter(Boolean)
-						.join(', ') || undefined,
-					phone: p.phone_number || undefined,
-					// TODO: Fetch transaction amounts from orders/receipts
-					amount: undefined,
-					transactionType: undefined,
-				}));
+			// Transform data to match Partner interface
+			const transformedPartners: Partner[] = (data || []).map((p: PartnerRow) => ({
+				id: p.id,
+				name: `${p.first_name} ${p.last_name}`.trim(),
+				type: p.partner_type as PartnerType,
+				address: [p.address_line1, p.city, p.state]
+					.filter(Boolean)
+					.join(', ') || undefined,
+				phone: p.phone_number || undefined,
+				// TODO: Fetch transaction amounts from orders/receipts
+				amount: undefined,
+				transactionType: undefined,
+			}));
 
-				setPartners(transformedPartners);
-			} catch (err) {
-				console.error('Error fetching partners:', err);
-				setError(err instanceof Error ? err.message : 'Failed to load partners');
-			} finally {
-				setLoading(false);
-			}
+			setPartners(transformedPartners);
+		} catch (err) {
+			console.error('Error fetching partners:', err);
+			setError(err instanceof Error ? err.message : 'Failed to load partners');
+		} finally {
+			setLoading(false);
 		}
+	};
 
+	useEffect(() => {
 		fetchPartners();
 	}, [selectedType]);
 
@@ -206,85 +208,93 @@ export default function PartnersPage() {
 					</div>
 				) : (
 					filteredPartners.map((partner) => (
-					<Card
-						key={partner.id}
-						className="shadow-gray-md border-gray-300"
-					>
-						<CardContent className="p-4 pb-3 flex flex-col gap-4">
-							{/* Partner Info */}
-							<div className="flex gap-4">
-								{/* Avatar */}
-								<div className="flex items-center justify-center size-18 rounded-full bg-gray-200 shrink-0">
-									<span className="text-xl font-semibold text-gray-700">
-										{getInitials(partner.name)}
-									</span>
-								</div>
-
-								{/* Details */}
-								<div className="flex-1 flex justify-between py-2">
-									<div className="flex flex-col">
-										<p className="text-base font-medium text-gray-900">
-											{partner.name}
-										</p>
-										<p className="text-xs text-gray-500">
-											{PARTNER_TYPES.find((t) => t.value === partner.type)?.label}
-										</p>
+						<Card
+							key={partner.id}
+							className="shadow-gray-md border-gray-300"
+						>
+							<CardContent className="p-4 pb-3 flex flex-col gap-4">
+								{/* Partner Info */}
+								<div className="flex gap-4">
+									{/* Avatar */}
+									<div className="flex items-center justify-center size-18 rounded-full bg-gray-200 shrink-0">
+										<span className="text-xl font-semibold text-gray-700">
+											{getInitials(partner.name)}
+										</span>
 									</div>
 
-									{/* Amount */}
-									{partner.amount && (
-										<div className="flex flex-col items-end justify-center">
-											<p
-												className={`text-base font-bold ${partner.transactionType === 'sales'
-													? 'text-teal-700'
-													: 'text-yellow-700'
-													}`}
-											>
-												₹{partner.amount.toLocaleString('en-IN')}
+									{/* Details */}
+									<div className="flex-1 flex justify-between py-2">
+										<div className="flex flex-col">
+											<p className="text-base font-medium text-gray-900">
+												{partner.name}
 											</p>
 											<p className="text-xs text-gray-500">
-												in {partner.transactionType}
+												{PARTNER_TYPES.find((t) => t.value === partner.type)?.label}
 											</p>
 										</div>
-									)}
-								</div>
-							</div>
 
-							{/* Contact Info */}
-							<div className="flex gap-6 px-2 text-sm">
-								<div className="flex gap-1.5 items-center">
-									<IconMapPin className="size-4 text-gray-500" />
-									<span className="text-gray-700">
-										{partner.address || 'No address'}
-									</span>
+										{/* Amount */}
+										{partner.amount && (
+											<div className="flex flex-col items-end justify-center">
+												<p
+													className={`text-base font-bold ${partner.transactionType === 'sales'
+														? 'text-teal-700'
+														: 'text-yellow-700'
+														}`}
+												>
+													₹{partner.amount.toLocaleString('en-IN')}
+												</p>
+												<p className="text-xs text-gray-500">
+													in {partner.transactionType}
+												</p>
+											</div>
+										)}
+									</div>
 								</div>
-								<div className="flex gap-1.5 items-center">
-									<IconPhone className="size-4 text-primary-700" />
-									<span className={partner.phone ? 'text-primary-700 font-medium' : 'text-gray-700'}>
-										{partner.phone || 'No phone number'}
-									</span>
-								</div>
-							</div>
-						</CardContent>
 
-						<CardFooter className="px-6 pb-4 pt-0">
-							<Button variant="ghost" size="sm" className='text-primary-700'>
-								<IconPlus className="size-4" />
-								{getActionLabel(partner.type)}
-							</Button>
-						</CardFooter>
-					</Card>
-				))
+								{/* Contact Info */}
+								<div className="flex gap-6 px-2 text-sm">
+									<div className="flex gap-1.5 items-center">
+										<IconMapPin className="size-4 text-gray-500" />
+										<span className="text-gray-700">
+											{partner.address || 'No address'}
+										</span>
+									</div>
+									<div className="flex gap-1.5 items-center">
+										<IconPhone className="size-4 text-primary-700" />
+										<span className={partner.phone ? 'text-primary-700 font-medium' : 'text-gray-700'}>
+											{partner.phone || 'No phone number'}
+										</span>
+									</div>
+								</div>
+							</CardContent>
+
+							<CardFooter className="px-6 pb-4 pt-0">
+								<Button variant="ghost" size="sm" className='text-primary-700'>
+									<IconPlus className="size-4" />
+									{getActionLabel(partner.type)}
+								</Button>
+							</CardFooter>
+						</Card>
+					))
 				)}
 			</div>
 
 			{/* Floating Action Button */}
 			<Button
 				size="icon"
+				onClick={() => setShowAddPartner(true)}
 				className="fixed bottom-20 right-4 size-14 rounded-full"
 			>
 				<IconPlus className="size-6 text-base-white" />
 			</Button>
+
+			{/* Add Partner Sheet */}
+			<AddPartnerSheet
+				open={showAddPartner}
+				onOpenChange={setShowAddPartner}
+				onPartnerAdded={fetchPartners}
+			/>
 		</div>
 	);
 }
