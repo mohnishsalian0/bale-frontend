@@ -145,8 +145,8 @@
     font-family: var(--font-base);
     @apply bg-background-100;
     background-image:
-      linear-gradient(to right, rgb(242 242 242) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(242 242 242) 1px, transparent 1px);
+      linear-gradient(to right, var(--color-gray-100) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--color-gray-100) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 }

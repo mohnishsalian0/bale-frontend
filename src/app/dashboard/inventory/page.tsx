@@ -2,107 +2,78 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { IconMapPin, IconPhone, IconPlus, IconSearch } from '@tabler/icons-react';
+import { IconPlus, IconSearch, IconAlertTriangle, IconClothesRack } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AddPartnerSheet } from './AddProductSheet';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AddProductSheet } from './AddProductSheet';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
-import type { PartnerType } from '@/types/database/enums';
 
 type ProductRow = Tables<'products'>;
 
-interface Partner {
+interface Product {
 	id: string;
 	name: string;
-	type: PartnerType;
-	amount?: number;
-	transactionType?: 'sales' | 'purchase';
-	address?: string;
-	phone?: string;
-}
-
-const PARTNER_TYPES: { value: PartnerType; label: string }[] = [
-	{ value: 'customer', label: 'Customer' },
-	{ value: 'supplier', label: 'Supplier' },
-	{ value: 'vendor', label: 'Vendor' },
-	{ value: 'agent', label: 'Agent' },
-];
-
-function getInitials(name: string): string {
-	return name
-		.split(' ')
-		.map((word) => word[0])
-		.join('')
-		.toUpperCase()
-		.slice(0, 2);
-}
-
-function getActionLabel(type: PartnerType): string {
-	switch (type) {
-		case 'customer':
-			return 'Sales order';
-		case 'supplier':
-		case 'vendor':
-			return 'Goods receipt';
-		default:
-			return 'Job work';
-	}
+	productNumber: string;
+	material: string | null;
+	color: string | null;
+	totalQuantity: number;
+	unit: string;
+	imageUrl?: string;
 }
 
 export default function InventoryPage() {
-	const [selectedType, setSelectedType] = useState<PartnerType>('customer');
 	const [searchQuery, setSearchQuery] = useState('');
-	const [products, setProducts] = useState<Partner[]>([]);
+	const [products, setProducts] = useState<Product[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [showAddPartner, setShowAddPartner] = useState(false);
+	const [showAddProduct, setShowAddProduct] = useState(false);
 
 	const supabase = createClient();
 
-	const fetchPartners = async () => {
+	const fetchProducts = async () => {
 		try {
 			setLoading(true);
 			setError(null);
 
 			const { data, error: fetchError } = await supabase
-				.from('partners')
+				.from('products')
 				.select('*')
-				.eq('partner_type', selectedType)
-				.order('first_name', { ascending: true });
+				.order('name', { ascending: true });
 
 			if (fetchError) throw fetchError;
 
-			// Transform data to match Partner interface
-			const transformedPartners: Partner[] = (data || []).map((p: PartnerRow) => ({
+			// Transform data to match Product interface
+			const transformedProducts: Product[] = (data || []).map((p: ProductRow) => ({
 				id: p.id,
-				name: `${p.first_name} ${p.last_name}`.trim(),
-				type: p.partner_type as PartnerType,
-				address: [p.address_line1, p.city, p.state]
-					.filter(Boolean)
-					.join(', ') || undefined,
-				phone: p.phone_number || undefined,
-				// TODO: Fetch transaction amounts from orders/receipts
-				amount: undefined,
-				transactionType: undefined,
+				name: p.name,
+				productNumber: p.product_number,
+				material: p.material,
+				color: p.color,
+				totalQuantity: 0, // TODO: Calculate from stock_units
+				unit: p.measuring_unit,
+				imageUrl: p.product_images?.[0] || undefined,
 			}));
 
-			setPartners(transformedPartners);
+			setProducts(transformedProducts);
 		} catch (err) {
-			console.error('Error fetching partners:', err);
-			setError(err instanceof Error ? err.message : 'Failed to load partners');
+			console.error('Error fetching products:', err);
+			setError(err instanceof Error ? err.message : 'Failed to load products');
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	useEffect(() => {
-		fetchPartners();
-	}, [selectedType]);
+		fetchProducts();
+	}, []);
 
-	const filteredPartners = partners.filter((partner) => {
-		const matchesSearch = partner.name.toLowerCase().includes(searchQuery.toLowerCase());
+	const filteredProducts = products.filter((product) => {
+		const matchesSearch =
+			product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+			product.productNumber.toLowerCase().includes(searchQuery.toLowerCase());
 		return matchesSearch;
 	});
 
@@ -113,7 +84,7 @@ export default function InventoryPage() {
 				<div className="flex items-center justify-center h-screen">
 					<div className="flex flex-col items-center gap-3">
 						<div className="size-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-						<p className="text-sm text-gray-600">Loading partners...</p>
+						<p className="text-sm text-gray-600">Loading inventory...</p>
 					</div>
 				</div>
 			</div>
@@ -129,7 +100,7 @@ export default function InventoryPage() {
 						<div className="size-12 rounded-full bg-red-100 flex items-center justify-center">
 							<span className="text-2xl">⚠️</span>
 						</div>
-						<h2 className="text-lg font-semibold text-gray-900">Failed to load partners</h2>
+						<h2 className="text-lg font-semibold text-gray-900">Failed to load inventory</h2>
 						<p className="text-sm text-gray-600">{error}</p>
 						<Button onClick={() => window.location.reload()} variant="outline" size="sm">
 							Try again
@@ -144,14 +115,14 @@ export default function InventoryPage() {
 		<div className="relative flex flex-col min-h-screen pb-16">
 			{/* Header */}
 			<div className="flex items-end justify-between gap-4 p-4">
-				<div className="flex-1">
-					<div className="mb-2">
-						<h1 className="text-3xl font-bold text-gray-900">Partners</h1>
+				<div className="flex-1 flex flex-col gap-2">
+					<div className="flex flex-col gap-1">
+						<h1 className="text-3xl font-bold text-gray-900">Inventory</h1>
 						<p className="text-sm text-gray-500">
-							<span className="text-teal-700">₹40,000 sales</span>
-							{' • '}
-							<span className="text-yellow-700">₹20,000 purchase</span>
-							{' in past month'}
+							<span>3000 items  •  </span>
+							<span className="text-teal-700">200 order request</span>
+							<span>  •  </span>
+							<span className="text-yellow-700">5 low stock products</span>
 						</p>
 					</div>
 
@@ -159,7 +130,7 @@ export default function InventoryPage() {
 					<div className="relative max-w-md">
 						<Input
 							type="text"
-							placeholder="Search for partner"
+							placeholder="Search for item"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							className="pr-10"
@@ -169,133 +140,117 @@ export default function InventoryPage() {
 				</div>
 
 				{/* Mascot */}
-				<div className="relative size-25 shrink-0">
+				<div className="relative w-[120px] h-[127px] shrink-0">
 					<Image
-						src="/mascot/partner-handshake.png"
-						alt="Partners"
+						src="/illustrations/inventory-shelf.png"
+						alt="Inventory"
 						fill
 						className="object-contain"
 					/>
 				</div>
 			</div>
 
-			{/* Filter Tabs */}
-			<div className="flex gap-2.5 px-4 py-2">
-				{PARTNER_TYPES.map((type) => (
-					<button
-						key={type.value}
-						onClick={() => setSelectedType(type.value)}
-						className={`px-2 py-1 text-sm font-medium rounded-lg border transition-colors ${selectedType === type.value
-							? 'bg-primary-200 border-primary-500 text-gray-700 shadow-primary-sm'
-							: 'bg-base-white border-gray-200 text-gray-700 shadow-gray-sm'
-							}`}
-					>
-						{type.label}
-					</button>
-				))}
+			{/* Filters */}
+			<div className="flex gap-3 px-4 py-2 overflow-x-auto">
+				<Button variant="outline" size="icon" className="shrink-0 size-10">
+					<IconAlertTriangle className="size-5" />
+				</Button>
+				<Select>
+					<SelectTrigger className="w-[140px] h-10 shrink-0">
+						<SelectValue placeholder="Material" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="silk">Silk</SelectItem>
+						<SelectItem value="cotton">Cotton</SelectItem>
+						<SelectItem value="wool">Wool</SelectItem>
+					</SelectContent>
+				</Select>
+				<Select>
+					<SelectTrigger className="w-[140px] h-10 shrink-0">
+						<SelectValue placeholder="Color" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="red">Red</SelectItem>
+						<SelectItem value="blue">Blue</SelectItem>
+						<SelectItem value="green">Green</SelectItem>
+					</SelectContent>
+				</Select>
+				<Select>
+					<SelectTrigger className="w-[140px] h-10 shrink-0">
+						<SelectValue placeholder="Tags" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="floral">Floral</SelectItem>
+						<SelectItem value="geometric">Geometric</SelectItem>
+						<SelectItem value="plain">Plain</SelectItem>
+					</SelectContent>
+				</Select>
 			</div>
 
-			{/* Partner Cards */}
-			<li className="flex flex-col gap-4 p-4">
-				{filteredPartners.length === 0 ? (
+			{/* Product List */}
+			<div className="flex flex-col gap-0">
+				{filteredProducts.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-12 text-center">
-						<p className="text-gray-600 mb-2">No partners found</p>
+						<p className="text-gray-600 mb-2">No products found</p>
 						<p className="text-sm text-gray-500">
-							{searchQuery
-								? 'Try adjusting your search'
-								: `Add your first ${selectedType.toLowerCase()}`}
+							{searchQuery ? 'Try adjusting your search' : 'Add your first product'}
 						</p>
 					</div>
 				) : (
-					filteredPartners.map((partner) => (
-						<ul
-							key={partner.id}
-						>
-							<Card>
-								<CardContent className="p-4 pb-3 flex flex-col gap-4">
-									{/* Partner Info */}
-									<div className="flex gap-4">
-										{/* Avatar */}
-										<div className="flex items-center justify-center size-18 rounded-full bg-gray-200 shrink-0">
-											<span className="text-xl font-semibold text-gray-700">
-												{getInitials(partner.name)}
-											</span>
+					filteredProducts.map((product) => (
+						<Card key={product.id} className="rounded-none border-0 border-b border-gray-200 shadow-none bg-transparent">
+							<CardContent className="p-4 flex gap-4 items-center">
+								{/* Product Image */}
+								<div className="relative size-16 rounded-lg shrink-0 bg-gray-200 overflow-hidden">
+									{product.imageUrl ? (
+										<Image
+											src={product.imageUrl}
+											alt={product.name}
+											fill
+											className="object-cover"
+										/>
+									) : (
+										<div className="flex items-center justify-center size-full">
+											<IconClothesRack className="size-8 text-gray-400" />
 										</div>
+									)}
+								</div>
 
-										{/* Details */}
-										<div className="flex-1 flex justify-between py-2">
-											<div className="flex flex-col">
-												<p className="text-base font-medium text-gray-900">
-													{partner.name}
-												</p>
-												<p className="text-xs text-gray-500">
-													{PARTNER_TYPES.find((t) => t.value === partner.type)?.label}
-												</p>
-											</div>
+								{/* Product Info */}
+								<div className="flex-1 flex flex-col items-start">
+									<p className="text-base font-medium text-gray-900">{product.name}</p>
+									<p className="text-xs text-gray-500">
+										{[product.material, product.color].filter(Boolean).join(', ') || 'No details'}
+									</p>
+								</div>
 
-											{/* Amount */}
-											{partner.amount && (
-												<div className="flex flex-col items-end justify-center">
-													<p
-														className={`text-base font-bold ${partner.transactionType === 'sales'
-															? 'text-teal-700'
-															: 'text-yellow-700'
-															}`}
-													>
-														₹{partner.amount.toLocaleString('en-IN')}
-													</p>
-													<p className="text-xs text-gray-500">
-														in {partner.transactionType}
-													</p>
-												</div>
-											)}
-										</div>
-									</div>
-
-									{/* Contact Info */}
-									<div className="flex gap-6 px-2 text-sm">
-										<div className="flex gap-1.5 items-center">
-											<IconMapPin className="size-4 text-gray-500" />
-											<span className="text-gray-700">
-												{partner.address || 'No address'}
-											</span>
-										</div>
-										<div className="flex gap-1.5 items-center">
-											<IconPhone className="size-4 text-primary-700" />
-											<span className={partner.phone ? 'text-primary-700 font-medium' : 'text-gray-700'}>
-												{partner.phone || 'No phone number'}
-											</span>
-										</div>
-									</div>
-								</CardContent>
-
-								<CardFooter className="px-6 pb-4 pt-0">
-									<Button variant="ghost" size="sm" className='text-primary-700'>
-										<IconPlus className="size-4" />
-										{getActionLabel(partner.type)}
-									</Button>
-								</CardFooter>
-							</Card>
-						</ul>
+								{/* Quantity */}
+								<div className="flex flex-col items-end">
+									<p className="text-base font-bold text-gray-900">
+										{product.totalQuantity} {product.unit}
+									</p>
+								</div>
+							</CardContent>
+						</Card>
 					))
 				)}
-			</li>
+			</div>
 
 			{/* Floating Action Button */}
 			<Button
 				size="icon"
-				onClick={() => setShowAddPartner(true)}
-				className="fixed bottom-20 right-4 size-14 rounded-full"
+				onClick={() => setShowAddProduct(true)}
+				className="fixed bottom-20 right-4 size-14 rounded-full shadow-none border-shadow-primary"
 			>
 				<IconPlus className="size-6 text-base-white" />
 			</Button>
 
-			{/* Add Partner Sheet */}
-			<AddPartnerSheet
-				open={showAddPartner}
-				onOpenChange={setShowAddPartner}
-				onPartnerAdded={fetchPartners}
+			{/* Add Product Sheet */}
+			<AddProductSheet
+				open={showAddProduct}
+				onOpenChange={setShowAddProduct}
+				onProductAdded={fetchProducts}
 			/>
-		</div >
+		</div>
 	);
 }

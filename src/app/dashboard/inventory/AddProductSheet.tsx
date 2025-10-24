@@ -2,90 +2,114 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { IconUser, IconPhone, IconChevronDown, IconBuildingFactory2, IconBuilding, IconId } from '@tabler/icons-react';
+import { IconChevronDown, IconX, IconPhoto } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group-pills';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetFooter, SheetHeader } from '@/components/ui/sheet';
-import { validateImageFile, uploadPartnerImage } from '@/lib/storage';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { validateImageFile, uploadProductImage, MAX_PRODUCT_IMAGES } from '@/lib/storage';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
 import type { TablesInsert } from '@/types/database/supabase';
-import type { PartnerType } from '@/types/database/enums';
 
-interface AddPartnerSheetProps {
+interface AddProductSheetProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	onPartnerAdded?: () => void;
+	onProductAdded?: () => void;
 }
 
-interface PartnerFormData {
-	partnerType: PartnerType;
-	firstName: string;
-	lastName: string;
-	phoneNumber: string;
-	businessType: string;
-	companyName: string;
-	addressLine1: string;
-	addressLine2: string;
-	city: string;
-	state: string;
-	country: string;
-	pinCode: string;
-	gstNumber: string;
-	panNumber: string;
+interface ProductFormData {
+	name: string;
+	productNumber: string;
+	showOnCatalog: boolean;
+	material: string;
+	color: string;
+	gsm: string;
+	threadCount: string;
+	tags: string;
+	measuringUnit: string;
+	costPrice: string;
+	sellingPrice: string;
+	minStockAlert: boolean;
+	minStockThreshold: string;
+	hsnCode: string;
 	notes: string;
-	image: File | null;
+	images: File[];
 }
 
-export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartnerSheetProps) {
-	const [formData, setFormData] = useState<PartnerFormData>({
-		partnerType: 'customer',
-		firstName: '',
-		lastName: '',
-		phoneNumber: '',
-		businessType: '',
-		companyName: '',
-		addressLine1: '',
-		addressLine2: '',
-		city: '',
-		state: '',
-		country: 'India',
-		pinCode: '',
-		gstNumber: '',
-		panNumber: '',
+export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProductSheetProps) {
+	const [formData, setFormData] = useState<ProductFormData>({
+		name: '',
+		productNumber: 'PROD-001',
+		showOnCatalog: true,
+		material: '',
+		color: '',
+		gsm: '',
+		threadCount: '',
+		tags: '',
+		measuringUnit: '',
+		costPrice: '',
+		sellingPrice: '',
+		minStockAlert: false,
+		minStockThreshold: '',
+		hsnCode: '',
 		notes: '',
-		image: null,
+		images: [],
 	});
 
-	const [imagePreview, setImagePreview] = useState<string | null>(null);
+	const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 	const [imageError, setImageError] = useState<string | null>(null);
-	const [showBusinessDetails, setShowBusinessDetails] = useState(false);
-	const [showAddress, setShowAddress] = useState(false);
-	const [showTaxDetails, setShowTaxDetails] = useState(false);
+	const [showFeaturesImages, setShowFeaturesImages] = useState(false);
+	const [showStockDetails, setShowStockDetails] = useState(false);
 	const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
 
 	const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
+		const files = Array.from(e.target.files || []);
+		if (!files.length) return;
 
-		const validation = validateImageFile(file);
-		if (!validation.valid) {
-			setImageError(validation.error!);
+		// Check if adding these files would exceed the limit
+		if (formData.images.length + files.length > MAX_PRODUCT_IMAGES) {
+			setImageError(`Maximum ${MAX_PRODUCT_IMAGES} images allowed`);
 			return;
 		}
 
-		setImageError(null);
-		setFormData({ ...formData, image: file });
+		// Validate each file
+		for (const file of files) {
+			const validation = validateImageFile(file);
+			if (!validation.valid) {
+				setImageError(validation.error!);
+				return;
+			}
+		}
 
-		// Create preview
-		const reader = new FileReader();
-		reader.onloadend = () => {
-			setImagePreview(reader.result as string);
-		};
-		reader.readAsDataURL(file);
+		setImageError(null);
+
+		// Add files to form data
+		const newImages = [...formData.images, ...files];
+		setFormData({ ...formData, images: newImages });
+
+		// Create previews
+		const newPreviews = [...imagePreviews];
+		files.forEach((file) => {
+			const reader = new FileReader();
+			reader.onloadend = () => {
+				newPreviews.push(reader.result as string);
+				setImagePreviews([...newPreviews]);
+			};
+			reader.readAsDataURL(file);
+		});
+	};
+
+	const handleRemoveImage = (index: number) => {
+		const newImages = formData.images.filter((_, i) => i !== index);
+		const newPreviews = imagePreviews.filter((_, i) => i !== index);
+		setFormData({ ...formData, images: newImages });
+		setImagePreviews(newPreviews);
+		setImageError(null);
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -102,40 +126,61 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 				throw new Error('User not found');
 			}
 
+			// Parse tags (comma-separated string to array)
+			const tagsArray = formData.tags
+				? formData.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
+				: null;
+
 			// Prepare typed insert data
-			const partnerInsert: TablesInsert<'partners'> = {
+			const productInsert: TablesInsert<'products'> = {
 				company_id: currentUser.company_id,
-				partner_type: formData.partnerType,
-				first_name: formData.firstName,
-				last_name: formData.lastName,
-				phone_number: formData.phoneNumber,
-				email: null,
-				company_name: formData.companyName || null,
-				address_line1: formData.addressLine1 || null,
-				address_line2: formData.addressLine2 || null,
-				city: formData.city || null,
-				state: formData.state || null,
-				country: formData.country || null,
-				pin_code: formData.pinCode || null,
-				gst_number: formData.gstNumber || null,
-				pan_number: formData.panNumber || null,
+				name: formData.name,
+				product_number: formData.productNumber,
+				show_on_catalog: formData.showOnCatalog,
+				material: formData.material || null,
+				color: formData.color || null,
+				gsm: formData.gsm ? parseFloat(formData.gsm) : null,
+				thread_count_cm: formData.threadCount ? parseFloat(formData.threadCount) : null,
+				tags: tagsArray,
+				measuring_unit: formData.measuringUnit,
+				cost_price_per_unit: formData.costPrice ? parseFloat(formData.costPrice) : null,
+				selling_price_per_unit: formData.sellingPrice ? parseFloat(formData.sellingPrice) : null,
+				min_stock_alert: formData.minStockAlert,
+				min_stock_threshold: formData.minStockThreshold ? parseFloat(formData.minStockThreshold) : null,
+				hsn_code: formData.hsnCode || null,
 				notes: formData.notes || null,
 				created_by: currentUser.id,
 			};
 
-			// Insert partner record
-			const { data: partner, error: insertError } = await supabase
-				.from('partners')
-				.insert(partnerInsert)
+			// Insert product record
+			const { data: product, error: insertError } = await supabase
+				.from('products')
+				.insert(productInsert)
 				.select()
 				.single();
 
 			if (insertError) throw insertError;
 
-			// Upload image if provided
-			if (formData.image && partner) {
+			// Upload images if provided
+			if (formData.images.length > 0 && product) {
 				try {
-					await uploadPartnerImage(currentUser.company_id, partner.id, formData.image);
+					const imageUrls: string[] = [];
+
+					for (let i = 0; i < formData.images.length; i++) {
+						const result = await uploadProductImage(
+							currentUser.company_id,
+							product.id,
+							formData.images[i],
+							i
+						);
+						imageUrls.push(result.publicUrl);
+					}
+
+					// Update product with image URLs
+					await supabase
+						.from('products')
+						.update({ product_images: imageUrls })
+						.eq('id', product.id);
 				} catch (uploadError) {
 					console.error('Image upload failed:', uploadError);
 					// Don't fail the whole operation if image upload fails
@@ -144,12 +189,12 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 
 			// Success! Close sheet and notify parent
 			handleCancel();
-			if (onPartnerAdded) {
-				onPartnerAdded();
+			if (onProductAdded) {
+				onProductAdded();
 			}
 		} catch (error) {
-			console.error('Error saving partner:', error);
-			setSaveError(error instanceof Error ? error.message : 'Failed to save partner');
+			console.error('Error saving product:', error);
+			setSaveError(error instanceof Error ? error.message : 'Failed to save product');
 		} finally {
 			setSaving(false);
 		}
@@ -158,24 +203,24 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 	const handleCancel = () => {
 		// Reset form
 		setFormData({
-			partnerType: 'customer',
-			firstName: '',
-			lastName: '',
-			phoneNumber: '',
-			businessType: '',
-			companyName: '',
-			addressLine1: '',
-			addressLine2: '',
-			city: '',
-			state: '',
-			country: 'India',
-			pinCode: '',
-			gstNumber: '',
-			panNumber: '',
+			name: '',
+			productNumber: 'PROD-001',
+			showOnCatalog: true,
+			material: '',
+			color: '',
+			gsm: '',
+			threadCount: '',
+			tags: '',
+			measuringUnit: '',
+			costPrice: '',
+			sellingPrice: '',
+			minStockAlert: false,
+			minStockThreshold: '',
+			hsnCode: '',
 			notes: '',
-			image: null,
+			images: [],
 		});
-		setImagePreview(null);
+		setImagePreviews([]);
 		setImageError(null);
 		onOpenChange(false);
 	};
@@ -185,261 +230,307 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 			<SheetContent>
 				{/* Header */}
 				<SheetHeader>
-					<h2 className="text-2xl font-bold text-gray-900">Add partner</h2>
+					<h2 className="text-2xl font-bold text-gray-900">Create product</h2>
 				</SheetHeader>
 
 				{/* Form Content - Scrollable */}
 				<form onSubmit={handleSubmit} className="flex flex-col h-full">
 					<div className="flex-1 overflow-y-auto">
-						{/* Image Upload & Basic Info */}
-						<div className="flex flex-col gap-5 px-4 py-5">
-							{/* Image Upload */}
-							<div className="flex justify-center">
-								<label
-									htmlFor="partner-image"
-									className="relative flex flex-col items-center justify-center size-40 rounded-full border-custom border-neutral-200 bg-neutral-100 cursor-pointer hover:bg-neutral-200 transition-colors"
-								>
-									{imagePreview ? (
-										<Image
-											src={imagePreview}
-											alt="Partner preview"
-											fill
-											className="object-cover rounded-full"
+						{/* Basic Info */}
+						<div className="flex flex-col gap-6 px-4 py-5">
+							{/* Product Name */}
+							<Input
+								placeholder="Product name"
+								value={formData.name}
+								onChange={(e) =>
+									setFormData({ ...formData, name: e.target.value })
+								}
+								required
+							/>
+						</div>
+
+						{/* Features & Images Section */}
+						<Collapsible
+							open={showFeaturesImages}
+							onOpenChange={setShowFeaturesImages}
+							className="border-t border-neutral-200 px-4 py-5"
+						>
+							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showFeaturesImages ? 'mb-5' : 'mb-0'}`}>
+								<h3 className="text-lg font-medium text-gray-900">Features & Images</h3>
+								<IconChevronDown
+									className={`size-6 text-gray-500 transition-transform ${showFeaturesImages ? 'rotate-180' : 'rotate-0'}`}
+								/>
+							</CollapsibleTrigger>
+
+							<CollapsibleContent>
+								<div className="flex flex-col gap-6">
+									{/* Material */}
+									<Select
+										value={formData.material}
+										onValueChange={(value) =>
+											setFormData({ ...formData, material: value })
+										}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Material" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="silk">Silk</SelectItem>
+											<SelectItem value="cotton">Cotton</SelectItem>
+											<SelectItem value="wool">Wool</SelectItem>
+											<SelectItem value="polyester">Polyester</SelectItem>
+											<SelectItem value="linen">Linen</SelectItem>
+										</SelectContent>
+									</Select>
+
+									{/* Color */}
+									<Select
+										value={formData.color}
+										onValueChange={(value) =>
+											setFormData({ ...formData, color: value })
+										}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Color" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="red">Red</SelectItem>
+											<SelectItem value="blue">Blue</SelectItem>
+											<SelectItem value="green">Green</SelectItem>
+											<SelectItem value="yellow">Yellow</SelectItem>
+											<SelectItem value="black">Black</SelectItem>
+											<SelectItem value="white">White</SelectItem>
+										</SelectContent>
+									</Select>
+
+									{/* GSM & Thread Count */}
+									<div className="flex gap-4">
+										<Input
+											type="number"
+											placeholder="GSM"
+											value={formData.gsm}
+											onChange={(e) =>
+												setFormData({ ...formData, gsm: e.target.value })
+											}
+											className="flex-1"
 										/>
-									) : (
-										<>
-											<IconUser className="size-12 text-gray-700 mb-2" />
-											<span className="text-base text-gray-700">Add image</span>
-										</>
+										<Input
+											type="number"
+											placeholder="Thread count"
+											value={formData.threadCount}
+											onChange={(e) =>
+												setFormData({ ...formData, threadCount: e.target.value })
+											}
+											className="flex-1"
+										/>
+									</div>
+
+									{/* Tags */}
+									<Input
+										placeholder="Tags (comma-separated)"
+										value={formData.tags}
+										onChange={(e) =>
+											setFormData({ ...formData, tags: e.target.value })
+										}
+									/>
+
+									{/* Image Upload */}
+									<div className="flex flex-col gap-3">
+										<label className="text-sm font-medium text-gray-700">
+											Product Images (Max {MAX_PRODUCT_IMAGES})
+										</label>
+
+										{/* Image Previews */}
+										{imagePreviews.length > 0 && (
+											<div className="flex flex-wrap gap-3">
+												{imagePreviews.map((preview, index) => (
+													<div
+														key={index}
+														className="relative size-20 rounded-lg overflow-hidden border border-gray-200"
+													>
+														<Image
+															src={preview}
+															alt={`Preview ${index + 1}`}
+															fill
+															className="object-cover"
+														/>
+														<button
+															type="button"
+															onClick={() => handleRemoveImage(index)}
+															className="absolute top-1 right-1 size-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600"
+														>
+															<IconX className="size-4" />
+														</button>
+													</div>
+												))}
+											</div>
+										)}
+
+										{/* Add Images Button */}
+										{formData.images.length < MAX_PRODUCT_IMAGES && (
+											<label
+												htmlFor="product-images"
+												className="flex items-center justify-center gap-2 h-20 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
+											>
+												<IconPhoto className="size-6 text-gray-500" />
+												<span className="text-sm text-gray-700">Add images</span>
+												<input
+													id="product-images"
+													type="file"
+													accept="image/jpeg,image/png,image/webp"
+													onChange={handleImageSelect}
+													className="sr-only"
+													multiple
+												/>
+											</label>
+										)}
+
+										{imageError && (
+											<p className="text-sm text-red-600">{imageError}</p>
+										)}
+									</div>
+								</div>
+							</CollapsibleContent>
+						</Collapsible>
+
+						{/* Stock Details Section */}
+						<Collapsible
+							open={showStockDetails}
+							onOpenChange={setShowStockDetails}
+							className="border-t border-neutral-200 px-4 py-5"
+						>
+							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showStockDetails ? 'mb-5' : 'mb-0'}`}>
+								<h3 className="text-lg font-medium text-gray-900">Stock Details</h3>
+								<IconChevronDown
+									className={`size-6 text-gray-500 transition-transform ${showStockDetails ? 'rotate-180' : 'rotate-0'}`}
+								/>
+							</CollapsibleTrigger>
+
+							<CollapsibleContent>
+								<div className="flex flex-col gap-6">
+									{/* Measuring Unit */}
+									<Select
+										value={formData.measuringUnit}
+										onValueChange={(value) =>
+											setFormData({ ...formData, measuringUnit: value })
+										}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Unit" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="meters">Meters</SelectItem>
+											<SelectItem value="yards">Yards</SelectItem>
+											<SelectItem value="pieces">Pieces</SelectItem>
+											<SelectItem value="kg">Kilograms</SelectItem>
+											<SelectItem value="rolls">Rolls</SelectItem>
+										</SelectContent>
+									</Select>
+
+									{/* Purchase & Sale Price */}
+									<div className="flex gap-4">
+										<Input
+											type="number"
+											placeholder="Purchase price"
+											value={formData.costPrice}
+											onChange={(e) =>
+												setFormData({ ...formData, costPrice: e.target.value })
+											}
+											className="flex-1"
+											step="0.01"
+										/>
+										<Input
+											type="number"
+											placeholder="Sale price"
+											value={formData.sellingPrice}
+											onChange={(e) =>
+												setFormData({ ...formData, sellingPrice: e.target.value })
+											}
+											className="flex-1"
+											step="0.01"
+										/>
+									</div>
+
+									{/* Minimum Stock Alert */}
+									<div className="flex items-center justify-between">
+										<label className="text-sm font-medium text-gray-700">
+											Minimum stock alert
+										</label>
+										<Switch
+											checked={formData.minStockAlert}
+											onCheckedChange={(checked) =>
+												setFormData({ ...formData, minStockAlert: checked })
+											}
+										/>
+									</div>
+
+									{/* Minimum Stock Threshold */}
+									{formData.minStockAlert && (
+										<Input
+											type="number"
+											placeholder="Minimum stock threshold"
+											value={formData.minStockThreshold}
+											onChange={(e) =>
+												setFormData({ ...formData, minStockThreshold: e.target.value })
+											}
+											step="0.01"
+										/>
 									)}
-									<input
-										id="partner-image"
-										type="file"
-										accept="image/jpeg,image/png,image/webp"
-										onChange={handleImageSelect}
-										className="sr-only"
-									/>
-								</label>
-							</div>
-							{imageError && (
-								<p className="text-sm text-red-600 text-center">{imageError}</p>
-							)}
-
-							{/* Partner Type */}
-							<div className="flex flex-col gap-2">
-								<label className="text-sm font-medium text-gray-700">Partner type</label>
-								<RadioGroup
-									value={formData.partnerType}
-									onValueChange={(value) =>
-										setFormData({ ...formData, partnerType: value as PartnerType })
-									}
-									name="partner-type"
-								>
-									<RadioGroupItem value="customer">Customer</RadioGroupItem>
-									<RadioGroupItem value="supplier">Supplier</RadioGroupItem>
-									<RadioGroupItem value="vendor">Vendor</RadioGroupItem>
-									<RadioGroupItem value="agent">Agent</RadioGroupItem>
-								</RadioGroup>
-							</div>
-
-							{/* Name Fields */}
-							<div className="flex gap-4">
-								<Input
-									placeholder="First name"
-									value={formData.firstName}
-									onChange={(e) =>
-										setFormData({ ...formData, firstName: e.target.value })
-									}
-									required
-								/>
-								<Input
-									placeholder="Last name"
-									value={formData.lastName}
-									onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-									required
-								/>
-							</div>
-
-							{/* Phone Number */}
-							<div className="relative">
-								<IconPhone className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-								<Input
-									type="tel"
-									placeholder="Phone number"
-									value={formData.phoneNumber}
-									onChange={(e) =>
-										setFormData({ ...formData, phoneNumber: e.target.value })
-									}
-									className="pl-12"
-								/>
-							</div>
-						</div>
-
-						{/* Business Details Section */}
-						<div className="border-t border-neutral-200 px-4 py-5">
-							<button
-								type="button"
-								onClick={() => setShowBusinessDetails(!showBusinessDetails)}
-								className={`flex items-center justify-between w-full ${showBusinessDetails ? 'mb-5' : 'mb-0'}`}
-							>
-								<h3 className="text-lg font-medium text-gray-900">Business details</h3>
-								<IconChevronDown
-									className={`size-6 text-gray-500 transition-transform ${showBusinessDetails ? 'rotate-180' : 'rotate-0'}`}
-								/>
-							</button>
-
-							{showBusinessDetails && (
-								<div className="flex flex-col gap-5">
-									<div className="relative">
-										<IconBuildingFactory2 className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-										<Input
-											placeholder="Business type"
-											value={formData.businessType}
-											onChange={(e) =>
-												setFormData({ ...formData, businessType: e.target.value })
-											}
-											className="pl-12"
-										/>
-									</div>
-									<div className="relative">
-										<IconBuilding className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-										<Input
-											placeholder="Company name"
-											value={formData.companyName}
-											onChange={(e) =>
-												setFormData({ ...formData, companyName: e.target.value })
-											}
-											className="pl-12"
-										/>
-									</div>
 								</div>
-							)}
-						</div>
-
-						{/* Address Section */}
-						<div className="border-t border-neutral-200 px-4 py-5">
-							<button
-								type="button"
-								onClick={() => setShowAddress(!showAddress)}
-								className={`flex items-center justify-between w-full ${showAddress ? 'mb-5' : 'mb-0'}`}
-							>
-								<h3 className="text-lg font-medium text-gray-900">Address</h3>
-								<IconChevronDown
-									className={`size-6 text-gray-500 transition-transform ${showAddress ? 'rotate-180' : 'rotate-0'}`}
-								/>
-							</button>
-
-							{showAddress && (
-								<div className="flex flex-col gap-5">
-									<Input
-										placeholder="Address line 1"
-										value={formData.addressLine1}
-										onChange={(e) =>
-											setFormData({ ...formData, addressLine1: e.target.value })
-										}
-									/>
-									<Input
-										placeholder="Address line 2"
-										value={formData.addressLine2}
-										onChange={(e) =>
-											setFormData({ ...formData, addressLine2: e.target.value })
-										}
-									/>
-									<div className="flex gap-4">
-										<Input
-											placeholder="City"
-											value={formData.city}
-											onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-										/>
-										<Input
-											placeholder="State"
-											value={formData.state}
-											onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-										/>
-									</div>
-									<div className="flex gap-4">
-										<Input
-											placeholder="Country"
-											value={formData.country}
-											onChange={(e) =>
-												setFormData({ ...formData, country: e.target.value })
-											}
-										/>
-										<Input
-											placeholder="Pin code"
-											value={formData.pinCode}
-											onChange={(e) =>
-												setFormData({ ...formData, pinCode: e.target.value })
-											}
-										/>
-									</div>
-								</div>
-							)}
-						</div>
-
-						{/* Tax Details Section */}
-						<div className="border-t border-neutral-200 px-4 py-5">
-							<button
-								type="button"
-								onClick={() => setShowTaxDetails(!showTaxDetails)}
-								className={`flex items-center justify-between w-full ${showTaxDetails ? 'mb-5' : 'mb-0'}`}
-							>
-								<h3 className="text-lg font-medium text-gray-900">Tax Details</h3>
-								<IconChevronDown
-									className={`size-6 text-gray-500 transition-transform ${showTaxDetails ? 'rotate-180' : 'rotate-0'}`}
-								/>
-							</button>
-
-							{showTaxDetails && (
-								<div className="flex flex-col gap-5">
-									<div className="relative">
-										<IconId className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-										<Input
-											placeholder="GST number"
-											value={formData.gstNumber}
-											onChange={(e) =>
-												setFormData({ ...formData, gstNumber: e.target.value })
-											}
-											className="pl-12"
-										/>
-									</div>
-									<div className="relative">
-										<IconId className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-										<Input
-											placeholder="PAN number"
-											value={formData.panNumber}
-											onChange={(e) =>
-												setFormData({ ...formData, panNumber: e.target.value })
-											}
-											className="pl-12"
-										/>
-									</div>
-								</div>
-							)}
-						</div>
+							</CollapsibleContent>
+						</Collapsible>
 
 						{/* Additional Details Section */}
-						<div className="border-t border-neutral-200 px-4 py-5 pb-24">
-							<button
-								type="button"
-								onClick={() => setShowAdditionalDetails(!showAdditionalDetails)}
-								className={`flex items-center justify-between w-full ${showAdditionalDetails ? 'mb-5' : 'mb-0'}`}
-							>
+						<Collapsible
+							open={showAdditionalDetails}
+							onOpenChange={setShowAdditionalDetails}
+							className="border-t border-neutral-200 px-4 py-5 pb-24"
+						>
+							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showAdditionalDetails ? 'mb-5' : 'mb-0'}`}>
 								<h3 className="text-lg font-medium text-gray-900">Additional Details</h3>
 								<IconChevronDown
 									className={`size-6 text-gray-500 transition-transform ${showAdditionalDetails ? 'rotate-180' : 'rotate-0'}`}
 								/>
-							</button>
+							</CollapsibleTrigger>
 
-							{showAdditionalDetails && (
-								<Textarea
-									placeholder="Enter a note..."
-									value={formData.notes}
-									onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-									className="min-h-32"
-								/>
-							)}
-						</div>
+							<CollapsibleContent>
+								<div className="flex flex-col gap-6">
+									{/* Show on Catalog */}
+									<div className="flex items-start justify-between">
+										<div className="flex flex-col">
+											<label className="text-sm font-medium text-gray-700">Show on catalog</label>
+											<span className="text-sm font-light text-gray-500">
+												Display this product on your public sales catalog
+											</span>
+										</div>
+										<Switch
+											checked={formData.showOnCatalog}
+											onCheckedChange={(checked) =>
+												setFormData({ ...formData, showOnCatalog: checked })
+											}
+											className='mt-2'
+										/>
+									</div>
+
+									{/* HSN Code */}
+									<Input
+										placeholder="HSN code"
+										value={formData.hsnCode}
+										onChange={(e) =>
+											setFormData({ ...formData, hsnCode: e.target.value })
+										}
+									/>
+
+									{/* Notes */}
+									<Textarea
+										placeholder="Enter a note..."
+										value={formData.notes}
+										onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+										className="min-h-32"
+									/>
+								</div>
+							</CollapsibleContent>
+						</Collapsible>
 					</div>
 
 					<SheetFooter className="flex flex-col gap-3 px-4 py-3 border-t border-neutral-200 bg-background-100 shadow-xs-reverse">

@@ -73,7 +73,9 @@
 - [ ] Company profile management
 - [ ] Warehouse CRUD (admin only)
 - [x] Staff page with 2-column grid layout showing staff cards
-- [x] Add staff form with role selection and warehouse assignment
+- [x] Staff invite form with role selection and warehouse assignment (generates invite link)
+- [ ] Send generated invite link via WhatsApp
+- [ ] View staff details
 - [ ] Edit staff functionality
 - [ ] Delete staff functionality
 

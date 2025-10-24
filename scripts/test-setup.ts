@@ -294,6 +294,176 @@ async function createTestPartners() {
 
 	console.log('\n✨ Test partners created successfully!');
 
+	// Create test products
+	console.log('\n📦 Creating test products...\n');
+
+	const testProducts = [
+		{
+			company_id: companyId,
+			created_by: createdBy,
+			name: 'Premium Silk Saree',
+			product_number: 'PROD-001',
+			material: 'Silk',
+			color: 'Red',
+			gsm: 120,
+			thread_count_cm: 80,
+			tags: ['premium', 'wedding', 'traditional'],
+			measuring_unit: 'Meters',
+			cost_price_per_unit: 2500.00,
+			selling_price_per_unit: 3500.00,
+			show_on_catalog: true,
+			min_stock_alert: true,
+			min_stock_threshold: 10,
+			hsn_code: '5007',
+			notes: 'Premium quality silk saree with golden border',
+		},
+		{
+			company_id: companyId,
+			created_by: createdBy,
+			name: 'Cotton Kurta Fabric',
+			product_number: 'PROD-002',
+			material: 'Cotton',
+			color: 'White',
+			gsm: 150,
+			thread_count_cm: 60,
+			tags: ['summer', 'breathable', 'casual'],
+			measuring_unit: 'Meters',
+			cost_price_per_unit: 450.00,
+			selling_price_per_unit: 650.00,
+			show_on_catalog: true,
+			min_stock_alert: true,
+			min_stock_threshold: 50,
+			hsn_code: '5208',
+			notes: 'Pure cotton fabric ideal for summer kurtas',
+		},
+		{
+			company_id: companyId,
+			created_by: createdBy,
+			name: 'Woolen Shawl Material',
+			product_number: 'PROD-003',
+			material: 'Wool',
+			color: 'Black',
+			gsm: 200,
+			thread_count_cm: 50,
+			tags: ['winter', 'warm', 'premium'],
+			measuring_unit: 'Meters',
+			cost_price_per_unit: 1800.00,
+			selling_price_per_unit: 2500.00,
+			show_on_catalog: true,
+			min_stock_alert: false,
+			hsn_code: '5111',
+			notes: 'High-quality woolen fabric for shawls',
+		},
+		{
+			company_id: companyId,
+			created_by: createdBy,
+			name: 'Polyester Blend Dress Material',
+			product_number: 'PROD-004',
+			material: 'Polyester',
+			color: 'Blue',
+			gsm: 180,
+			thread_count_cm: 70,
+			tags: ['modern', 'formal', 'wrinkle-free'],
+			measuring_unit: 'Meters',
+			cost_price_per_unit: 350.00,
+			selling_price_per_unit: 550.00,
+			show_on_catalog: true,
+			min_stock_alert: true,
+			min_stock_threshold: 30,
+			hsn_code: '5407',
+		},
+		{
+			company_id: companyId,
+			created_by: createdBy,
+			name: 'Linen Summer Fabric',
+			product_number: 'PROD-005',
+			material: 'Linen',
+			color: 'White',
+			gsm: 140,
+			thread_count_cm: 55,
+			tags: ['summer', 'eco-friendly', 'breathable'],
+			measuring_unit: 'Meters',
+			cost_price_per_unit: 800.00,
+			selling_price_per_unit: 1200.00,
+			show_on_catalog: true,
+			min_stock_alert: true,
+			min_stock_threshold: 20,
+			hsn_code: '5309',
+			notes: 'Eco-friendly linen fabric for summer wear',
+		},
+		{
+			company_id: companyId,
+			created_by: createdBy,
+			name: 'Designer Silk Fabric',
+			product_number: 'PROD-006',
+			material: 'Silk',
+			color: 'Green',
+			gsm: 110,
+			thread_count_cm: 75,
+			tags: ['designer', 'luxury', 'festive'],
+			measuring_unit: 'Meters',
+			cost_price_per_unit: 3000.00,
+			selling_price_per_unit: 4200.00,
+			show_on_catalog: false,
+			min_stock_alert: false,
+			hsn_code: '5007',
+		},
+		{
+			company_id: companyId,
+			created_by: createdBy,
+			name: 'Cotton Denim',
+			product_number: 'PROD-007',
+			material: 'Denim',
+			color: 'Blue',
+			gsm: 300,
+			thread_count_cm: 40,
+			tags: ['denim', 'casual', 'durable'],
+			measuring_unit: 'Meters',
+			cost_price_per_unit: 600.00,
+			selling_price_per_unit: 900.00,
+			show_on_catalog: true,
+			min_stock_alert: true,
+			min_stock_threshold: 40,
+			hsn_code: '5209',
+			notes: 'Heavy-duty cotton denim fabric',
+		},
+		{
+			company_id: companyId,
+			created_by: createdBy,
+			name: 'Yellow Cotton Print',
+			product_number: 'PROD-008',
+			material: 'Cotton',
+			color: 'Yellow',
+			gsm: 130,
+			thread_count_cm: 65,
+			tags: ['printed', 'colorful', 'casual'],
+			measuring_unit: 'Meters',
+			cost_price_per_unit: 400.00,
+			selling_price_per_unit: 600.00,
+			show_on_catalog: true,
+			min_stock_alert: true,
+			min_stock_threshold: 25,
+			hsn_code: '5208',
+		},
+	];
+
+	for (const product of testProducts) {
+		const { data, error } = await supabase
+			.from('products')
+			.insert(product)
+			.select()
+			.single();
+
+		if (error) {
+			console.error(`❌ Failed to create product: ${product.name}`);
+			console.error(`   Error: ${error.message}`);
+		} else {
+			console.log(`✅ Created product: ${product.name} (${product.product_number})`);
+		}
+	}
+
+	console.log('\n✨ Test products created successfully!');
+
 	// 5. Create invite for the test company
 	console.log('\n🎟️  Creating admin invite for test company...');
 	const adminToken = randomBytes(32).toString('hex');

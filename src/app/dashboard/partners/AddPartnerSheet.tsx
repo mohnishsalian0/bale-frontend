@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group-pills';
 import { Sheet, SheetContent, SheetFooter, SheetHeader } from '@/components/ui/sheet';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { validateImageFile, uploadPartnerImage } from '@/lib/storage';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
 import type { TablesInsert } from '@/types/database/supabase';
@@ -276,19 +277,19 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 						</div>
 
 						{/* Business Details Section */}
-						<div className="border-t border-neutral-200 px-4 py-5">
-							<button
-								type="button"
-								onClick={() => setShowBusinessDetails(!showBusinessDetails)}
-								className={`flex items-center justify-between w-full ${showBusinessDetails ? 'mb-5' : 'mb-0'}`}
-							>
+						<Collapsible
+							open={showBusinessDetails}
+							onOpenChange={setShowBusinessDetails}
+							className="border-t border-neutral-200 px-4 py-5"
+						>
+							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showBusinessDetails ? 'mb-5' : 'mb-0'}`}>
 								<h3 className="text-lg font-medium text-gray-900">Business details</h3>
 								<IconChevronDown
 									className={`size-6 text-gray-500 transition-transform ${showBusinessDetails ? 'rotate-180' : 'rotate-0'}`}
 								/>
-							</button>
+							</CollapsibleTrigger>
 
-							{showBusinessDetails && (
+							<CollapsibleContent>
 								<div className="flex flex-col gap-5">
 									<div className="relative">
 										<IconBuildingFactory2 className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
@@ -313,23 +314,23 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 										/>
 									</div>
 								</div>
-							)}
-						</div>
+							</CollapsibleContent>
+						</Collapsible>
 
 						{/* Address Section */}
-						<div className="border-t border-neutral-200 px-4 py-5">
-							<button
-								type="button"
-								onClick={() => setShowAddress(!showAddress)}
-								className={`flex items-center justify-between w-full ${showAddress ? 'mb-5' : 'mb-0'}`}
-							>
+						<Collapsible
+							open={showAddress}
+							onOpenChange={setShowAddress}
+							className="border-t border-neutral-200 px-4 py-5"
+						>
+							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showAddress ? 'mb-5' : 'mb-0'}`}>
 								<h3 className="text-lg font-medium text-gray-900">Address</h3>
 								<IconChevronDown
 									className={`size-6 text-gray-500 transition-transform ${showAddress ? 'rotate-180' : 'rotate-0'}`}
 								/>
-							</button>
+							</CollapsibleTrigger>
 
-							{showAddress && (
+							<CollapsibleContent>
 								<div className="flex flex-col gap-5">
 									<Input
 										placeholder="Address line 1"
@@ -374,23 +375,23 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 										/>
 									</div>
 								</div>
-							)}
-						</div>
+							</CollapsibleContent>
+						</Collapsible>
 
 						{/* Tax Details Section */}
-						<div className="border-t border-neutral-200 px-4 py-5">
-							<button
-								type="button"
-								onClick={() => setShowTaxDetails(!showTaxDetails)}
-								className={`flex items-center justify-between w-full ${showTaxDetails ? 'mb-5' : 'mb-0'}`}
-							>
+						<Collapsible
+							open={showTaxDetails}
+							onOpenChange={setShowTaxDetails}
+							className="border-t border-neutral-200 px-4 py-5"
+						>
+							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showTaxDetails ? 'mb-5' : 'mb-0'}`}>
 								<h3 className="text-lg font-medium text-gray-900">Tax Details</h3>
 								<IconChevronDown
 									className={`size-6 text-gray-500 transition-transform ${showTaxDetails ? 'rotate-180' : 'rotate-0'}`}
 								/>
-							</button>
+							</CollapsibleTrigger>
 
-							{showTaxDetails && (
+							<CollapsibleContent>
 								<div className="flex flex-col gap-5">
 									<div className="relative">
 										<IconId className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
@@ -415,31 +416,31 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 										/>
 									</div>
 								</div>
-							)}
-						</div>
+							</CollapsibleContent>
+						</Collapsible>
 
 						{/* Additional Details Section */}
-						<div className="border-t border-neutral-200 px-4 py-5 pb-24">
-							<button
-								type="button"
-								onClick={() => setShowAdditionalDetails(!showAdditionalDetails)}
-								className={`flex items-center justify-between w-full ${showAdditionalDetails ? 'mb-5' : 'mb-0'}`}
-							>
+						<Collapsible
+							open={showAdditionalDetails}
+							onOpenChange={setShowAdditionalDetails}
+							className="border-t border-neutral-200 px-4 py-5 pb-24"
+						>
+							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showAdditionalDetails ? 'mb-5' : 'mb-0'}`}>
 								<h3 className="text-lg font-medium text-gray-900">Additional Details</h3>
 								<IconChevronDown
 									className={`size-6 text-gray-500 transition-transform ${showAdditionalDetails ? 'rotate-180' : 'rotate-0'}`}
 								/>
-							</button>
+							</CollapsibleTrigger>
 
-							{showAdditionalDetails && (
+							<CollapsibleContent>
 								<Textarea
 									placeholder="Enter a note..."
 									value={formData.notes}
 									onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
 									className="min-h-32"
 								/>
-							)}
-						</div>
+							</CollapsibleContent>
+						</Collapsible>
 					</div>
 
 					<SheetFooter className="flex flex-col gap-3 px-4 py-3 border-t border-neutral-200 bg-background-100 shadow-xs-reverse">
