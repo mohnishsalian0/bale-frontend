@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { IconBuilding, IconPhone, IconPlus } from '@tabler/icons-react';
+import { IconBuilding, IconPhone } from '@tabler/icons-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Fab } from '@/components/ui/fab';
 import { AddStaffSheet } from './AddStaffSheet';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
@@ -193,13 +193,10 @@ export default function StaffPage() {
 			</li>
 
 			{/* Floating Action Button */}
-			< Button
-				size="icon"
+			<Fab
 				onClick={() => setShowAddStaff(true)}
-				className="fixed bottom-20 right-4 size-14 rounded-full"
-			>
-				<IconPlus className="size-6 text-base-white" />
-			</Button>
+				className="fixed bottom-20 right-4"
+			/>
 
 			{/* Add Staff Sheet */}
 			<AddStaffSheet

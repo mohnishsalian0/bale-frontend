@@ -818,11 +818,12 @@ Sub-modules:
 - Notes (additional information)
 - Add files (attachments for invoices and documents)
 
-**Received product list**
-- Received products and their stock unit quantity
-- Individual stock units created with sequential numbering and added to inventory automatically
-- Stock unit created with status as Received
-- Auto update product quantity in the inventory of assigned warehouse
+**Stock Units Creation**
+- User directly creates stock units with complete details (size, quality grade, location, etc.)
+- Each stock unit created with full specifications during receipt process
+- If multiple units have identical details, user can specify quantity to create multiple at once
+- Stock units created with status as 'in_stock'
+- All units automatically linked to this goods receipt via created_from_receipt_id
 
 **Staff Access Controls**
 - All receipts automatically assigned to staff's warehouse

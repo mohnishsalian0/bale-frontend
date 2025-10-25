@@ -6,6 +6,8 @@ import { IconMapPin, IconPhone, IconPlus, IconSearch } from '@tabler/icons-react
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Fab } from '@/components/ui/fab';
+import { TabPills } from '@/components/ui/tab-pills';
 import { AddPartnerSheet } from './AddPartnerSheet';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
@@ -180,19 +182,12 @@ export default function PartnersPage() {
 			</div>
 
 			{/* Filter Tabs */}
-			<div className="flex gap-2.5 px-4 py-2">
-				{PARTNER_TYPES.map((type) => (
-					<button
-						key={type.value}
-						onClick={() => setSelectedType(type.value)}
-						className={`px-2 py-1 text-sm font-medium rounded-lg border transition-colors ${selectedType === type.value
-							? 'bg-primary-200 border-primary-500 text-gray-700 shadow-primary-sm'
-							: 'bg-base-white border-gray-200 text-gray-700 shadow-gray-sm'
-							}`}
-					>
-						{type.label}
-					</button>
-				))}
+			<div className="px-4 py-2">
+				<TabPills
+					options={PARTNER_TYPES}
+					value={selectedType}
+					onValueChange={(value) => setSelectedType(value as PartnerType)}
+				/>
 			</div>
 
 			{/* Partner Cards */}
@@ -282,13 +277,10 @@ export default function PartnersPage() {
 			</li>
 
 			{/* Floating Action Button */}
-			<Button
-				size="icon"
+			<Fab
 				onClick={() => setShowAddPartner(true)}
-				className="fixed bottom-20 right-4 size-14 rounded-full shadow-none border-shadow-primary"
-			>
-				<IconPlus className="size-6 text-base-white" />
-			</Button>
+				className="fixed bottom-20 right-4"
+			/>
 
 			{/* Add Partner Sheet */}
 			<AddPartnerSheet

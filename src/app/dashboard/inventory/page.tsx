@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { IconPlus, IconSearch, IconAlertTriangle, IconClothesRack } from '@tabler/icons-react';
+import { IconSearch, IconAlertTriangle, IconClothesRack } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Fab } from '@/components/ui/fab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AddProductSheet } from './AddProductSheet';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
+import { Button } from '@/components/ui/button';
 
 type ProductRow = Tables<'products'>;
 
@@ -237,13 +238,10 @@ export default function InventoryPage() {
 			</div>
 
 			{/* Floating Action Button */}
-			<Button
-				size="icon"
+			<Fab
 				onClick={() => setShowAddProduct(true)}
-				className="fixed bottom-20 right-4 size-14 rounded-full shadow-none border-shadow-primary"
-			>
-				<IconPlus className="size-6 text-base-white" />
-			</Button>
+				className="fixed bottom-20 right-4"
+			/>
 
 			{/* Add Product Sheet */}
 			<AddProductSheet

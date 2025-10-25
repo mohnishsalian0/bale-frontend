@@ -80,8 +80,16 @@
 - [ ] Delete staff functionality
 
 ## Phase 6: Iteration 2 - Products/Partners
-- [ ] Product master CRUD with fabric attributes (admin CRUD, staff read)
-- [ ] Product images upload (max 5, 2MB each)
+- [x] Inventory page UI with search, filters (material, color, tags), and product cards
+- [x] Connect inventory page to Supabase database (fetch, loading, error states)
+- [x] Add product form with typed insert (features & images, stock details, additional details)
+- [x] Product images upload (max 5, 2MB each) with preview and remove functionality
+- [ ] View product summary with stock units
+- [ ] Product detail view showing all attributes
+- [ ] Edit product functionality
+- [ ] Delete product functionality
+- [ ] Stock units list for each product with status and location
+- [ ] Bulk actions on stock units (dispatch, mark damaged, etc.)
 - [x] Partners page UI with filter tabs, search, and partner cards
 - [x] Connect partners page to Supabase database (fetch, loading, error states)
 - [x] Add partner form with typed insert (image upload, business details, address, tax details)
