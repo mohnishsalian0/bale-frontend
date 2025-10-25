@@ -27,10 +27,10 @@ CREATE TABLE stock_units (
     
     -- Dates
     manufacturing_date DATE,
-    
-    -- Receipt tracking (links back to goods receipt that created this unit)
-    created_from_receipt_id UUID, -- FK will be added in goods movement migration
-    
+
+    -- Inward tracking (links back to goods inward that created this unit)
+    created_from_inward_id UUID, -- FK will be added in goods movement migration
+
     notes TEXT,
     
     -- Barcode tracking
@@ -64,8 +64,8 @@ CREATE INDEX idx_stock_units_product_id ON stock_units(product_id);
 -- Unit number lookup within company
 CREATE INDEX idx_stock_units_unit_number ON stock_units(company_id, unit_number);
 
--- Receipt tracking (for audit trail)
-CREATE INDEX idx_stock_units_receipt_id ON stock_units(created_from_receipt_id);
+-- Inward tracking (for audit trail)
+CREATE INDEX idx_stock_units_inward_id ON stock_units(created_from_inward_id);
 
 -- Barcode generation tracking
 CREATE INDEX idx_stock_units_barcode_generated ON stock_units(warehouse_id, barcode_generated);

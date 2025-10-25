@@ -58,7 +58,7 @@ FROM sales_orders so
 JOIN partners c ON so.customer_id = c.id
 LEFT JOIN warehouses w ON so.fulfillment_warehouse_id = w.id
 LEFT JOIN sales_order_items soi ON so.id = soi.sales_order_id
-LEFT JOIN goods_dispatches gd ON so.id = gd.sales_order_id
+LEFT JOIN goods_outwards gd ON so.id = gd.sales_order_id
 LEFT JOIN job_works jw ON so.id = jw.sales_order_id
 WHERE so.deleted_at IS NULL
 GROUP BY so.company_id, so.id, so.order_number, so.status, so.order_date, so.expected_delivery_date,
@@ -81,15 +81,15 @@ SELECT
     SUM(CASE WHEN su.status = 'dispatched' THEN 1 ELSE 0 END) as dispatched_units,
     
     -- Recent activity counts (last 30 days)
-    COUNT(DISTINCT CASE 
-        WHEN gr.receipt_date >= CURRENT_DATE - INTERVAL '30 days' 
-        THEN gr.id 
-    END) as receipts_last_30_days,
-    
-    COUNT(DISTINCT CASE 
-        WHEN gd.dispatch_date >= CURRENT_DATE - INTERVAL '30 days' AND gd.is_cancelled = false
-        THEN gd.id 
-    END) as dispatches_last_30_days,
+    COUNT(DISTINCT CASE
+        WHEN gr.inward_date >= CURRENT_DATE - INTERVAL '30 days'
+        THEN gr.id
+    END) as inwards_last_30_days,
+
+    COUNT(DISTINCT CASE
+        WHEN gd.outward_date >= CURRENT_DATE - INTERVAL '30 days' AND gd.is_cancelled = false
+        THEN gd.id
+    END) as outwards_last_30_days,
     
     COUNT(DISTINCT CASE 
         WHEN jw.start_date >= CURRENT_DATE - INTERVAL '30 days'
@@ -119,8 +119,8 @@ SELECT
 
 FROM warehouses w
 LEFT JOIN stock_units su ON w.id = su.warehouse_id AND su.deleted_at IS NULL
-LEFT JOIN goods_receipts gr ON w.id = gr.warehouse_id AND gr.deleted_at IS NULL
-LEFT JOIN goods_dispatches gd ON w.id = gd.warehouse_id AND gd.deleted_at IS NULL
+LEFT JOIN goods_inwards gr ON w.id = gr.warehouse_id AND gr.deleted_at IS NULL
+LEFT JOIN goods_outwards gd ON w.id = gd.warehouse_id AND gd.deleted_at IS NULL
 LEFT JOIN job_works jw ON w.id = jw.warehouse_id AND jw.deleted_at IS NULL
 LEFT JOIN sales_orders so ON w.id = so.fulfillment_warehouse_id AND so.deleted_at IS NULL
 LEFT JOIN users u ON w.id = u.warehouse_id AND u.deleted_at IS NULL
@@ -157,9 +157,9 @@ SELECT
     END) as completed_job_works,
     
     -- Goods movements
-    COUNT(DISTINCT gd_to.id) as goods_dispatched_to,
-    COUNT(DISTINCT gd_agent.id) as goods_dispatched_via_agent,
-    COUNT(DISTINCT gr_from.id) as goods_received_from,
+    COUNT(DISTINCT gd_to.id) as goods_outward_to,
+    COUNT(DISTINCT gd_agent.id) as goods_outward_via_agent,
+    COUNT(DISTINCT gr_from.id) as goods_inward_from,
     
     -- Recent activity
     GREATEST(
@@ -189,9 +189,9 @@ SELECT
 FROM partners p
 LEFT JOIN sales_orders so ON p.id = so.customer_id AND so.deleted_at IS NULL
 LEFT JOIN job_works jw ON p.id = jw.vendor_id AND jw.deleted_at IS NULL
-LEFT JOIN goods_dispatches gd_to ON p.id = gd_to.partner_id AND gd_to.deleted_at IS NULL
-LEFT JOIN goods_dispatches gd_agent ON p.id = gd_agent.agent_id AND gd_agent.deleted_at IS NULL
-LEFT JOIN goods_receipts gr_from ON p.id = gr_from.partner_id AND gr_from.deleted_at IS NULL
+LEFT JOIN goods_outwards gd_to ON p.id = gd_to.partner_id AND gd_to.deleted_at IS NULL
+LEFT JOIN goods_outwards gd_agent ON p.id = gd_agent.agent_id AND gd_agent.deleted_at IS NULL
+LEFT JOIN goods_inwards gr_from ON p.id = gr_from.partner_id AND gr_from.deleted_at IS NULL
 WHERE p.deleted_at IS NULL
 GROUP BY p.company_id, p.id, p.first_name, p.last_name, p.company_name, 
          p.partner_type, p.phone_number, p.email;
@@ -201,70 +201,70 @@ GROUP BY p.company_id, p.id, p.first_name, p.last_name, p.company_name,
 -- =====================================================
 
 CREATE VIEW inventory_movement_audit_trail AS
--- Goods Receipts (Inward movement)
-SELECT 
-    'RECEIPT' as movement_type,
-    gr.company_id,
-    gr.warehouse_id,
+-- Goods Inwards (Inward movement)
+SELECT
+    'INWARD' as movement_type,
+    gi.company_id,
+    gi.warehouse_id,
     w.name as warehouse_name,
-    gr.id as transaction_id,
-    gr.receipt_number as transaction_number,
-    gr.receipt_date as transaction_date,
+    gi.id as transaction_id,
+    gi.inward_number as transaction_number,
+    gi.inward_date as transaction_date,
     p.first_name || ' ' || p.last_name as partner_name,
     p.partner_type,
-    gr.receipt_type,
-    gr.sales_order_id,
-    gr.job_work_id,
-    gr.other_reference,
-    COUNT(gri.id) as items_count,
-    SUM(gri.quantity_received) as total_quantity,
-    gr.invoice_amount,
-    gr.created_by as created_by_user_id,
-    gr.created_at,
+    gi.inward_type,
+    gi.sales_order_id,
+    gi.job_work_id,
+    gi.other_reference,
+    COUNT(su.id) as items_count,
+    COALESCE(SUM(su.size_quantity), 0) as total_quantity,
+    gi.invoice_amount,
+    gi.created_by as created_by_user_id,
+    gi.created_at,
     'IN' as direction
-FROM goods_receipts gr
-JOIN warehouses w ON gr.warehouse_id = w.id
-LEFT JOIN partners p ON gr.partner_id = p.id
-LEFT JOIN goods_receipt_items gri ON gr.id = gri.receipt_id
-WHERE gr.deleted_at IS NULL
-GROUP BY gr.company_id, gr.warehouse_id, w.name, gr.id, gr.receipt_number, 
-         gr.receipt_date, p.first_name, p.last_name, p.partner_type,
-         gr.receipt_type, gr.sales_order_id, gr.job_work_id, gr.other_reference,
-         gr.invoice_amount, gr.created_by, gr.created_at
+FROM goods_inwards gi
+JOIN warehouses w ON gi.warehouse_id = w.id
+LEFT JOIN partners p ON gi.partner_id = p.id
+LEFT JOIN stock_units su ON gi.id = su.created_from_inward_id
+WHERE gi.deleted_at IS NULL
+GROUP BY gi.company_id, gi.warehouse_id, w.name, gi.id, gi.inward_number,
+         gi.inward_date, p.first_name, p.last_name, p.partner_type,
+         gi.inward_type, gi.sales_order_id, gi.job_work_id, gi.other_reference,
+         gi.invoice_amount, gi.created_by, gi.created_at
 
 UNION ALL
 
--- Goods Dispatches (Outward movement)
-SELECT 
-    'DISPATCH' as movement_type,
-    gd.company_id,
-    gd.warehouse_id,
+-- Goods Outwards (Outward movement)
+SELECT
+    'OUTWARD' as movement_type,
+    go.company_id,
+    go.warehouse_id,
     w.name as warehouse_name,
-    gd.id as transaction_id,
-    gd.dispatch_number as transaction_number,
-    gd.dispatch_date as transaction_date,
+    go.id as transaction_id,
+    go.outward_number as transaction_number,
+    go.outward_date as transaction_date,
     COALESCE(p.first_name || ' ' || p.last_name, wh.name) as partner_name,
     COALESCE(p.partner_type, 'Warehouse') as partner_type,
-    gd.dispatch_type,
-    gd.sales_order_id,
-    gd.job_work_id,
-    gd.other_reference,
-    COUNT(gdi.id) as items_count,
-    COUNT(gdi.stock_unit_id) as total_quantity, -- Each dispatch item is one stock unit
-    gd.invoice_amount,
-    gd.created_by as created_by_user_id,
-    gd.created_at,
+    go.outward_type,
+    go.sales_order_id,
+    go.job_work_id,
+    go.other_reference,
+    COUNT(goi.id) as items_count,
+    COUNT(goi.stock_unit_id) as total_quantity, -- Each outward item is one stock unit
+    go.invoice_amount,
+    go.created_by as created_by_user_id,
+    go.created_at,
     'OUT' as direction
-FROM goods_dispatches gd
-JOIN warehouses w ON gd.warehouse_id = w.id
-LEFT JOIN partners p ON gd.partner_id = p.id
-LEFT JOIN warehouses wh ON gd.to_warehouse_id = wh.id
-LEFT JOIN goods_dispatch_items gdi ON gd.id = gdi.dispatch_id
-WHERE gd.deleted_at IS NULL AND gd.is_cancelled = false
-GROUP BY gd.company_id, gd.warehouse_id, w.name, gd.id, gd.dispatch_number,
-         gd.dispatch_date, p.first_name, p.last_name, p.partner_type, wh.name,
-         gd.dispatch_type, gd.sales_order_id, gd.job_work_id, gd.other_reference,
-         gd.invoice_amount, gd.created_by, gd.created_at
+FROM goods_outwards go
+JOIN warehouses w ON go.warehouse_id = w.id
+LEFT JOIN partners p ON go.partner_id = p.id
+LEFT JOIN warehouses wh ON go.to_warehouse_id = wh.id
+LEFT JOIN goods_outward_items goi ON go.id = goi.outward_id
+WHERE go.deleted_at IS NULL AND go.is_cancelled = false
+GROUP BY go.company_id, go.warehouse_id, w.name, go.id, go.outward_number,
+         go.outward_date, p.first_name, p.last_name, p.partner_type, wh.name,
+         go.outward_type, go.sales_order_id, go.job_work_id, go.other_reference,
+         go.invoice_amount, go.created_by, go.created_at
 
 ORDER BY transaction_date DESC, created_at DESC;
 
@@ -296,15 +296,15 @@ SELECT
     END), 0) as sales_value_last_30_days,
     
     -- Operational activity (last 30 days)
-    COUNT(DISTINCT CASE 
-        WHEN gr.receipt_date >= CURRENT_DATE - INTERVAL '30 days'
-        THEN gr.id 
-    END) as receipts_last_30_days,
-    
-    COUNT(DISTINCT CASE 
-        WHEN gd.dispatch_date >= CURRENT_DATE - INTERVAL '30 days' AND gd.is_cancelled = false
-        THEN gd.id 
-    END) as dispatches_last_30_days,
+    COUNT(DISTINCT CASE
+        WHEN gr.inward_date >= CURRENT_DATE - INTERVAL '30 days'
+        THEN gr.id
+    END) as inwards_last_30_days,
+
+    COUNT(DISTINCT CASE
+        WHEN gd.outward_date >= CURRENT_DATE - INTERVAL '30 days' AND gd.is_cancelled = false
+        THEN gd.id
+    END) as outwards_last_30_days,
     
     COUNT(DISTINCT CASE 
         WHEN jw.start_date >= CURRENT_DATE - INTERVAL '30 days'
@@ -335,8 +335,8 @@ LEFT JOIN partners p ON c.id = p.company_id AND p.deleted_at IS NULL
 LEFT JOIN products prod ON c.id = prod.company_id AND prod.deleted_at IS NULL
 LEFT JOIN stock_units su ON c.id = su.company_id AND su.deleted_at IS NULL
 LEFT JOIN sales_orders so ON c.id = so.company_id AND so.deleted_at IS NULL
-LEFT JOIN goods_receipts gr ON c.id = gr.company_id AND gr.deleted_at IS NULL
-LEFT JOIN goods_dispatches gd ON c.id = gd.company_id AND gd.deleted_at IS NULL
+LEFT JOIN goods_inwards gr ON c.id = gr.company_id AND gr.deleted_at IS NULL
+LEFT JOIN goods_outwards gd ON c.id = gd.company_id AND gd.deleted_at IS NULL
 LEFT JOIN job_works jw ON c.id = jw.company_id AND jw.deleted_at IS NULL
 LEFT JOIN catalog_configurations cc ON c.id = cc.company_id
 WHERE c.deleted_at IS NULL

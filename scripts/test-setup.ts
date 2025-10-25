@@ -464,12 +464,12 @@ async function createTestPartners() {
 
 	console.log('\n✨ Test products created successfully!');
 
-	// Note: Goods receipts and dispatches creation removed
-	// In the new design, users create stock units directly during goods receipt
+	// Note: Goods inwards and outwards creation removed
+	// In the new design, users create stock units directly during goods inward
 	// with complete details (size, quality, location, etc.)
-	console.log('\n⏭️  Skipping goods receipts/dispatches (users create stock units directly)\n');
+	console.log('\n⏭️  Skipping goods inwards/outwards (users create stock units directly)\n');
 
-	// Get partner IDs for use in receipts and dispatches
+	// Get partner IDs for use in inwards and outwards
 	const { data: supplierPartners, error: supplierError } = await supabase
 		.from('partners')
 		.select('id')
@@ -485,9 +485,9 @@ async function createTestPartners() {
 		.limit(2);
 
 	if (supplierError || !supplierPartners || supplierPartners.length === 0) {
-		console.error('❌ No suppliers found for creating receipts');
+		console.error('❌ No suppliers found for creating inwards');
 	} else if (customerError || !customerPartners || customerPartners.length === 0) {
-		console.error('❌ No customers found for creating dispatches');
+		console.error('❌ No customers found for creating outwards');
 	} else {
 		const supplierId1 = supplierPartners[0].id;
 		const supplierId2 = supplierPartners.length > 1 ? supplierPartners[1].id : supplierId1;
@@ -502,7 +502,7 @@ async function createTestPartners() {
 			.limit(5);
 
 		if (productsError || !productsList || productsList.length === 0) {
-			console.error('❌ No products found for creating receipts/dispatches');
+			console.error('❌ No products found for creating inwards/outwards');
 		} else {
 			// Create dates spanning 3 months
 			const now = new Date();
@@ -510,16 +510,16 @@ async function createTestPartners() {
 			const month2 = new Date(now.getFullYear(), now.getMonth() - 1, 20); // Last month, 20th
 			const month3 = new Date(now.getFullYear(), now.getMonth() - 2, 10); // 2 months ago, 10th
 
-			// Create 5 goods receipts
-			const testReceipts = [
+			// Create 5 goods inwards
+			const testInwards = [
 				{
 					company_id: companyId,
 					warehouse_id: warehouseId,
 					created_by: createdBy,
-					receipt_number: 'GR-001',
-					receipt_type: 'purchase',
+					inward_number: 'GR-001',
+					inward_type: 'purchase',
 					partner_id: supplierId1,
-					receipt_date: month3.toISOString().split('T')[0],
+					inward_date: month3.toISOString().split('T')[0],
 					invoice_number: 'INV-2024-001',
 					invoice_amount: 15000.00,
 					notes: 'Received silk fabrics from supplier',
@@ -528,10 +528,10 @@ async function createTestPartners() {
 					company_id: companyId,
 					warehouse_id: warehouseId,
 					created_by: createdBy,
-					receipt_number: 'GR-002',
-					receipt_type: 'purchase',
+					inward_number: 'GR-002',
+					inward_type: 'purchase',
 					partner_id: supplierId2,
-					receipt_date: month3.toISOString().split('T')[0],
+					inward_date: month3.toISOString().split('T')[0],
 					invoice_number: 'INV-2024-002',
 					invoice_amount: 8500.00,
 					notes: 'Cotton fabric purchase',
@@ -540,10 +540,10 @@ async function createTestPartners() {
 					company_id: companyId,
 					warehouse_id: warehouseId,
 					created_by: createdBy,
-					receipt_number: 'GR-003',
-					receipt_type: 'purchase',
+					inward_number: 'GR-003',
+					inward_type: 'purchase',
 					partner_id: supplierId1,
-					receipt_date: month2.toISOString().split('T')[0],
+					inward_date: month2.toISOString().split('T')[0],
 					invoice_number: 'INV-2024-003',
 					invoice_amount: 22000.00,
 					notes: 'Premium woolen fabrics received',
@@ -552,10 +552,10 @@ async function createTestPartners() {
 					company_id: companyId,
 					warehouse_id: warehouseId,
 					created_by: createdBy,
-					receipt_number: 'GR-004',
-					receipt_type: 'purchase',
+					inward_number: 'GR-004',
+					inward_type: 'purchase',
 					partner_id: supplierId2,
-					receipt_date: month2.toISOString().split('T')[0],
+					inward_date: month2.toISOString().split('T')[0],
 					invoice_number: 'INV-2024-004',
 					invoice_amount: 12000.00,
 					notes: 'Polyester blend materials',
@@ -564,56 +564,56 @@ async function createTestPartners() {
 					company_id: companyId,
 					warehouse_id: warehouseId,
 					created_by: createdBy,
-					receipt_number: 'GR-005',
-					receipt_type: 'purchase',
+					inward_number: 'GR-005',
+					inward_type: 'purchase',
 					partner_id: supplierId1,
-					receipt_date: month1.toISOString().split('T')[0],
+					inward_date: month1.toISOString().split('T')[0],
 					invoice_number: 'INV-2024-005',
 					invoice_amount: 18500.00,
 					notes: 'Linen fabric stock replenishment',
 				},
 			];
 
-			const receiptIds: string[] = [];
+			const inwardIds: string[] = [];
 
-			for (const receipt of testReceipts) {
-				// Check if receipt already exists
-				const { data: existingReceipt } = await supabase
-					.from('goods_receipts')
-					.select('id, receipt_number')
+			for (const inwards of testInwards) {
+				// Check if inwards already exists
+				const { data: existingInward } = await supabase
+					.from('goods_inwards')
+					.select('id, inward_number')
 					.eq('company_id', companyId)
-					.eq('receipt_number', receipt.receipt_number)
+					.eq('inward_number', inwards.inward_number)
 					.single();
 
-				let receiptId: string;
+				let inwardId: string;
 
-				if (existingReceipt) {
-					console.log(`⏭️  Receipt ${receipt.receipt_number} already exists`);
-					receiptId = existingReceipt.id;
-					receiptIds.push(receiptId);
+				if (existingInward) {
+					console.log(`⏭️  Inward ${inwards.inward_number} already exists`);
+					inwardId = existingInward.id;
+					inwardIds.push(inwardId);
 				} else {
 					const { data, error } = await supabase
-						.from('goods_receipts')
-						.insert(receipt)
+						.from('goods_inwards')
+						.insert(inwards)
 						.select()
 						.single();
 
 					if (error) {
-						console.error(`❌ Failed to create receipt: ${receipt.receipt_number}`);
+						console.error(`❌ Failed to create inwards: ${inwards.inward_number}`);
 						console.error(`   Error: ${error.message}`);
 						continue;
 					} else {
-						receiptId = data.id;
-						receiptIds.push(receiptId);
-						console.log(`✅ Created goods receipt: ${receipt.receipt_number}`);
+						inwardId = data.id;
+						inwardIds.push(inwardId);
+						console.log(`✅ Created goods inwards: ${inwards.inward_number}`);
 					}
 				}
 
-				// Check if stock units already exist for this receipt
+				// Check if stock units already exist for this inwards
 				const { data: existingStockUnits, error: checkStockError } = await supabase
 					.from('stock_units')
 					.select('id')
-					.eq('created_from_receipt_id', receiptId);
+					.eq('created_from_inward_id', inwardId);
 
 				if (checkStockError) {
 					console.error(`   ❌ Failed to check existing stock units: ${checkStockError.message}`);
@@ -625,7 +625,7 @@ async function createTestPartners() {
 					continue;
 				}
 
-				// Create stock units directly (2-3 products per receipt)
+				// Create stock units directly (2-3 products per inwards)
 				const itemCount = Math.floor(Math.random() * 2) + 2; // 2-3 items
 				for (let i = 0; i < itemCount && i < productsList.length; i++) {
 					const quantity = Math.floor(Math.random() * 5) + 1; // 1-5 units per product
@@ -638,13 +638,13 @@ async function createTestPartners() {
 								company_id: companyId,
 								warehouse_id: warehouseId,
 								product_id: productsList[i].id,
-								created_from_receipt_id: receiptId,
+								created_from_inward_id: inwardId,
 								created_by: createdBy,
 								size_quantity: (Math.random() * 50 + 10).toFixed(2), // Random size 10-60
 								quality_grade: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
 								location_description: `Rack ${String.fromCharCode(65 + Math.floor(Math.random() * 5))}-${Math.floor(Math.random() * 10) + 1}`,
 								status: 'in_stock',
-								manufacturing_date: receipt.receipt_date,
+								manufacturing_date: inwards.inward_date,
 								barcode_generated: false,
 							});
 
@@ -657,7 +657,7 @@ async function createTestPartners() {
 				}
 			}
 
-			// Get stock units that were auto-created from receipts
+			// Get stock units that were auto-created from inwards
 			const { data: stockUnits, error: stockError } = await supabase
 				.from('stock_units')
 				.select('id')
@@ -666,18 +666,18 @@ async function createTestPartners() {
 				.limit(15);
 
 			if (stockError || !stockUnits || stockUnits.length === 0) {
-				console.error('❌ No stock units available for creating dispatches');
+				console.error('❌ No stock units available for creating outwards');
 			} else {
-				// Create 5 goods dispatches
-				const testDispatches = [
+				// Create 5 goods outwards
+				const testOutwards = [
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
 						created_by: createdBy,
-						dispatch_number: 'GD-001',
-						dispatch_type: 'other',
-						other_reason: 'Sample dispatch for exhibition',
-						dispatch_date: month3.toISOString().split('T')[0],
+						outward_number: 'GD-001',
+						outward_type: 'other',
+						other_reason: 'Sample outward for exhibition',
+						outward_date: month3.toISOString().split('T')[0],
 						invoice_number: 'DISP-001',
 						invoice_amount: 5000.00,
 						notes: 'Sample fabrics sent for trade show',
@@ -686,10 +686,10 @@ async function createTestPartners() {
 						company_id: companyId,
 						warehouse_id: warehouseId,
 						created_by: createdBy,
-						dispatch_number: 'GD-002',
-						dispatch_type: 'other',
+						outward_number: 'GD-002',
+						outward_type: 'other',
 						other_reason: 'Quality testing at external lab',
-						dispatch_date: month3.toISOString().split('T')[0],
+						outward_date: month3.toISOString().split('T')[0],
 						invoice_number: 'DISP-002',
 						notes: 'Silk samples for quality verification',
 					},
@@ -697,10 +697,10 @@ async function createTestPartners() {
 						company_id: companyId,
 						warehouse_id: warehouseId,
 						created_by: createdBy,
-						dispatch_number: 'GD-003',
-						dispatch_type: 'other',
+						outward_number: 'GD-003',
+						outward_type: 'other',
 						other_reason: 'Customer sample approval',
-						dispatch_date: month2.toISOString().split('T')[0],
+						outward_date: month2.toISOString().split('T')[0],
 						invoice_number: 'DISP-003',
 						invoice_amount: 3500.00,
 						notes: 'Cotton fabric samples for customer review',
@@ -709,10 +709,10 @@ async function createTestPartners() {
 						company_id: companyId,
 						warehouse_id: warehouseId,
 						created_by: createdBy,
-						dispatch_number: 'GD-004',
-						dispatch_type: 'other',
-						other_reason: 'Marketing material dispatch',
-						dispatch_date: month2.toISOString().split('T')[0],
+						outward_number: 'GD-004',
+						outward_type: 'other',
+						other_reason: 'Marketing material outward',
+						outward_date: month2.toISOString().split('T')[0],
 						invoice_number: 'DISP-004',
 						notes: 'Product samples for marketing campaign',
 					},
@@ -720,10 +720,10 @@ async function createTestPartners() {
 						company_id: companyId,
 						warehouse_id: warehouseId,
 						created_by: createdBy,
-						dispatch_number: 'GD-005',
-						dispatch_type: 'other',
+						outward_number: 'GD-005',
+						outward_type: 'other',
 						other_reason: 'Demo pieces for new collection',
-						dispatch_date: month1.toISOString().split('T')[0],
+						outward_date: month1.toISOString().split('T')[0],
 						invoice_number: 'DISP-005',
 						invoice_amount: 7500.00,
 						notes: 'New season collection samples',
@@ -732,42 +732,42 @@ async function createTestPartners() {
 
 				let stockUnitIndex = 0;
 
-				for (const dispatch of testDispatches) {
-					// Check if dispatch already exists
-					const { data: existingDispatch } = await supabase
-						.from('goods_dispatches')
-						.select('id, dispatch_number')
+				for (const outward of testOutwards) {
+					// Check if outward already exists
+					const { data: existingOutward } = await supabase
+						.from('goods_outwards')
+						.select('id, outward_number')
 						.eq('company_id', companyId)
-						.eq('dispatch_number', dispatch.dispatch_number)
+						.eq('outward_number', outward.outward_number)
 						.single();
 
-					let dispatchId: string;
+					let outwardId: string;
 
-					if (existingDispatch) {
-						console.log(`⏭️  Dispatch ${dispatch.dispatch_number} already exists`);
-						dispatchId = existingDispatch.id;
+					if (existingOutward) {
+						console.log(`⏭️  Outward ${outward.outward_number} already exists`);
+						outwardId = existingOutward.id;
 					} else {
 						const { data, error } = await supabase
-							.from('goods_dispatches')
-							.insert(dispatch)
+							.from('goods_outwards')
+							.insert(outward)
 							.select()
 							.single();
 
 						if (error) {
-							console.error(`❌ Failed to create dispatch: ${dispatch.dispatch_number}`);
+							console.error(`❌ Failed to create outward: ${outward.outward_number}`);
 							console.error(`   Error: ${error.message}`);
 							continue;
 						} else {
-							dispatchId = data.id;
-							console.log(`✅ Created goods dispatch: ${dispatch.dispatch_number}`);
+							outwardId = data.id;
+							console.log(`✅ Created goods outward: ${outward.outward_number}`);
 						}
 					}
 
-					// Check if dispatch items already exist
+					// Check if outward items already exist
 					const { data: existingItems, error: checkItemsError } = await supabase
-						.from('goods_dispatch_items')
+						.from('goods_outward_items')
 						.select('id')
-						.eq('dispatch_id', dispatchId);
+						.eq('outward_id', outwardId);
 
 					if (checkItemsError) {
 						console.error(`   ❌ Failed to check existing items: ${checkItemsError.message}`);
@@ -775,30 +775,30 @@ async function createTestPartners() {
 					}
 
 					if (existingItems && existingItems.length > 0) {
-						console.log(`   ⏭️  Dispatch items already exist (${existingItems.length} items)`);
+						console.log(`   ⏭️  Outward items already exist (${existingItems.length} items)`);
 						continue;
 					}
 
-					// Add dispatch items (1-3 stock units per dispatch)
+					// Add outward items (1-3 stock units per outward)
 					const itemCount = Math.min(3, stockUnits.length - stockUnitIndex);
 					for (let i = 0; i < itemCount && stockUnitIndex < stockUnits.length; i++) {
 						const { error: itemError } = await supabase
-							.from('goods_dispatch_items')
+							.from('goods_outward_items')
 							.insert({
 								company_id: companyId,
-								dispatch_id: dispatchId,
+								outward_id: outwardId,
 								stock_unit_id: stockUnits[stockUnitIndex].id,
 							});
 
 						if (itemError) {
-							console.error(`   ❌ Failed to add item to dispatch: ${itemError.message}`);
+							console.error(`   ❌ Failed to add item to outward: ${itemError.message}`);
 						} else {
 							// Update stock unit status to dispatched
 							await supabase
 								.from('stock_units')
 								.update({ status: 'dispatched' })
 								.eq('id', stockUnits[stockUnitIndex].id);
-							console.log(`   ✅ Added dispatch item with stock unit ${stockUnitIndex + 1}`);
+							console.log(`   ✅ Added outward item with stock unit ${stockUnitIndex + 1}`);
 						}
 
 						stockUnitIndex++;
@@ -806,7 +806,7 @@ async function createTestPartners() {
 				}
 			}
 
-			console.log('\n✨ Test goods receipts and dispatches created successfully!');
+			console.log('\n✨ Test goods inwards and outwards created successfully!');
 		}
 	}
 

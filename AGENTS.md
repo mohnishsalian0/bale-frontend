@@ -33,7 +33,7 @@ Company
 | Stock Units | All warehouses | Assigned warehouse only |
 | Sales Orders | Full CRUD all | Read assigned warehouse only |
 | Job Work | All warehouses | Assigned warehouse (CRUD) |
-| Dispatch/Receipt | All warehouses | Assigned warehouse (CRUD) |
+| Outward/Inward | All warehouses | Assigned warehouse (CRUD) |
 | Barcode Generation | All warehouses | Assigned warehouse only |
 
 ## Common Commands
@@ -116,3 +116,5 @@ Always update the TODO.md file before proceeding to the next task
 Refer to globals.css for theme
 
 Use shadcn components wherever possible
+
+Feel free to overwrite existing migration files if needed. Because we are in development phase, and we are not live yet

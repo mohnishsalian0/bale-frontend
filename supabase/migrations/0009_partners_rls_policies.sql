@@ -11,7 +11,7 @@ ALTER TABLE partners ENABLE ROW LEVEL SECURITY;
 -- PARTNERS TABLE RLS POLICIES
 -- =====================================================
 
--- Admins can view all partners, staff can view partners (needed for dispatch/receipt operations)
+-- Admins can view all partners, staff can view partners (needed for outward/inward operations)
 CREATE POLICY "Users can view partners in their company"
 ON partners
 FOR SELECT

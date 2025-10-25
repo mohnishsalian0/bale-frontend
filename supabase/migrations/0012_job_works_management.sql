@@ -1,5 +1,5 @@
 -- Bale Backend - Job Works Management
--- Job work coordination with goods dispatch and receipt integration
+-- Job work coordination with goods outward and inward integration
 
 -- =====================================================
 -- JOB WORKS TABLE

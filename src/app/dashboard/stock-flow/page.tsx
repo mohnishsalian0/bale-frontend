@@ -10,12 +10,12 @@ import { Fab } from '@/components/ui/fab';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
 
-type DispatchRow = Tables<'goods_dispatches'>;
-type ReceiptRow = Tables<'goods_receipts'>;
+type OutwardRow = Tables<'goods_outwards'>;
+type InwardRow = Tables<'goods_inwards'>;
 
 interface StockFlowItem {
 	id: string;
-	type: 'dispatch' | 'receipt';
+	type: 'outward' | 'inward';
 	productName: string;
 	partnerName: string;
 	date: string;
@@ -34,13 +34,13 @@ interface MonthGroup {
 
 export default function StockFlowPage() {
 	const [searchQuery, setSearchQuery] = useState('');
-	const [selectedFilter, setSelectedFilter] = useState<'all' | 'dispatch' | 'receipt'>('all');
+	const [selectedFilter, setSelectedFilter] = useState<'all' | 'outward' | 'inward'>('all');
 	const [selectedPartner, setSelectedPartner] = useState('all');
 	const [monthGroups, setMonthGroups] = useState<MonthGroup[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [totalReceived, setTotalReceived] = useState(0);
-	const [totalDispatched, setTotalDispatched] = useState(0);
+	const [totalOutwarded, setTotalOutwarded] = useState(0);
 
 	const fetchStockFlow = async () => {
 		try {
@@ -49,45 +49,45 @@ export default function StockFlowPage() {
 
 			const supabase = createClient();
 
-			// Fetch dispatches with partner details
-			const { data: dispatches, error: dispatchError } = await supabase
-				.from('goods_dispatches')
+			// Fetch outwardes with partner details
+			const { data: outwardes, error: outwardError } = await supabase
+				.from('goods_outwards')
 				.select(`
 					*,
-					partner:partners!goods_dispatches_partner_id_fkey(first_name, last_name, company_name),
-					goods_dispatch_items(
+					partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name),
+					goods_outward_items(
 						stock_unit:stock_units(
 							product:products(name, measuring_unit),
 							size_quantity
 						)
 					)
 				`)
-				.order('dispatch_date', { ascending: false });
+				.order('outward_date', { ascending: false });
 
-			if (dispatchError) throw dispatchError;
+			if (outwardError) throw outwardError;
 
-			// Fetch receipts with partner details and stock units
-			const { data: receipts, error: receiptError } = await supabase
-				.from('goods_receipts')
+			// Fetch inwards with partner details and stock units
+			const { data: inwards, error: inwardError } = await supabase
+				.from('goods_inwards')
 				.select(`
 					*,
-					partner:partners!goods_receipts_partner_id_fkey(first_name, last_name, company_name),
+					partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, company_name),
 					stock_units(
 						product:products(name, measuring_unit),
 						size_quantity
 					)
 				`)
-				.order('receipt_date', { ascending: false });
+				.order('inward_date', { ascending: false });
 
-			if (receiptError) throw receiptError;
+			if (inwardError) throw inwardError;
 
-			// Transform dispatches
-			const dispatchItems: StockFlowItem[] = (dispatches || []).map((d) => {
+			// Transform outwardes
+			const outwardItems: StockFlowItem[] = (outwardes || []).map((d) => {
 				const partnerName = d.partner
 					? d.partner.company_name || `${d.partner.first_name} ${d.partner.last_name}`
 					: 'Unknown Partner';
 
-				const items = d.goods_dispatch_items || [];
+				const items = d.goods_outward_items || [];
 				const firstProduct = items[0]?.stock_unit?.product;
 				const productName = firstProduct?.name || 'Unknown Product';
 				const totalQty = Number(items.reduce(
@@ -98,18 +98,18 @@ export default function StockFlowPage() {
 
 				return {
 					id: d.id,
-					type: 'dispatch',
+					type: 'outward',
 					productName,
 					partnerName,
-					date: d.dispatch_date,
+					date: d.outward_date,
 					quantity: totalQty,
 					unit,
-					billNumber: d.dispatch_number,
+					billNumber: d.outward_number,
 				};
 			});
 
-			// Transform receipts
-			const receiptItems: StockFlowItem[] = (receipts || []).map((r) => {
+			// Transform inwards
+			const inwardItems: StockFlowItem[] = (inwards || []).map((r) => {
 				const partnerName = r.partner
 					? r.partner.company_name || `${r.partner.first_name} ${r.partner.last_name}`
 					: 'Unknown Partner';
@@ -125,18 +125,18 @@ export default function StockFlowPage() {
 
 				return {
 					id: r.id,
-					type: 'receipt',
+					type: 'inward',
 					productName,
 					partnerName,
-					date: r.receipt_date,
+					date: r.inward_date,
 					quantity: totalQty,
 					unit,
-					billNumber: r.receipt_number,
+					billNumber: r.inward_number,
 				};
 			});
 
 			// Combine and sort by date
-			const allItems = [...dispatchItems, ...receiptItems].sort(
+			const allItems = [...outwardItems, ...inwardItems].sort(
 				(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
 			);
 
@@ -161,7 +161,7 @@ export default function StockFlowPage() {
 
 				groups[monthKey].items.push(item);
 
-				if (item.type === 'receipt') {
+				if (item.type === 'inward') {
 					groups[monthKey].inCount += item.quantity;
 				} else {
 					groups[monthKey].outCount += item.quantity;
@@ -186,18 +186,18 @@ export default function StockFlowPage() {
 			const oneMonthAgo = new Date();
 			oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-			const received = Number(receiptItems
+			const inward = Number(inwardItems
 				.filter((item) => new Date(item.date) >= oneMonthAgo)
 				.reduce((sum, item) => sum + item.quantity, 0)
 				.toFixed(2));
 
-			const dispatched = Number(dispatchItems
+			const outwarded = Number(outwardItems
 				.filter((item) => new Date(item.date) >= oneMonthAgo)
 				.reduce((sum, item) => sum + item.quantity, 0)
 				.toFixed(2));
 
-			setTotalReceived(received);
-			setTotalDispatched(dispatched);
+			setTotalReceived(inward);
+			setTotalOutwarded(outwarded);
 		} catch (err) {
 			console.error('Error fetching stock flow:', err);
 			setError(err instanceof Error ? err.message : 'Failed to load stock flow');
@@ -220,8 +220,8 @@ export default function StockFlowPage() {
 
 			const matchesFilter =
 				selectedFilter === 'all' ||
-				(selectedFilter === 'dispatch' && item.type === 'dispatch') ||
-				(selectedFilter === 'receipt' && item.type === 'receipt');
+				(selectedFilter === 'outward' && item.type === 'outward') ||
+				(selectedFilter === 'inward' && item.type === 'inward');
 
 			return matchesSearch && matchesFilter;
 		}),
@@ -274,9 +274,9 @@ export default function StockFlowPage() {
 					<div className="flex flex-col gap-1">
 						<h1 className="text-3xl font-bold text-gray-900">Stock flow</h1>
 						<p className="text-sm text-gray-500">
-							<span className="text-teal-700">{totalReceived} received</span>
+							<span className="text-teal-700">{totalReceived} inward</span>
 							<span> & </span>
-							<span className="text-yellow-700">{totalDispatched} dispatched</span>
+							<span className="text-yellow-700">{totalOutwarded} outwarded</span>
 							<span> in past month</span>
 						</p>
 					</div>
@@ -311,11 +311,11 @@ export default function StockFlowPage() {
 				<TabPills
 					options={[
 						{ value: 'all', label: 'All' },
-						{ value: 'dispatch', label: 'Dispatch' },
-						{ value: 'receipt', label: 'Receive' },
+						{ value: 'outward', label: 'Outward' },
+						{ value: 'inward', label: 'Receive' },
 					]}
 					value={selectedFilter}
-					onValueChange={(value) => setSelectedFilter(value as 'all' | 'dispatch' | 'receipt')}
+					onValueChange={(value) => setSelectedFilter(value as 'all' | 'outward' | 'inward')}
 				/>
 
 				{/* Partner Filter */}
@@ -335,7 +335,7 @@ export default function StockFlowPage() {
 					<div className="flex flex-col items-center justify-center py-12 text-center">
 						<p className="text-gray-600 mb-2">No transactions found</p>
 						<p className="text-sm text-gray-500">
-							{searchQuery ? 'Try adjusting your search' : 'Start by adding a dispatch or receipt'}
+							{searchQuery ? 'Try adjusting your search' : 'Start by adding a outward or inward'}
 						</p>
 					</div>
 				) : (
@@ -366,19 +366,19 @@ export default function StockFlowPage() {
 										<p className="text-base font-medium text-gray-900">{item.productName}</p>
 										<p className="text-xs text-gray-500">{item.partnerName}</p>
 										<p className="text-xs text-gray-500">
-											Goods {item.type === 'dispatch' ? 'dispatched' : 'received'} on{' '}
+											Goods {item.type === 'outward' ? 'outwarded' : 'inward'} on{' '}
 											{formatDate(item.date)}
 										</p>
 									</div>
 									<div className="flex flex-col items-end justify-center">
 										<p
-											className={`text-base font-bold ${item.type === 'receipt' ? 'text-teal-700' : 'text-yellow-700'
+											className={`text-base font-bold ${item.type === 'inward' ? 'text-teal-700' : 'text-yellow-700'
 												}`}
 										>
 											{item.quantity} {item.unit}
 										</p>
 										<p className="text-xs text-gray-500">
-											{item.type === 'receipt' ? 'In' : 'Out'}
+											{item.type === 'inward' ? 'In' : 'Out'}
 										</p>
 									</div>
 								</button>

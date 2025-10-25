@@ -1,22 +1,21 @@
 -- Bale Backend - Goods Movement RLS Policies
--- Security policies for goods dispatch and receipt
+-- Security policies for goods outward and inward
 
 -- =====================================================
 -- ENABLE RLS ON GOODS MOVEMENT TABLES
 -- =====================================================
 
-ALTER TABLE goods_dispatches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE goods_dispatch_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE goods_receipts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE goods_receipt_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE goods_outwards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE goods_outward_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE goods_inwards ENABLE ROW LEVEL SECURITY;
 
 -- =====================================================
--- GOODS DISPATCH TABLE RLS POLICIES
+-- GOODS OUTWARD TABLE RLS POLICIES
 -- =====================================================
 
--- Admins can view all dispatches, staff can view dispatches from their assigned warehouse
-CREATE POLICY "Users can view goods dispatches in their scope"
-ON goods_dispatches
+-- Admins can view all outwards, staff can view outwards from their assigned warehouse
+CREATE POLICY "Users can view goods outwards in their scope"
+ON goods_outwards
 FOR SELECT
 TO authenticated
 USING (
@@ -25,9 +24,9 @@ USING (
     )
 );
 
--- Admins can create dispatches from any warehouse, staff only from their assigned warehouse
-CREATE POLICY "Users can create goods dispatches in their scope"
-ON goods_dispatches
+-- Admins can create outwards from any warehouse, staff only from their assigned warehouse
+CREATE POLICY "Users can create goods outwards in their scope"
+ON goods_outwards
 FOR INSERT
 TO authenticated
 WITH CHECK (
@@ -36,9 +35,9 @@ WITH CHECK (
     )
 );
 
--- Admins can update all dispatches, staff only from their assigned warehouse
-CREATE POLICY "Users can update goods dispatches in their scope"
-ON goods_dispatches
+-- Admins can update all outwards, staff only from their assigned warehouse
+CREATE POLICY "Users can update goods outwards in their scope"
+ON goods_outwards
 FOR UPDATE
 TO authenticated
 USING (
@@ -52,9 +51,9 @@ WITH CHECK (
     )
 );
 
--- Admins can delete dispatches, staff only from their assigned warehouse
-CREATE POLICY "Users can delete goods dispatches in their scope"
-ON goods_dispatches
+-- Admins can delete outwards, staff only from their assigned warehouse
+CREATE POLICY "Users can delete goods outwards in their scope"
+ON goods_outwards
 FOR DELETE
 TO authenticated
 USING (
@@ -64,55 +63,55 @@ USING (
 );
 
 -- =====================================================
--- GOODS DISPATCH ITEMS TABLE RLS POLICIES
+-- GOODS OUTWARD ITEMS TABLE RLS POLICIES
 -- =====================================================
 
--- Users can view dispatch items if they can view the parent dispatch
-CREATE POLICY "Users can view goods dispatch items in their scope"
-ON goods_dispatch_items
+-- Users can view outward items if they can view the parent outward
+CREATE POLICY "Users can view goods outward items in their scope"
+ON goods_outward_items
 FOR SELECT
 TO authenticated
 USING (
     company_id = get_user_company_id() AND
     EXISTS (
-        SELECT 1 FROM goods_dispatches gd 
-        WHERE gd.id = dispatch_id 
-        AND gd.company_id = get_user_company_id()
-        AND (is_company_admin() OR gd.warehouse_id = get_user_warehouse_id())
+        SELECT 1 FROM goods_outwards go
+        WHERE go.id = outward_id
+        AND go.company_id = get_user_company_id()
+        AND (is_company_admin() OR go.warehouse_id = get_user_warehouse_id())
     )
 );
 
--- Users can manage dispatch items if they can manage the parent dispatch
-CREATE POLICY "Users can manage goods dispatch items in their scope"
-ON goods_dispatch_items
+-- Users can manage outward items if they can manage the parent outward
+CREATE POLICY "Users can manage goods outward items in their scope"
+ON goods_outward_items
 FOR ALL
 TO authenticated
 USING (
     company_id = get_user_company_id() AND
     EXISTS (
-        SELECT 1 FROM goods_dispatches gd 
-        WHERE gd.id = dispatch_id 
-        AND gd.company_id = get_user_company_id()
-        AND (is_company_admin() OR gd.warehouse_id = get_user_warehouse_id())
+        SELECT 1 FROM goods_outwards go
+        WHERE go.id = outward_id
+        AND go.company_id = get_user_company_id()
+        AND (is_company_admin() OR go.warehouse_id = get_user_warehouse_id())
     )
 )
 WITH CHECK (
     company_id = get_user_company_id() AND
     EXISTS (
-        SELECT 1 FROM goods_dispatches gd 
-        WHERE gd.id = dispatch_id 
-        AND gd.company_id = get_user_company_id()
-        AND (is_company_admin() OR gd.warehouse_id = get_user_warehouse_id())
+        SELECT 1 FROM goods_outwards go
+        WHERE go.id = outward_id
+        AND go.company_id = get_user_company_id()
+        AND (is_company_admin() OR go.warehouse_id = get_user_warehouse_id())
     )
 );
 
 -- =====================================================
--- GOODS RECEIPT TABLE RLS POLICIES
+-- GOODS INWARD TABLE RLS POLICIES
 -- =====================================================
 
--- Admins can view all receipts, staff can view receipts for their assigned warehouse
-CREATE POLICY "Users can view goods receipts in their scope"
-ON goods_receipts
+-- Admins can view all inwards, staff can view inwards for their assigned warehouse
+CREATE POLICY "Users can view goods inwards in their scope"
+ON goods_inwards
 FOR SELECT
 TO authenticated
 USING (
@@ -121,9 +120,9 @@ USING (
     )
 );
 
--- Admins can create receipts for any warehouse, staff only for their assigned warehouse
-CREATE POLICY "Users can create goods receipts in their scope"
-ON goods_receipts
+-- Admins can create inwards for any warehouse, staff only for their assigned warehouse
+CREATE POLICY "Users can create goods inwards in their scope"
+ON goods_inwards
 FOR INSERT
 TO authenticated
 WITH CHECK (
@@ -132,9 +131,9 @@ WITH CHECK (
     )
 );
 
--- Admins can update all receipts, staff only for their assigned warehouse
-CREATE POLICY "Users can update goods receipts in their scope"
-ON goods_receipts
+-- Admins can update all inwards, staff only for their assigned warehouse
+CREATE POLICY "Users can update goods inwards in their scope"
+ON goods_inwards
 FOR UPDATE
 TO authenticated
 USING (
@@ -148,9 +147,9 @@ WITH CHECK (
     )
 );
 
--- Only admins can delete receipts (soft delete for audit)
-CREATE POLICY "Company admins can delete goods receipts"
-ON goods_receipts
+-- Only admins can delete inwards (soft delete for audit)
+CREATE POLICY "Company admins can delete goods inwards"
+ON goods_inwards
 FOR DELETE
 TO authenticated
 USING (
@@ -158,54 +157,10 @@ USING (
 );
 
 -- =====================================================
--- GOODS RECEIPT ITEMS TABLE RLS POLICIES
--- =====================================================
-
--- Users can view receipt items if they can view the parent receipt
-CREATE POLICY "Users can view goods receipt items in their scope"
-ON goods_receipt_items
-FOR SELECT
-TO authenticated
-USING (
-    company_id = get_user_company_id() AND
-    EXISTS (
-        SELECT 1 FROM goods_receipts gr 
-        WHERE gr.id = receipt_id 
-        AND gr.company_id = get_user_company_id()
-        AND (is_company_admin() OR gr.warehouse_id = get_user_warehouse_id())
-    )
-);
-
--- Users can manage receipt items if they can manage the parent receipt
-CREATE POLICY "Users can manage goods receipt items in their scope"
-ON goods_receipt_items
-FOR ALL
-TO authenticated
-USING (
-    company_id = get_user_company_id() AND
-    EXISTS (
-        SELECT 1 FROM goods_receipts gr 
-        WHERE gr.id = receipt_id 
-        AND gr.company_id = get_user_company_id()
-        AND (is_company_admin() OR gr.warehouse_id = get_user_warehouse_id())
-    )
-)
-WITH CHECK (
-    company_id = get_user_company_id() AND
-    EXISTS (
-        SELECT 1 FROM goods_receipts gr 
-        WHERE gr.id = receipt_id 
-        AND gr.company_id = get_user_company_id()
-        AND (is_company_admin() OR gr.warehouse_id = get_user_warehouse_id())
-    )
-);
-
--- =====================================================
 -- GRANT PERMISSIONS
 -- =====================================================
 
 -- Grant permissions to authenticated users
-GRANT SELECT, INSERT, UPDATE, DELETE ON goods_dispatches TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON goods_dispatch_items TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON goods_receipts TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON goods_receipt_items TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON goods_outwards TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON goods_outward_items TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON goods_inwards TO authenticated;

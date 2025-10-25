@@ -31,8 +31,8 @@ BEGIN
         WHEN table_name = 'products' THEN 'product_number'
         WHEN table_name = 'sales_orders' THEN 'order_number'
         WHEN table_name = 'job_works' THEN 'job_number'
-        WHEN table_name = 'goods_dispatches' THEN 'dispatch_number'
-        WHEN table_name = 'goods_receipts' THEN 'receipt_number'
+        WHEN table_name = 'goods_outwards' THEN 'outward_number'
+        WHEN table_name = 'goods_inwards' THEN 'inward_number'
         WHEN table_name = 'stock_units' THEN 'unit_number'
         ELSE 'number'
     END;

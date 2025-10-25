@@ -47,7 +47,7 @@ function getActionLabel(type: PartnerType): string {
 			return 'Sales order';
 		case 'supplier':
 		case 'vendor':
-			return 'Goods receipt';
+			return 'Goods inward';
 		default:
 			return 'Job work';
 	}
@@ -85,7 +85,7 @@ export default function PartnersPage() {
 					.filter(Boolean)
 					.join(', ') || undefined,
 				phone: p.phone_number || undefined,
-				// TODO: Fetch transaction amounts from orders/receipts
+				// TODO: Fetch transaction amounts from orders/inwards
 				amount: undefined,
 				transactionType: undefined,
 			}));

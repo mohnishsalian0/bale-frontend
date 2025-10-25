@@ -62,7 +62,7 @@ export type Database = {
             foreignKeyName: "barcode_batch_items_stock_unit_id_fkey"
             columns: ["stock_unit_id"]
             isOneToOne: false
-            referencedRelation: "goods_receipt_stock_units"
+            referencedRelation: "goods_inward_stock_units"
             referencedColumns: ["stock_unit_id"]
           },
           {
@@ -330,62 +330,281 @@ export type Database = {
         }
         Relationships: []
       }
-      goods_dispatch_items: {
+      goods_inwards: {
         Row: {
+          agent_id: string | null
+          attachments: string[] | null
           company_id: string
           created_at: string
-          dispatch_id: string
+          created_by: string
+          deleted_at: string | null
+          from_warehouse_id: string | null
           id: string
-          stock_unit_id: string
+          invoice_amount: number | null
+          invoice_number: string | null
+          inward_date: string
+          inward_number: string
+          inward_type: string
+          job_work_id: string | null
+          modified_by: string | null
+          notes: string | null
+          other_reason: string | null
+          other_reference: string | null
+          partner_id: string | null
+          sales_order_id: string | null
+          transport_details: string | null
           updated_at: string
+          warehouse_id: string
         }
         Insert: {
+          agent_id?: string | null
+          attachments?: string[] | null
           company_id: string
           created_at?: string
-          dispatch_id: string
+          created_by: string
+          deleted_at?: string | null
+          from_warehouse_id?: string | null
           id?: string
-          stock_unit_id: string
+          invoice_amount?: number | null
+          invoice_number?: string | null
+          inward_date?: string
+          inward_number: string
+          inward_type: string
+          job_work_id?: string | null
+          modified_by?: string | null
+          notes?: string | null
+          other_reason?: string | null
+          other_reference?: string | null
+          partner_id?: string | null
+          sales_order_id?: string | null
+          transport_details?: string | null
           updated_at?: string
+          warehouse_id: string
         }
         Update: {
+          agent_id?: string | null
+          attachments?: string[] | null
           company_id?: string
           created_at?: string
-          dispatch_id?: string
+          created_by?: string
+          deleted_at?: string | null
+          from_warehouse_id?: string | null
           id?: string
-          stock_unit_id?: string
+          invoice_amount?: number | null
+          invoice_number?: string | null
+          inward_date?: string
+          inward_number?: string
+          inward_type?: string
+          job_work_id?: string | null
+          modified_by?: string | null
+          notes?: string | null
+          other_reason?: string | null
+          other_reference?: string | null
+          partner_id?: string | null
+          sales_order_id?: string | null
+          transport_details?: string | null
           updated_at?: string
+          warehouse_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "goods_dispatch_items_company_id_fkey"
+            foreignKeyName: "goods_inwards_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "partner_transaction_summary"
+            referencedColumns: ["partner_id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "goods_dispatch_items_company_id_fkey"
+            foreignKeyName: "goods_inwards_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "company_performance_metrics"
             referencedColumns: ["company_id"]
           },
           {
-            foreignKeyName: "goods_dispatch_items_dispatch_id_fkey"
-            columns: ["dispatch_id"]
+            foreignKeyName: "goods_inwards_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "goods_dispatches"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "goods_dispatch_items_stock_unit_id_fkey"
+            foreignKeyName: "goods_inwards_from_warehouse_id_fkey"
+            columns: ["from_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_summary"
+            referencedColumns: ["warehouse_id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_from_warehouse_id_fkey"
+            columns: ["from_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_activity_dashboard"
+            referencedColumns: ["warehouse_id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_from_warehouse_id_fkey"
+            columns: ["from_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_job_work_id_fkey"
+            columns: ["job_work_id"]
+            isOneToOne: false
+            referencedRelation: "job_work_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_job_work_id_fkey"
+            columns: ["job_work_id"]
+            isOneToOne: false
+            referencedRelation: "job_work_progress"
+            referencedColumns: ["job_work_id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_job_work_id_fkey"
+            columns: ["job_work_id"]
+            isOneToOne: false
+            referencedRelation: "job_works"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_modified_by_fkey"
+            columns: ["modified_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_transaction_summary"
+            referencedColumns: ["partner_id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "comprehensive_order_fulfillment"
+            referencedColumns: ["sales_order_id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_order_status"
+            referencedColumns: ["sales_order_id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_summary"
+            referencedColumns: ["warehouse_id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_activity_dashboard"
+            referencedColumns: ["warehouse_id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goods_outward_items: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          outward_id: string
+          stock_unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          outward_id: string
+          stock_unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          outward_id?: string
+          stock_unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goods_outward_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_outward_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_performance_metrics"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "goods_outward_items_outward_id_fkey"
+            columns: ["outward_id"]
+            isOneToOne: false
+            referencedRelation: "goods_outwards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_outward_items_stock_unit_id_fkey"
             columns: ["stock_unit_id"]
             isOneToOne: false
-            referencedRelation: "goods_receipt_stock_units"
+            referencedRelation: "goods_inward_stock_units"
             referencedColumns: ["stock_unit_id"]
           },
           {
-            foreignKeyName: "goods_dispatch_items_stock_unit_id_fkey"
+            foreignKeyName: "goods_outward_items_stock_unit_id_fkey"
             columns: ["stock_unit_id"]
             isOneToOne: false
             referencedRelation: "stock_units"
@@ -393,7 +612,7 @@ export type Database = {
           },
         ]
       }
-      goods_dispatches: {
+      goods_outwards: {
         Row: {
           agent_id: string | null
           attachments: string[] | null
@@ -404,9 +623,6 @@ export type Database = {
           created_at: string
           created_by: string
           deleted_at: string | null
-          dispatch_date: string
-          dispatch_number: string
-          dispatch_type: string
           due_date: string | null
           id: string
           invoice_amount: number | null
@@ -417,6 +633,9 @@ export type Database = {
           notes: string | null
           other_reason: string | null
           other_reference: string | null
+          outward_date: string
+          outward_number: string
+          outward_type: string
           partner_id: string | null
           sales_order_id: string | null
           to_warehouse_id: string | null
@@ -434,9 +653,6 @@ export type Database = {
           created_at?: string
           created_by: string
           deleted_at?: string | null
-          dispatch_date?: string
-          dispatch_number: string
-          dispatch_type: string
           due_date?: string | null
           id?: string
           invoice_amount?: number | null
@@ -447,6 +663,9 @@ export type Database = {
           notes?: string | null
           other_reason?: string | null
           other_reference?: string | null
+          outward_date?: string
+          outward_number: string
+          outward_type: string
           partner_id?: string | null
           sales_order_id?: string | null
           to_warehouse_id?: string | null
@@ -464,9 +683,6 @@ export type Database = {
           created_at?: string
           created_by?: string
           deleted_at?: string | null
-          dispatch_date?: string
-          dispatch_number?: string
-          dispatch_type?: string
           due_date?: string | null
           id?: string
           invoice_amount?: number | null
@@ -477,6 +693,9 @@ export type Database = {
           notes?: string | null
           other_reason?: string | null
           other_reference?: string | null
+          outward_date?: string
+          outward_number?: string
+          outward_type?: string
           partner_id?: string | null
           sales_order_id?: string | null
           to_warehouse_id?: string | null
@@ -486,442 +705,147 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "goods_dispatches_agent_id_fkey"
+            foreignKeyName: "goods_outwards_agent_id_fkey"
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "partner_transaction_summary"
             referencedColumns: ["partner_id"]
           },
           {
-            foreignKeyName: "goods_dispatches_agent_id_fkey"
+            foreignKeyName: "goods_outwards_agent_id_fkey"
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "goods_dispatches_cancelled_by_fkey"
+            foreignKeyName: "goods_outwards_cancelled_by_fkey"
             columns: ["cancelled_by"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "goods_dispatches_company_id_fkey"
+            foreignKeyName: "goods_outwards_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "goods_dispatches_company_id_fkey"
+            foreignKeyName: "goods_outwards_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "company_performance_metrics"
             referencedColumns: ["company_id"]
           },
           {
-            foreignKeyName: "goods_dispatches_created_by_fkey"
+            foreignKeyName: "goods_outwards_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "goods_dispatches_job_work_id_fkey"
+            foreignKeyName: "goods_outwards_job_work_id_fkey"
             columns: ["job_work_id"]
             isOneToOne: false
             referencedRelation: "job_work_details"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "goods_dispatches_job_work_id_fkey"
+            foreignKeyName: "goods_outwards_job_work_id_fkey"
             columns: ["job_work_id"]
             isOneToOne: false
             referencedRelation: "job_work_progress"
             referencedColumns: ["job_work_id"]
           },
           {
-            foreignKeyName: "goods_dispatches_job_work_id_fkey"
+            foreignKeyName: "goods_outwards_job_work_id_fkey"
             columns: ["job_work_id"]
             isOneToOne: false
             referencedRelation: "job_works"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "goods_dispatches_modified_by_fkey"
+            foreignKeyName: "goods_outwards_modified_by_fkey"
             columns: ["modified_by"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "goods_dispatches_partner_id_fkey"
+            foreignKeyName: "goods_outwards_partner_id_fkey"
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partner_transaction_summary"
             referencedColumns: ["partner_id"]
           },
           {
-            foreignKeyName: "goods_dispatches_partner_id_fkey"
+            foreignKeyName: "goods_outwards_partner_id_fkey"
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "goods_dispatches_sales_order_id_fkey"
+            foreignKeyName: "goods_outwards_sales_order_id_fkey"
             columns: ["sales_order_id"]
             isOneToOne: false
             referencedRelation: "comprehensive_order_fulfillment"
             referencedColumns: ["sales_order_id"]
           },
           {
-            foreignKeyName: "goods_dispatches_sales_order_id_fkey"
+            foreignKeyName: "goods_outwards_sales_order_id_fkey"
             columns: ["sales_order_id"]
             isOneToOne: false
             referencedRelation: "sales_order_status"
             referencedColumns: ["sales_order_id"]
           },
           {
-            foreignKeyName: "goods_dispatches_sales_order_id_fkey"
+            foreignKeyName: "goods_outwards_sales_order_id_fkey"
             columns: ["sales_order_id"]
             isOneToOne: false
             referencedRelation: "sales_orders"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "goods_dispatches_to_warehouse_id_fkey"
+            foreignKeyName: "goods_outwards_to_warehouse_id_fkey"
             columns: ["to_warehouse_id"]
             isOneToOne: false
             referencedRelation: "inventory_summary"
             referencedColumns: ["warehouse_id"]
           },
           {
-            foreignKeyName: "goods_dispatches_to_warehouse_id_fkey"
+            foreignKeyName: "goods_outwards_to_warehouse_id_fkey"
             columns: ["to_warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouse_activity_dashboard"
             referencedColumns: ["warehouse_id"]
           },
           {
-            foreignKeyName: "goods_dispatches_to_warehouse_id_fkey"
+            foreignKeyName: "goods_outwards_to_warehouse_id_fkey"
             columns: ["to_warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "goods_dispatches_warehouse_id_fkey"
+            foreignKeyName: "goods_outwards_warehouse_id_fkey"
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "inventory_summary"
             referencedColumns: ["warehouse_id"]
           },
           {
-            foreignKeyName: "goods_dispatches_warehouse_id_fkey"
+            foreignKeyName: "goods_outwards_warehouse_id_fkey"
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouse_activity_dashboard"
             referencedColumns: ["warehouse_id"]
           },
           {
-            foreignKeyName: "goods_dispatches_warehouse_id_fkey"
-            columns: ["warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "warehouses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      goods_receipt_items: {
-        Row: {
-          company_id: string
-          created_at: string
-          id: string
-          notes: string | null
-          product_id: string
-          quantity_received: number
-          receipt_id: string
-          updated_at: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          id?: string
-          notes?: string | null
-          product_id: string
-          quantity_received: number
-          receipt_id: string
-          updated_at?: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          id?: string
-          notes?: string | null
-          product_id?: string
-          quantity_received?: number
-          receipt_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "goods_receipt_items_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "goods_receipt_items_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "company_performance_metrics"
-            referencedColumns: ["company_id"]
-          },
-          {
-            foreignKeyName: "goods_receipt_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "inventory_summary"
-            referencedColumns: ["product_id"]
-          },
-          {
-            foreignKeyName: "goods_receipt_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "goods_receipt_items_receipt_id_fkey"
-            columns: ["receipt_id"]
-            isOneToOne: false
-            referencedRelation: "goods_receipt_stock_units"
-            referencedColumns: ["receipt_id"]
-          },
-          {
-            foreignKeyName: "goods_receipt_items_receipt_id_fkey"
-            columns: ["receipt_id"]
-            isOneToOne: false
-            referencedRelation: "goods_receipts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      goods_receipts: {
-        Row: {
-          agent_id: string | null
-          attachments: string[] | null
-          company_id: string
-          created_at: string
-          created_by: string
-          deleted_at: string | null
-          from_warehouse_id: string | null
-          id: string
-          invoice_amount: number | null
-          invoice_number: string | null
-          job_work_id: string | null
-          modified_by: string | null
-          notes: string | null
-          other_reason: string | null
-          other_reference: string | null
-          partner_id: string | null
-          receipt_date: string
-          receipt_number: string
-          receipt_type: string
-          sales_order_id: string | null
-          transport_details: string | null
-          updated_at: string
-          warehouse_id: string
-        }
-        Insert: {
-          agent_id?: string | null
-          attachments?: string[] | null
-          company_id: string
-          created_at?: string
-          created_by: string
-          deleted_at?: string | null
-          from_warehouse_id?: string | null
-          id?: string
-          invoice_amount?: number | null
-          invoice_number?: string | null
-          job_work_id?: string | null
-          modified_by?: string | null
-          notes?: string | null
-          other_reason?: string | null
-          other_reference?: string | null
-          partner_id?: string | null
-          receipt_date?: string
-          receipt_number: string
-          receipt_type: string
-          sales_order_id?: string | null
-          transport_details?: string | null
-          updated_at?: string
-          warehouse_id: string
-        }
-        Update: {
-          agent_id?: string | null
-          attachments?: string[] | null
-          company_id?: string
-          created_at?: string
-          created_by?: string
-          deleted_at?: string | null
-          from_warehouse_id?: string | null
-          id?: string
-          invoice_amount?: number | null
-          invoice_number?: string | null
-          job_work_id?: string | null
-          modified_by?: string | null
-          notes?: string | null
-          other_reason?: string | null
-          other_reference?: string | null
-          partner_id?: string | null
-          receipt_date?: string
-          receipt_number?: string
-          receipt_type?: string
-          sales_order_id?: string | null
-          transport_details?: string | null
-          updated_at?: string
-          warehouse_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "goods_receipts_agent_id_fkey"
-            columns: ["agent_id"]
-            isOneToOne: false
-            referencedRelation: "partner_transaction_summary"
-            referencedColumns: ["partner_id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_agent_id_fkey"
-            columns: ["agent_id"]
-            isOneToOne: false
-            referencedRelation: "partners"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "company_performance_metrics"
-            referencedColumns: ["company_id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_from_warehouse_id_fkey"
-            columns: ["from_warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "inventory_summary"
-            referencedColumns: ["warehouse_id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_from_warehouse_id_fkey"
-            columns: ["from_warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "warehouse_activity_dashboard"
-            referencedColumns: ["warehouse_id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_from_warehouse_id_fkey"
-            columns: ["from_warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "warehouses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_job_work_id_fkey"
-            columns: ["job_work_id"]
-            isOneToOne: false
-            referencedRelation: "job_work_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_job_work_id_fkey"
-            columns: ["job_work_id"]
-            isOneToOne: false
-            referencedRelation: "job_work_progress"
-            referencedColumns: ["job_work_id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_job_work_id_fkey"
-            columns: ["job_work_id"]
-            isOneToOne: false
-            referencedRelation: "job_works"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_modified_by_fkey"
-            columns: ["modified_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_partner_id_fkey"
-            columns: ["partner_id"]
-            isOneToOne: false
-            referencedRelation: "partner_transaction_summary"
-            referencedColumns: ["partner_id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_partner_id_fkey"
-            columns: ["partner_id"]
-            isOneToOne: false
-            referencedRelation: "partners"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_sales_order_id_fkey"
-            columns: ["sales_order_id"]
-            isOneToOne: false
-            referencedRelation: "comprehensive_order_fulfillment"
-            referencedColumns: ["sales_order_id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_sales_order_id_fkey"
-            columns: ["sales_order_id"]
-            isOneToOne: false
-            referencedRelation: "sales_order_status"
-            referencedColumns: ["sales_order_id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_sales_order_id_fkey"
-            columns: ["sales_order_id"]
-            isOneToOne: false
-            referencedRelation: "sales_orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_warehouse_id_fkey"
-            columns: ["warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "inventory_summary"
-            referencedColumns: ["warehouse_id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_warehouse_id_fkey"
-            columns: ["warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "warehouse_activity_dashboard"
-            referencedColumns: ["warehouse_id"]
-          },
-          {
-            foreignKeyName: "goods_receipts_warehouse_id_fkey"
+            foreignKeyName: "goods_outwards_warehouse_id_fkey"
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"
@@ -1928,7 +1852,7 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string
-          created_from_receipt_id: string | null
+          created_from_inward_id: string | null
           deleted_at: string | null
           id: string
           location_description: string | null
@@ -1951,7 +1875,7 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by: string
-          created_from_receipt_id?: string | null
+          created_from_inward_id?: string | null
           deleted_at?: string | null
           id?: string
           location_description?: string | null
@@ -1974,7 +1898,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string
-          created_from_receipt_id?: string | null
+          created_from_inward_id?: string | null
           deleted_at?: string | null
           id?: string
           location_description?: string | null
@@ -1993,17 +1917,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_stock_unit_receipt"
-            columns: ["created_from_receipt_id"]
+            foreignKeyName: "fk_stock_unit_inward"
+            columns: ["created_from_inward_id"]
             isOneToOne: false
-            referencedRelation: "goods_receipt_stock_units"
-            referencedColumns: ["receipt_id"]
+            referencedRelation: "goods_inward_stock_units"
+            referencedColumns: ["inward_id"]
           },
           {
-            foreignKeyName: "fk_stock_unit_receipt"
-            columns: ["created_from_receipt_id"]
+            foreignKeyName: "fk_stock_unit_inward"
+            columns: ["created_from_inward_id"]
             isOneToOne: false
-            referencedRelation: "goods_receipts"
+            referencedRelation: "goods_inwards"
             referencedColumns: ["id"]
           },
           {
@@ -2255,12 +2179,12 @@ export type Database = {
           catalog_status: string | null
           company_id: string | null
           company_name: string | null
-          dispatches_last_30_days: number | null
           domain_slug: string | null
+          inwards_last_30_days: number | null
           job_works_last_30_days: number | null
           last_activity_at: string | null
+          outwards_last_30_days: number | null
           pending_orders: number | null
-          receipts_last_30_days: number | null
           sales_orders_last_30_days: number | null
           sales_value_last_30_days: number | null
           total_partners: number | null
@@ -2313,10 +2237,13 @@ export type Database = {
           },
         ]
       }
-      goods_receipt_stock_units: {
+      goods_inward_stock_units: {
         Row: {
           barcode_generated: boolean | null
           color: string | null
+          inward_date: string | null
+          inward_id: string | null
+          inward_number: string | null
           location_description: string | null
           manufacturing_date: string | null
           material: string | null
@@ -2324,9 +2251,6 @@ export type Database = {
           product_name: string | null
           qr_code: string | null
           quality_grade: string | null
-          receipt_date: string | null
-          receipt_id: string | null
-          receipt_number: string | null
           size_quantity: number | null
           status: string | null
           stock_unit_id: string | null
@@ -2341,13 +2265,13 @@ export type Database = {
           created_by_user_id: string | null
           direction: string | null
           invoice_amount: number | null
+          inward_type: string | null
           items_count: number | null
           job_work_id: string | null
           movement_type: string | null
           other_reference: string | null
           partner_name: string | null
           partner_type: string | null
-          receipt_type: string | null
           sales_order_id: string | null
           total_quantity: number | null
           transaction_date: string | null
@@ -2584,9 +2508,9 @@ export type Database = {
           completed_sales_orders: number | null
           days_since_last_activity: number | null
           email: string | null
-          goods_dispatched_to: number | null
-          goods_dispatched_via_agent: number | null
-          goods_received_from: number | null
+          goods_inward_from: number | null
+          goods_outward_to: number | null
+          goods_outward_via_agent: number | null
           last_transaction_at: string | null
           partner_id: string | null
           partner_name: string | null
@@ -2654,11 +2578,11 @@ export type Database = {
           available_units: number | null
           company_id: string | null
           dispatched_units: number | null
-          dispatches_last_30_days: number | null
+          inwards_last_30_days: number | null
           job_works_last_30_days: number | null
           last_activity_at: string | null
+          outwards_last_30_days: number | null
           pending_sales_orders: number | null
-          receipts_last_30_days: number | null
           total_stock_units: number | null
           units_without_barcodes: number | null
           warehouse_id: string | null

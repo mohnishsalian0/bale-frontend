@@ -8,18 +8,18 @@ export type UserRole = 'admin' | 'staff';
 export type PartnerType = 'customer' | 'vendor' | 'supplier' | 'agent';
 
 export type MaterialType =
-  // Natural Fibers
-  | 'Cotton' | 'Silk' | 'Wool' | 'Linen' | 'Jute' | 'Hemp' | 'Cashmere' | 'Mohair' | 'Alpaca'
-  // Synthetic Fibers
-  | 'Polyester' | 'Nylon' | 'Acrylic' | 'Spandex' | 'Lycra' | 'Rayon' | 'Viscose' | 'Modal'
-  // Semi-Synthetic
-  | 'Bamboo' | 'Tencel' | 'Cupro'
-  // Specialty/Technical
-  | 'Microfiber' | 'Fleece' | 'Denim' | 'Canvas' | 'Twill' | 'Satin' | 'Chiffon' | 'Georgette'
-  | 'Organza' | 'Taffeta' | 'Velvet' | 'Corduroy' | 'Jacquard' | 'Brocade'
-  // Blends & Custom
-  | 'Cotton-Polyester' | 'Cotton-Spandex' | 'Cotton-Linen' | 'Poly-Cotton' | 'Wool-Silk'
-  | 'Silk-Cotton' | 'Blend' | 'Custom';
+	// Natural Fibers
+	| 'Cotton' | 'Silk' | 'Wool' | 'Linen' | 'Jute' | 'Hemp' | 'Cashmere' | 'Mohair' | 'Alpaca'
+	// Synthetic Fibers
+	| 'Polyester' | 'Nylon' | 'Acrylic' | 'Spandex' | 'Lycra' | 'Rayon' | 'Viscose' | 'Modal'
+	// Semi-Synthetic
+	| 'Bamboo' | 'Tencel' | 'Cupro'
+	// Specialty/Technical
+	| 'Microfiber' | 'Fleece' | 'Denim' | 'Canvas' | 'Twill' | 'Satin' | 'Chiffon' | 'Georgette'
+	| 'Organza' | 'Taffeta' | 'Velvet' | 'Corduroy' | 'Jacquard' | 'Brocade'
+	// Blends & Custom
+	| 'Cotton-Polyester' | 'Cotton-Spandex' | 'Cotton-Linen' | 'Poly-Cotton' | 'Wool-Silk'
+	| 'Silk-Cotton' | 'Blend' | 'Custom';
 
 export type MeasuringUnit = 'Meters' | 'Yards' | 'Kg' | 'Pieces';
 

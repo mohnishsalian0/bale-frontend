@@ -9,9 +9,9 @@
 - [x] Configure Tailwind CSS with theme
 
 ## Phase 2: Database & Security
-- [x] Design and create database schema (companies, staff, warehouses, products, stock_units, partners, orders, job_works, dispatches, receipts)
+- [x] Design and create database schema (companies, staff, warehouses, products, stock_units, partners, orders, job_works, outwards, inwards)
 - [x] Implement Row Level Security policies (tenant isolation, warehouse scoping, role-based permissions)
-- [x] Review and update migration schema (dispatch/receipt types, stock status)
+- [x] Review and update migration schema (outward/inward types, stock status)
 - [x] Create TypeScript database type definitions (enums)
 - [x] Initialize Supabase locally (Docker + migrations copied)
 - [x] Fix Supabase services startup and verify all containers running
@@ -97,24 +97,24 @@
 - [ ] Delete partner functionality
 - [ ] Partner detail view
 
-## Phase 7: Iteration 3 - Receipt/Stock/Inventory
-- [ ] Goods receipt form with automatic stock unit creation
+## Phase 7: Iteration 3 - Inward/Stock/Inventory
+- [ ] Goods inward form with automatic stock unit creation
 - [ ] Stock units list with warehouse filtering
 - [ ] Inventory dashboard with summary cards
 - [ ] Stock unit detail and edit
 
-## Phase 8: Iteration 4 - Dispatch/Barcode Scanning
-- [ ] Goods dispatch form (partner or warehouse transfer)
+## Phase 8: Iteration 4 - Outward/Barcode Scanning
+- [ ] Goods outward form (partner or warehouse transfer)
 - [ ] Stock unit selection with real-time validation
 - [ ] PWA barcode scanning with camera
-- [ ] Dispatch cancellation functionality
+- [ ] Outward cancellation functionality
 
 ## Phase 9: Iteration 5 - Sales Orders/Job Work
 - [ ] Sales order CRUD with line items
 - [ ] Order status workflow (approval_pending → in_progress → completed/cancelled)
 - [ ] Real-time fulfillment tracking per warehouse
 - [ ] Job work CRUD with raw/finished goods tracking
-- [ ] Link dispatches/receipts to job work
+- [ ] Link outwards/inwards to job work
 
 ## Phase 10: Iteration 6 - Barcode Generation/Public Catalog
 - [ ] Barcode generation (unit selection, field customization, PDF output)
