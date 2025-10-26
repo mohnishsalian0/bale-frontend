@@ -121,9 +121,9 @@ export default function InventoryPage() {
 						<h1 className="text-3xl font-bold text-gray-900">Inventory</h1>
 						<p className="text-sm text-gray-500">
 							<span>3000 items  •  </span>
-							<span className="text-teal-700">200 order request</span>
+							<span className="text-teal-700 font-medium">200 order request</span>
 							<span>  •  </span>
-							<span className="text-yellow-700">5 low stock products</span>
+							<span className="text-yellow-700 font-medium">5 low stock products</span>
 						</p>
 					</div>
 

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup as RadioGroupPills, RadioGroupItem as RadioGroupItemPills } from '@/components/ui/radio-group-pills';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Sheet, SheetContent, SheetFooter, SheetHeader } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
 import type { TablesInsert, Tables } from '@/types/database/supabase';
 import type { UserRole } from '@/types/database/enums';
@@ -151,7 +151,7 @@ export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffShee
 			<SheetContent>
 				{/* Header */}
 				<SheetHeader>
-					<h2 className="text-2xl font-bold text-gray-900">Staff invite</h2>
+					<SheetTitle>Staff invite</SheetTitle>
 				</SheetHeader>
 
 				{/* Form Content - Scrollable */}

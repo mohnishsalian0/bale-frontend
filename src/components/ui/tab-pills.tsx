@@ -19,7 +19,7 @@ const TabPills = React.forwardRef<HTMLDivElement, TabPillsProps>(
 			<div
 				ref={ref}
 				className={cn(
-					'bg-primary-200 flex gap-1 h-11 items-center p-1 rounded-md w-fit',
+					'bg-primary-100 flex gap-1 h-11 items-center p-1 pb-1.5 rounded-md w-fit',
 					className
 				)}
 			>
@@ -29,7 +29,7 @@ const TabPills = React.forwardRef<HTMLDivElement, TabPillsProps>(
 						type="button"
 						onClick={() => onValueChange(option.value)}
 						className={cn(
-							'px-2 py-1.5 rounded text-sm font-medium transition-colors',
+							'px-2 py-1.5 pb-1 rounded text-sm font-medium transition-colors',
 							value === option.value
 								? 'bg-white text-gray-700 border border-gray-300 shadow-gray-sm'
 								: 'text-gray-700'

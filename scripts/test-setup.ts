@@ -810,7 +810,261 @@ async function createTestPartners() {
 		}
 	}
 
-	// 5. Create invite for the test company
+	// Create sales orders
+	console.log('\n📋 Creating test sales orders...\n');
+
+	if (customerError || !customerPartners || customerPartners.length === 0) {
+		console.error('❌ No customers found for creating sales orders');
+	} else {
+		const customerId1 = customerPartners[0].id;
+		const customerId2 = customerPartners.length > 1 ? customerPartners[1].id : customerId1;
+
+		// Get product IDs
+		const { data: productsList, error: productsError } = await supabase
+			.from('products')
+			.select('id, name')
+			.eq('company_id', companyId)
+			.limit(8);
+
+		if (productsError || !productsList || productsList.length === 0) {
+			console.error('❌ No products found for creating sales orders');
+		} else {
+			// Create dates spanning 3 months
+			const now = new Date();
+			const currentMonth = new Date(now.getFullYear(), now.getMonth(), 5);
+			const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+			const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 20);
+
+			// Define 10 sales orders with different statuses
+			const testSalesOrders = [
+				// Two months ago - all completed/cancelled
+				{
+					company_id: companyId,
+					created_by: createdBy,
+					fulfillment_warehouse_id: warehouseId,
+					customer_id: customerId1,
+					order_number: 'SO-001',
+					order_date: twoMonthsAgo.toISOString().split('T')[0],
+					expected_delivery_date: new Date(twoMonthsAgo.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					status: 'completed',
+					total_amount: 25000.00,
+					advance_amount: 10000.00,
+					discount_percentage: 5,
+					notes: 'Bulk order for wedding season',
+				},
+				{
+					company_id: companyId,
+					created_by: createdBy,
+					fulfillment_warehouse_id: warehouseId,
+					customer_id: customerId2,
+					order_number: 'SO-002',
+					order_date: new Date(twoMonthsAgo.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					expected_delivery_date: new Date(twoMonthsAgo.getTime() + 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					status: 'completed',
+					total_amount: 18000.00,
+					advance_amount: 9000.00,
+					discount_percentage: 10,
+					notes: 'Regular customer order',
+				},
+				{
+					company_id: companyId,
+					created_by: createdBy,
+					fulfillment_warehouse_id: warehouseId,
+					customer_id: customerId1,
+					order_number: 'SO-003',
+					order_date: new Date(twoMonthsAgo.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					expected_delivery_date: new Date(twoMonthsAgo.getTime() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					status: 'cancelled',
+					total_amount: 15000.00,
+					advance_amount: 5000.00,
+					discount_percentage: 0,
+					notes: 'Cancelled due to design changes',
+				},
+
+				// Last month - mix of statuses
+				{
+					company_id: companyId,
+					created_by: createdBy,
+					fulfillment_warehouse_id: warehouseId,
+					customer_id: customerId2,
+					order_number: 'SO-004',
+					order_date: lastMonth.toISOString().split('T')[0],
+					expected_delivery_date: new Date(lastMonth.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					status: 'completed',
+					total_amount: 32000.00,
+					advance_amount: 16000.00,
+					discount_percentage: 8,
+					notes: 'Premium silk order',
+				},
+				{
+					company_id: companyId,
+					created_by: createdBy,
+					fulfillment_warehouse_id: warehouseId,
+					customer_id: customerId1,
+					order_number: 'SO-005',
+					order_date: new Date(lastMonth.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					expected_delivery_date: new Date(lastMonth.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Overdue
+					status: 'in_progress',
+					total_amount: 28000.00,
+					advance_amount: 14000.00,
+					discount_percentage: 5,
+					notes: 'Delayed due to material shortage',
+				},
+				{
+					company_id: companyId,
+					created_by: createdBy,
+					fulfillment_warehouse_id: warehouseId,
+					customer_id: customerId2,
+					order_number: 'SO-006',
+					order_date: new Date(lastMonth.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					expected_delivery_date: new Date(lastMonth.getTime() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					status: 'completed',
+					total_amount: 22000.00,
+					advance_amount: 11000.00,
+					discount_percentage: 12,
+					notes: 'Festive collection order',
+				},
+
+				// Current month - mostly pending/in progress
+				{
+					company_id: companyId,
+					created_by: createdBy,
+					fulfillment_warehouse_id: warehouseId,
+					customer_id: customerId1,
+					order_number: 'SO-007',
+					order_date: currentMonth.toISOString().split('T')[0],
+					expected_delivery_date: new Date(currentMonth.getTime() + 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					status: 'approval_pending',
+					total_amount: 35000.00,
+					advance_amount: 17500.00,
+					discount_percentage: 7,
+					notes: 'Awaiting customer approval on design',
+				},
+				{
+					company_id: companyId,
+					created_by: createdBy,
+					fulfillment_warehouse_id: warehouseId,
+					customer_id: customerId2,
+					order_number: 'SO-008',
+					order_date: new Date(currentMonth.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					expected_delivery_date: new Date(currentMonth.getTime() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					status: 'in_progress',
+					total_amount: 42000.00,
+					advance_amount: 21000.00,
+					discount_percentage: 10,
+					notes: 'Large order in production',
+				},
+				{
+					company_id: companyId,
+					created_by: createdBy,
+					fulfillment_warehouse_id: warehouseId,
+					customer_id: customerId1,
+					order_number: 'SO-009',
+					order_date: new Date(currentMonth.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					expected_delivery_date: new Date(currentMonth.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Overdue
+					status: 'in_progress',
+					total_amount: 19000.00,
+					advance_amount: 9500.00,
+					discount_percentage: 5,
+					notes: 'Rush order - overdue',
+				},
+				{
+					company_id: companyId,
+					created_by: createdBy,
+					fulfillment_warehouse_id: warehouseId,
+					customer_id: customerId2,
+					order_number: 'SO-010',
+					order_date: new Date(currentMonth.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					expected_delivery_date: new Date(currentMonth.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+					status: 'approval_pending',
+					total_amount: 38000.00,
+					advance_amount: 19000.00,
+					discount_percentage: 15,
+					notes: 'New customer - premium discount',
+				},
+			];
+
+			for (const order of testSalesOrders) {
+				// Check if order already exists
+				const { data: existingOrder } = await supabase
+					.from('sales_orders')
+					.select('id, order_number')
+					.eq('company_id', companyId)
+					.eq('order_number', order.order_number)
+					.single();
+
+				let orderId: string;
+
+				if (existingOrder) {
+					console.log(`⏭️  Sales order ${order.order_number} already exists`);
+					orderId = existingOrder.id;
+				} else {
+					const { data, error } = await supabase
+						.from('sales_orders')
+						.insert(order)
+						.select()
+						.single();
+
+					if (error) {
+						console.error(`❌ Failed to create sales order: ${order.order_number}`);
+						console.error(`   Error: ${error.message}`);
+						continue;
+					} else {
+						orderId = data.id;
+						console.log(`✅ Created sales order: ${order.order_number} (${order.status})`);
+					}
+				}
+
+				// Check if order items already exist
+				const { data: existingItems, error: checkItemsError } = await supabase
+					.from('sales_order_items')
+					.select('id')
+					.eq('sales_order_id', orderId);
+
+				if (checkItemsError) {
+					console.error(`   ❌ Failed to check existing items: ${checkItemsError.message}`);
+					continue;
+				}
+
+				if (existingItems && existingItems.length > 0) {
+					console.log(`   ⏭️  Order items already exist (${existingItems.length} items)`);
+					continue;
+				}
+
+				// Create order items (2-4 products per order)
+				const itemCount = Math.floor(Math.random() * 3) + 2; // 2-4 items
+				for (let i = 0; i < itemCount && i < productsList.length; i++) {
+					const requiredQty = Math.floor(Math.random() * 20) + 5; // 5-25 units
+					const dispatchedQty = order.status === 'completed'
+						? requiredQty
+						: order.status === 'cancelled'
+							? 0
+							: Math.floor(requiredQty * (Math.random() * 0.5 + 0.3)); // 30-80% dispatched
+
+					const { error: itemError } = await supabase
+						.from('sales_order_items')
+						.insert({
+							company_id: companyId,
+							sales_order_id: orderId,
+							product_id: productsList[i].id,
+							required_quantity: requiredQty,
+							dispatched_quantity: dispatchedQty,
+							notes: `${productsList[i].name} - ${requiredQty} units`,
+						});
+
+					if (itemError) {
+						console.error(`   ❌ Failed to create order item: ${itemError.message}`);
+					} else {
+						console.log(`   ✅ Added item: ${productsList[i].name} (${dispatchedQty}/${requiredQty} dispatched)`);
+					}
+				}
+			}
+
+			console.log('\n✨ Test sales orders created successfully!');
+		}
+	}
+
+	// Create invite for the test company
 	console.log('\n🎟️  Creating admin invite for test company...');
 	const adminToken = randomBytes(32).toString('hex');
 	const expiresAt = new Date();

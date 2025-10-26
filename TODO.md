@@ -98,20 +98,44 @@
 - [ ] Partner detail view
 
 ## Phase 7: Iteration 3 - Inward/Stock/Inventory
-- [ ] Goods inward form with automatic stock unit creation
+- [x] Stock flow page UI with month grouping, search, filters, and transaction list
+- [x] Connect stock flow page to Supabase (fetch inwards/outwards with related data)
+- [ ] Add goods inward form with automatic stock unit creation
+- [ ] View goods inward details page
+- [ ] View goods inward stock units page
 - [ ] Stock units list with warehouse filtering
 - [ ] Inventory dashboard with summary cards
 - [ ] Stock unit detail and edit
 
 ## Phase 8: Iteration 4 - Outward/Barcode Scanning
-- [ ] Goods outward form (partner or warehouse transfer)
+- [ ] Add goods outward form (partner or warehouse transfer)
+- [ ] View goods outward details page
+- [ ] View goods outward stock units page
 - [ ] Stock unit selection with real-time validation
 - [ ] PWA barcode scanning with camera
 - [ ] Outward cancellation functionality
 
 ## Phase 9: Iteration 5 - Sales Orders/Job Work
-- [ ] Sales order CRUD with line items
-- [ ] Order status workflow (approval_pending → in_progress → completed/cancelled)
+- [x] Sales orders page UI with month grouping, search, filters (status, products, customers)
+- [x] Connect sales orders page to Supabase (fetch orders with customer and product details)
+- [x] Display order cards with customer name, products, due date, status badges
+- [x] Implement progress bars for in-progress and overdue orders
+- [x] Calculate completion percentage from dispatched vs required quantities
+- [x] Implement overdue detection (compare due date with current date)
+- [x] Support all order statuses (approval_pending, in_progress, overdue, completed, cancelled)
+- [x] Create test data script with 10 sales orders spanning 3 months
+- [x] Create AddSalesOrderSheet component with 2-step flow (products → details)
+- [x] Implement Step 1: Product selection with search and filters (material, color, tags)
+- [x] Install shadcn Dialog and Drawer components
+- [x] Create ProductQuantitySheet with responsive design (Dialog on desktop, Drawer on mobile)
+- [x] Implement quantity input with increment/decrement controls
+- [x] Update product buttons to show quantity when selected (primary button with "150 mtr" format)
+- [ ] Fix Dialog/Drawer styling issues
+- [ ] Implement Step 2: Order details form (customer, dates, warehouse, financial details)
+- [ ] Add sales order form submission with line items creation
+- [ ] View sales order details page
+- [ ] Edit sales order functionality
+- [ ] Order status workflow transitions (approval_pending → in_progress → completed/cancelled)
 - [ ] Real-time fulfillment tracking per warehouse
 - [ ] Job work CRUD with raw/finished goods tracking
 - [ ] Link outwards/inwards to job work

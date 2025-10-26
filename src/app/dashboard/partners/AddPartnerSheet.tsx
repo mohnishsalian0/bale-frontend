@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group-pills';
-import { Sheet, SheetContent, SheetFooter, SheetHeader } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { validateImageFile, uploadPartnerImage } from '@/lib/storage';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
@@ -186,7 +186,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 			<SheetContent>
 				{/* Header */}
 				<SheetHeader>
-					<h2 className="text-2xl font-bold text-gray-900">Add partner</h2>
+					<SheetTitle>Add partner</SheetTitle>
 				</SheetHeader>
 
 				{/* Form Content - Scrollable */}

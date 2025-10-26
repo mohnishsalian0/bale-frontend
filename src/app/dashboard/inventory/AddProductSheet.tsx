@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sheet, SheetContent, SheetFooter, SheetHeader } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { validateImageFile, uploadProductImage, MAX_PRODUCT_IMAGES } from '@/lib/storage';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
@@ -230,7 +230,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 			<SheetContent>
 				{/* Header */}
 				<SheetHeader>
-					<h2 className="text-2xl font-bold text-gray-900">Create product</h2>
+					<SheetTitle>Create product</SheetTitle>
 				</SheetHeader>
 
 				{/* Form Content - Scrollable */}
