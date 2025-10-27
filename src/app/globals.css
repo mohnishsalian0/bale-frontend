@@ -120,8 +120,8 @@
   --color-input: var(--input);
 
   /* Text colors */
-  --color-gray-foreground: var(--gray-foreground);
-  --color-gray-muted-foreground: var(--gray-muted-foreground);
+  --color-foreground: var(--gray-foreground);
+  --color-muted-foreground: var(--gray-muted-foreground);
 
   /* Background colors */
   --color-background: var(--background);
@@ -168,6 +168,26 @@
       linear-gradient(to bottom, var(--color-gray-100) 1px, transparent 1px);
     background-size: 24px 24px;
   }
+
+	/* Remove spin buttons from number inputs */
+	input[type="number"]::-webkit-outer-spin-button,
+	input[type="number"]::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+
+	
+	/* Remove the calendar icon from date inputs (Chrome, Safari, Edge) */
+	input[type="date"]::-webkit-calendar-picker-indicator {
+		display: none;
+		-webkit-appearance: none;
+	}
+
+	/* Optional: normalize appearance on Firefox */
+	input[type="number"],
+	input[type="date"] {
+		-moz-appearance: textfield;
+	}
 }
 
 /* @layer base { */

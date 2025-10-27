@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { IconSearch } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
@@ -207,25 +207,28 @@ export default function OrdersPage() {
 		fetchSalesOrders();
 	}, []);
 
-	const filteredGroups = monthGroups
-		.map((group) => ({
-			...group,
-			orders: group.orders.filter((order) => {
-				const matchesSearch =
-					order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-					order.customerName.toLowerCase().includes(searchQuery.toLowerCase());
+	// Filter groups using useMemo
+	const filteredGroups = useMemo(() => {
+		return monthGroups
+			.map((group) => ({
+				...group,
+				orders: group.orders.filter((order) => {
+					const matchesSearch =
+						order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+						order.customerName.toLowerCase().includes(searchQuery.toLowerCase());
 
-				const matchesStatus = selectedStatus === 'all' || order.status === selectedStatus;
+					const matchesStatus = selectedStatus === 'all' || order.status === selectedStatus;
 
-				const matchesProduct =
-					selectedProduct === 'all' || order.products.some((p) => p.name === selectedProduct);
+					const matchesProduct =
+						selectedProduct === 'all' || order.products.some((p) => p.name === selectedProduct);
 
-				const matchesCustomer = selectedCustomer === 'all' || order.customerName === selectedCustomer;
+					const matchesCustomer = selectedCustomer === 'all' || order.customerName === selectedCustomer;
 
-				return matchesSearch && matchesStatus && matchesProduct && matchesCustomer;
-			}),
-		}))
-		.filter((group) => group.orders.length > 0);
+					return matchesSearch && matchesStatus && matchesProduct && matchesCustomer;
+				}),
+			}))
+			.filter((group) => group.orders.length > 0);
+	}, [monthGroups, searchQuery, selectedStatus, selectedProduct, selectedCustomer]);
 
 	const formatDate = (dateStr: string) => {
 		const date = new Date(dateStr);
@@ -417,7 +420,7 @@ export default function OrdersPage() {
 												<span className={`${badge.bg} ${badge.text} px-2 py-0.5 rounded-2xl text-xs`}>
 													{badge.label}
 												</span>
-												<p className="text-xs text-gray-700">{order.completionPercentage}% completed</p>
+												<p className="text-xs text-gray-500">{order.completionPercentage}% completed</p>
 											</div>
 										</div>
 
@@ -442,11 +445,13 @@ export default function OrdersPage() {
 			<Fab onClick={() => setShowAddOrderSheet(true)} className="fixed bottom-20 right-4" />
 
 			{/* Add Sales Order Sheet */}
-			<AddSalesOrderSheet
-				open={showAddOrderSheet}
-				onOpenChange={setShowAddOrderSheet}
-				onOrderAdded={fetchSalesOrders}
-			/>
+			{showAddOrderSheet && (
+				<AddSalesOrderSheet
+					open={showAddOrderSheet}
+					onOpenChange={setShowAddOrderSheet}
+					onOrderAdded={fetchSalesOrders}
+				/>
+			)}
 		</div>
 	);
 }

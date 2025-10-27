@@ -244,11 +244,13 @@ export default function InventoryPage() {
 			/>
 
 			{/* Add Product Sheet */}
-			<AddProductSheet
-				open={showAddProduct}
-				onOpenChange={setShowAddProduct}
-				onProductAdded={fetchProducts}
-			/>
+			{showAddProduct && (
+				<AddProductSheet
+					open={showAddProduct}
+					onOpenChange={setShowAddProduct}
+					onProductAdded={fetchProducts}
+				/>
+			)}
 		</div>
 	);
 }

@@ -533,7 +533,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 						</Collapsible>
 					</div>
 
-					<SheetFooter className="flex flex-col gap-3 px-4 py-3 border-t border-neutral-200 bg-background-100 shadow-xs-reverse">
+					<SheetFooter>
 						{saveError && (
 							<p className="text-sm text-red-600 text-center">{saveError}</p>
 						)}

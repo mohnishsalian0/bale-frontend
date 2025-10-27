@@ -130,9 +130,18 @@
 - [x] Create ProductQuantitySheet with responsive design (Dialog on desktop, Drawer on mobile)
 - [x] Implement quantity input with increment/decrement controls
 - [x] Update product buttons to show quantity when selected (primary button with "150 mtr" format)
-- [ ] Fix Dialog/Drawer styling issues
-- [ ] Implement Step 2: Order details form (customer, dates, warehouse, financial details)
-- [ ] Add sales order form submission with line items creation
+- [x] Implement Step 2: Order details form (customer, dates, financial details)
+- [x] Create OrderDetailsStep component with collapsible Additional Details
+- [x] Add customer and agent dropdowns with data from partners table
+- [x] Add order date and expected date pickers
+- [x] Add advance amount, discount, notes, and file upload fields
+- [x] Extract ProductSelectionStep into separate component
+- [x] Add progress bar showing step 1/2 and step 2/2
+- [x] Add sales order form submission with line items creation
+- [x] Create DatePicker component with Calendar integration
+- [x] Add useMemo optimization for DatePicker displayValue
+- [x] Create date utility functions (dateToISOString, formatDateDisplay)
+- [ ] Fix partners page flickering on filter change (fetch all, filter client-side)
 - [ ] View sales order details page
 - [ ] Edit sales order functionality
 - [ ] Order status workflow transitions (approval_pending → in_progress → completed/cancelled)

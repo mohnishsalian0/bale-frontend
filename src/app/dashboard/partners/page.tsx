@@ -181,7 +181,7 @@ export default function PartnersPage() {
 				</div>
 			</div>
 
-			{/* Filter Tabs */}
+			{/* Filter */}
 			<div className="px-4 py-2">
 				<TabPills
 					options={PARTNER_TYPES}
@@ -283,11 +283,13 @@ export default function PartnersPage() {
 			/>
 
 			{/* Add Partner Sheet */}
-			<AddPartnerSheet
-				open={showAddPartner}
-				onOpenChange={setShowAddPartner}
-				onPartnerAdded={fetchPartners}
-			/>
+			{showAddPartner && (
+				<AddPartnerSheet
+					open={showAddPartner}
+					onOpenChange={setShowAddPartner}
+					onPartnerAdded={fetchPartners}
+				/>
+			)}
 		</div >
 	);
 }

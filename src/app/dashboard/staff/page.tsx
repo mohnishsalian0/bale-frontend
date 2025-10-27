@@ -199,11 +199,13 @@ export default function StaffPage() {
 			/>
 
 			{/* Add Staff Sheet */}
-			<AddStaffSheet
-				open={showAddStaff}
-				onOpenChange={setShowAddStaff}
-				onStaffAdded={fetchStaff}
-			/>
+			{showAddStaff && (
+				<AddStaffSheet
+					open={showAddStaff}
+					onOpenChange={setShowAddStaff}
+					onStaffAdded={fetchStaff}
+				/>
+			)}
 		</div>
 	);
 }

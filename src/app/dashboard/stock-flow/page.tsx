@@ -9,6 +9,11 @@ import { TabPills } from '@/components/ui/tab-pills';
 import { Fab } from '@/components/ui/fab';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DropdownMenu } from '@radix-ui/react-dropdown-menu';
+import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import IconGoodsInward from '@/components/icons/IconGoodsInward';
+import IconGoodsOutward from '@/components/icons/IconGoodsOutward';
 
 type OutwardRow = Tables<'goods_outwards'>;
 type InwardRow = Tables<'goods_inwards'>;
@@ -41,6 +46,7 @@ export default function StockFlowPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [totalReceived, setTotalReceived] = useState(0);
 	const [totalOutwarded, setTotalOutwarded] = useState(0);
+	const [showActions, setShowActions] = useState(false);
 
 	const fetchStockFlow = async () => {
 		try {
@@ -49,8 +55,8 @@ export default function StockFlowPage() {
 
 			const supabase = createClient();
 
-			// Fetch outwardes with partner details
-			const { data: outwardes, error: outwardError } = await supabase
+			// Fetch outwards with partner details
+			const { data: outwards, error: outwardError } = await supabase
 				.from('goods_outwards')
 				.select(`
 					*,
@@ -81,8 +87,8 @@ export default function StockFlowPage() {
 
 			if (inwardError) throw inwardError;
 
-			// Transform outwardes
-			const outwardItems: StockFlowItem[] = (outwardes || []).map((d) => {
+			// Transform outwards
+			const outwardItems: StockFlowItem[] = (outwards || []).map((d) => {
 				const partnerName = d.partner
 					? d.partner.company_name || `${d.partner.first_name} ${d.partner.last_name}`
 					: 'Unknown Partner';
@@ -389,7 +395,21 @@ export default function StockFlowPage() {
 			</div>
 
 			{/* Floating Action Button */}
-			<Fab className="fixed bottom-20 right-4" />
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild className='focus-visible:ring-0'>
+					<Fab className="fixed bottom-20 right-4" />
+				</DropdownMenuTrigger>
+				<DropdownMenuContent className="w-56 mx-4" align="start" side='top' sideOffset={8}>
+					<DropdownMenuItem className='group'>
+						<IconGoodsInward className='size-8 mr-1 fill-gray-500 group-hover:fill-primary-foreground' />
+						Goods Inward
+					</DropdownMenuItem>
+					<DropdownMenuItem className='group'>
+						<IconGoodsOutward className='size-8 mr-1 fill-gray-500 group-hover:fill-primary-foreground' />
+						Goods Outward
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
 		</div>
 	);
 }

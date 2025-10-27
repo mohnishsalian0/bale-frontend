@@ -230,7 +230,7 @@ export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffShee
 						</div>
 					</div>
 
-					<SheetFooter className="flex flex-col gap-3 px-4 py-3 border-t border-neutral-200 bg-background-100 shadow-xs-reverse">
+					<SheetFooter>
 						{sendError && (
 							<p className="text-sm text-red-600 text-center">{sendError}</p>
 						)}
