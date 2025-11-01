@@ -37,6 +37,7 @@ export default function BottomNav() {
 									src={item.icon}
 									alt={item.label}
 									fill
+									sizes='24px'
 									className="object-contain"
 								/>
 							</div>

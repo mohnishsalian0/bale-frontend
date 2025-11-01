@@ -62,7 +62,7 @@ export function ProductQuantitySheet({
 			<div className="flex flex-row gap-4">
 				{/* Product Info */}
 				<div className="flex items-center gap-3 flex-3">
-					<div className="relative size-12 rounded-lg overflow-hidden bg-neutral-100 shrink-0">
+					<div className="relative size-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
 						{product.product_images?.[0] ? (
 							<Image
 								src={product.product_images[0]}
@@ -71,14 +71,14 @@ export function ProductQuantitySheet({
 								className="object-cover"
 							/>
 						) : (
-							<div className="size-full flex items-center justify-center text-neutral-400">
+							<div className="size-full flex items-center justify-center text-gray-400">
 								<IconPlus className="size-8" />
 							</div>
 						)}
 					</div>
 					<div className="flex-1 min-w-0">
 						<p className="text-base font-medium text-gray-700 truncate">{product.name}</p>
-						<p className="text-xs text-neutral-500 truncate">
+						<p className="text-xs text-gray-500 truncate">
 							{[product.material, product.color].filter(Boolean).join(', ')}
 						</p>
 					</div>

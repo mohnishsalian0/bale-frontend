@@ -215,9 +215,9 @@ SELECT
     gi.inward_type,
     gi.sales_order_id,
     gi.job_work_id,
-    gi.other_reference,
+    gi.other_reason,
     COUNT(su.id) as items_count,
-    COALESCE(SUM(su.size_quantity), 0) as total_quantity,
+    COALESCE(SUM(su.remaining_quantity), 0) as total_quantity,
     gi.invoice_amount,
     gi.created_by as created_by_user_id,
     gi.created_at,
@@ -229,7 +229,7 @@ LEFT JOIN stock_units su ON gi.id = su.created_from_inward_id
 WHERE gi.deleted_at IS NULL
 GROUP BY gi.company_id, gi.warehouse_id, w.name, gi.id, gi.inward_number,
          gi.inward_date, p.first_name, p.last_name, p.partner_type,
-         gi.inward_type, gi.sales_order_id, gi.job_work_id, gi.other_reference,
+         gi.inward_type, gi.sales_order_id, gi.job_work_id, gi.other_reason,
          gi.invoice_amount, gi.created_by, gi.created_at
 
 UNION ALL
@@ -248,7 +248,7 @@ SELECT
     go.outward_type,
     go.sales_order_id,
     go.job_work_id,
-    go.other_reference,
+    go.other_reason,
     COUNT(goi.id) as items_count,
     COUNT(goi.stock_unit_id) as total_quantity, -- Each outward item is one stock unit
     go.invoice_amount,
@@ -263,7 +263,7 @@ LEFT JOIN goods_outward_items goi ON go.id = goi.outward_id
 WHERE go.deleted_at IS NULL AND go.is_cancelled = false
 GROUP BY go.company_id, go.warehouse_id, w.name, go.id, go.outward_number,
          go.outward_date, p.first_name, p.last_name, p.partner_type, wh.name,
-         go.outward_type, go.sales_order_id, go.job_work_id, go.other_reference,
+         go.outward_type, go.sales_order_id, go.job_work_id, go.other_reason,
          go.invoice_amount, go.created_by, go.created_at
 
 ORDER BY transaction_date DESC, created_at DESC;

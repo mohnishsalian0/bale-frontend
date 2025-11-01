@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { IconChevronDown, IconCurrencyRupee, IconPhoto, IconPercentage } from '@tabler/icons-react';
-import { Input } from '@/components/ui/input';
+import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -158,7 +158,7 @@ export function OrderDetailsStep({
 			<Collapsible
 				open={showAdditionalDetails}
 				onOpenChange={setShowAdditionalDetails}
-				className="border-t border-neutral-200 px-4 py-5"
+				className="border-t border-gray-200 px-4 py-5"
 			>
 				<CollapsibleTrigger className={`flex items-center justify-between w-full ${showAdditionalDetails ? 'mb-5' : 'mb-0'}`}>
 					<h3 className="text-lg font-medium text-gray-900">Additional Details</h3>
@@ -170,32 +170,26 @@ export function OrderDetailsStep({
 				<CollapsibleContent>
 					<div className="flex flex-col gap-5">
 						{/* Advance Amount */}
-						<div className="relative">
-							<IconCurrencyRupee className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-							<Input
-								type="number"
-								placeholder="Advance amount"
-								value={formData.advanceAmount}
-								onChange={(e) => setFormData({ ...formData, advanceAmount: e.target.value })}
-								className="pl-12"
-								min="0"
-								step="0.01"
-							/>
-						</div>
+						<InputWithIcon
+							type="number"
+							placeholder="Advance amount"
+							value={formData.advanceAmount}
+							onChange={(e) => setFormData({ ...formData, advanceAmount: e.target.value })}
+							icon={<IconCurrencyRupee />}
+							min="0"
+							step="0.01"
+						/>
 
 						{/* Discount */}
-						<div className="relative">
-							<IconPercentage className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-							<Input
-								type="number"
-								placeholder="Discount percent"
-								value={formData.discount}
-								onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
-								className="pl-12"
-								min="0"
-								step="0.01"
-							/>
-						</div>
+						<InputWithIcon
+							type="number"
+							placeholder="Discount percent"
+							value={formData.discount}
+							onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+							icon={<IconPercentage />}
+							min="0"
+							step="0.01"
+						/>
 
 						{/* Notes */}
 						<Textarea

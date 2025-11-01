@@ -198,7 +198,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 							<div className="flex justify-center">
 								<label
 									htmlFor="partner-image"
-									className="relative flex flex-col items-center justify-center size-40 rounded-full border-shadow-gray bg-neutral-100 cursor-pointer hover:bg-neutral-200 transition-colors"
+									className="relative flex flex-col items-center justify-center size-40 rounded-full border-shadow-gray bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors"
 								>
 									{imagePreview ? (
 										<Image
@@ -280,7 +280,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 						<Collapsible
 							open={showBusinessDetails}
 							onOpenChange={setShowBusinessDetails}
-							className="border-t border-neutral-200 px-4 py-5"
+							className="border-t border-gray-200 px-4 py-5"
 						>
 							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showBusinessDetails ? 'mb-5' : 'mb-0'}`}>
 								<h3 className="text-lg font-medium text-gray-900">Business details</h3>
@@ -321,7 +321,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 						<Collapsible
 							open={showAddress}
 							onOpenChange={setShowAddress}
-							className="border-t border-neutral-200 px-4 py-5"
+							className="border-t border-gray-200 px-4 py-5"
 						>
 							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showAddress ? 'mb-5' : 'mb-0'}`}>
 								<h3 className="text-lg font-medium text-gray-900">Address</h3>
@@ -382,7 +382,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 						<Collapsible
 							open={showTaxDetails}
 							onOpenChange={setShowTaxDetails}
-							className="border-t border-neutral-200 px-4 py-5"
+							className="border-t border-gray-200 px-4 py-5"
 						>
 							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showTaxDetails ? 'mb-5' : 'mb-0'}`}>
 								<h3 className="text-lg font-medium text-gray-900">Tax Details</h3>
@@ -423,7 +423,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 						<Collapsible
 							open={showAdditionalDetails}
 							onOpenChange={setShowAdditionalDetails}
-							className="border-t border-neutral-200 px-4 py-5 pb-24"
+							className="border-t border-gray-200 px-4 py-5 pb-24"
 						>
 							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showAdditionalDetails ? 'mb-5' : 'mb-0'}`}>
 								<h3 className="text-lg font-medium text-gray-900">Additional Details</h3>

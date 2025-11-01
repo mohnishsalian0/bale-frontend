@@ -260,9 +260,9 @@ export default function OrdersPage() {
 			case 'completed':
 				return { bg: 'bg-green-100', text: 'text-green-700', label: 'Completed' };
 			case 'cancelled':
-				return { bg: 'bg-neutral-100', text: 'text-neutral-500', label: 'Cancelled' };
+				return { bg: 'bg-gray-100', text: 'text-gray-500', label: 'Cancelled' };
 			default:
-				return { bg: 'bg-neutral-100', text: 'text-neutral-500', label: status };
+				return { bg: 'bg-gray-100', text: 'text-gray-500', label: status };
 		}
 	};
 
@@ -392,7 +392,7 @@ export default function OrdersPage() {
 					filteredGroups.map((group) => (
 						<div key={group.monthYear} className="flex flex-col">
 							{/* Month Header */}
-							<div className="flex items-center justify-between px-4 py-2 border-t border-dashed border-gray-300 bg-neutral-200">
+							<div className="flex items-center justify-between px-4 py-2 border-t border-dashed border-gray-300 bg-gray-200">
 								<p className="text-xs font-semibold text-gray-700">{group.month}</p>
 							</div>
 
@@ -426,7 +426,7 @@ export default function OrdersPage() {
 
 										{/* Progress Bar */}
 										{showProgressBar && (
-											<div className="relative w-full h-2.5 border border-neutral-500 rounded-xs">
+											<div className="relative w-full h-2.5 border border-gray-500 rounded-xs">
 												<div
 													className={`absolute top-0 left-0 bottom-0 rounded-xs ${progressColor}`}
 													style={{ width: `${order.completionPercentage}%` }}

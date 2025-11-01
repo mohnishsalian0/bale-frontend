@@ -14,18 +14,17 @@ CREATE TABLE goods_outwards (
     outward_number VARCHAR(50) NOT NULL,
 
     -- Outward type
-    outward_type VARCHAR(20) NOT NULL CHECK (outward_type IN ('sales', 'job_work', 'purchase_return', 'warehouse_transfer', 'other')),
-    other_reason TEXT, -- Required when outward_type = 'other'
-
-    -- Recipients (based on outward_type)
-    partner_id UUID REFERENCES partners(id), -- Customer (sales), Vendor (purchase_return), or Job work partner
-    to_warehouse_id UUID REFERENCES warehouses(id), -- For warehouse_transfer
-    agent_id UUID REFERENCES partners(id), -- Optional agent for sales
+    outward_type VARCHAR(20) NOT NULL CHECK (outward_type IN ('sales', 'job_work', 'other')),
 
     -- Linking (optional, for reference)
     sales_order_id UUID REFERENCES sales_orders(id), -- When outward_type = 'sales'
     job_work_id UUID REFERENCES job_works(id), -- When outward_type = 'job_work'
-    other_reference TEXT, -- Additional reference notes for any outward type
+    other_reason TEXT, -- When outward_type = 'other'
+
+    -- Recipients
+    partner_id UUID REFERENCES partners(id),
+    to_warehouse_id UUID REFERENCES warehouses(id), -- For warehouse_transfer
+    agent_id UUID REFERENCES partners(id), -- Optional agent for sales
 
     -- Details
     outward_date DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -51,19 +50,16 @@ CREATE TABLE goods_outwards (
     deleted_at TIMESTAMPTZ,
 
     -- Business logic constraints
-    CONSTRAINT check_outward_type_requirements
+    CONSTRAINT check_outward_source
         CHECK (
-            (outward_type = 'sales' AND partner_id IS NOT NULL AND sales_order_id IS NOT NULL) OR
-            (outward_type = 'job_work' AND partner_id IS NOT NULL AND job_work_id IS NOT NULL) OR
-            (outward_type = 'purchase_return' AND partner_id IS NOT NULL) OR
-            (outward_type = 'warehouse_transfer' AND to_warehouse_id IS NOT NULL AND to_warehouse_id != warehouse_id) OR
-            (outward_type = 'other' AND other_reason IS NOT NULL)
+            (partner_id IS NOT NULL AND to_warehouse_id IS NULL) OR
+            (partner_id IS NULL AND to_warehouse_id IS NOT NULL AND to_warehouse_id != warehouse_id)
         ),
-
-    -- Agent only valid for sales outward (optional)
-    CONSTRAINT check_agent_for_sales_only
+    CONSTRAINT check_outward_type_requirement
         CHECK (
-            agent_id IS NULL OR outward_type = 'sales'
+						(outward_type = 'sales' AND sales_order_id IS NOT NULL) OR
+						(outward_type = 'job_work' AND job_work_id IS NOT NULL) OR
+						(outward_type = 'other' AND other_reason IS NOT NULL)
         ),
 
     UNIQUE(company_id, outward_number)
@@ -78,6 +74,7 @@ CREATE TABLE goods_outward_items (
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     outward_id UUID NOT NULL REFERENCES goods_outwards(id) ON DELETE CASCADE,
     stock_unit_id UUID NOT NULL REFERENCES stock_units(id),
+    quantity DECIMAL(10,3) NOT NULL,
 
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -97,18 +94,17 @@ CREATE TABLE goods_inwards (
     inward_number VARCHAR(50) NOT NULL,
 
     -- Inward type
-    inward_type VARCHAR(20) NOT NULL CHECK (inward_type IN ('purchase', 'job_work', 'sales_return', 'warehouse_transfer', 'other')),
-    other_reason TEXT, -- Required when inward_type = 'other'
-
-    -- Senders (based on inward_type)
-    partner_id UUID REFERENCES partners(id), -- Vendor (purchase), Customer (sales_return), or Job work partner
-    from_warehouse_id UUID REFERENCES warehouses(id), -- For warehouse_transfer
-    agent_id UUID REFERENCES partners(id), -- Optional agent
+    inward_type VARCHAR(20) NOT NULL CHECK (inward_type IN ('job_work', 'sales_return', 'other')),
 
     -- Linking (optional, for reference)
     sales_order_id UUID REFERENCES sales_orders(id), -- When inward_type = 'sales_return'
     job_work_id UUID REFERENCES job_works(id), -- When inward_type = 'job_work'
-    other_reference TEXT, -- Additional reference notes for any inward type
+    other_reason TEXT, -- Required when inward_type = 'other'
+
+    -- Senders
+    partner_id UUID REFERENCES partners(id),
+    from_warehouse_id UUID REFERENCES warehouses(id), -- For warehouse transfers
+    agent_id UUID REFERENCES partners(id), -- Optional agent
 
     -- Details
     inward_date DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -127,13 +123,16 @@ CREATE TABLE goods_inwards (
     deleted_at TIMESTAMPTZ,
 
     -- Business logic constraints
+    CONSTRAINT check_inward_source
+        CHECK (
+            (partner_id IS NOT NULL AND from_warehouse_id IS NULL) OR
+            (partner_id IS NULL AND from_warehouse_id IS NOT NULL AND from_warehouse_id != warehouse_id)
+        ),
     CONSTRAINT check_inward_type_requirements
         CHECK (
-            (inward_type = 'purchase' AND partner_id IS NOT NULL) OR
-            (inward_type = 'job_work' AND partner_id IS NOT NULL AND job_work_id IS NOT NULL) OR
-            (inward_type = 'sales_return' AND partner_id IS NOT NULL AND sales_order_id IS NOT NULL) OR
-            (inward_type = 'warehouse_transfer' AND from_warehouse_id IS NOT NULL AND from_warehouse_id != warehouse_id) OR
-            (inward_type = 'other' AND other_reason IS NOT NULL)
+						(inward_type = 'job_work' AND job_work_id IS NOT NULL) OR
+						(inward_type = 'sales_return' AND sales_order_id IS NOT NULL) OR
+						(inward_type = 'other' AND other_reason IS NOT NULL)
         ),
 
     UNIQUE(company_id, inward_number)
@@ -183,7 +182,7 @@ SELECT
     su.id as stock_unit_id,
     su.unit_number,
     su.qr_code,
-    su.size_quantity,
+    su.remaining_quantity,
     su.quality_grade,
     su.location_description,
     su.status,

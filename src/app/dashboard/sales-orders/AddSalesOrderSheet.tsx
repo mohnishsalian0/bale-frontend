@@ -224,7 +224,7 @@ export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSale
 					</SheetHeader>
 
 					{/* Progress bar */}
-					<div className="h-1 bg-neutral-200">
+					<div className="h-1 bg-gray-200">
 						<div
 							className="h-full bg-primary-500 transition-all duration-300"
 							style={{ width: currentStep === 'products' ? '50%' : '100%' }}

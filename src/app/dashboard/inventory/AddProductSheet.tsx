@@ -253,7 +253,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 						<Collapsible
 							open={showFeaturesImages}
 							onOpenChange={setShowFeaturesImages}
-							className="border-t border-neutral-200 px-4 py-5"
+							className="border-t border-gray-200 px-4 py-5"
 						>
 							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showFeaturesImages ? 'mb-5' : 'mb-0'}`}>
 								<h3 className="text-lg font-medium text-gray-900">Features & Images</h3>
@@ -397,7 +397,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 						<Collapsible
 							open={showStockDetails}
 							onOpenChange={setShowStockDetails}
-							className="border-t border-neutral-200 px-4 py-5"
+							className="border-t border-gray-200 px-4 py-5"
 						>
 							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showStockDetails ? 'mb-5' : 'mb-0'}`}>
 								<h3 className="text-lg font-medium text-gray-900">Stock Details</h3>
@@ -484,7 +484,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 						<Collapsible
 							open={showAdditionalDetails}
 							onOpenChange={setShowAdditionalDetails}
-							className="border-t border-neutral-200 px-4 py-5 pb-24"
+							className="border-t border-gray-200 px-4 py-5 pb-24"
 						>
 							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showAdditionalDetails ? 'mb-5' : 'mb-0'}`}>
 								<h3 className="text-lg font-medium text-gray-900">Additional Details</h3>

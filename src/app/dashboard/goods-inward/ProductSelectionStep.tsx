@@ -2,27 +2,36 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { IconSearch, IconPlus } from '@tabler/icons-react';
+import { IconSearch, IconPlus, IconMinus } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Tables } from '@/types/database/supabase';
 
-interface ProductWithSelection extends Tables<'products'> {
-	selected: boolean;
+export interface StockUnitSpec {
+	id: string; // temp ID for UI
 	quantity: number;
+	grade: string;
+	supplier_number?: string;
+	location?: string;
+	notes?: string;
+	count: number; // for duplicate specs
+}
+
+export interface ProductWithUnits extends Tables<'products'> {
+	units: StockUnitSpec[];
 }
 
 interface ProductSelectionStepProps {
-	products: ProductWithSelection[];
+	products: ProductWithUnits[];
 	loading: boolean;
-	onOpenQuantitySheet: (product: Tables<'products'>) => void;
+	onOpenUnitSheet: (product: Tables<'products'>, hasExistingUnits: boolean) => void;
 }
 
 export function ProductSelectionStep({
 	products,
 	loading,
-	onOpenQuantitySheet,
+	onOpenUnitSheet,
 }: ProductSelectionStepProps) {
 	const [searchQuery, setSearchQuery] = useState('');
 	const [materialFilter, setMaterialFilter] = useState<string>('all');
@@ -69,10 +78,12 @@ export function ProductSelectionStep({
 			return true;
 		});
 
-		// Sort: selected products first
+		// Sort: products with units first
 		filtered.sort((a, b) => {
-			if (a.selected && !b.selected) return -1;
-			if (!a.selected && b.selected) return 1;
+			const aHasUnits = a.units.length > 0;
+			const bHasUnits = b.units.length > 0;
+			if (aHasUnits && !bHasUnits) return -1;
+			if (!aHasUnits && bHasUnits) return 1;
 			return 0;
 		});
 
@@ -162,6 +173,8 @@ export function ProductSelectionStep({
 					<div className="flex flex-col">
 						{filteredProducts.map(product => {
 							const imageUrl = product.product_images?.[0];
+							const hasUnits = product.units.length > 0;
+							const totalUnits = product.units.reduce((sum, unit) => sum + unit.count, 0);
 
 							return (
 								<div
@@ -194,21 +207,24 @@ export function ProductSelectionStep({
 										</p>
 									</div>
 
-									{/* Add/Quantity Button */}
-									{product.selected && product.quantity > 0 ? (
+									{/* Add/Count Button */}
+									{hasUnits ? (
 										<Button
 											type="button"
 											size="sm"
-											onClick={() => onOpenQuantitySheet(product)}
+											onClick={() => onOpenUnitSheet(product, hasUnits)}
+											className='gap-2'
 										>
-											{product.quantity} {product.measuring_unit}
+											<IconMinus />
+											{totalUnits}
+											<IconPlus />
 										</Button>
 									) : (
 										<Button
 											type="button"
 											variant="outline"
 											size="sm"
-											onClick={() => onOpenQuantitySheet(product)}
+											onClick={() => onOpenUnitSheet(product, hasUnits)}
 										>
 											<IconPlus />
 											Add

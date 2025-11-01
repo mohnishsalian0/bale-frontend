@@ -9,11 +9,12 @@ import { TabPills } from '@/components/ui/tab-pills';
 import { Fab } from '@/components/ui/fab';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu } from '@radix-ui/react-dropdown-menu';
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import IconGoodsInward from '@/components/icons/IconGoodsInward';
 import IconGoodsOutward from '@/components/icons/IconGoodsOutward';
+import { AddGoodsInwardSheet } from '../goods-inward/AddGoodsInwardSheet';
+import { AddGoodsOutwardSheet } from '../goods-outward/AddGoodsOutwardSheet';
 
 type OutwardRow = Tables<'goods_outwards'>;
 type InwardRow = Tables<'goods_inwards'>;
@@ -46,7 +47,8 @@ export default function StockFlowPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [totalReceived, setTotalReceived] = useState(0);
 	const [totalOutwarded, setTotalOutwarded] = useState(0);
-	const [showActions, setShowActions] = useState(false);
+	const [showGoodsInward, setShowGoodsInward] = useState(false);
+	const [showGoodsOutward, setShowGoodsOutward] = useState(false);
 
 	const fetchStockFlow = async () => {
 		try {
@@ -55,23 +57,6 @@ export default function StockFlowPage() {
 
 			const supabase = createClient();
 
-			// Fetch outwards with partner details
-			const { data: outwards, error: outwardError } = await supabase
-				.from('goods_outwards')
-				.select(`
-					*,
-					partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name),
-					goods_outward_items(
-						stock_unit:stock_units(
-							product:products(name, measuring_unit),
-							size_quantity
-						)
-					)
-				`)
-				.order('outward_date', { ascending: false });
-
-			if (outwardError) throw outwardError;
-
 			// Fetch inwards with partner details and stock units
 			const { data: inwards, error: inwardError } = await supabase
 				.from('goods_inwards')
@@ -79,40 +64,30 @@ export default function StockFlowPage() {
 					*,
 					partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, company_name),
 					stock_units(
-						product:products(name, measuring_unit),
-						size_quantity
+						product:products(id, name, measuring_unit),
+						initial_quantity
 					)
 				`)
 				.order('inward_date', { ascending: false });
 
 			if (inwardError) throw inwardError;
 
-			// Transform outwards
-			const outwardItems: StockFlowItem[] = (outwards || []).map((d) => {
-				const partnerName = d.partner
-					? d.partner.company_name || `${d.partner.first_name} ${d.partner.last_name}`
-					: 'Unknown Partner';
+			// Fetch outwards with partner details
+			const { data: outwards, error: outwardError } = await supabase
+				.from('goods_outwards')
+				.select(`
+					*,
+					partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name),
+					goods_outward_items(
+						quantity,
+						stock_unit:stock_units(
+							product:products(id, name, measuring_unit)
+						)
+					)
+				`)
+				.order('outward_date', { ascending: false });
 
-				const items = d.goods_outward_items || [];
-				const firstProduct = items[0]?.stock_unit?.product;
-				const productName = firstProduct?.name || 'Unknown Product';
-				const totalQty = Number(items.reduce(
-					(sum: number, item) => sum + (Number(item.stock_unit?.size_quantity) || 0),
-					0
-				).toFixed(2));
-				const unit = firstProduct?.measuring_unit || 'm';
-
-				return {
-					id: d.id,
-					type: 'outward',
-					productName,
-					partnerName,
-					date: d.outward_date,
-					quantity: totalQty,
-					unit,
-					billNumber: d.outward_number,
-				};
-			});
+			if (outwardError) throw outwardError;
 
 			// Transform inwards
 			const inwardItems: StockFlowItem[] = (inwards || []).map((r) => {
@@ -122,9 +97,16 @@ export default function StockFlowPage() {
 
 				const stockUnits = r.stock_units || [];
 				const firstProduct = stockUnits[0]?.product;
-				const productName = firstProduct?.name || 'Unknown Product';
+
+				// Get unique products
+				const uniqueProducts = new Set(stockUnits.map((unit: any) => unit.product?.id).filter(Boolean));
+				const productCount = uniqueProducts.size;
+				const productName = productCount > 1
+					? `${firstProduct?.name || 'Unknown Product'}, ${productCount - 1} more`
+					: firstProduct?.name || 'Unknown Product';
+
 				const totalQty = Number(stockUnits.reduce(
-					(sum: number, unit) => sum + (Number(unit.size_quantity) || 0),
+					(sum: number, unit: any) => sum + (Number(unit.initial_quantity) || 0),
 					0
 				).toFixed(2));
 				const unit = firstProduct?.measuring_unit || 'm';
@@ -138,6 +120,40 @@ export default function StockFlowPage() {
 					quantity: totalQty,
 					unit,
 					billNumber: r.inward_number,
+				};
+			});
+
+			// Transform outwards
+			const outwardItems: StockFlowItem[] = (outwards || []).map((d) => {
+				const partnerName = d.partner
+					? d.partner.company_name || `${d.partner.first_name} ${d.partner.last_name}`
+					: 'Unknown Partner';
+
+				const items = d.goods_outward_items || [];
+				const firstProduct = items[0]?.stock_unit?.product;
+
+				// Get unique products
+				const uniqueProducts = new Set(items.map((item: any) => item.stock_unit?.product?.id).filter(Boolean));
+				const productCount = uniqueProducts.size;
+				const productName = productCount > 1
+					? `${firstProduct?.name || 'Unknown Product'}, ${productCount - 1} more`
+					: firstProduct?.name || 'Unknown Product';
+
+				const totalQty = Number(items.reduce(
+					(sum: number, item: any) => sum + (Number(item.quantity) || 0),
+					0
+				).toFixed(2));
+				const unit = firstProduct?.measuring_unit || 'm';
+
+				return {
+					id: d.id,
+					type: 'outward',
+					productName,
+					partnerName,
+					date: d.outward_date,
+					quantity: totalQty,
+					unit,
+					billNumber: d.outward_number,
 				};
 			});
 
@@ -280,9 +296,9 @@ export default function StockFlowPage() {
 					<div className="flex flex-col gap-1">
 						<h1 className="text-3xl font-bold text-gray-900">Stock flow</h1>
 						<p className="text-sm text-gray-500">
-							<span className="text-teal-700">{totalReceived} inward</span>
+							<span className="text-teal-700">{totalReceived} received</span>
 							<span> & </span>
-							<span className="text-yellow-700">{totalOutwarded} outwarded</span>
+							<span className="text-yellow-700">{totalOutwarded} dispatched</span>
 							<span> in past month</span>
 						</p>
 					</div>
@@ -306,6 +322,8 @@ export default function StockFlowPage() {
 						src="/mascot/stock-flow-diary.png"
 						alt="Stock flow"
 						fill
+						priority
+						sizes="100px"
 						className="object-contain"
 					/>
 				</div>
@@ -317,8 +335,8 @@ export default function StockFlowPage() {
 				<TabPills
 					options={[
 						{ value: 'all', label: 'All' },
+						{ value: 'inward', label: 'Inward' },
 						{ value: 'outward', label: 'Outward' },
-						{ value: 'inward', label: 'Receive' },
 					]}
 					value={selectedFilter}
 					onValueChange={(value) => setSelectedFilter(value as 'all' | 'outward' | 'inward')}
@@ -400,16 +418,34 @@ export default function StockFlowPage() {
 					<Fab className="fixed bottom-20 right-4" />
 				</DropdownMenuTrigger>
 				<DropdownMenuContent className="w-56 mx-4" align="start" side='top' sideOffset={8}>
-					<DropdownMenuItem className='group'>
+					<DropdownMenuItem className='group' onSelect={() => setShowGoodsInward(true)}>
 						<IconGoodsInward className='size-8 mr-1 fill-gray-500 group-hover:fill-primary-foreground' />
 						Goods Inward
 					</DropdownMenuItem>
-					<DropdownMenuItem className='group'>
+					<DropdownMenuItem className='group' onSelect={() => setShowGoodsOutward(true)}>
 						<IconGoodsOutward className='size-8 mr-1 fill-gray-500 group-hover:fill-primary-foreground' />
 						Goods Outward
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
+
+			{/* Add Goods Inward Sheet */}
+			{showGoodsInward && (
+				<AddGoodsInwardSheet
+					open={showGoodsInward}
+					onOpenChange={setShowGoodsInward}
+					onInwardAdded={fetchStockFlow}
+				/>
+			)}
+
+			{/* Add Goods Outward Sheet */}
+			{showGoodsOutward && (
+				<AddGoodsOutwardSheet
+					open={showGoodsOutward}
+					onOpenChange={setShowGoodsOutward}
+					onOutwardAdded={fetchStockFlow}
+				/>
+			)}
 		</div>
 	);
 }

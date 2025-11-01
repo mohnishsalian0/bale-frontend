@@ -43,7 +43,7 @@
 - [x] Test complete OAuth flow (invite → Google login → profile creation → dashboard)
 - [x] Style invite acceptance page with Figma design (mascot, layout, colors)
 - [x] Add grid background pattern to app (24px grid with gray lines)
-- [x] Install and configure icon libraries (Tabler Icons, Lucide React)
+- [x] Install and configure icon libraries (Tabler Icons)
 - [x] Build TopBar component with warehouse selector button
 - [x] Build BottomNav component for mobile navigation
 - [x] Create WarehouseSelector dropdown component with Figma design (warehouse icon, address, location pin)
@@ -100,7 +100,24 @@
 ## Phase 7: Iteration 3 - Inward/Stock/Inventory
 - [x] Stock flow page UI with month grouping, search, filters, and transaction list
 - [x] Connect stock flow page to Supabase (fetch inwards/outwards with related data)
-- [ ] Add goods inward form with automatic stock unit creation
+- [x] Add goods inward form with automatic stock unit creation
+- [x] Create AddGoodsReceiptSheet with 2-step flow integrated into stock flow page
+- [x] Create ProductSelectionStep for goods inward with product filtering
+- [x] Create StockUnitEntrySheet for adding individual stock units
+- [x] Create AllSpecificationsSheet for viewing/editing all units per product
+- [x] Create DetailsStep with conditional fields (Received from, Link to)
+- [x] Implement RadioGroupPills for partner/warehouse and link type selection
+- [x] Add increment/decrement functionality for duplicate unit specifications
+- [x] Integrate goods inward form with FAB dropdown in stock flow page
+- [x] Implement responsive Dialog/Drawer pattern for unit entry
+- [x] Add stock unit creation with proper field mapping (quality_grade, supplier_number, location_description)
+- [x] Replace wastage field with supplier_number in stock units schema
+- [x] Add supplier_number input to StockUnitEntrySheet with IconHash
+- [x] Update AllSpecificationsSheet to display supplier_number
+- [x] Implement atomic transaction for goods inward creation using database function
+- [x] Add editable count input in AllSpecificationsSheet
+- [x] Show delete icon when count is 1 in AllSpecificationsSheet
+- [x] Display multiple products as "Product name, x more" in stock flow items
 - [ ] View goods inward details page
 - [ ] View goods inward stock units page
 - [ ] Stock units list with warehouse filtering

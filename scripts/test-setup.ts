@@ -517,7 +517,8 @@ async function createTestPartners() {
 					warehouse_id: warehouseId,
 					created_by: createdBy,
 					inward_number: 'GR-001',
-					inward_type: 'purchase',
+					inward_type: 'other',
+					other_reason: 'Purchase',
 					partner_id: supplierId1,
 					inward_date: month3.toISOString().split('T')[0],
 					invoice_number: 'INV-2024-001',
@@ -529,7 +530,8 @@ async function createTestPartners() {
 					warehouse_id: warehouseId,
 					created_by: createdBy,
 					inward_number: 'GR-002',
-					inward_type: 'purchase',
+					inward_type: 'other',
+					other_reason: 'Purchase',
 					partner_id: supplierId2,
 					inward_date: month3.toISOString().split('T')[0],
 					invoice_number: 'INV-2024-002',
@@ -541,7 +543,8 @@ async function createTestPartners() {
 					warehouse_id: warehouseId,
 					created_by: createdBy,
 					inward_number: 'GR-003',
-					inward_type: 'purchase',
+					inward_type: 'other',
+					other_reason: 'Purchase',
 					partner_id: supplierId1,
 					inward_date: month2.toISOString().split('T')[0],
 					invoice_number: 'INV-2024-003',
@@ -553,7 +556,8 @@ async function createTestPartners() {
 					warehouse_id: warehouseId,
 					created_by: createdBy,
 					inward_number: 'GR-004',
-					inward_type: 'purchase',
+					inward_type: 'other',
+					other_reason: 'Purchase',
 					partner_id: supplierId2,
 					inward_date: month2.toISOString().split('T')[0],
 					invoice_number: 'INV-2024-004',
@@ -565,7 +569,8 @@ async function createTestPartners() {
 					warehouse_id: warehouseId,
 					created_by: createdBy,
 					inward_number: 'GR-005',
-					inward_type: 'purchase',
+					inward_type: 'other',
+					other_reason: 'Purchase',
 					partner_id: supplierId1,
 					inward_date: month1.toISOString().split('T')[0],
 					invoice_number: 'INV-2024-005',
@@ -632,6 +637,7 @@ async function createTestPartners() {
 
 					// Create stock units for each quantity
 					for (let j = 0; j < quantity; j++) {
+						const initial_quantity = (Math.random() * 50 + 10).toFixed(2); // Random size 10-60
 						const { error: stockError } = await supabase
 							.from('stock_units')
 							.insert({
@@ -640,7 +646,8 @@ async function createTestPartners() {
 								product_id: productsList[i].id,
 								created_from_inward_id: inwardId,
 								created_by: createdBy,
-								size_quantity: (Math.random() * 50 + 10).toFixed(2), // Random size 10-60
+								initial_quantity,
+								remaining_quantity: initial_quantity,
 								quality_grade: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
 								location_description: `Rack ${String.fromCharCode(65 + Math.floor(Math.random() * 5))}-${Math.floor(Math.random() * 10) + 1}`,
 								status: 'in_stock',
@@ -675,6 +682,7 @@ async function createTestPartners() {
 						warehouse_id: warehouseId,
 						created_by: createdBy,
 						outward_number: 'GD-001',
+						partner_id: customerId1,
 						outward_type: 'other',
 						other_reason: 'Sample outward for exhibition',
 						outward_date: month3.toISOString().split('T')[0],
@@ -687,6 +695,7 @@ async function createTestPartners() {
 						warehouse_id: warehouseId,
 						created_by: createdBy,
 						outward_number: 'GD-002',
+						partner_id: customerId2,
 						outward_type: 'other',
 						other_reason: 'Quality testing at external lab',
 						outward_date: month3.toISOString().split('T')[0],
@@ -698,6 +707,7 @@ async function createTestPartners() {
 						warehouse_id: warehouseId,
 						created_by: createdBy,
 						outward_number: 'GD-003',
+						partner_id: customerId1,
 						outward_type: 'other',
 						other_reason: 'Customer sample approval',
 						outward_date: month2.toISOString().split('T')[0],
@@ -710,6 +720,7 @@ async function createTestPartners() {
 						warehouse_id: warehouseId,
 						created_by: createdBy,
 						outward_number: 'GD-004',
+						partner_id: customerId2,
 						outward_type: 'other',
 						other_reason: 'Marketing material outward',
 						outward_date: month2.toISOString().split('T')[0],
@@ -721,6 +732,7 @@ async function createTestPartners() {
 						warehouse_id: warehouseId,
 						created_by: createdBy,
 						outward_number: 'GD-005',
+						partner_id: customerId1,
 						outward_type: 'other',
 						other_reason: 'Demo pieces for new collection',
 						outward_date: month1.toISOString().split('T')[0],
@@ -741,67 +753,50 @@ async function createTestPartners() {
 						.eq('outward_number', outward.outward_number)
 						.single();
 
-					let outwardId: string;
-
 					if (existingOutward) {
 						console.log(`⏭️  Outward ${outward.outward_number} already exists`);
-						outwardId = existingOutward.id;
-					} else {
-						const { data, error } = await supabase
-							.from('goods_outwards')
-							.insert(outward)
-							.select()
+						stockUnitIndex += 3; // Skip stock units that would have been used
+						continue;
+					}
+
+					// Prepare stock unit items (1-3 stock units per outward)
+					const itemCount = Math.min(3, stockUnits.length - stockUnitIndex);
+					const stockUnitItems = [];
+
+					for (let i = 0; i < itemCount && stockUnitIndex < stockUnits.length; i++) {
+						// Get stock unit details to determine quantity to dispatch
+						const { data: stockUnit } = await supabase
+							.from('stock_units')
+							.select('remaining_quantity')
+							.eq('id', stockUnits[stockUnitIndex].id)
 							.single();
 
-						if (error) {
-							console.error(`❌ Failed to create outward: ${outward.outward_number}`);
-							console.error(`   Error: ${error.message}`);
-							continue;
-						} else {
-							outwardId = data.id;
-							console.log(`✅ Created goods outward: ${outward.outward_number}`);
-						}
-					}
+						const dispatchQty = stockUnit?.remaining_quantity || 0;
 
-					// Check if outward items already exist
-					const { data: existingItems, error: checkItemsError } = await supabase
-						.from('goods_outward_items')
-						.select('id')
-						.eq('outward_id', outwardId);
-
-					if (checkItemsError) {
-						console.error(`   ❌ Failed to check existing items: ${checkItemsError.message}`);
-						continue;
-					}
-
-					if (existingItems && existingItems.length > 0) {
-						console.log(`   ⏭️  Outward items already exist (${existingItems.length} items)`);
-						continue;
-					}
-
-					// Add outward items (1-3 stock units per outward)
-					const itemCount = Math.min(3, stockUnits.length - stockUnitIndex);
-					for (let i = 0; i < itemCount && stockUnitIndex < stockUnits.length; i++) {
-						const { error: itemError } = await supabase
-							.from('goods_outward_items')
-							.insert({
-								company_id: companyId,
-								outward_id: outwardId,
-								stock_unit_id: stockUnits[stockUnitIndex].id,
-							});
-
-						if (itemError) {
-							console.error(`   ❌ Failed to add item to outward: ${itemError.message}`);
-						} else {
-							// Update stock unit status to dispatched
-							await supabase
-								.from('stock_units')
-								.update({ status: 'dispatched' })
-								.eq('id', stockUnits[stockUnitIndex].id);
-							console.log(`   ✅ Added outward item with stock unit ${stockUnitIndex + 1}`);
-						}
+						stockUnitItems.push({
+							stock_unit_id: stockUnits[stockUnitIndex].id,
+							quantity: dispatchQty, // Dispatch full quantity
+						});
 
 						stockUnitIndex++;
+					}
+
+					if (stockUnitItems.length === 0) {
+						console.log(`⏭️  No stock units available for ${outward.outward_number}`);
+						continue;
+					}
+
+					// Use the atomic function to create outward with items
+					const { data, error } = await supabase.rpc('create_goods_outward_with_items', {
+						p_outward_data: outward,
+						p_stock_unit_items: stockUnitItems,
+					});
+
+					if (error) {
+						console.error(`❌ Failed to create outward: ${outward.outward_number}`);
+						console.error(`   Error: ${error.message}`);
+					} else {
+						console.log(`✅ Created goods outward: ${outward.outward_number} with ${stockUnitItems.length} items`);
 					}
 				}
 			}

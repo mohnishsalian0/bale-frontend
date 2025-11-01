@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { IconBuilding, IconPhone } from '@tabler/icons-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Fab } from '@/components/ui/fab';
+import { Button } from '@/components/ui/button';
 import { AddStaffSheet } from './AddStaffSheet';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
@@ -147,7 +148,7 @@ export default function StaffPage() {
 							>
 								<CardContent className="p-4 flex flex-col gap-3 items-center h-full">
 									{/* Avatar */}
-									<div className="flex items-center justify-center size-16 rounded-full bg-neutral-200 shrink-0">
+									<div className="flex items-center justify-center size-16 rounded-full bg-gray-200 shrink-0">
 										{member.profileImageUrl ? (
 											<Image
 												src={member.profileImageUrl}
@@ -170,17 +171,17 @@ export default function StaffPage() {
 										</p>
 
 										{/* Warehouse */}
-										<div className="flex gap-1.5 items-center justify-center text-neutral-500 w-full">
+										<div className="flex gap-1.5 items-center justify-center text-gray-500 w-full">
 											<IconBuilding className="size-3.5 shrink-0" />
-											<p className="text-xs text-neutral-500 truncate">
+											<p className="text-xs text-gray-500 truncate">
 												{member.warehouseName || 'Not assigned yet'}
 											</p>
 										</div>
 
 										{/* Phone */}
-										<div className="flex gap-1.5 items-center justify-center text-neutral-500 w-full">
+										<div className="flex gap-1.5 items-center justify-center text-gray-500 w-full">
 											<IconPhone className="size-3.5 shrink-0" />
-											<p className="text-xs text-neutral-500">
+											<p className="text-xs text-gray-500">
 												{member.phoneNumber || 'No phone'}
 											</p>
 										</div>

@@ -349,7 +349,6 @@ export type Database = {
           modified_by: string | null
           notes: string | null
           other_reason: string | null
-          other_reference: string | null
           partner_id: string | null
           sales_order_id: string | null
           transport_details: string | null
@@ -374,7 +373,6 @@ export type Database = {
           modified_by?: string | null
           notes?: string | null
           other_reason?: string | null
-          other_reference?: string | null
           partner_id?: string | null
           sales_order_id?: string | null
           transport_details?: string | null
@@ -399,7 +397,6 @@ export type Database = {
           modified_by?: string | null
           notes?: string | null
           other_reason?: string | null
-          other_reference?: string | null
           partner_id?: string | null
           sales_order_id?: string | null
           transport_details?: string | null
@@ -555,6 +552,7 @@ export type Database = {
           created_at: string
           id: string
           outward_id: string
+          quantity: number
           stock_unit_id: string
           updated_at: string
         }
@@ -563,6 +561,7 @@ export type Database = {
           created_at?: string
           id?: string
           outward_id: string
+          quantity: number
           stock_unit_id: string
           updated_at?: string
         }
@@ -571,6 +570,7 @@ export type Database = {
           created_at?: string
           id?: string
           outward_id?: string
+          quantity?: number
           stock_unit_id?: string
           updated_at?: string
         }
@@ -632,7 +632,6 @@ export type Database = {
           modified_by: string | null
           notes: string | null
           other_reason: string | null
-          other_reference: string | null
           outward_date: string
           outward_number: string
           outward_type: string
@@ -662,7 +661,6 @@ export type Database = {
           modified_by?: string | null
           notes?: string | null
           other_reason?: string | null
-          other_reference?: string | null
           outward_date?: string
           outward_number: string
           outward_type: string
@@ -692,7 +690,6 @@ export type Database = {
           modified_by?: string | null
           notes?: string | null
           other_reason?: string | null
-          other_reference?: string | null
           outward_date?: string
           outward_number?: string
           outward_type?: string
@@ -1855,6 +1852,7 @@ export type Database = {
           created_from_inward_id: string | null
           deleted_at: string | null
           id: string
+          initial_quantity: number
           location_description: string | null
           manufacturing_date: string | null
           modified_by: string | null
@@ -1862,12 +1860,12 @@ export type Database = {
           product_id: string
           qr_code: string | null
           quality_grade: string | null
-          size_quantity: number
+          remaining_quantity: number
           status: string
+          supplier_number: string | null
           unit_number: string
           updated_at: string
           warehouse_id: string
-          wastage: number | null
         }
         Insert: {
           barcode_generated?: boolean | null
@@ -1878,6 +1876,7 @@ export type Database = {
           created_from_inward_id?: string | null
           deleted_at?: string | null
           id?: string
+          initial_quantity: number
           location_description?: string | null
           manufacturing_date?: string | null
           modified_by?: string | null
@@ -1885,12 +1884,12 @@ export type Database = {
           product_id: string
           qr_code?: string | null
           quality_grade?: string | null
-          size_quantity: number
+          remaining_quantity: number
           status?: string
+          supplier_number?: string | null
           unit_number: string
           updated_at?: string
           warehouse_id: string
-          wastage?: number | null
         }
         Update: {
           barcode_generated?: boolean | null
@@ -1901,6 +1900,7 @@ export type Database = {
           created_from_inward_id?: string | null
           deleted_at?: string | null
           id?: string
+          initial_quantity?: number
           location_description?: string | null
           manufacturing_date?: string | null
           modified_by?: string | null
@@ -1908,12 +1908,12 @@ export type Database = {
           product_id?: string
           qr_code?: string | null
           quality_grade?: string | null
-          size_quantity?: number
+          remaining_quantity?: number
           status?: string
+          supplier_number?: string | null
           unit_number?: string
           updated_at?: string
           warehouse_id?: string
-          wastage?: number | null
         }
         Relationships: [
           {
@@ -2251,7 +2251,7 @@ export type Database = {
           product_name: string | null
           qr_code: string | null
           quality_grade: string | null
-          size_quantity: number | null
+          remaining_quantity: number | null
           status: string | null
           stock_unit_id: string | null
           unit_number: string | null
@@ -2269,7 +2269,7 @@ export type Database = {
           items_count: number | null
           job_work_id: string | null
           movement_type: string | null
-          other_reference: string | null
+          other_reason: string | null
           partner_name: string | null
           partner_type: string | null
           sales_order_id: string | null
@@ -2608,6 +2608,14 @@ export type Database = {
     }
     Functions: {
       cleanup_expired_tokens: { Args: never; Returns: number }
+      create_goods_inward_with_units: {
+        Args: { p_inward_data: Json; p_stock_units: Json[] }
+        Returns: Json
+      }
+      create_goods_outward_with_items: {
+        Args: { p_outward_data: Json; p_stock_unit_items: Json[] }
+        Returns: Json
+      }
       generate_sequence_number: {
         Args: { company_uuid: string; prefix: string; table_name: string }
         Returns: string

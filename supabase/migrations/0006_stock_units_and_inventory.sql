@@ -16,8 +16,9 @@ CREATE TABLE stock_units (
     qr_code TEXT, -- Generated from unit_number
     
     -- Physical specifications
-    size_quantity DECIMAL(10,3) NOT NULL,
-    wastage DECIMAL(10,3) DEFAULT 0,
+    remaining_quantity DECIMAL(10,3) NOT NULL,
+    initial_quantity DECIMAL(10,3) NOT NULL, -- Track initial quantity at creation
+    supplier_number VARCHAR(100),
     quality_grade TEXT, -- Custom quality grade with auto-suggestions from previously used values
     location_description TEXT,
     
@@ -91,8 +92,8 @@ SELECT
     SUM(CASE WHEN su.status = 'in_stock' THEN 1 ELSE 0 END) as in_stock_units,
     SUM(CASE WHEN su.status = 'dispatched' THEN 1 ELSE 0 END) as dispatched_units,
     SUM(CASE WHEN su.status = 'removed' THEN 1 ELSE 0 END) as removed_units,
-    SUM(su.size_quantity) as total_quantity,
-    SUM(CASE WHEN su.status = 'in_stock' THEN su.size_quantity ELSE 0 END) as in_stock_quantity,
+    SUM(su.remaining_quantity) as total_quantity,
+    SUM(CASE WHEN su.status = 'in_stock' THEN su.remaining_quantity ELSE 0 END) as in_stock_quantity,
     p.measuring_unit
 FROM products p
 JOIN stock_units su ON p.id = su.product_id
