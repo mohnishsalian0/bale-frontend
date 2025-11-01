@@ -8,16 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TabPills } from '@/components/ui/tab-pills';
 import { Fab } from '@/components/ui/fab';
 import { createClient } from '@/lib/supabase/client';
-import type { Tables } from '@/types/database/supabase';
 import { DropdownMenu } from '@radix-ui/react-dropdown-menu';
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import IconGoodsInward from '@/components/icons/IconGoodsInward';
 import IconGoodsOutward from '@/components/icons/IconGoodsOutward';
 import { AddGoodsInwardSheet } from '../goods-inward/AddGoodsInwardSheet';
 import { AddGoodsOutwardSheet } from '../goods-outward/AddGoodsOutwardSheet';
-
-type OutwardRow = Tables<'goods_outwards'>;
-type InwardRow = Tables<'goods_inwards'>;
 
 interface StockFlowItem {
 	id: string;

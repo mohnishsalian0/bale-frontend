@@ -1,14 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { IconBolt, IconTrash } from '@tabler/icons-react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Scanner } from '@yudiel/react-qr-scanner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SelectInventorySheet } from './SelectInventorySheet';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
 import { getUnitAbbreviation } from '@/lib/utils/units';
+
+const SCAN_DELAY: number = 1200;
 
 export interface ScannedStockUnit {
 	stockUnit: Tables<'stock_units'>;
@@ -26,122 +29,18 @@ export function QRScannerStep({
 	onScannedUnitsChange,
 }: QRScannerStepProps) {
 	const [error, setError] = useState<string | null>(null);
-	const [flashlightSupported, setFlashlightSupported] = useState(false);
-	const [flashlightEnabled, setFlashlightEnabled] = useState(false);
-	const scannerRef = useRef<Html5Qrcode | null>(null);
-	const hasCameraInitialized = useRef(false);
+	const [torch, setTorch] = useState(false);
+	const [paused, setPaused] = useState(false);
+	const [showInventorySheet, setShowInventorySheet] = useState(false);
 	const supabase = createClient();
 
-	useEffect(() => {
-		// Prevent double initialization in strict mode
-		if (hasCameraInitialized.current) return;
-		hasCameraInitialized.current = true;
+	const handleScan = async (detectedCodes: any[]) => {
+		if (paused || detectedCodes.length === 0) return;
 
-		// Initialize scanner
-		const scanner = new Html5Qrcode('qr-reader');
-		scannerRef.current = scanner;
-
-		// Check if flashlight is supported
-		checkFlashlightSupport();
-
-		// Start scanning
-		startScanning();
-
-		return () => {
-			// Cleanup scanner on unmount
-			void stopScanning();
-		};
-	}, []);
-
-	const startScanning = async () => {
-		if (!scannerRef.current) return;
-
-		try {
-			setError(null);
-
-			await scannerRef.current.start(
-				{ facingMode: 'environment' },
-				{
-					fps: 10,
-					qrbox: 250,
-					aspectRatio: 1.0,
-				},
-				handleScanSuccess,
-				handleScanError
-			);
-
-			// Clear any previous errors on successful start
-			setError(null);
-		} catch (err) {
-			console.error('Error starting scanner:', err);
-			const errorMessage = err instanceof Error ? err.message : 'Failed to start camera';
-
-			// Only show error if it's a real issue (not permission-related temporary issue)
-			if (errorMessage.includes('NotAllowedError') || errorMessage.includes('Permission')) {
-				setError('Camera permission denied');
-			} else if (errorMessage.includes('NotFoundError')) {
-				setError('No camera found');
-			} else {
-				setError('Failed to start camera');
-			}
-		}
-	};
-
-	const pauseScanning = async () => {
-		if (scannerRef.current) {
-			scannerRef.current.pause();
-		}
-	};
-
-	const resumeScanning = async () => {
-		if (scannerRef.current) {
-			scannerRef.current.resume();
-		}
-	};
-
-	const stopScanning = async () => {
-		if (scannerRef.current) {
-			await scannerRef.current.stop();
-			scannerRef.current.clear();
-			scannerRef.current = null;
-			hasCameraInitialized.current = false;
-		}
-	};
-
-	const checkFlashlightSupport = async () => {
-		try {
-			const devices = await Html5Qrcode.getCameras();
-			if (devices && devices.length > 0) {
-				// Flashlight support varies by device, we'll try to enable it
-				const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-				const track = stream.getVideoTracks()[0];
-				const capabilities = track.getCapabilities() as any;
-				setFlashlightSupported('torch' in capabilities);
-				stream.getTracks().forEach(track => track.stop());
-			}
-		} catch (err) {
-			console.error('Error checking flashlight support:', err);
-		}
-	};
-
-	const toggleFlashlight = async () => {
-		if (!flashlightSupported) return;
-
-		try {
-			const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-			const track = stream.getVideoTracks()[0];
-			await track.applyConstraints({
-				advanced: [{ torch: !flashlightEnabled } as any]
-			});
-			setFlashlightEnabled(!flashlightEnabled);
-		} catch (err) {
-			console.error('Error toggling flashlight:', err);
-		}
-	};
-
-	const handleScanSuccess = async (decodedText: string) => {
 		// Pause scanning temporarily to process
-		await pauseScanning();
+		setPaused(true);
+
+		const decodedText = detectedCodes[0].rawValue;
 
 		// Check if already scanned
 		const alreadyScanned = scannedUnits.some(
@@ -150,8 +49,10 @@ export function QRScannerStep({
 
 		if (alreadyScanned) {
 			setError('Stock unit already added');
-			setTimeout(() => setError(null), 3000);
-			setTimeout(resumeScanning, 1000);
+			setTimeout(() => {
+				setError(null);
+				setPaused(false);
+			}, SCAN_DELAY);
 			return;
 		}
 
@@ -166,8 +67,10 @@ export function QRScannerStep({
 
 			if (stockError || !stockUnit) {
 				setError('Stock unit no longer in inventory');
-				setTimeout(() => setError(null), 3000);
-				setTimeout(resumeScanning, 1000);
+				setTimeout(() => {
+					setError(null);
+					setPaused(false);
+				}, SCAN_DELAY);
 				return;
 			}
 
@@ -180,8 +83,10 @@ export function QRScannerStep({
 
 			if (productError || !product) {
 				setError('Product not found');
-				setTimeout(() => setError(null), 3000);
-				setTimeout(resumeScanning, 1000);
+				setTimeout(() => {
+					setError(null);
+					setPaused(false);
+				}, SCAN_DELAY);
 				return;
 			}
 
@@ -191,23 +96,29 @@ export function QRScannerStep({
 				{
 					stockUnit,
 					product,
-					quantity: stockUnit.initial_quantity,
+					quantity: stockUnit.remaining_quantity,
 				}
 			]);
 
-			// Resume scanning
-			setTimeout(resumeScanning, 1000);
+			// Resume scanning after a brief delay
+			setTimeout(() => setPaused(false), SCAN_DELAY);
 		} catch (err) {
 			console.error('Error fetching stock unit:', err);
-			setError('Invalid qr code');
-			setTimeout(() => setError(null), 3000);
-			setTimeout(resumeScanning, 1000);
+			setError('Invalid QR code');
+			setTimeout(() => {
+				setError(null);
+				setPaused(false);
+			}, SCAN_DELAY);
 		}
 	};
 
-	const handleScanError = (_err: string) => {
-		// Silently ignore all scan errors - they happen constantly when no QR is detected
-		// This is normal behavior for the scanner
+	const handleError = (err: any) => {
+		console.error('Scanner error:', err);
+		if (err?.name === 'NotAllowedError') {
+			setError('Camera permission denied');
+		} else if (err?.name === 'NotFoundError') {
+			setError('No camera found');
+		}
 	};
 
 	const handleQuantityChange = (index: number, newQuantity: number) => {
@@ -230,45 +141,62 @@ export function QRScannerStep({
 	};
 
 	const handleOpenInventory = () => {
-		// TODO: Open inventory selection sheet
-		console.log('Open inventory selection');
+		setShowInventorySheet(true);
+	};
+
+	const handleProductSelect = (product: Tables<'products'>) => {
+		// TODO: Open stock units selection for this product
+		console.log('Selected product:', product);
+		setShowInventorySheet(false);
 	};
 
 	return (
 		<div className="flex flex-col h-full">
 			{/* Camera Section */}
 			<div className="relative aspect-square w-full shrink-0 bg-gray-900 overflow-hidden">
-				{/* QR Reader Container */}
-				<div id="qr-reader" className="absolute inset-0" />
-				<style jsx global>{`
-					#qr-reader {
-						width: 100% !important;
-						height: 100% !important;
-					}
-					#qr-reader > div,
-					#qr-reader video {
-						width: 100% !important;
-						height: 100% !important;
-						object-fit: cover !important;
-					}
-					#qr-reader__dashboard_section {
-						display: none !important;
-					}
-					#qr-reader__dashboard_section_csr {
-						display: none !important;
-					}
-				`}</style>
+				{/* QR Scanner */}
+				<Scanner
+					onScan={handleScan}
+					onError={handleError}
+					formats={['qr_code']}
+					paused={paused}
+					components={{
+						torch: torch,
+						finder: false,
+					}}
+					constraints={{
+						facingMode: 'environment',
+					}}
+					styles={{
+						container: {
+							width: '100%',
+							height: '100%',
+						},
+						video: {
+							objectFit: 'cover',
+						},
+					}}
+				>
+					{/* Custom Finder */}
+					<div className="absolute top-1/2 left-1/2 w-2/3 h-2/3 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+						<div
+							className="w-full h-full border-2 border-white rounded-2xl"
+							style={{
+								boxShadow: '0 0 0 9999px color-mix(in srgb, var(--color-gray-900) 80%, transparent)',
+							}}
+						/>
+					</div>
+				</Scanner>
 
-				{/* Title Overlay */}
-				<p className="absolute top-10 left-1/2 -translate-x-1/2 text-lg text-white text-center whitespace-pre z-10">
-					Scan QR to add item
-				</p>
-
-				{/* Error Message */}
-				{error && (
-					<div className="absolute top-20 left-1/2 -translate-x-1/2 bg-red-100/50 text-red-900 px-4 py-2 rounded-lg text-sm z-10">
+				{/* Title & Error Overlay */}
+				{error ? (
+					<div className="absolute top-10 left-1/2 -translate-x-1/2 bg-white/50 text-red-900 px-4 py-2 text-sm text-nowrap rounded-lg z-10">
 						{error}
 					</div>
+				) : (
+					<p className="absolute top-10 left-1/2 -translate-x-1/2 text-lg text-white text-center whitespace-pre z-10">
+						Scan QR to add item
+					</p>
 				)}
 
 				{/* Action Buttons */}
@@ -276,11 +204,11 @@ export function QRScannerStep({
 					{/* Flashlight Button */}
 					<Button
 						type="button"
-						variant="outline"
+						// variant="outline"
+						variant={`${torch ? 'default' : 'outline'}`}
 						size="icon"
-						onClick={toggleFlashlight}
-						disabled={!flashlightSupported}
-						className="border-gray-500 shadow-dark-gray-md hover:bg-gray-200 hover:text-gray-700"
+						onClick={() => setTorch(prev => !prev)}
+						className={`${!torch ? 'border-gray-500 shadow-dark-gray-md hover:bg-gray-200 hover:text-gray-700' : ''}`}
 					>
 						<IconBolt className="rotate-[270deg]" />
 					</Button>
@@ -376,6 +304,15 @@ export function QRScannerStep({
 					</div>
 				)}
 			</div>
+
+			{/* Select Inventory Sheet */}
+			{showInventorySheet && (
+				<SelectInventorySheet
+					open={showInventorySheet}
+					onOpenChange={setShowInventorySheet}
+					onProductSelect={handleProductSelect}
+				/>
+			)}
 		</div>
 	);
 }

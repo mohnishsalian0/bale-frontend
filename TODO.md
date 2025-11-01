@@ -125,11 +125,22 @@
 - [ ] Stock unit detail and edit
 
 ## Phase 8: Iteration 4 - Outward/Barcode Scanning
-- [ ] Add goods outward form (partner or warehouse transfer)
+- [x] Create AddGoodsOutwardSheet component with 2-step flow (scanner → details)
+- [x] Implement QRScannerStep with camera scanner using @yudiel/react-qr-scanner
+- [x] Add custom overlay with rounded cutout for QR scanner
+- [x] Implement flashlight/torch toggle for camera
+- [x] Create scanned units list with quantity editing
+- [x] Create OutwardDetailsStep with dispatch to and link to options
+- [x] Add goods outward form submission using create_goods_outward_with_items function
+- [x] Integrate goods outward with stock flow page
+- [x] Create SelectInventorySheet for manual stock unit selection
+- [x] Create InventoryProductListStep with search and filters (material, color, tags)
+- [x] Add "Select from inventory" button in QR scanner
+- [ ] Create StockUnitSelectionStep to show product's stock units
+- [ ] Allow selecting and adding stock units from inventory to outward
 - [ ] View goods outward details page
 - [ ] View goods outward stock units page
 - [ ] Stock unit selection with real-time validation
-- [ ] PWA barcode scanning with camera
 - [ ] Outward cancellation functionality
 
 ## Phase 9: Iteration 5 - Sales Orders/Job Work
