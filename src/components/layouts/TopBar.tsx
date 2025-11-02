@@ -1,6 +1,6 @@
 'use client';
 
-import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import { IconChevronDown } from '@tabler/icons-react';
 import Image from 'next/image';
 import { SidebarTrigger } from '../ui/sidebar';
 import { Button } from '../ui/button';

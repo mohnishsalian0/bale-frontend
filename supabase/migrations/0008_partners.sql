@@ -31,7 +31,10 @@ CREATE TABLE partners (
     state VARCHAR(100),
     country VARCHAR(100) DEFAULT 'India',
     pin_code VARCHAR(10),
-    
+
+    -- Image
+    image_url TEXT,
+
     notes TEXT,
     
     -- Audit fields

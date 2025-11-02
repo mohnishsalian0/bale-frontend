@@ -81,8 +81,8 @@ export default async function InvitePage({ params }: InvitePageProps) {
       .single();
 
     if (existingUser) {
-      // Already registered - redirect to protected
-      redirect('/protected');
+      // Already registered - redirect to protected/dashboard
+      redirect('/protected/dashboard');
     }
   }
 

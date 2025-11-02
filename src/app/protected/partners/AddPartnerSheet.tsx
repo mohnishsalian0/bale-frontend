@@ -103,7 +103,25 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 				throw new Error('User not found');
 			}
 
-			// Prepare typed insert data
+			// Upload image first (if provided)
+			let imageUrl: string | null = null;
+			if (formData.image) {
+				try {
+					// Generate a temporary ID for the upload path
+					const tempPartnerId = crypto.randomUUID();
+					const { publicUrl } = await uploadPartnerImage(
+						currentUser.company_id,
+						tempPartnerId,
+						formData.image
+					);
+					imageUrl = publicUrl;
+				} catch (uploadError) {
+					console.error('Image upload failed:', uploadError);
+					throw new Error('Failed to upload image. Please try again.');
+				}
+			}
+
+			// Prepare typed insert data with image URL
 			const partnerInsert: TablesInsert<'partners'> = {
 				company_id: currentUser.company_id,
 				partner_type: formData.partnerType,
@@ -121,6 +139,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 				gst_number: formData.gstNumber || null,
 				pan_number: formData.panNumber || null,
 				notes: formData.notes || null,
+				image_url: imageUrl,
 				created_by: currentUser.id,
 			};
 
@@ -132,16 +151,6 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 				.single();
 
 			if (insertError) throw insertError;
-
-			// Upload image if provided
-			if (formData.image && partner) {
-				try {
-					await uploadPartnerImage(currentUser.company_id, partner.id, formData.image);
-				} catch (uploadError) {
-					console.error('Image upload failed:', uploadError);
-					// Don't fail the whole operation if image upload fails
-				}
-			}
 
 			// Success! Close sheet and notify parent
 			handleCancel();

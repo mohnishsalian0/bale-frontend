@@ -43,7 +43,7 @@ export default function WarehouseSelector({
 
 			{/* Dropdown Panel */}
 			<div
-				className={`z-20 fixed left-[var(--sidebar-width)] right-0 top-[64px] bg-background-100 border-b border-gray-200 transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'translate-y-0' : '-translate-y-full pointer-events-none'
+				className={`z-20 sticky w-full right-0 top-[64px] bg-background-100 border-b border-gray-200 transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'translate-y-0' : '-translate-y-full pointer-events-none'
 					}`}
 			>
 				<div className="max-w-md mx-auto px-4 py-6">

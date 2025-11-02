@@ -82,6 +82,7 @@ export type Database = {
           created_by: string
           fields_selected: string[] | null
           id: string
+          image_url: string | null
           modified_by: string | null
           pdf_url: string | null
           updated_at: string
@@ -94,6 +95,7 @@ export type Database = {
           created_by: string
           fields_selected?: string[] | null
           id?: string
+          image_url?: string | null
           modified_by?: string | null
           pdf_url?: string | null
           updated_at?: string
@@ -106,6 +108,7 @@ export type Database = {
           created_by?: string
           fields_selected?: string[] | null
           id?: string
+          image_url?: string | null
           modified_by?: string | null
           pdf_url?: string | null
           updated_at?: string
@@ -1297,6 +1300,7 @@ export type Database = {
           first_name: string
           gst_number: string | null
           id: string
+          image_url: string | null
           last_name: string
           modified_by: string | null
           notes: string | null
@@ -1321,6 +1325,7 @@ export type Database = {
           first_name: string
           gst_number?: string | null
           id?: string
+          image_url?: string | null
           last_name: string
           modified_by?: string | null
           notes?: string | null
@@ -1345,6 +1350,7 @@ export type Database = {
           first_name?: string
           gst_number?: string | null
           id?: string
+          image_url?: string | null
           last_name?: string
           modified_by?: string | null
           notes?: string | null

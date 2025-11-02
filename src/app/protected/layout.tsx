@@ -5,7 +5,7 @@ import TopBar from '@/components/layouts/TopBar';
 import BottomNav from '@/components/layouts/BottomNav';
 import WarehouseSelector from '@/components/layouts/WarehouseSelector';
 import { AppSidebar } from '@/components/layouts/AppSidebar';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
 	const [isSelectorOpen, setIsSelectorOpen] = useState(false);

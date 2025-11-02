@@ -11,6 +11,7 @@ CREATE TABLE barcode_batches (
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
     
     batch_name VARCHAR(100) NOT NULL,
+    image_url TEXT,
     fields_selected TEXT[], -- Fields to display on barcode
     pdf_url TEXT, -- Generated PDF location
     
