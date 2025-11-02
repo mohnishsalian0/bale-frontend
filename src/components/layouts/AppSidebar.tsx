@@ -36,32 +36,32 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
 	{
 		label: 'Job work',
-		href: '/dashboard/job-work',
+		href: '/protected/job-work',
 		icon: IconClipboardList,
 	},
 	{
 		label: 'QR codes',
-		href: '/dashboard/qr-codes',
+		href: '/protected/qr-codes',
 		icon: IconQrcode,
 	},
 	{
 		label: 'Partners',
-		href: '/dashboard/partners',
+		href: '/protected/partners',
 		icon: IconUsers,
 	},
 	{
 		label: 'Staff',
-		href: '/dashboard/staff',
+		href: '/protected/staff',
 		icon: IconIdBadge2,
 	},
 	{
 		label: 'Reports',
-		href: '/dashboard/reports',
+		href: '/protected/reports',
 		icon: IconChartBar,
 	},
 	{
 		label: 'Settings',
-		href: '/dashboard/settings',
+		href: '/protected/settings',
 		icon: IconSettings,
 	},
 	{

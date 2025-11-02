@@ -50,10 +50,10 @@ export async function middleware(request: NextRequest) {
 		return NextResponse.redirect(redirectUrl);
 	}
 
-	// If authenticated and trying to access auth pages, redirect to dashboard
+	// If authenticated and trying to access auth pages, redirect to protected
 	if (user && pathname.startsWith('/auth/login')) {
 		const redirectUrl = request.nextUrl.clone();
-		redirectUrl.pathname = '/dashboard';
+		redirectUrl.pathname = '/protected';
 		return NextResponse.redirect(redirectUrl);
 	}
 

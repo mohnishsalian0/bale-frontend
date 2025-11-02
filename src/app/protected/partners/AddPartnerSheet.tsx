@@ -423,7 +423,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 						<Collapsible
 							open={showAdditionalDetails}
 							onOpenChange={setShowAdditionalDetails}
-							className="border-t border-gray-200 px-4 py-5 pb-24"
+							className="border-t border-gray-200 px-4 py-5"
 						>
 							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showAdditionalDetails ? 'mb-5' : 'mb-0'}`}>
 								<h3 className="text-lg font-medium text-gray-900">Additional Details</h3>

@@ -11,10 +11,10 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-	{ href: '/dashboard', label: 'Home', icon: '/illustrations/dashboard.png' },
-	{ href: '/dashboard/inventory', label: 'Inventory', icon: '/illustrations/inventory.png' },
-	{ href: '/dashboard/stock-flow', label: 'Stock flow', icon: '/illustrations/stock-flow.png' },
-	{ href: '/dashboard/sales-orders', label: 'Sales orders', icon: '/illustrations/sales-order.png' },
+	{ href: '/protected', label: 'Home', icon: '/illustrations/dashboard.png' },
+	{ href: '/protected/inventory', label: 'Inventory', icon: '/illustrations/inventory.png' },
+	{ href: '/protected/stock-flow', label: 'Stock flow', icon: '/illustrations/stock-flow.png' },
+	{ href: '/protected/sales-orders', label: 'Sales orders', icon: '/illustrations/sales-order.png' },
 ];
 
 export default function BottomNav() {

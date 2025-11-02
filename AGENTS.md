@@ -93,7 +93,7 @@ npm run build
 /src
   /app                    # Next.js App Router
     /(auth)              # Auth routes (login, register)
-    /(dashboard)         # Protected dashboard routes
+    /(protected)         # Protected routes
     /(catalog)           # Public sales catalog
   /components
     /ui                  # Reusable UI components

@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
   const inviteCode = requestUrl.searchParams.get('invite_code');
-  const redirectTo = requestUrl.searchParams.get('redirectTo') || '/dashboard';
+  const redirectTo = requestUrl.searchParams.get('redirectTo') || '/protected';
 
   console.log('🔍 Auth callback received');
   console.log('Code:', code);

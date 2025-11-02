@@ -11,7 +11,7 @@ export default function LoginPage() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
 	const searchParams = useSearchParams();
-	const redirectTo = searchParams.get('redirectTo') || '/dashboard';
+	const redirectTo = searchParams.get('redirectTo') || '/protected';
 
 	const handleLogin = async () => {
 		setLoading(true);
