@@ -13,8 +13,7 @@ CREATE TABLE stock_units (
     
     -- Identity
     unit_number VARCHAR(100) NOT NULL,
-    qr_code TEXT, -- Generated from unit_number
-    
+
     -- Physical specifications
     remaining_quantity DECIMAL(10,3) NOT NULL,
     initial_quantity DECIMAL(10,3) NOT NULL, -- Track initial quantity at creation
@@ -33,11 +32,10 @@ CREATE TABLE stock_units (
     created_from_inward_id UUID, -- FK will be added in goods movement migration
 
     notes TEXT,
-    
+
     -- Barcode tracking
-    barcode_generated BOOLEAN DEFAULT FALSE,
     barcode_generated_at TIMESTAMPTZ,
-    
+
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -67,9 +65,6 @@ CREATE INDEX idx_stock_units_unit_number ON stock_units(company_id, unit_number)
 
 -- Inward tracking (for audit trail)
 CREATE INDEX idx_stock_units_inward_id ON stock_units(created_from_inward_id);
-
--- Barcode generation tracking
-CREATE INDEX idx_stock_units_barcode_generated ON stock_units(warehouse_id, barcode_generated);
 
 -- Quality grade filtering
 CREATE INDEX idx_stock_units_quality_grade ON stock_units(company_id, quality_grade);
@@ -128,12 +123,7 @@ BEGIN
         
         NEW.unit_number := product_num || '-SU' || LPAD(next_seq::TEXT, 6, '0');
     END IF;
-    
-    -- Generate QR code from unit number
-    IF NEW.qr_code IS NULL OR NEW.qr_code = '' THEN
-        NEW.qr_code := NEW.unit_number;
-    END IF;
-    
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

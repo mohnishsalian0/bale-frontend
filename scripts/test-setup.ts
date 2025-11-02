@@ -652,7 +652,6 @@ async function createTestPartners() {
 								location_description: `Rack ${String.fromCharCode(65 + Math.floor(Math.random() * 5))}-${Math.floor(Math.random() * 10) + 1}`,
 								status: 'in_stock',
 								manufacturing_date: inwards.inward_date,
-								barcode_generated: false,
 							});
 
 						if (stockError) {
@@ -1057,6 +1056,177 @@ async function createTestPartners() {
 
 			console.log('\n✨ Test sales orders created successfully!');
 		}
+	}
+
+	// Create QR code batches
+	console.log('\n📱 Creating test QR code batches...\n');
+
+	// Get some stock units to use in batches
+	const { data: availableStockUnits, error: stockUnitsError } = await supabase
+		.from('stock_units')
+		.select('id')
+		.eq('company_id', companyId)
+		.eq('warehouse_id', warehouseId)
+		.eq('status', 'in_stock')
+		.limit(20);
+
+	if (stockUnitsError || !availableStockUnits || availableStockUnits.length === 0) {
+		console.error('❌ No stock units found for creating QR batches');
+	} else {
+		// Create dates spanning 3 months
+		const now = new Date();
+		const month1 = new Date(now.getFullYear(), now.getMonth(), 10); // Current month
+		const month2 = new Date(now.getFullYear(), now.getMonth() - 1, 15); // Last month
+		const month3 = new Date(now.getFullYear(), now.getMonth() - 2, 20); // 2 months ago
+
+		const testBatches = [
+			{
+				company_id: companyId,
+				warehouse_id: warehouseId,
+				created_by: createdBy,
+				batch_name: 'Silk Saree Collection - Jan 2025',
+				fields_selected: ['product_name', 'quality_grade', 'location', 'qr_code'],
+				pdf_url: null, // Would be generated when batch is actually created
+				image_url: null,
+				created_at: month3.toISOString(),
+			},
+			{
+				company_id: companyId,
+				warehouse_id: warehouseId,
+				created_by: createdBy,
+				batch_name: 'Cotton Fabric Batch #2',
+				fields_selected: ['product_name', 'size', 'quality_grade', 'qr_code'],
+				pdf_url: null,
+				image_url: null,
+				created_at: month3.toISOString(),
+			},
+			{
+				company_id: companyId,
+				warehouse_id: warehouseId,
+				created_by: createdBy,
+				batch_name: 'Premium Woolen Stock',
+				fields_selected: ['product_name', 'quality_grade', 'supplier_number', 'location', 'qr_code'],
+				pdf_url: null,
+				image_url: null,
+				created_at: month2.toISOString(),
+			},
+			{
+				company_id: companyId,
+				warehouse_id: warehouseId,
+				created_by: createdBy,
+				batch_name: 'New Arrivals - March',
+				fields_selected: ['product_name', 'color', 'size', 'qr_code'],
+				pdf_url: null,
+				image_url: null,
+				created_at: month2.toISOString(),
+			},
+			{
+				company_id: companyId,
+				warehouse_id: warehouseId,
+				created_by: createdBy,
+				batch_name: 'Export Ready Stock',
+				fields_selected: ['product_name', 'quality_grade', 'location', 'manufacturing_date', 'qr_code'],
+				pdf_url: null,
+				image_url: null,
+				created_at: month2.toISOString(),
+			},
+			{
+				company_id: companyId,
+				warehouse_id: warehouseId,
+				created_by: createdBy,
+				batch_name: 'Warehouse Audit Batch',
+				fields_selected: ['product_name', 'size', 'location', 'qr_code'],
+				pdf_url: null,
+				image_url: null,
+				created_at: month1.toISOString(),
+			},
+			{
+				company_id: companyId,
+				warehouse_id: warehouseId,
+				created_by: createdBy,
+				batch_name: 'Festival Collection QRs',
+				fields_selected: ['product_name', 'color', 'quality_grade', 'qr_code'],
+				pdf_url: null,
+				image_url: null,
+				created_at: month1.toISOString(),
+			},
+		];
+
+		let stockUnitIndex = 0;
+
+		for (const batch of testBatches) {
+			// Check if batch already exists
+			const { data: existingBatch } = await supabase
+				.from('barcode_batches')
+				.select('id, batch_name')
+				.eq('company_id', companyId)
+				.eq('batch_name', batch.batch_name)
+				.single();
+
+			let batchId: string;
+
+			if (existingBatch) {
+				console.log(`⏭️  Batch "${batch.batch_name}" already exists`);
+				batchId = existingBatch.id;
+			} else {
+				const { data, error } = await supabase
+					.from('barcode_batches')
+					.insert(batch)
+					.select()
+					.single();
+
+				if (error) {
+					console.error(`❌ Failed to create batch: ${batch.batch_name}`);
+					console.error(`   Error: ${error.message}`);
+					continue;
+				} else {
+					batchId = data.id;
+					console.log(`✅ Created QR batch: ${batch.batch_name}`);
+				}
+			}
+
+			// Check if batch items already exist
+			const { data: existingItems, error: checkItemsError } = await supabase
+				.from('barcode_batch_items')
+				.select('id')
+				.eq('batch_id', batchId);
+
+			if (checkItemsError) {
+				console.error(`   ❌ Failed to check existing items: ${checkItemsError.message}`);
+				continue;
+			}
+
+			if (existingItems && existingItems.length > 0) {
+				console.log(`   ⏭️  Batch items already exist (${existingItems.length} items)`);
+				stockUnitIndex += existingItems.length;
+				continue;
+			}
+
+			// Add stock units to batch (3-5 units per batch)
+			const itemCount = Math.min(
+				Math.floor(Math.random() * 3) + 3, // 3-5 items
+				availableStockUnits.length - stockUnitIndex
+			);
+
+			for (let i = 0; i < itemCount && stockUnitIndex < availableStockUnits.length; i++) {
+				const { error: itemError } = await supabase
+					.from('barcode_batch_items')
+					.insert({
+						batch_id: batchId,
+						stock_unit_id: availableStockUnits[stockUnitIndex].id,
+					});
+
+				if (itemError) {
+					console.error(`   ❌ Failed to add item to batch: ${itemError.message}`);
+				} else {
+					console.log(`   ✅ Added item ${i + 1}/${itemCount} to batch`);
+				}
+
+				stockUnitIndex++;
+			}
+		}
+
+		console.log('\n✨ Test QR code batches created successfully!');
 	}
 
 	// Create invite for the test company

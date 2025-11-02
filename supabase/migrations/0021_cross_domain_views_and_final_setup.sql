@@ -104,7 +104,7 @@ SELECT
     END) as pending_sales_orders,
     
     -- Barcode generation status
-    COUNT(DISTINCT CASE WHEN su.barcode_generated = false THEN su.id END) as units_without_barcodes,
+    COUNT(DISTINCT CASE WHEN su.barcode_generated_at IS NULL THEN su.id END) as units_without_barcodes,
     
     -- Staff information
     COUNT(DISTINCT u.id) as assigned_staff_count,

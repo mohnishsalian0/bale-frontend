@@ -1850,7 +1850,6 @@ export type Database = {
       }
       stock_units: {
         Row: {
-          barcode_generated: boolean | null
           barcode_generated_at: string | null
           company_id: string
           created_at: string
@@ -1864,7 +1863,6 @@ export type Database = {
           modified_by: string | null
           notes: string | null
           product_id: string
-          qr_code: string | null
           quality_grade: string | null
           remaining_quantity: number
           status: string
@@ -1874,7 +1872,6 @@ export type Database = {
           warehouse_id: string
         }
         Insert: {
-          barcode_generated?: boolean | null
           barcode_generated_at?: string | null
           company_id: string
           created_at?: string
@@ -1888,7 +1885,6 @@ export type Database = {
           modified_by?: string | null
           notes?: string | null
           product_id: string
-          qr_code?: string | null
           quality_grade?: string | null
           remaining_quantity: number
           status?: string
@@ -1898,7 +1894,6 @@ export type Database = {
           warehouse_id: string
         }
         Update: {
-          barcode_generated?: boolean | null
           barcode_generated_at?: string | null
           company_id?: string
           created_at?: string
@@ -1912,7 +1907,6 @@ export type Database = {
           modified_by?: string | null
           notes?: string | null
           product_id?: string
-          qr_code?: string | null
           quality_grade?: string | null
           remaining_quantity?: number
           status?: string
@@ -2245,7 +2239,7 @@ export type Database = {
       }
       goods_inward_stock_units: {
         Row: {
-          barcode_generated: boolean | null
+          barcode_generated_at: string | null
           color: string | null
           inward_date: string | null
           inward_id: string | null
@@ -2255,7 +2249,6 @@ export type Database = {
           material: string | null
           measuring_unit: string | null
           product_name: string | null
-          qr_code: string | null
           quality_grade: string | null
           remaining_quantity: number | null
           status: string | null
@@ -2620,6 +2613,10 @@ export type Database = {
       }
       create_goods_outward_with_items: {
         Args: { p_outward_data: Json; p_stock_unit_items: Json[] }
+        Returns: Json
+      }
+      create_qr_batch_with_items: {
+        Args: { p_batch_data: Json; p_stock_unit_ids: string[] }
         Returns: Json
       }
       generate_sequence_number: {

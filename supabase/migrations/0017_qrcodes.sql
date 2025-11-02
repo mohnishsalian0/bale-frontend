@@ -64,11 +64,10 @@ BEGIN
     SELECT created_at INTO batch_created_at
     FROM barcode_batches
     WHERE id = NEW.batch_id;
-    
+
     -- Update stock unit with barcode tracking info
-    UPDATE stock_units 
-    SET barcode_generated = TRUE,
-        barcode_generated_at = batch_created_at
+    UPDATE stock_units
+    SET barcode_generated_at = batch_created_at
     WHERE id = NEW.stock_unit_id;
     RETURN NEW;
 END;
