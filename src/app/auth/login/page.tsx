@@ -1,13 +1,13 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
-import { useState, useEffect } from 'react';
+import { useState, Suspense } from 'react';
 import Image from 'next/image';
 import { IconBrandGoogleFilled } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
+function LoginForm() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
 	const searchParams = useSearchParams();
@@ -46,11 +46,12 @@ export default function LoginPage() {
 		<div className="min-h-screen flex items-start justify-center px-4 pt-[66px]">
 			<div className="w-full max-w-[380px] flex flex-col gap-8 items-center">
 				{/* Mascot Image */}
-				<div className="relative w-[222px] h-[320px]">
+				<div className="relative size-80 shrink-0">
 					<Image
 						src="/mascot/welcome.png"
 						alt="Welcome mascot"
 						fill
+						sizes="320px"
 						className="object-contain"
 						priority
 					/>
@@ -94,4 +95,21 @@ export default function LoginPage() {
 			</div>
 		</div>
 	);
+}
+
+export default function LoginPage() {
+	return (
+		<Suspense fallback={(
+			<div className="relative flex flex-col min-h-screen pb-16">
+				<div className="flex items-center justify-center h-screen">
+					<div className="flex flex-col items-center gap-3">
+						<div className="size-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+						<p className="text-sm text-gray-600">Loading login...</p>
+					</div>
+				</div>
+			</div>
+		)} >
+			<LoginForm />
+		</Suspense >
+	)
 }

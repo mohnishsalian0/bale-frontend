@@ -50,14 +50,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 					isWarehouseSelectorOpen={isSelectorOpen}
 				/>
 
-				{isSelectorOpen &&
+				{isSelectorOpen && (
 					<WarehouseSelector
 						warehouses={warehouses}
 						currentWarehouse={currentWarehouse}
 						onSelect={handleWarehouseSelect}
-						isOpen={isSelectorOpen}
 						onClose={() => setIsSelectorOpen(false)}
-					/>}
+					/>
+				)}
 
 				<div className="flex-1 pb-16 overflow-y-auto">
 					{children}

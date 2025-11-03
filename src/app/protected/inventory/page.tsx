@@ -141,11 +141,12 @@ export default function InventoryPage() {
 				</div>
 
 				{/* Mascot */}
-				<div className="relative w-[120px] h-[127px] shrink-0">
+				<div className="relative size-25 shrink-0">
 					<Image
 						src="/illustrations/inventory-shelf.png"
 						alt="Inventory"
 						fill
+						sizes="100px"
 						className="object-contain"
 					/>
 				</div>

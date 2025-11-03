@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Image from 'next/image';
 import { IconMapPin, IconBuildingWarehouse } from '@tabler/icons-react';
 
@@ -15,7 +14,6 @@ interface WarehouseSelectorProps {
 	warehouses: Warehouse[];
 	currentWarehouse: string;
 	onSelect: (warehouseId: string) => void;
-	isOpen: boolean;
 	onClose: () => void;
 }
 
@@ -23,7 +21,6 @@ export default function WarehouseSelector({
 	warehouses,
 	currentWarehouse,
 	onSelect,
-	isOpen,
 	onClose,
 }: WarehouseSelectorProps) {
 	const handleSelect = (warehouseId: string) => {
@@ -34,17 +31,14 @@ export default function WarehouseSelector({
 	return (
 		<>
 			{/* Backdrop */}
-			{isOpen && (
-				<div
-					className="fixed inset-0 bg-black/20 z-10"
-					onClick={onClose}
-				/>
-			)}
+			<div
+				className="fixed inset-0 bg-black/20 z-10 animate-in fade-in-0 duration-300"
+				onClick={onClose}
+			/>
 
 			{/* Dropdown Panel */}
 			<div
-				className={`z-20 sticky w-full right-0 top-[64px] bg-background-100 border-b border-gray-200 transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'translate-y-0' : '-translate-y-full pointer-events-none'
-					}`}
+				className="z-20 absolute w-full top-[64px] bg-background-100 border-b border-gray-200 overflow-hidden animate-in slide-in-from-top duration-300"
 			>
 				<div className="max-w-md mx-auto px-4 py-6">
 					{/* Header with illustration */}

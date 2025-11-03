@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { QRProductSelectionStep } from './QRProductSelectionStep';
 import { QRStockUnitSelectionStep } from './QRStockUnitSelectionStep';
-import { QRTemplateSelectionStep, getDefaultTemplateFields } from './QRTemplateSelectionStep';
-import type { QRTemplateField } from './QRTemplateSelectionStep';
+import { QRTemplateSelectionStep, getDefaultTemplateFields } from './QRTemplateCustomisationStep';
+import type { QRTemplateField } from './QRTemplateCustomisationStep';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import type { Tables } from '@/types/database/supabase';
+import { generateAndDownloadPDF, type LabelData } from '@/lib/pdf/qr-label-generator';
 
 interface CreateQRBatchSheetProps {
 	open: boolean;
@@ -102,22 +103,80 @@ export function CreateQRBatchSheet({
 				company_id: currentUser.company_id,
 				warehouse_id: currentUser.warehouse_id,
 				batch_name: batchName,
-				image_url: null, // TODO: Generate QR code image
+				image_url: null,
 				fields_selected: selectedFields,
-				pdf_url: null, // TODO: Generate PDF
+				pdf_url: null,
 				created_by: currentUser.id,
 			};
 
 			// Call RPC function to create batch atomically
-			const { data, error } = await supabase.rpc('create_qr_batch_with_items', {
+			const { data: _data, error } = await supabase.rpc('create_qr_batch_with_items', {
 				p_batch_data: batchData,
 				p_stock_unit_ids: selectedStockUnitIds,
 			});
 
 			if (error) throw error;
 
-			// TODO: Redirect to batch info page with batch ID
-			// For now, just show success and close
+			// Fetch stock unit data for PDF generation
+			const { data: stockUnitsData, error: stockUnitsError } = await supabase
+				.from('stock_units')
+				.select(`
+					id,
+					unit_number,
+					manufacturing_date,
+					initial_quantity,
+					quality_grade,
+					location_description,
+					products (
+						name,
+						product_number,
+						hsn_code,
+						material,
+						color,
+						gsm,
+						selling_price_per_unit
+					)
+				`)
+				.in('id', selectedStockUnitIds);
+
+			if (stockUnitsError) throw stockUnitsError;
+
+			// Fetch company logo
+			const { data: companyData, error: companyError } = await supabase
+				.from('companies')
+				.select('logo_url')
+				.eq('id', currentUser.company_id)
+				.single();
+
+			if (companyError) throw companyError;
+
+			// Map data to LabelData format
+			const stockUnits: LabelData[] = stockUnitsData.map((unit: any) => ({
+				id: unit.id,
+				unit_number: unit.unit_number,
+				manufacturing_date: unit.manufacturing_date,
+				initial_quantity: unit.initial_quantity,
+				quality_grade: unit.quality_grade,
+				location_description: unit.location_description,
+				product: {
+					name: unit.products?.name || '',
+					product_number: unit.products?.product_number || '',
+					hsn_code: unit.products?.hsn_code,
+					material: unit.products?.material,
+					color: unit.products?.color,
+					gsm: unit.products?.gsm,
+					selling_price_per_unit: unit.products?.selling_price_per_unit,
+				},
+			}));
+
+			// Generate and download PDF
+			await generateAndDownloadPDF(
+				stockUnits,
+				selectedFields,
+				companyData?.logo_url || null,
+				batchName
+			);
+
 			toast.success(`QR batch created with ${selectedStockUnitIds.length} units`);
 			handleClose();
 
@@ -161,8 +220,8 @@ export function CreateQRBatchSheet({
 						style={{
 							width:
 								currentStep === 'product' ? '33%' :
-								currentStep === 'stock-units' ? '66%' :
-								'100%'
+									currentStep === 'stock-units' ? '66%' :
+										'100%'
 						}}
 					/>
 				</div>

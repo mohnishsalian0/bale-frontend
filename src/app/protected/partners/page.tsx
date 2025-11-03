@@ -176,6 +176,7 @@ export default function PartnersPage() {
 						src="/mascot/partner-handshake.png"
 						alt="Partners"
 						fill
+						sizes="100px"
 						className="object-contain"
 					/>
 				</div>
