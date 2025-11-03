@@ -51,12 +51,12 @@ export function formatRelativeDate(date: Date | string): string {
 	}
 
 	if (isThisYear(dateObj)) {
-		// Return month name like "on August"
-		return `on ${format(dateObj, 'MMMM')}`;
+		// Return month name like "on Aug"
+		return `on ${format(dateObj, 'MMM')}`;
 	}
 
 	// For older dates, just return the year
-	return format(dateObj, 'yyyy');
+	return format(dateObj, 'MMM yy');
 }
 
 /**

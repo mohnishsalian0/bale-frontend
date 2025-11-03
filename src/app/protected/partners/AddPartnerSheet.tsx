@@ -144,7 +144,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 			};
 
 			// Insert partner record
-			const { data: partner, error: insertError } = await supabase
+			const { data: _partner, error: insertError } = await supabase
 				.from('partners')
 				.insert(partnerInsert)
 				.select()

@@ -150,7 +150,7 @@ export function QRProductSelectionStep({
 									key={product.id}
 									type="button"
 									onClick={() => onProductSelect(product)}
-									className="flex items-center gap-3 p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors text-left"
+									className="flex items-center gap-3 p-4 border-b border-gray-200 hover:bg-gray-100 transition-colors text-left"
 								>
 									{/* Product Image */}
 									<div className="relative size-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">

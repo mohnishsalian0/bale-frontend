@@ -178,7 +178,25 @@
 - [ ] Link outwards/inwards to job work
 
 ## Phase 10: Iteration 6 - Barcode Generation/Public Catalog
-- [ ] Barcode generation (unit selection, field customization, PDF output)
+- [x] QR codes page UI with product filter, batch list, share/download actions
+- [x] Connect QR codes page to Supabase (fetch batches with item counts)
+- [x] Add dynamic relative date formatting (today, yesterday, this week, this month, on August, 2024)
+- [x] Implement share functionality (mobile share sheet, desktop copy link)
+- [x] Implement download functionality for batch PDFs
+- [x] Update stock units schema (remove qr_code and barcode_generated fields, keep only barcode_generated_at)
+- [x] Create QR batch creation RPC function (create_qr_batch_with_items) for atomic operations
+- [x] Update migrations to remove qr_code and barcode_generated references
+- [x] Create QRProductSelectionStep (Step 1) with search and filters
+- [x] Create QRStockUnitSelectionStep (Step 2) with goods inward grouping and collapsible lists
+- [x] Create QRTemplateSelectionStep (Step 3) with grouped field selection (Product Info, Stock Unit Info)
+- [x] Create CreateQRBatchSheet with 3-step flow and progress bar
+- [x] Integrate CreateQRBatchSheet with QR codes page FAB button
+- [x] Implement QR status badges (QR pending / QR made on date)
+- [x] Add select all functionality for goods inward groups
+- [x] Update test setup script to remove barcode_generated field
+- [ ] Generate QR code images for batches (PDF with customizable fields)
+- [ ] Implement batch info page showing all QR codes in batch
+- [ ] Add PDF generation with selected template fields
 - [ ] Public sales catalog (browsing, cart, checkout)
 - [ ] Automatic sales order creation from catalog
 - [ ] Catalog configuration (branding, product display settings)

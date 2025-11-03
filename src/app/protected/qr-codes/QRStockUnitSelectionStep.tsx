@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { IconChevronDown } from '@tabler/icons-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { createClient } from '@/lib/supabase/client';
@@ -188,21 +188,23 @@ export function QRStockUnitSelectionStep({
 							key={inward.id}
 							open={isExpanded}
 							onOpenChange={() => toggleInward(inward.id)}
-							className="border-t border-gray-200 px-4 py-2"
+							className="border-b border-gray-200 px-4 py-3"
 						>
-							<CollapsibleTrigger className={`flex items-center gap-3 w-full`}>
+							<div className={`flex gap-3 items-center ${isExpanded ? 'mb-3' : 'mb-0'}`}>
 								<Checkbox
 									checked={selectionState === 'all'}
 									onCheckedChange={(checked) => handleInwardCheckboxChange(inward, checked === true)}
 									className={selectionState === 'some' ? 'data-[state=checked]:bg-gray-400' : ''}
 								/>
-								<span className="flex-1 text-xs font-medium text-gray-900 text-start">
-									{inward.inward_number} ({selectedInwardCount}/{inward.stock_units.length} selected)
-								</span>
-								<IconChevronDown
-									className={`size-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : 'rotate-0'}`}
-								/>
-							</CollapsibleTrigger>
+								<CollapsibleTrigger className="flex items-center justify-between w-full">
+									<span className="flex-1 text-sm font-medium text-gray-900 text-start">
+										{inward.inward_number} ({selectedInwardCount}/{inward.stock_units.length} selected)
+									</span>
+									<IconChevronDown
+										className={`size-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : 'rotate-0'}`}
+									/>
+								</CollapsibleTrigger>
+							</div>
 
 							<CollapsibleContent key={inward.id}>
 								{/* Stock Units List */}
@@ -210,30 +212,33 @@ export function QRStockUnitSelectionStep({
 									{inward.stock_units.map(unit => (
 										<div
 											key={unit.id}
-											className="flex items-center gap-3 py-3 border-t border-gray-100 hover:bg-gray-50"
+											className="flex items-center gap-3 py-3 hover:bg-gray-50"
 										>
 											<Checkbox
 												checked={selectedStockUnitIds.includes(unit.id)}
 												onCheckedChange={(checked) => handleUnitCheckboxChange(unit.id, checked === true)}
 											/>
-											<div className="flex-1 min-w-0">
-												<div className="flex items-center gap-2">
-													<p className="text-sm font-medium text-gray-900">{unit.unit_number}</p>
-													<span className={`text-xs px-2 py-0.5 rounded-full ${unit.barcode_generated_at
-														? 'bg-green-100 text-green-700'
-														: 'bg-yellow-100 text-yellow-700'
-														}`}>
-														{getQRStatus(unit)}
-													</span>
+											<div className="flex items-center gap-3 flex-1">
+												<div className="flex-1 min-w-0">
+													<p className="text-xs font-medium text-gray-900">{unit.unit_number}</p>
+													<div className="flex items-center gap-1.5 text-xs text-gray-500">
+														{unit.manufacturing_date && (
+															<Fragment>
+																<span>Made on {new Date(unit.manufacturing_date).toLocaleDateString()}</span>
+																<span>•</span>
+															</Fragment>
+														)}
+														<span>
+															{unit.initial_quantity} {unit.product?.measuring_unit || 'units'}
+														</span>
+													</div>
 												</div>
-												<div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-													{unit.manufacturing_date && (
-														<span>Made on {new Date(unit.manufacturing_date).toLocaleDateString()}</span>
-													)}
-													<span>
-														{unit.initial_quantity} {unit.product?.measuring_unit || 'units'}
-													</span>
-												</div>
+												<span className={`text-xs px-2 py-0.5 rounded-sm ${unit.barcode_generated_at
+													? 'bg-gray-100 text-gray-500'
+													: 'bg-green-100 text-green-700'
+													}`}>
+													{getQRStatus(unit)}
+												</span>
 											</div>
 										</div>
 									))}
