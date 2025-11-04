@@ -6,7 +6,7 @@
 -- =====================================================
 
 CREATE TABLE catalog_configurations (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     
     -- Branding
@@ -50,7 +50,7 @@ CREATE TABLE catalog_configurations (
 -- =====================================================
 
 CREATE TABLE product_variants (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     
     variant_name VARCHAR(100) NOT NULL, -- e.g., "Cotton Solids", "Embroidered Collection"
@@ -67,7 +67,7 @@ CREATE TABLE product_variants (
 -- =====================================================
 
 CREATE TABLE product_variant_items (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     variant_id UUID NOT NULL REFERENCES product_variants(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     

@@ -88,6 +88,23 @@ export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffShee
 				throw new Error('Please enter a phone number');
 			}
 
+			// Get company and warehouse names
+			const { data: company } = await supabase
+				.from('companies')
+				.select('name')
+				.eq('id', currentUser.company_id)
+				.single();
+
+			const { data: warehouse } = await supabase
+				.from('warehouses')
+				.select('name')
+				.eq('id', formData.warehouseId)
+				.single();
+
+			if (!company || !warehouse) {
+				throw new Error('Failed to fetch company or warehouse details');
+			}
+
 			// Create invite token
 			const token = crypto.randomUUID();
 			const expiresAt = new Date();
@@ -96,7 +113,9 @@ export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffShee
 			// Insert invite record
 			const inviteInsert: TablesInsert<'invites'> = {
 				company_id: currentUser.company_id,
+				company_name: company.name,
 				warehouse_id: formData.warehouseId,
+				warehouse_name: warehouse.name,
 				role: formData.role,
 				token: token,
 				expires_at: expiresAt.toISOString(),

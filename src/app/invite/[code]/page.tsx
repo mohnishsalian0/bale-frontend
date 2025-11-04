@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import InviteAcceptance from './InviteAcceptance';
+import type { Tables } from '@/types/database/supabase';
 
 interface InvitePageProps {
   params: Promise<{
@@ -15,9 +16,9 @@ export default async function InvitePage({ params }: InvitePageProps) {
   // Check if invite is valid
   const { data: invite, error } = await supabase
     .from('invites')
-    .select('*, companies(name), warehouses(name)')
+    .select('*')
     .eq('token', code)
-    .single();
+    .single<Tables<'invites'>>();
 
   if (error || !invite) {
     return (
@@ -90,8 +91,8 @@ export default async function InvitePage({ params }: InvitePageProps) {
   return (
     <InviteAcceptance
       inviteCode={code}
-      companyName={(invite.companies as any)?.name || 'Unknown Company'}
-      warehouseName={(invite.warehouses as any)?.name || 'Unknown Warehouse'}
+      companyName={invite.company_name}
+      warehouseName={invite.warehouse_name || undefined}
       role={invite.role}
     />
   );

@@ -28,7 +28,7 @@ export default function TopBar({
 				{/* Left side - Menu + Warehouse selector */}
 				<div className="flex items-center gap-2">
 					{/* Menu Button */}
-					<SidebarTrigger className='w-10 h-10 text-gray-700' />
+					<SidebarTrigger className='size-10 text-gray-700' />
 
 					{/* Warehouse Selector */}
 					<Button

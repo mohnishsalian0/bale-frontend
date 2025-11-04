@@ -6,7 +6,7 @@
 -- =====================================================
 
 CREATE TABLE sales_orders (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     
     -- Order identification
@@ -53,7 +53,7 @@ CREATE TABLE sales_orders (
 -- =====================================================
 
 CREATE TABLE sales_order_items (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     sales_order_id UUID NOT NULL REFERENCES sales_orders(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id),

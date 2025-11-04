@@ -234,7 +234,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 				</SheetHeader>
 
 				{/* Form Content - Scrollable */}
-				<form onSubmit={handleSubmit} className="flex flex-col h-full">
+				<form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
 					<div className="flex-1 overflow-y-auto">
 						{/* Basic Info */}
 						<div className="flex flex-col gap-6 px-4 py-5">
@@ -484,7 +484,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 						<Collapsible
 							open={showAdditionalDetails}
 							onOpenChange={setShowAdditionalDetails}
-							className="border-t border-gray-200 px-4 py-5 pb-24"
+							className="border-t border-gray-200 px-4 py-5"
 						>
 							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showAdditionalDetails ? 'mb-5' : 'mb-0'}`}>
 								<h3 className="text-lg font-medium text-gray-900">Additional Details</h3>

@@ -6,7 +6,7 @@
 -- =====================================================
 
 CREATE TABLE barcode_batches (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
     
@@ -27,7 +27,7 @@ CREATE TABLE barcode_batches (
 -- =====================================================
 
 CREATE TABLE barcode_batch_items (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     batch_id UUID NOT NULL REFERENCES barcode_batches(id) ON DELETE CASCADE,
     stock_unit_id UUID NOT NULL REFERENCES stock_units(id)
 );

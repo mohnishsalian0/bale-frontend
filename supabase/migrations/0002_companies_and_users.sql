@@ -6,7 +6,7 @@
 -- =====================================================
 
 CREATE TABLE companies (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     name VARCHAR(100) NOT NULL,
     address_line1 VARCHAR(255),
     address_line2 VARCHAR(255),
@@ -32,7 +32,7 @@ CREATE TABLE companies (
 -- =====================================================
 
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     
     -- Personal information

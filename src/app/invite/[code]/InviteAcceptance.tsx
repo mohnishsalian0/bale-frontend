@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 interface InviteAcceptanceProps {
 	inviteCode: string;
 	companyName: string;
-	warehouseName: string;
+	warehouseName?: string;
 	role: string;
 }
 
@@ -65,11 +65,12 @@ export default function InviteAcceptance({
 		<div className="min-h-screen flex items-start justify-center px-4 pt-[66px]">
 			<div className="w-full max-w-[380px] flex flex-col gap-8 items-center">
 				{/* Mascot Image */}
-				<div className="relative w-[222px] h-[320px]">
+				<div className="relative size-80 shrink-0">
 					<Image
 						src="/mascot/welcome.png"
 						alt="Welcome mascot"
 						fill
+						sizes="320px"
 						className="object-contain"
 						priority
 					/>
@@ -99,15 +100,18 @@ export default function InviteAcceptance({
 						</div>
 
 						{/* Company & Warehouse Info */}
-						<div className="flex-1 min-w-0 flex flex-col gap-1">
+						<div className="flex-1 min-w-0 flex flex-col gap-0.5">
 							<p className="text-base font-medium text-gray-900">
 								{companyName}
 							</p>
 							<div className="flex items-center gap-1.5 text-gray-500">
 								<IconBuildingWarehouse className="w-4 h-4" />
-								<span className="text-sm font-normal">{warehouseName}</span>
+								<span className="text-sm font-normal">{warehouseName ? warehouseName : 'All warehouses'}</span>
 							</div>
 						</div>
+						<span className="text-sm px-2 py-0.5 rounded-sm bg-green-100 text-green-700">
+							{role.charAt(0).toUpperCase() + role.slice(1)}
+						</span>
 					</div>
 				</div>
 

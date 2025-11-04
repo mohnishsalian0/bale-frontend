@@ -1,9 +1,9 @@
 -- Bale Backend - Extensions and Core Functions
 -- Enable required extensions and create utility functions
 
--- Enable required extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- Enable required extensions in extensions schema
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" SCHEMA extensions;
 
 -- =====================================================
 -- UTILITY FUNCTIONS FOR AUTO-GENERATION

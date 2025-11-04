@@ -204,20 +204,22 @@ export function AddGoodsOutwardSheet({
 				</div>
 
 				{/* Form Content - Scrollable */}
-				<form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
-					{currentStep === 'scanner' ? (
-						open && (
-							<QRScannerStep
-								scannedUnits={scannedUnits}
-								onScannedUnitsChange={setScannedUnits}
+				<form onSubmit={handleSubmit} className="flex flex-col h-full overflow-y-hidden">
+					<div className="flex-1 overflow-y-auto">
+						{currentStep === 'scanner' ? (
+							open && (
+								<QRScannerStep
+									scannedUnits={scannedUnits}
+									onScannedUnitsChange={setScannedUnits}
+								/>
+							)
+						) : (
+							<OutwardDetailsStep
+								formData={detailsFormData}
+								onChange={(updates) => setDetailsFormData(prev => ({ ...prev, ...updates }))}
 							/>
-						)
-					) : (
-						<OutwardDetailsStep
-							formData={detailsFormData}
-							onChange={(updates) => setDetailsFormData(prev => ({ ...prev, ...updates }))}
-						/>
-					)}
+						)}
+					</div>
 
 					{/* Footer */}
 					<SheetFooter>

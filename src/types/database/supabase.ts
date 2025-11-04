@@ -856,6 +856,7 @@ export type Database = {
       invites: {
         Row: {
           company_id: string
+          company_name: string
           created_at: string
           created_by: string | null
           expires_at: string
@@ -864,10 +865,12 @@ export type Database = {
           token: string
           used_at: string | null
           used_by_user_id: string | null
-          warehouse_id: string
+          warehouse_id: string | null
+          warehouse_name: string | null
         }
         Insert: {
           company_id: string
+          company_name: string
           created_at?: string
           created_by?: string | null
           expires_at: string
@@ -876,10 +879,12 @@ export type Database = {
           token: string
           used_at?: string | null
           used_by_user_id?: string | null
-          warehouse_id: string
+          warehouse_id?: string | null
+          warehouse_name?: string | null
         }
         Update: {
           company_id?: string
+          company_name?: string
           created_at?: string
           created_by?: string | null
           expires_at?: string
@@ -888,7 +893,8 @@ export type Database = {
           token?: string
           used_at?: string | null
           used_by_user_id?: string | null
-          warehouse_id?: string
+          warehouse_id?: string | null
+          warehouse_name?: string | null
         }
         Relationships: [
           {

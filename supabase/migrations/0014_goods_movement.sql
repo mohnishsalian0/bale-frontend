@@ -6,7 +6,7 @@
 -- =====================================================
 
 CREATE TABLE goods_outwards (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
 
@@ -70,7 +70,7 @@ CREATE TABLE goods_outwards (
 -- =====================================================
 
 CREATE TABLE goods_outward_items (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     outward_id UUID NOT NULL REFERENCES goods_outwards(id) ON DELETE CASCADE,
     stock_unit_id UUID NOT NULL REFERENCES stock_units(id),
@@ -86,7 +86,7 @@ CREATE TABLE goods_outward_items (
 -- =====================================================
 
 CREATE TABLE goods_inwards (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
 

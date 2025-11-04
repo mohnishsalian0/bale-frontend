@@ -21,11 +21,13 @@ async function createTestPartners() {
 
 	// Get or create company
 	let companyId: string;
+	let companyName: string;
 	let warehouseId: string;
+	let warehouseName: string;
 
 	const { data: companies, error: companyError } = await supabase
 		.from('companies')
-		.select('id')
+		.select('id, name')
 		.limit(1);
 
 	if (companyError) {
@@ -57,6 +59,7 @@ async function createTestPartners() {
 		}
 
 		companyId = newCompany.id;
+		companyName = newCompany.name;
 		console.log(`✅ Created company: ${companyId}\n`);
 
 		// Create a test warehouse
@@ -81,6 +84,7 @@ async function createTestPartners() {
 		}
 
 		warehouseId = warehouse.id;
+		warehouseName = warehouse.name;
 		console.log(`✅ Created warehouse: ${warehouseId}\n`);
 
 		// Create a test admin user
@@ -116,12 +120,13 @@ async function createTestPartners() {
 		}
 	} else {
 		companyId = companies[0].id;
+		companyName = companies[0].name;
 		console.log(`📦 Using existing company: ${companyId}\n`);
 
 		// Get existing warehouse
 		const { data: warehouses, error: whError } = await supabase
 			.from('warehouses')
-			.select('id')
+			.select('id, name')
 			.eq('company_id', companyId)
 			.limit(1);
 
@@ -131,6 +136,7 @@ async function createTestPartners() {
 		}
 
 		warehouseId = warehouses[0].id;
+		warehouseName = warehouses[0].name;
 	}
 
 	// Get a user to use as created_by
@@ -1240,7 +1246,10 @@ async function createTestPartners() {
 		.insert({
 			token: adminToken,
 			company_id: companyId,
-			warehouse_id: warehouseId,
+			company_name: companyName,
+			// Admin users don't need warehouse assignment
+			warehouse_id: null,
+			warehouse_name: null,
 			role: 'admin',
 			expires_at: expiresAt.toISOString(),
 		})
@@ -1262,7 +1271,9 @@ async function createTestPartners() {
 		.insert({
 			token: staffToken,
 			company_id: companyId,
+			company_name: companyName,
 			warehouse_id: warehouseId,
+			warehouse_name: warehouseName,
 			role: 'staff',
 			expires_at: expiresAt.toISOString(),
 		})

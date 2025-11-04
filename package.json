@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "db:types": "npx supabase gen types typescript --local > src/types/database/supabase.ts"
+    "db:types": "npx supabase gen types typescript --local > src/types/database/supabase.ts",
+    "setup:company": "npx tsx scripts/setup-production-company.ts"
   },
   "repository": {
     "type": "git",
