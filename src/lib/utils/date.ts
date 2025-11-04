@@ -74,3 +74,29 @@ export function formatAbsoluteDate(date: Date | string): string {
 export function formatCreatedAt(date: Date | string): string {
 	return `Created ${formatRelativeDate(date)}`;
 }
+
+/**
+ * Format expiry date with relative time
+ * Returns object with text and status for styling
+ * Examples: "Expires today", "Expires tomorrow", "Expires in 5 days", "Expired"
+ */
+export function formatExpiryDate(expiryDate: Date | string): { text: string; status: 'expired' | 'urgent' | 'normal' } {
+	const dateObj = typeof expiryDate === 'string' ? new Date(expiryDate) : expiryDate;
+	const now = new Date();
+	const diffMs = dateObj.getTime() - now.getTime();
+	const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+	if (diffDays < 0) {
+		return { text: 'Expired', status: 'expired' };
+	}
+
+	if (diffDays === 0) {
+		return { text: 'Expires today', status: 'urgent' };
+	}
+
+	if (diffDays === 1) {
+		return { text: 'Expires tomorrow', status: 'urgent' };
+	}
+
+	return { text: `Expires in ${diffDays} days`, status: 'normal' };
+}

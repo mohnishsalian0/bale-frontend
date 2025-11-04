@@ -2,13 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { IconBuilding, IconPhone } from '@tabler/icons-react';
+import { IconBuilding, IconPhone, IconMailOpened, IconBrandWhatsapp, IconCopy, IconTrash, IconClock } from '@tabler/icons-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Fab } from '@/components/ui/fab';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { TabPills } from '@/components/ui/tab-pills';
 import { AddStaffSheet } from './AddStaffSheet';
 import { createClient } from '@/lib/supabase/client';
+import { formatExpiryDate } from '@/lib/utils/date';
+import { toast } from 'sonner';
 import type { Tables } from '@/types/database/supabase';
+import type { UserRole } from '@/types/database/enums';
 
 type UserRow = Tables<'users'>;
 type WarehouseRow = Tables<'warehouses'>;
@@ -21,6 +26,16 @@ interface StaffMember {
 	profileImageUrl: string | null;
 }
 
+interface ActiveInvite {
+	id: string;
+	role: UserRole;
+	warehouseName: string | null;
+	companyName: string;
+	token: string;
+	expiresAt: string;
+	createdAt: string;
+}
+
 function getInitials(name: string): string {
 	return name
 		.split(' ')
@@ -31,10 +46,13 @@ function getInitials(name: string): string {
 }
 
 export default function StaffPage() {
+	const [activeTab, setActiveTab] = useState<'staff' | 'invites'>('staff');
 	const [staff, setStaff] = useState<StaffMember[]>([]);
+	const [invites, setInvites] = useState<ActiveInvite[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [showAddStaff, setShowAddStaff] = useState(false);
+	const [deletingInviteId, setDeletingInviteId] = useState<string | null>(null);
 
 	const supabase = createClient();
 
@@ -78,9 +96,110 @@ export default function StaffPage() {
 		}
 	};
 
+	const fetchInvites = async () => {
+		try {
+			setLoading(true);
+			setError(null);
+
+			const { data, error: fetchError } = await supabase
+				.from('invites')
+				.select('*')
+				.is('used_at', null)
+				.gt('expires_at', new Date().toISOString())
+				.order('created_at', { ascending: false });
+
+			if (fetchError) throw fetchError;
+
+			// Transform data to match ActiveInvite interface
+			const transformedInvites: ActiveInvite[] = (data || []).map((invite: any) => ({
+				id: invite.id,
+				role: invite.role,
+				warehouseName: invite.warehouse_name,
+				companyName: invite.company_name,
+				token: invite.token,
+				expiresAt: invite.expires_at,
+				createdAt: invite.created_at,
+			}));
+
+			setInvites(transformedInvites);
+		} catch (err) {
+			console.error('Error fetching invites:', err);
+			setError(err instanceof Error ? err.message : 'Failed to load invites');
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	useEffect(() => {
-		fetchStaff();
-	}, []);
+		if (activeTab === 'staff') {
+			fetchStaff();
+		} else {
+			fetchInvites();
+		}
+	}, [activeTab]);
+
+	const handleShareWhatsApp = (invite: ActiveInvite) => {
+		const inviteUrl = `${window.location.origin}/invite/${invite.token}`;
+		const systemDescription = invite.role === 'staff' && invite.warehouseName
+			? `${invite.warehouseName} inventory system`
+			: 'our inventory system';
+
+		const whatsappMessage = `Hi,
+
+You've been invited to join ${invite.companyName} and get access to ${systemDescription} as ${invite.role === 'admin' ? 'Admin' : 'Staff'}.
+
+Here's your invite link:
+🔗 ${inviteUrl}
+
+📅 Please note: This link is valid for 7 days.
+
+We're excited to have you onboard with us!
+
+Thanks,
+The Bale Team`;
+
+		const encodedMessage = encodeURIComponent(whatsappMessage);
+		window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+	};
+
+	const handleCopyLink = async (token: string) => {
+		try {
+			const inviteUrl = `${window.location.origin}/invite/${token}`;
+			await navigator.clipboard.writeText(inviteUrl);
+			toast.success('Invite link copied to clipboard!');
+		} catch (err) {
+			console.error('Failed to copy:', err);
+			toast.error('Failed to copy link');
+		}
+	};
+
+	const handleDeleteClick = (id: string) => {
+		setDeletingInviteId(id);
+	};
+
+	const handleConfirmDelete = async (id: string) => {
+		try {
+			const { error } = await supabase
+				.from('invites')
+				.delete()
+				.eq('id', id);
+
+			if (error) throw error;
+
+			toast.success('Invite revoked successfully');
+			setDeletingInviteId(null);
+			// Refresh invites list
+			fetchInvites();
+		} catch (err) {
+			console.error('Error revoking invite:', err);
+			toast.error('Failed to revoke invite');
+			setDeletingInviteId(null);
+		}
+	};
+
+	const handleCancelDelete = () => {
+		setDeletingInviteId(null);
+	};
 
 	// Loading state
 	if (loading) {
@@ -89,7 +208,9 @@ export default function StaffPage() {
 				<div className="flex items-center justify-center h-screen">
 					<div className="flex flex-col items-center gap-3">
 						<div className="size-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-						<p className="text-sm text-gray-600">Loading staff...</p>
+						<p className="text-sm text-gray-600">
+							{activeTab === 'staff' ? 'Loading staff...' : 'Loading invites...'}
+						</p>
 					</div>
 				</div>
 			</div>
@@ -105,7 +226,9 @@ export default function StaffPage() {
 						<div className="size-12 rounded-full bg-red-100 flex items-center justify-center">
 							<span className="text-2xl">⚠️</span>
 						</div>
-						<h2 className="text-lg font-semibold text-gray-900">Failed to load staff</h2>
+						<h2 className="text-lg font-semibold text-gray-900">
+							{activeTab === 'staff' ? 'Failed to load staff' : 'Failed to load invites'}
+						</h2>
 						<p className="text-sm text-gray-600">{error}</p>
 						<Button onClick={() => window.location.reload()} variant="outline" size="sm">
 							Try again
@@ -133,65 +256,188 @@ export default function StaffPage() {
 				</div>
 			</div>
 
+			{/* Tabs */}
+			<div className="px-4 py-2">
+				<TabPills
+					options={[
+						{ value: 'staff', label: 'Staff Members' },
+						{ value: 'invites', label: 'Active Invites' },
+					]}
+					value={activeTab}
+					onValueChange={(value) => setActiveTab(value as 'staff' | 'invites')}
+				/>
+			</div>
+
 			{/* Staff Cards Grid */}
-			<li className="grid grid-cols-2 gap-4 p-4">
-				{staff.length === 0 ? (
-					<div className="col-span-2 flex flex-col items-center justify-center py-12 text-center">
-						<p className="text-gray-600 mb-2">No staff members found</p>
-						<p className="text-sm text-gray-500">Add your first staff member</p>
-					</div>
-				) : (
-					staff.map((member) => (
-						<ul key={member.id}>
-							<Card
-								className="min-h-[180px]"
-							>
-								<CardContent className="p-4 flex flex-col gap-3 items-center h-full">
-									{/* Avatar */}
-									<div className="flex items-center justify-center size-16 rounded-full bg-gray-200 shrink-0">
-										{member.profileImageUrl ? (
-											<Image
-												src={member.profileImageUrl}
-												alt={member.name}
-												width={64}
-												height={64}
-												className="rounded-full object-cover"
-											/>
-										) : (
-											<span className="text-lg font-medium text-gray-700">
-												{getInitials(member.name)}
-											</span>
-										)}
-									</div>
-
-									{/* Details */}
-									<div className="flex flex-col gap-1 items-center w-full">
-										<p className="text-base font-medium text-gray-900 text-center">
-											{member.name}
-										</p>
-
-										{/* Warehouse */}
-										<div className="flex gap-1.5 items-center justify-center text-gray-500 w-full">
-											<IconBuilding className="size-3.5 shrink-0" />
-											<p className="text-xs text-gray-500 truncate">
-												{member.warehouseName || 'Not assigned yet'}
-											</p>
+			{activeTab === 'staff' && (
+				<li className="grid grid-cols-2 gap-4 p-4">
+					{staff.length === 0 ? (
+						<div className="col-span-2 flex flex-col items-center justify-center py-12 text-center">
+							<p className="text-gray-600 mb-2">No staff members found</p>
+							<p className="text-sm text-gray-500">Add your first staff member</p>
+						</div>
+					) : (
+						staff.map((member) => (
+							<ul key={member.id}>
+								<Card
+									className="min-h-[180px]"
+								>
+									<CardContent className="p-4 flex flex-col gap-3 items-center h-full">
+										{/* Avatar */}
+										<div className="flex items-center justify-center size-16 rounded-full bg-gray-200 shrink-0">
+											{member.profileImageUrl ? (
+												<Image
+													src={member.profileImageUrl}
+													alt={member.name}
+													width={64}
+													height={64}
+													className="rounded-full object-cover"
+												/>
+											) : (
+												<span className="text-lg font-medium text-gray-700">
+													{getInitials(member.name)}
+												</span>
+											)}
 										</div>
 
-										{/* Phone */}
-										<div className="flex gap-1.5 items-center justify-center text-gray-500 w-full">
-											<IconPhone className="size-3.5 shrink-0" />
-											<p className="text-xs text-gray-500">
-												{member.phoneNumber || 'No phone'}
+										{/* Details */}
+										<div className="flex flex-col gap-1 items-center w-full">
+											<p className="text-base font-medium text-gray-900 text-center">
+												{member.name}
 											</p>
+
+											{/* Warehouse */}
+											<div className="flex gap-1.5 items-center justify-center text-gray-500 w-full">
+												<IconBuilding className="size-3.5 shrink-0" />
+												<p className="text-xs text-gray-500 truncate">
+													{member.warehouseName || 'Not assigned yet'}
+												</p>
+											</div>
+
+											{/* Phone */}
+											<div className="flex gap-1.5 items-center justify-center text-gray-500 w-full">
+												<IconPhone className="size-3.5 shrink-0" />
+												<p className="text-xs text-gray-500">
+													{member.phoneNumber || 'No phone'}
+												</p>
+											</div>
 										</div>
-									</div>
-								</CardContent>
-							</Card>
-						</ul>
-					))
-				)}
-			</li>
+									</CardContent>
+								</Card>
+							</ul>
+						))
+					)}
+				</li>
+			)}
+
+			{/* Active Invites Grid */}
+			{activeTab === 'invites' && (
+				<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
+					{invites.length === 0 ? (
+						<div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+							<p className="text-gray-600 mb-2">No active invites</p>
+							<p className="text-sm text-gray-500">Create a new invite to get started</p>
+						</div>
+					) : (
+						invites.map((invite) => {
+							const expiry = formatExpiryDate(invite.expiresAt);
+							return (
+								<Card key={invite.id}>
+									<CardContent className="p-4 flex flex-col gap-6 h-full">
+										{/* Top Row: Icon, Info, Badge */}
+										<div className="flex gap-3 items-start w-full">
+											{/* Mail Icon */}
+											<div className="relative size-12 rounded-lg shrink-0 bg-gray-200 overflow-hidden">
+												<div className="flex items-center justify-center size-full">
+													<IconMailOpened className="size-6 text-gray-400" />
+												</div>
+											</div>
+
+											{/* Warehouse & Expiry Info */}
+											<div className="flex-1 flex flex-col gap-0.5 min-w-0">
+												{/* Warehouse (only for staff) */}
+												{invite.role === 'staff' && invite.warehouseName ? (
+													<p className="text-gray-900 truncate font-medium">
+														{invite.warehouseName}
+													</p>
+												) : (
+													<p className="text-gray-900 font-medium">
+														{invite.companyName}
+													</p>
+												)}
+
+												{/* Expiry */}
+												<div className="flex gap-1.5 items-center">
+													<IconClock className="size-4 shrink-0 text-gray-500" />
+													<p className={`text-sm ${expiry.status === 'expired' ? 'text-red-600' :
+														expiry.status === 'urgent' ? 'text-orange-600' :
+															'text-gray-500'
+														}`}>
+														{expiry.text}
+													</p>
+												</div>
+											</div>
+
+											{/* Role Badge */}
+											<Badge type={invite.role === 'admin' ? 'info' : 'success'}>
+												{invite.role === 'admin' ? 'Admin' : 'Staff'}
+											</Badge>
+										</div>
+
+										{/* Action Buttons */}
+										<div className="flex gap-2 w-full">
+											{deletingInviteId === invite.id ? (
+												<>
+													<Button
+														variant="outline"
+														className="flex-1"
+														onClick={handleCancelDelete}
+													>
+														Cancel
+													</Button>
+													<Button
+														variant="outline"
+														className='flex-1 border-gray-300 shadow-gray-md text-red-700 hover:bg-gray-200 hover:text-red-700'
+														onClick={() => handleConfirmDelete(invite.id)}
+													>
+														Confirm delete
+													</Button>
+												</>
+											) : (
+												<>
+													<Button
+														variant="outline"
+														onClick={() => handleShareWhatsApp(invite)}
+													>
+														<IconBrandWhatsapp />
+														Share on WhatsApp
+													</Button>
+													<Button
+														variant="outline"
+														size="icon"
+														title='Copy invite link'
+														onClick={() => handleCopyLink(invite.token)}
+													>
+														<IconCopy />
+													</Button>
+													<Button
+														variant="outline"
+														size="icon"
+														className='border-gray-300 shadow-gray-md text-red-700 hover:bg-gray-200 hover:text-red-700'
+														onClick={() => handleDeleteClick(invite.id)}
+													>
+														<IconTrash />
+													</Button>
+												</>
+											)}
+										</div>
+									</CardContent>
+								</Card>
+							);
+						})
+					)}
+				</div>
+			)}
 
 			{/* Floating Action Button */}
 			<Fab
@@ -204,7 +450,12 @@ export default function StaffPage() {
 				<AddStaffSheet
 					open={showAddStaff}
 					onOpenChange={setShowAddStaff}
-					onStaffAdded={fetchStaff}
+					onStaffAdded={() => {
+						// Refresh invites when a new invite is created
+						if (activeTab === 'invites') {
+							fetchInvites();
+						}
+					}}
 				/>
 			)}
 		</div>

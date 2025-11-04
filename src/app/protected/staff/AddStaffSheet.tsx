@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { IconPhone, IconMapPin } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { RadioGroup as RadioGroupPills, RadioGroupItem as RadioGroupItemPills } from '@/components/ui/radio-group-pills';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -20,7 +18,6 @@ interface AddStaffSheetProps {
 
 interface InviteFormData {
 	role: UserRole;
-	phoneNumber: string;
 	warehouseId: string;
 }
 
@@ -29,7 +26,6 @@ type WarehouseRow = Tables<'warehouses'>;
 export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffSheetProps) {
 	const [formData, setFormData] = useState<InviteFormData>({
 		role: 'staff',
-		phoneNumber: '',
 		warehouseId: '',
 	});
 
@@ -83,11 +79,6 @@ export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffShee
 				throw new Error('Please select a warehouse');
 			}
 
-			// Validate phone number
-			if (!formData.phoneNumber || formData.phoneNumber.trim().length === 0) {
-				throw new Error('Please enter a phone number');
-			}
-
 			// Get company and warehouse names
 			const { data: company } = await supabase
 				.from('companies')
@@ -95,14 +86,23 @@ export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffShee
 				.eq('id', currentUser.company_id)
 				.single();
 
-			const { data: warehouse } = await supabase
-				.from('warehouses')
-				.select('name')
-				.eq('id', formData.warehouseId)
-				.single();
+			if (!company) {
+				throw new Error('Failed to fetch company details');
+			}
 
-			if (!company || !warehouse) {
-				throw new Error('Failed to fetch company or warehouse details');
+			// Get warehouse name only if role is staff
+			let warehouse = null;
+			if (formData.role === 'staff') {
+				const { data: warehouseData } = await supabase
+					.from('warehouses')
+					.select('name')
+					.eq('id', formData.warehouseId)
+					.single();
+
+				if (!warehouseData) {
+					throw new Error('Failed to fetch warehouse details');
+				}
+				warehouse = warehouseData;
 			}
 
 			// Create invite token
@@ -114,8 +114,8 @@ export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffShee
 			const inviteInsert: TablesInsert<'invites'> = {
 				company_id: currentUser.company_id,
 				company_name: company.name,
-				warehouse_id: formData.warehouseId,
-				warehouse_name: warehouse.name,
+				warehouse_id: formData.role === 'staff' ? formData.warehouseId : null,
+				warehouse_name: formData.role === 'staff' && warehouse ? warehouse.name : null,
 				role: formData.role,
 				token: token,
 				expires_at: expiresAt.toISOString(),
@@ -133,13 +133,35 @@ export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffShee
 			// Generate invite link
 			const inviteUrl = `${window.location.origin}/invite/${token}`;
 
-			// TODO: Send SMS/WhatsApp to phone number with invite link
-			console.log('Send invite to:', formData.phoneNumber);
-			console.log('Invite URL:', inviteUrl);
+			// Generate WhatsApp message
+			const systemDescription = formData.role === 'staff' && warehouse
+				? `${warehouse.name} inventory system`
+				: 'our inventory system';
 
-			// For now, just copy to clipboard
-			await navigator.clipboard.writeText(inviteUrl);
-			alert(`Invite link copied to clipboard!\nSend this to ${formData.phoneNumber}:\n${inviteUrl}`);
+			const whatsappMessage = `Hi,
+
+You've been invited to join ${company.name} and get access to ${systemDescription} as ${formData.role === 'admin' ? 'Admin' : 'Staff'}.
+
+Here's your invite link:
+🔗 ${inviteUrl}
+
+📅 Please note: This link is valid for 7 days.
+
+We're excited to have you onboard with us!
+
+Thanks,
+The Bale Team`;
+
+			// Copy to clipboard as fallback
+			try {
+				await navigator.clipboard.writeText(inviteUrl);
+			} catch (err) {
+				console.error('Failed to copy to clipboard:', err);
+			}
+
+			// Open WhatsApp with message
+			const encodedMessage = encodeURIComponent(whatsappMessage);
+			window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
 
 			// Success! Close sheet and notify parent
 			handleCancel();
@@ -158,7 +180,6 @@ export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffShee
 		// Reset form
 		setFormData({
 			role: 'staff',
-			phoneNumber: '',
 			warehouseId: '',
 		});
 		setSendError(null);
@@ -177,26 +198,6 @@ export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffShee
 				<form onSubmit={handleSubmit} className="flex flex-col h-full">
 					<div className="flex-1 overflow-y-auto">
 						<div className="flex flex-col gap-6 px-4 py-5">
-							{/* Phone Number */}
-							<div className="flex flex-col gap-2">
-								<label className="text-sm font-medium text-gray-700">
-									Phone Number <span className="text-red-600">*</span>
-								</label>
-								<div className="relative">
-									<IconPhone className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-									<Input
-										type="tel"
-										placeholder="Enter phone number"
-										value={formData.phoneNumber}
-										onChange={(e) =>
-											setFormData({ ...formData, phoneNumber: e.target.value })
-										}
-										className="pl-12"
-										required
-									/>
-								</div>
-							</div>
-
 							{/* Role Selection */}
 							<div className="flex flex-col gap-2">
 								<label className="text-sm font-medium text-gray-700">Role</label>
