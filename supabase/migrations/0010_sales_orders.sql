@@ -92,36 +92,6 @@ CREATE INDEX idx_sales_order_items_sales_order ON sales_order_items(sales_order_
 CREATE INDEX idx_sales_order_items_product ON sales_order_items(product_id);
 
 -- =====================================================
--- SALES ORDER STATUS VIEW
--- =====================================================
-
-CREATE VIEW sales_order_status AS
-SELECT 
-    so.company_id,
-    so.id as sales_order_id,
-    so.order_number,
-    so.status,
-    so.order_date,
-    so.expected_delivery_date,
-    p.first_name || ' ' || p.last_name as customer_name,
-    p.company_name as customer_company,
-    so.total_amount,
-    COUNT(soi.id) as total_items,
-    COALESCE(SUM(soi.required_quantity), 0) as total_required_qty,
-    COALESCE(SUM(soi.dispatched_quantity), 0) as total_dispatched_qty,
-    COALESCE(SUM(soi.pending_quantity), 0) as total_pending_qty,
-    CASE 
-        WHEN COALESCE(SUM(soi.required_quantity), 0) = 0 THEN 0
-        ELSE ROUND((COALESCE(SUM(soi.dispatched_quantity), 0) / COALESCE(SUM(soi.required_quantity), 1)) * 100, 2)
-    END as completion_percentage
-FROM sales_orders so
-JOIN partners p ON so.customer_id = p.id
-LEFT JOIN sales_order_items soi ON so.id = soi.sales_order_id
-WHERE so.deleted_at IS NULL
-GROUP BY so.company_id, so.id, so.order_number, so.status, so.order_date, so.expected_delivery_date, 
-         p.first_name, p.last_name, p.company_name, so.total_amount;
-
--- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES
 -- =====================================================
 

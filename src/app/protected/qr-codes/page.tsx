@@ -11,6 +11,7 @@ import { createClient, getCurrentUser } from '@/lib/supabase/client';
 import { formatCreatedAt, formatAbsoluteDate } from '@/lib/utils/date';
 import type { Tables } from '@/types/database/supabase';
 import { toast } from 'sonner';
+import { LoadingState } from '@/components/layouts/loading-state';
 import { CreateQRBatchSheet } from './CreateQRBatchSheet';
 
 type BarcodeBatchRow = Tables<'barcode_batches'>;
@@ -174,16 +175,7 @@ export default function QRCodesPage() {
 
 	// Loading state
 	if (loading) {
-		return (
-			<div className="relative flex flex-col min-h-screen pb-16">
-				<div className="flex items-center justify-center h-screen">
-					<div className="flex flex-col items-center gap-3">
-						<div className="size-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-						<p className="text-sm text-gray-600">Loading QR batches...</p>
-					</div>
-				</div>
-			</div>
-		);
+		return <LoadingState message="Loading QR batches..." />;
 	}
 
 	// Error state

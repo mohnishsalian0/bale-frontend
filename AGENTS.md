@@ -107,14 +107,18 @@ npm run build
   /types               # TypeScript type definitions
 ```
 
-## Development guildelines
+## Development Guidelines
 
-Refer to TODO.md file for list of completed and pending tasks
+- Refer to TODO.md file for list of completed and pending tasks
 
-Always update the TODO.md file before proceeding to the next task
+- Always update the TODO.md file before proceeding to the next task
 
-Refer to globals.css for theme
+- Refer to globals.css for theme
 
-Use shadcn components wherever possible
+- Use shadcn components wherever possible
 
-Feel free to overwrite existing migration files if needed. Because we are in development phase, and we are not live yet
+- Feel free to overwrite existing migration files if needed. Because we are in development phase, and we are not live yet
+
+- Use Sonner for all toast notifications (already configured in layout)
+
+- Use utility functions from `@/lib/utils/date` for date formats

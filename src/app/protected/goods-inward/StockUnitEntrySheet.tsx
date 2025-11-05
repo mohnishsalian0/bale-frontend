@@ -82,7 +82,7 @@ export function StockUnitEntrySheet({
 	if (!product) return null;
 
 	const formContent = (
-		<div className="flex flex-col gap-8 py-4">
+		<div className="flex flex-col gap-8 p-4">
 			<div className="flex flex-col gap-4">
 				<div className="flex gap-4 min-w-0">
 					{/* Product Info */}
@@ -123,7 +123,7 @@ export function StockUnitEntrySheet({
 							type="number"
 							value={quantity}
 							onChange={e => setQuantity(Math.max(0, parseFloat(e.target.value) || 0))}
-							className="relative text-center text-lg font-medium h-9 max-w-20"
+							className="relative text-center text-lg font-medium max-w-20"
 							min="0"
 							step="0.01"
 						/>
@@ -163,6 +163,7 @@ export function StockUnitEntrySheet({
 						type="text"
 						placeholder="Supplier number"
 						value={supplierNumber}
+						className="flex-1"
 						onChange={e => setSupplierNumber(e.target.value)}
 						icon={<IconHash />}
 					/>
@@ -171,6 +172,7 @@ export function StockUnitEntrySheet({
 					<DatePicker
 						placeholder="Manufactured on"
 						value={manufacturedOn}
+						className="flex-1"
 						onChange={(date) => setManufacturedOn(date)}
 					/>
 				</div>
@@ -181,6 +183,7 @@ export function StockUnitEntrySheet({
 						type="text"
 						placeholder="Quality"
 						value={quality}
+						className="flex-1"
 						onChange={e => setQuality(e.target.value)}
 						icon={<IconRubberStamp />}
 					/>
@@ -190,6 +193,7 @@ export function StockUnitEntrySheet({
 						type="text"
 						placeholder="Location"
 						value={location}
+						className="flex-1"
 						onChange={e => setLocation(e.target.value)}
 						icon={<IconTruckLoading />}
 					/>

@@ -171,32 +171,6 @@ CREATE INDEX idx_goods_inwards_sales_order ON goods_inwards(sales_order_id);
 CREATE INDEX idx_goods_inwards_job_work ON goods_inwards(job_work_id);
 
 -- =====================================================
--- GOODS INWARD STOCK UNITS VIEW
--- =====================================================
-
-CREATE VIEW goods_inward_stock_units AS
-SELECT
-    gi.id as inward_id,
-    gi.inward_number,
-    gi.inward_date,
-    su.id as stock_unit_id,
-    su.unit_number,
-    su.remaining_quantity,
-    su.quality_grade,
-    su.location_description,
-    su.status,
-    su.manufacturing_date,
-    su.barcode_generated_at,
-    p.name as product_name,
-    p.material,
-    p.color,
-    p.measuring_unit
-FROM goods_inwards gi
-JOIN stock_units su ON gi.id = su.created_from_inward_id
-JOIN products p ON su.product_id = p.id
-WHERE su.deleted_at IS NULL;
-
--- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES
 -- =====================================================
 

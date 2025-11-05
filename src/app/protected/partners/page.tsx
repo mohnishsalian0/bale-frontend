@@ -8,6 +8,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Fab } from '@/components/ui/fab';
 import { TabPills } from '@/components/ui/tab-pills';
+import { LoadingState } from '@/components/layouts/loading-state';
 import { AddPartnerSheet } from './AddPartnerSheet';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
@@ -110,16 +111,7 @@ export default function PartnersPage() {
 
 	// Loading state
 	if (loading) {
-		return (
-			<div className="relative flex flex-col min-h-screen pb-16">
-				<div className="flex items-center justify-center h-screen">
-					<div className="flex flex-col items-center gap-3">
-						<div className="size-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-						<p className="text-sm text-gray-600">Loading partners...</p>
-					</div>
-				</div>
-			</div>
-		);
+		return <LoadingState message="Loading partners..." />;
 	}
 
 	// Error state

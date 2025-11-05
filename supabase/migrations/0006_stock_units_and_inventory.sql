@@ -70,33 +70,6 @@ CREATE INDEX idx_stock_units_inward_id ON stock_units(created_from_inward_id);
 CREATE INDEX idx_stock_units_quality_grade ON stock_units(company_id, quality_grade);
 
 -- =====================================================
--- INVENTORY SUMMARY VIEW
--- =====================================================
-
-CREATE VIEW inventory_summary AS
-SELECT 
-    p.company_id,
-    p.id as product_id,
-    p.name as product_name,
-    p.product_number,
-    p.material,
-    p.color,
-    w.id as warehouse_id,
-    w.name as warehouse_name,
-    COUNT(su.id) as total_units,
-    SUM(CASE WHEN su.status = 'in_stock' THEN 1 ELSE 0 END) as in_stock_units,
-    SUM(CASE WHEN su.status = 'dispatched' THEN 1 ELSE 0 END) as dispatched_units,
-    SUM(CASE WHEN su.status = 'removed' THEN 1 ELSE 0 END) as removed_units,
-    SUM(su.remaining_quantity) as total_quantity,
-    SUM(CASE WHEN su.status = 'in_stock' THEN su.remaining_quantity ELSE 0 END) as in_stock_quantity,
-    p.measuring_unit
-FROM products p
-JOIN stock_units su ON p.id = su.product_id
-JOIN warehouses w ON su.warehouse_id = w.id
-WHERE su.deleted_at IS NULL
-GROUP BY p.company_id, p.id, p.name, p.product_number, p.material, p.color, w.id, w.name, p.measuring_unit;
-
--- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES
 -- =====================================================
 

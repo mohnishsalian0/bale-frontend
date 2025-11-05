@@ -8,15 +8,12 @@ import { Fab } from '@/components/ui/fab';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TabPills } from '@/components/ui/tab-pills';
+import { LoadingState } from '@/components/layouts/loading-state';
 import { AddStaffSheet } from './AddStaffSheet';
 import { createClient } from '@/lib/supabase/client';
 import { formatExpiryDate } from '@/lib/utils/date';
 import { toast } from 'sonner';
-import type { Tables } from '@/types/database/supabase';
 import type { UserRole } from '@/types/database/enums';
-
-type UserRow = Tables<'users'>;
-type WarehouseRow = Tables<'warehouses'>;
 
 interface StaffMember {
 	id: string;
@@ -203,18 +200,7 @@ The Bale Team`;
 
 	// Loading state
 	if (loading) {
-		return (
-			<div className="relative flex flex-col min-h-screen pb-16">
-				<div className="flex items-center justify-center h-screen">
-					<div className="flex flex-col items-center gap-3">
-						<div className="size-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-						<p className="text-sm text-gray-600">
-							{activeTab === 'staff' ? 'Loading staff...' : 'Loading invites...'}
-						</p>
-					</div>
-				</div>
-			</div>
-		);
+		return <LoadingState message={activeTab === 'staff' ? 'Loading staff...' : 'Loading invites...'} />;
 	}
 
 	// Error state

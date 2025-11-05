@@ -66,6 +66,8 @@
 - [x] Create tailwind.config.ts for v4 compatibility
 - [x] Add border and ring color definitions to @theme
 - [x] Create custom icon components (WarehouseIcon wrapper)
+- [x] Create LoadingState component with trolley truck illustration (500x500)
+- [x] Replace all page loading states with LoadingState component
 - [ ] Build custom components (DataTable, FileUpload, SearchInput, StatusBadge)
 - [ ] Create form components with validation (Zod + React Hook Form)
 
@@ -74,7 +76,14 @@
 - [ ] Warehouse CRUD (admin only)
 - [x] Staff page with 2-column grid layout showing staff cards
 - [x] Staff invite form with role selection and warehouse assignment (generates invite link)
-- [ ] Send generated invite link via WhatsApp
+- [x] Staff invite form - removed phone number field, added WhatsApp integration
+- [x] Active invites tab with responsive grid (1 col mobile, 2 col large screens)
+- [x] Active invites card with mail icon, warehouse/expiry info, role badge
+- [x] WhatsApp share and copy link functionality for invites
+- [x] Delete invite with inline confirmation (no alert dialogs)
+- [x] Sonner toast notifications for invite actions
+- [x] Badge component with type prop (info, success, warn, error)
+- [x] Relative date helper for expiry display
 - [ ] View staff details
 - [ ] Edit staff functionality
 - [ ] Delete staff functionality

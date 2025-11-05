@@ -13,13 +13,13 @@ const InputWithIcon = React.forwardRef<HTMLInputElement, InputWithIconProps>(
 		}
 
 		return (
-			<div className="relative">
+			<div className={cn("relative", className)}>
 				<div className="absolute flex justify-center items-center left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500">
 					{icon}
 				</div>
 				<Input
 					ref={ref}
-					className={cn('pl-12', className)}
+					className="pl-12"
 					{...props}
 				/>
 			</div>
