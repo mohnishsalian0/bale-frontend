@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { SelectInventorySheet } from './SelectInventorySheet';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
-import { getUnitAbbreviation } from '@/lib/utils/units';
+import type { MeasuringUnit } from '@/types/database/enums';
+import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 
 const SCAN_DELAY: number = 1200;
 
@@ -283,7 +284,7 @@ export function QRScannerStep({
 												step="0.01"
 											/>
 											<p className="text-sm text-gray-500 whitespace-nowrap">
-												/ {maxQuantity} {getUnitAbbreviation(item.product.measuring_unit)}
+												/ {maxQuantity} {getMeasuringUnitAbbreviation(item.product.measuring_unit as MeasuringUnit | null)}
 											</p>
 										</div>
 

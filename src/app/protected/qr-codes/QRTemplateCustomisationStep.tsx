@@ -18,7 +18,7 @@ export type QRTemplateField =
 	| 'manufacturing_date'
 	| 'initial_quantity'
 	| 'quality_grade'
-	| 'location_description';
+	| 'warehouse_location';
 
 interface FieldOption {
 	id: QRTemplateField;
@@ -47,7 +47,7 @@ const STOCK_UNIT_INFO_FIELDS: FieldOption[] = [
 	{ id: 'manufacturing_date', label: 'Made on', disabled: false, defaultSelected: true },
 	{ id: 'initial_quantity', label: 'Size', disabled: false, defaultSelected: false },
 	{ id: 'quality_grade', label: 'Quality', disabled: false, defaultSelected: true },
-	{ id: 'location_description', label: 'Location', disabled: false, defaultSelected: true },
+	{ id: 'warehouse_location', label: 'Location', disabled: false, defaultSelected: true },
 ];
 
 // Map field IDs to their display labels in the preview
@@ -63,7 +63,7 @@ const FIELD_PREVIEW_LABELS: Record<QRTemplateField, string> = {
 	manufacturing_date: 'Made on:',
 	initial_quantity: 'Size:',
 	quality_grade: 'Quality:',
-	location_description: 'Location:',
+	warehouse_location: 'Location:',
 };
 
 export function QRTemplateSelectionStep({

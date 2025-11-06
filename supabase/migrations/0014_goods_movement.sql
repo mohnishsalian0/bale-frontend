@@ -74,7 +74,7 @@ CREATE TABLE goods_outward_items (
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     outward_id UUID NOT NULL REFERENCES goods_outwards(id) ON DELETE CASCADE,
     stock_unit_id UUID NOT NULL REFERENCES stock_units(id),
-    quantity DECIMAL(10,3) NOT NULL,
+    quantity_dispatched DECIMAL(10,3) NOT NULL,
 
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -160,6 +160,7 @@ CREATE INDEX idx_goods_outwards_job_work ON goods_outwards(job_work_id);
 CREATE INDEX idx_goods_outward_items_company_id ON goods_outward_items(company_id);
 CREATE INDEX idx_goods_outward_items_outward_id ON goods_outward_items(outward_id);
 CREATE INDEX idx_goods_outward_items_stock_unit ON goods_outward_items(stock_unit_id);
+CREATE INDEX idx_goods_outward_items_stock_unit_quantity ON goods_outward_items(stock_unit_id, quantity_dispatched);
 
 -- Goods Inward indexes
 CREATE INDEX idx_goods_inwards_company_id ON goods_inwards(company_id);

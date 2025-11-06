@@ -314,7 +314,8 @@ async function createTestPartners() {
 			gsm: 120,
 			thread_count_cm: 80,
 			tags: ['premium', 'wedding', 'traditional'],
-			measuring_unit: 'Meters',
+			stock_type: 'roll',
+			measuring_unit: 'metre',
 			cost_price_per_unit: 2500.00,
 			selling_price_per_unit: 3500.00,
 			show_on_catalog: true,
@@ -333,7 +334,8 @@ async function createTestPartners() {
 			gsm: 150,
 			thread_count_cm: 60,
 			tags: ['summer', 'breathable', 'casual'],
-			measuring_unit: 'Meters',
+			stock_type: 'roll',
+			measuring_unit: 'metre',
 			cost_price_per_unit: 450.00,
 			selling_price_per_unit: 650.00,
 			show_on_catalog: true,
@@ -352,7 +354,8 @@ async function createTestPartners() {
 			gsm: 200,
 			thread_count_cm: 50,
 			tags: ['winter', 'warm', 'premium'],
-			measuring_unit: 'Meters',
+			stock_type: 'roll',
+			measuring_unit: 'yard',
 			cost_price_per_unit: 1800.00,
 			selling_price_per_unit: 2500.00,
 			show_on_catalog: true,
@@ -370,7 +373,8 @@ async function createTestPartners() {
 			gsm: 180,
 			thread_count_cm: 70,
 			tags: ['modern', 'formal', 'wrinkle-free'],
-			measuring_unit: 'Meters',
+			stock_type: 'roll',
+			measuring_unit: 'metre',
 			cost_price_per_unit: 350.00,
 			selling_price_per_unit: 550.00,
 			show_on_catalog: true,
@@ -388,7 +392,8 @@ async function createTestPartners() {
 			gsm: 140,
 			thread_count_cm: 55,
 			tags: ['summer', 'eco-friendly', 'breathable'],
-			measuring_unit: 'Meters',
+			stock_type: 'roll',
+			measuring_unit: 'kilogram',
 			cost_price_per_unit: 800.00,
 			selling_price_per_unit: 1200.00,
 			show_on_catalog: true,
@@ -407,7 +412,8 @@ async function createTestPartners() {
 			gsm: 110,
 			thread_count_cm: 75,
 			tags: ['designer', 'luxury', 'festive'],
-			measuring_unit: 'Meters',
+			stock_type: 'batch',
+			measuring_unit: 'unit',
 			cost_price_per_unit: 3000.00,
 			selling_price_per_unit: 4200.00,
 			show_on_catalog: false,
@@ -424,7 +430,8 @@ async function createTestPartners() {
 			gsm: 300,
 			thread_count_cm: 40,
 			tags: ['denim', 'casual', 'durable'],
-			measuring_unit: 'Meters',
+			stock_type: 'batch',
+			measuring_unit: 'unit',
 			cost_price_per_unit: 600.00,
 			selling_price_per_unit: 900.00,
 			show_on_catalog: true,
@@ -443,7 +450,8 @@ async function createTestPartners() {
 			gsm: 130,
 			thread_count_cm: 65,
 			tags: ['printed', 'colorful', 'casual'],
-			measuring_unit: 'Meters',
+			stock_type: 'piece',
+			measuring_unit: null,
 			cost_price_per_unit: 400.00,
 			selling_price_per_unit: 600.00,
 			show_on_catalog: true,
@@ -639,11 +647,11 @@ async function createTestPartners() {
 				// Create stock units directly (2-3 products per inwards)
 				const itemCount = Math.floor(Math.random() * 2) + 2; // 2-3 items
 				for (let i = 0; i < itemCount && i < productsList.length; i++) {
-					const quantity = Math.floor(Math.random() * 5) + 1; // 1-5 units per product
+					const quantityCount = Math.floor(Math.random() * 5) + 1; // 1-5 units per product
 
 					// Create stock units for each quantity
-					for (let j = 0; j < quantity; j++) {
-						const initial_quantity = (Math.random() * 50 + 10).toFixed(2); // Random size 10-60
+					for (let j = 0; j < quantityCount; j++) {
+						const quantity = parseFloat((Math.random() * 50 + 10).toFixed(2)); // Random size 10-60
 						const { error: stockError } = await supabase
 							.from('stock_units')
 							.insert({
@@ -652,18 +660,17 @@ async function createTestPartners() {
 								product_id: productsList[i].id,
 								created_from_inward_id: inwardId,
 								created_by: createdBy,
-								initial_quantity,
-								remaining_quantity: initial_quantity,
+								initial_quantity: quantity,
+								remaining_quantity: quantity,
 								quality_grade: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
-								location_description: `Rack ${String.fromCharCode(65 + Math.floor(Math.random() * 5))}-${Math.floor(Math.random() * 10) + 1}`,
-								status: 'in_stock',
+								warehouse_location: `Rack ${String.fromCharCode(65 + Math.floor(Math.random() * 5))}-${Math.floor(Math.random() * 10) + 1}`,
 								manufacturing_date: inwards.inward_date,
 							});
 
 						if (stockError) {
 							console.error(`   ❌ Failed to create stock unit: ${stockError.message}`);
 						} else {
-							console.log(`   ✅ Created stock unit ${j + 1}/${quantity} for product ${i + 1}`);
+							console.log(`   ✅ Created stock unit ${j + 1}/${quantityCount} for product ${i + 1}`);
 						}
 					}
 				}
@@ -772,15 +779,15 @@ async function createTestPartners() {
 						// Get stock unit details to determine quantity to dispatch
 						const { data: stockUnit } = await supabase
 							.from('stock_units')
-							.select('remaining_quantity')
+							.select('quantity')
 							.eq('id', stockUnits[stockUnitIndex].id)
 							.single();
 
-						const dispatchQty = stockUnit?.remaining_quantity || 0;
+						const dispatchQty = stockUnit?.quantity || 0;
 
 						stockUnitItems.push({
 							stock_unit_id: stockUnits[stockUnitIndex].id,
-							quantity: dispatchQty, // Dispatch full quantity
+							quantity_dispatched: dispatchQty, // Dispatch full quantity
 						});
 
 						stockUnitIndex++;

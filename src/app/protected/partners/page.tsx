@@ -184,7 +184,7 @@ export default function PartnersPage() {
 			</div>
 
 			{/* Partner Cards */}
-			<li className="flex flex-col gap-4 p-4">
+			<li className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 items-stretch p-4">
 				{filteredPartners.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-12 text-center">
 						<p className="text-gray-600 mb-2">No partners found</p>
@@ -243,12 +243,12 @@ export default function PartnersPage() {
 									{/* Contact Info */}
 									<div className="flex gap-6 px-2 text-sm">
 										<div className="flex gap-1.5 items-center">
-											<IconMapPin className="size-4 text-gray-500" />
+											<IconMapPin className="size-4 text-gray-500 shrink-0" />
 											<span className="text-gray-700">
 												{partner.address || 'No address'}
 											</span>
 										</div>
-										<div className="flex gap-1.5 items-center">
+										<div className="flex gap-1.5 items-center text-nowrap">
 											<IconPhone className="size-4 text-primary-700" />
 											<span className={partner.phone ? 'text-primary-700 font-medium' : 'text-gray-700'}>
 												{partner.phone || 'No phone number'}

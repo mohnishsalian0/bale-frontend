@@ -88,7 +88,7 @@ export default function InviteAcceptance({
 
 				{/* Registration Info */}
 				<div className="flex flex-col gap-1 w-full">
-					<p className="text-base text-gray-500">
+					<p className="text-sm text-gray-500">
 						You are registering with...
 					</p>
 					<div className="bg-background-100 border-2 border-gray-200 rounded-2xl p-4 flex gap-3 items-start">

@@ -126,7 +126,7 @@ export function CreateQRBatchSheet({
 					manufacturing_date,
 					initial_quantity,
 					quality_grade,
-					location_description,
+					warehouse_location,
 					products (
 						name,
 						product_number,
@@ -157,7 +157,7 @@ export function CreateQRBatchSheet({
 				manufacturing_date: unit.manufacturing_date,
 				initial_quantity: unit.initial_quantity,
 				quality_grade: unit.quality_grade,
-				location_description: unit.location_description,
+				warehouse_location: unit.warehouse_location,
 				product: {
 					name: unit.products?.name || '',
 					product_number: unit.products?.product_number || '',

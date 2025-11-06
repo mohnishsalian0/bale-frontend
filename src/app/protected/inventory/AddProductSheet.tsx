@@ -8,11 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group-pills';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { validateImageFile, uploadProductImage, MAX_PRODUCT_IMAGES } from '@/lib/storage';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
 import type { TablesInsert } from '@/types/database/supabase';
+import type { StockType, MeasuringUnit } from '@/types/database/enums';
 
 interface AddProductSheetProps {
 	open: boolean;
@@ -29,7 +31,8 @@ interface ProductFormData {
 	gsm: string;
 	threadCount: string;
 	tags: string;
-	measuringUnit: string;
+	stockType: StockType | '';
+	measuringUnit: MeasuringUnit | '';
 	costPrice: string;
 	sellingPrice: string;
 	minStockAlert: boolean;
@@ -49,6 +52,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 		gsm: '',
 		threadCount: '',
 		tags: '',
+		stockType: '',
 		measuringUnit: '',
 		costPrice: '',
 		sellingPrice: '',
@@ -142,7 +146,8 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 				gsm: formData.gsm ? parseFloat(formData.gsm) : null,
 				thread_count_cm: formData.threadCount ? parseFloat(formData.threadCount) : null,
 				tags: tagsArray,
-				measuring_unit: formData.measuringUnit,
+				stock_type: formData.stockType as StockType,
+				measuring_unit: formData.measuringUnit || null,
 				cost_price_per_unit: formData.costPrice ? parseFloat(formData.costPrice) : null,
 				selling_price_per_unit: formData.sellingPrice ? parseFloat(formData.sellingPrice) : null,
 				min_stock_alert: formData.minStockAlert,
@@ -211,6 +216,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 			gsm: '',
 			threadCount: '',
 			tags: '',
+			stockType: '',
 			measuringUnit: '',
 			costPrice: '',
 			sellingPrice: '',
@@ -408,24 +414,51 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 
 							<CollapsibleContent>
 								<div className="flex flex-col gap-6">
-									{/* Measuring Unit */}
-									<Select
-										value={formData.measuringUnit}
-										onValueChange={(value) =>
-											setFormData({ ...formData, measuringUnit: value })
-										}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Unit" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="meters">Meters</SelectItem>
-											<SelectItem value="yards">Yards</SelectItem>
-											<SelectItem value="pieces">Pieces</SelectItem>
-											<SelectItem value="kg">Kilograms</SelectItem>
-											<SelectItem value="rolls">Rolls</SelectItem>
-										</SelectContent>
-									</Select>
+									{/* Stock Type */}
+									<div className="flex flex-col gap-2">
+										<label className="text-sm font-medium text-gray-700">
+											Stock Type <span className="text-red-500">*</span>
+										</label>
+										<RadioGroup
+											value={formData.stockType}
+											onValueChange={(value) => {
+												const stockType = value as StockType;
+												let measuringUnit: MeasuringUnit | '' = '';
+
+												// Auto-set measuring unit based on stock type
+												if (stockType === 'batch') {
+													measuringUnit = 'unit';
+												}
+
+												setFormData({ ...formData, stockType, measuringUnit });
+											}}
+											name="stock-type"
+										>
+											<RadioGroupItem value="roll">Roll</RadioGroupItem>
+											<RadioGroupItem value="batch">Batch</RadioGroupItem>
+											<RadioGroupItem value="piece">Piece</RadioGroupItem>
+										</RadioGroup>
+									</div>
+
+									{/* Measuring Unit - Only show for roll type */}
+									{formData.stockType === 'roll' && (
+										<div className="flex flex-col gap-2">
+											<label className="text-sm font-medium text-gray-700">
+												Measuring Unit <span className="text-red-500">*</span>
+											</label>
+											<RadioGroup
+												value={formData.stockType}
+												onValueChange={(value) =>
+													setFormData({ ...formData, measuringUnit: value as MeasuringUnit })
+												}
+												name="measuring-unit"
+											>
+												<RadioGroupItem value="meter">Meter</RadioGroupItem>
+												<RadioGroupItem value="kilogram">Kilogram</RadioGroupItem>
+												<RadioGroupItem value="yard">Yard</RadioGroupItem>
+											</RadioGroup>
+										</div>
+									)}
 
 									{/* Purchase & Sale Price */}
 									<div className="flex gap-4">
@@ -547,13 +580,21 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 							>
 								Cancel
 							</Button>
-							<Button type="submit" disabled={saving} className="flex-1">
+							<Button
+								type="submit"
+								disabled={
+									saving ||
+									!formData.stockType ||
+									(formData.stockType === 'roll' && !formData.measuringUnit)
+								}
+								className="flex-1"
+							>
 								{saving ? 'Saving...' : 'Save'}
 							</Button>
 						</div>
 					</SheetFooter>
 				</form>
 			</SheetContent>
-		</Sheet>
+		</Sheet >
 	);
 }

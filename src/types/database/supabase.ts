@@ -443,7 +443,7 @@ export type Database = {
           created_at: string
           id: string
           outward_id: string
-          quantity: number
+          quantity_dispatched: number
           stock_unit_id: string
           updated_at: string
         }
@@ -452,7 +452,7 @@ export type Database = {
           created_at?: string
           id?: string
           outward_id: string
-          quantity: number
+          quantity_dispatched: number
           stock_unit_id: string
           updated_at?: string
         }
@@ -461,7 +461,7 @@ export type Database = {
           created_at?: string
           id?: string
           outward_id?: string
-          quantity?: number
+          quantity_dispatched?: number
           stock_unit_id?: string
           updated_at?: string
         }
@@ -1152,7 +1152,7 @@ export type Database = {
           hsn_code: string | null
           id: string
           material: string | null
-          measuring_unit: string
+          measuring_unit: string | null
           min_stock_alert: boolean | null
           min_stock_threshold: number | null
           modified_by: string | null
@@ -1162,6 +1162,7 @@ export type Database = {
           product_number: string
           selling_price_per_unit: number | null
           show_on_catalog: boolean | null
+          stock_type: string
           tags: string[] | null
           thread_count_cm: number | null
           updated_at: string
@@ -1178,7 +1179,7 @@ export type Database = {
           hsn_code?: string | null
           id?: string
           material?: string | null
-          measuring_unit: string
+          measuring_unit?: string | null
           min_stock_alert?: boolean | null
           min_stock_threshold?: number | null
           modified_by?: string | null
@@ -1188,6 +1189,7 @@ export type Database = {
           product_number: string
           selling_price_per_unit?: number | null
           show_on_catalog?: boolean | null
+          stock_type: string
           tags?: string[] | null
           thread_count_cm?: number | null
           updated_at?: string
@@ -1204,7 +1206,7 @@ export type Database = {
           hsn_code?: string | null
           id?: string
           material?: string | null
-          measuring_unit?: string
+          measuring_unit?: string | null
           min_stock_alert?: boolean | null
           min_stock_threshold?: number | null
           modified_by?: string | null
@@ -1214,6 +1216,7 @@ export type Database = {
           product_number?: string
           selling_price_per_unit?: number | null
           show_on_catalog?: boolean | null
+          stock_type?: string
           tags?: string[] | null
           thread_count_cm?: number | null
           updated_at?: string
@@ -1444,7 +1447,6 @@ export type Database = {
           deleted_at: string | null
           id: string
           initial_quantity: number
-          location_description: string | null
           manufacturing_date: string | null
           modified_by: string | null
           notes: string | null
@@ -1456,6 +1458,7 @@ export type Database = {
           unit_number: string
           updated_at: string
           warehouse_id: string
+          warehouse_location: string | null
         }
         Insert: {
           barcode_generated_at?: string | null
@@ -1466,7 +1469,6 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           initial_quantity: number
-          location_description?: string | null
           manufacturing_date?: string | null
           modified_by?: string | null
           notes?: string | null
@@ -1478,6 +1480,7 @@ export type Database = {
           unit_number: string
           updated_at?: string
           warehouse_id: string
+          warehouse_location?: string | null
         }
         Update: {
           barcode_generated_at?: string | null
@@ -1488,7 +1491,6 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           initial_quantity?: number
-          location_description?: string | null
           manufacturing_date?: string | null
           modified_by?: string | null
           notes?: string | null
@@ -1500,6 +1502,7 @@ export type Database = {
           unit_number?: string
           updated_at?: string
           warehouse_id?: string
+          warehouse_location?: string | null
         }
         Relationships: [
           {
@@ -1712,9 +1715,25 @@ export type Database = {
         Args: { p_batch_data: Json; p_stock_unit_ids: string[] }
         Returns: Json
       }
+      dispatch_pieces_fifo: {
+        Args: {
+          p_company_id: string
+          p_outward_id: string
+          p_product_id: string
+          p_quantity_to_dispatch: number
+        }
+        Returns: {
+          quantity_dispatched: number
+          stock_unit_id: string
+        }[]
+      }
       generate_sequence_number: {
         Args: { company_uuid: string; prefix: string; table_name: string }
         Returns: string
+      }
+      get_available_pieces_quantity: {
+        Args: { p_company_id: string; p_product_id: string }
+        Returns: number
       }
       get_job_type_suggestions: {
         Args: { company_id_param?: string; search_term?: string }

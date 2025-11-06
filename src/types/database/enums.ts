@@ -21,7 +21,9 @@ export type MaterialType =
 	| 'Cotton-Polyester' | 'Cotton-Spandex' | 'Cotton-Linen' | 'Poly-Cotton' | 'Wool-Silk'
 	| 'Silk-Cotton' | 'Blend' | 'Custom';
 
-export type MeasuringUnit = 'Meters' | 'Yards' | 'Kg' | 'Pieces';
+export type StockType = 'roll' | 'batch' | 'piece';
+
+export type MeasuringUnit = 'metre' | 'yard' | 'kilogram' | 'unit';
 
 export type StockUnitStatus = 'in_stock' | 'dispatched' | 'removed';
 

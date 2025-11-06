@@ -36,7 +36,8 @@ CREATE TABLE products (
     tags TEXT[], -- Array for categorization
     
     -- Stock information
-    measuring_unit VARCHAR(20) NOT NULL CHECK (measuring_unit IN ('Meters', 'Yards', 'Kg', 'Pieces')),
+    stock_type VARCHAR(10) NOT NULL CHECK (stock_type IN ('roll', 'batch', 'piece')),
+    measuring_unit VARCHAR(20) CHECK (measuring_unit IN ('metre', 'yard', 'kilogram', 'unit')),
     cost_price_per_unit DECIMAL(10,2),
     selling_price_per_unit DECIMAL(10,2),
     min_stock_alert BOOLEAN DEFAULT FALSE,
@@ -83,6 +84,9 @@ CREATE INDEX idx_products_tags ON products USING GIN(tags);
 -- Price range queries
 CREATE INDEX idx_products_selling_price ON products(company_id, selling_price_per_unit);
 
+-- Stock type filtering
+CREATE INDEX idx_products_stock_type ON products(company_id, stock_type);
+
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES
 -- =====================================================
@@ -112,5 +116,13 @@ CREATE TRIGGER trigger_auto_product_number
 -- =====================================================
 
 -- Ensure products belong to a company
-ALTER TABLE products ADD CONSTRAINT check_product_company_not_null 
+ALTER TABLE products ADD CONSTRAINT check_product_company_not_null
     CHECK (company_id IS NOT NULL);
+
+-- Ensure measuring_unit matches stock_type
+ALTER TABLE products ADD CONSTRAINT check_stock_type_measuring_unit
+    CHECK (
+        (stock_type = 'roll' AND measuring_unit IN ('metre', 'yard', 'kilogram')) OR
+        (stock_type = 'batch' AND measuring_unit = 'unit') OR
+        (stock_type = 'piece' AND measuring_unit IS NULL)
+    );

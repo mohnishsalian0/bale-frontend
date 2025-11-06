@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Tables } from '@/types/database/supabase';
+import { pluralize, pluralizeWord } from '@/lib/utils/pluralize';
 
 export interface StockUnitSpec {
 	id: string; // temp ID for UI
@@ -105,7 +106,7 @@ export function ProductSelectionStep({
 				{/* Search */}
 				<div className="relative">
 					<Input
-						placeholder="Search for item"
+						placeholder="Search for product"
 						value={searchQuery}
 						onChange={e => setSearchQuery(e.target.value)}
 						className="pr-10"
@@ -175,6 +176,7 @@ export function ProductSelectionStep({
 							const imageUrl = product.product_images?.[0];
 							const hasUnits = product.units.length > 0;
 							const totalUnits = product.units.reduce((sum, unit) => sum + unit.count, 0);
+							const stockTypeLabel = product.stock_type || 'roll'; // Fallback to roll
 
 							return (
 								<div
@@ -216,7 +218,7 @@ export function ProductSelectionStep({
 											className='gap-2'
 										>
 											<IconMinus />
-											{totalUnits}
+											{pluralize(totalUnits, stockTypeLabel)}
 											<IconPlus />
 										</Button>
 									) : (
@@ -227,7 +229,7 @@ export function ProductSelectionStep({
 											onClick={() => onOpenUnitSheet(product, hasUnits)}
 										>
 											<IconPlus />
-											Add
+											Add {stockTypeLabel}
 										</Button>
 									)}
 								</div>

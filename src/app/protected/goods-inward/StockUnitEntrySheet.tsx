@@ -12,8 +12,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { DatePicker } from '@/components/ui/date-picker';
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery';
 import type { Tables } from '@/types/database/supabase';
+import type { MeasuringUnit } from '@/types/database/enums';
 import type { StockUnitSpec } from './ProductSelectionStep';
 import { Input } from '@/components/ui/input';
+import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 
 interface StockUnitEntrySheetProps {
 	open: boolean;
@@ -81,8 +83,10 @@ export function StockUnitEntrySheet({
 
 	if (!product) return null;
 
+	const unitAbbreviation = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null);
+
 	const formContent = (
-		<div className="flex flex-col gap-8 p-4">
+		<div className="flex flex-col gap-8 p-4 md:px-0">
 			<div className="flex flex-col gap-4">
 				<div className="flex gap-4 min-w-0">
 					{/* Product Info */}
@@ -119,14 +123,19 @@ export function StockUnitEntrySheet({
 						>
 							<IconMinus />
 						</Button>
-						<Input
-							type="number"
-							value={quantity}
-							onChange={e => setQuantity(Math.max(0, parseFloat(e.target.value) || 0))}
-							className="relative text-center text-lg font-medium max-w-20"
-							min="0"
-							step="0.01"
-						/>
+						<div className="relative">
+							<Input
+								type="number"
+								value={quantity}
+								onChange={e => setQuantity(Math.max(0, parseFloat(e.target.value) || 0))}
+								className="text-center text-lg font-medium max-w-20 pr-10"
+								min="0"
+								step="0.01"
+							/>
+							<span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
+								{unitAbbreviation}
+							</span>
+						</div>
 						<Button
 							type="button"
 							variant="ghost"

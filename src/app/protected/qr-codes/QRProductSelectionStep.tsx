@@ -73,7 +73,7 @@ export function QRProductSelectionStep({
 				{/* Search */}
 				<div className="relative">
 					<Input
-						placeholder="Search for item"
+						placeholder="Search for product"
 						value={searchQuery}
 						onChange={e => setSearchQuery(e.target.value)}
 						className="pr-10"

@@ -76,7 +76,7 @@ export default function StockFlowPage() {
 					*,
 					partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name),
 					goods_outward_items(
-						quantity,
+						quantity_dispatched,
 						stock_unit:stock_units(
 							product:products(id, name, measuring_unit)
 						)
@@ -137,7 +137,7 @@ export default function StockFlowPage() {
 					: firstProduct?.name || 'Unknown Product';
 
 				const totalQty = Number(items.reduce(
-					(sum: number, item: any) => sum + (Number(item.quantity) || 0),
+					(sum: number, item: any) => sum + (Number(item.quantity_dispatched) || 0),
 					0
 				).toFixed(2));
 				const unit = firstProduct?.measuring_unit || 'm';

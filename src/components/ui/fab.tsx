@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { IconPlus } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/cn';
 
 export interface FabProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 	/**

@@ -11,7 +11,9 @@ import { LoadingState } from '@/components/layouts/loading-state';
 import { AddProductSheet } from './AddProductSheet';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
+import type { MeasuringUnit } from '@/types/database/enums';
 import { Button } from '@/components/ui/button';
+import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 
 type ProductRow = Tables<'products'>;
 
@@ -22,7 +24,7 @@ interface Product {
 	material: string | null;
 	color: string | null;
 	totalQuantity: number;
-	unit: string;
+	unit: string | null;
 	imageUrl?: string;
 }
 
@@ -123,7 +125,7 @@ export default function InventoryPage() {
 					<div className="relative max-w-md">
 						<Input
 							type="text"
-							placeholder="Search for item"
+							placeholder="Search for product"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							className="pr-10"
@@ -221,7 +223,7 @@ export default function InventoryPage() {
 								{/* Quantity */}
 								<div className="flex flex-col items-end">
 									<p className="text-base font-bold text-gray-900">
-										{product.totalQuantity} {product.unit}
+										{product.totalQuantity} {getMeasuringUnitAbbreviation(product.unit as MeasuringUnit | null)}
 									</p>
 								</div>
 							</CardContent>

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/cn';
 
 interface RadioGroupProps {
 	value: string;
@@ -47,7 +47,7 @@ function RadioGroupItem({ value, children, className }: RadioGroupItemProps) {
 		<label
 			htmlFor={id}
 			className={cn(
-				'px-3 py-1 text-sm font-medium rounded-2xl border-2 transition-colors cursor-pointer',
+				'px-4 py-2 text-sm font-medium rounded-2xl border-2 transition-colors cursor-pointer',
 				isSelected
 					? 'bg-primary-200 border-primary-700 text-gray-700'
 					: 'bg-gray-100 border-transparent text-gray-700',

@@ -19,7 +19,7 @@ CREATE TABLE stock_units (
     initial_quantity DECIMAL(10,3) NOT NULL, -- Track initial quantity at creation
     supplier_number VARCHAR(100),
     quality_grade TEXT, -- Custom quality grade with auto-suggestions from previously used values
-    location_description TEXT,
+    warehouse_location TEXT,
     
     -- Status tracking
     status VARCHAR(20) NOT NULL DEFAULT 'in_stock'
@@ -68,6 +68,10 @@ CREATE INDEX idx_stock_units_inward_id ON stock_units(created_from_inward_id);
 
 -- Quality grade filtering
 CREATE INDEX idx_stock_units_quality_grade ON stock_units(company_id, quality_grade);
+
+-- FIFO queries (crucial for piece dispatch performance)
+CREATE INDEX idx_stock_units_fifo ON stock_units(company_id, product_id, created_at, id)
+    WHERE deleted_at IS NULL;
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES

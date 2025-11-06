@@ -7,7 +7,7 @@ import type { Tables } from '@/types/database/supabase';
 // Type for label data combining stock unit and product information
 export type LabelData = Pick<
 	Tables<'stock_units'>,
-	'id' | 'unit_number' | 'manufacturing_date' | 'initial_quantity' | 'quality_grade' | 'location_description'
+	'id' | 'unit_number' | 'manufacturing_date' | 'initial_quantity' | 'quality_grade' | 'warehouse_location'
 > & {
 	product: Pick<
 		Tables<'products'>,
@@ -83,7 +83,7 @@ const FIELD_LABELS: Record<QRTemplateField, string> = {
 	manufacturing_date: 'Made on:',
 	initial_quantity: 'Size:',
 	quality_grade: 'Quality:',
-	location_description: 'Location:',
+	warehouse_location: 'Location:',
 };
 
 // Generate QR code data URL
@@ -142,8 +142,8 @@ function getFieldValue(unit: LabelData, field: QRTemplateField): string {
 		case 'quality_grade':
 			value = unit.quality_grade;
 			break;
-		case 'location_description':
-			value = unit.location_description;
+		case 'warehouse_location':
+			value = unit.warehouse_location;
 			break;
 		default:
 			return '';

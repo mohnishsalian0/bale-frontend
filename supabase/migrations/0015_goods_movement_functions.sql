@@ -63,7 +63,7 @@ BEGIN
         status,
         quality_grade,
         supplier_number,
-        location_description,
+        warehouse_location,
         notes,
         created_by
     )
@@ -78,7 +78,7 @@ BEGIN
         unit->>'status',
         unit->>'quality_grade',
         unit->>'supplier_number',
-        unit->>'location_description',
+        unit->>'warehouse_location',
         unit->>'notes',
         (unit->>'created_by')::UUID
     FROM unnest(p_stock_units) AS unit;
@@ -169,13 +169,13 @@ BEGIN
             company_id,
             outward_id,
             stock_unit_id,
-						quantity
+            quantity_dispatched
         )
         VALUES (
             (p_outward_data->>'company_id')::UUID,
             v_outward_id,
             v_stock_unit_id,
-						v_dispatch_quantity
+            v_dispatch_quantity
         );
 
         -- Update stock unit
@@ -202,3 +202,116 @@ BEGIN
     RETURN v_result;
 END;
 $$;
+
+-- =====================================================
+-- PIECE TRACKING HELPER FUNCTIONS
+-- =====================================================
+
+-- Function to get available pieces quantity
+CREATE OR REPLACE FUNCTION get_available_pieces_quantity(
+    p_company_id UUID,
+    p_product_id UUID
+)
+RETURNS DECIMAL(10,3) AS $$
+DECLARE
+    total_quantity DECIMAL(10,3);
+BEGIN
+    -- Sum all inward pieces minus all dispatched pieces
+    SELECT COALESCE(SUM(su.initial_quantity), 0) -
+           COALESCE(SUM(goi.quantity_dispatched), 0)
+    INTO total_quantity
+    FROM stock_units su
+    LEFT JOIN goods_outward_items goi ON goi.stock_unit_id = su.id
+    WHERE su.company_id = p_company_id
+      AND su.product_id = p_product_id
+      AND su.deleted_at IS NULL;
+
+    RETURN COALESCE(total_quantity, 0);
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+COMMENT ON FUNCTION get_available_pieces_quantity IS 'Calculate total available quantity for piece-tracked products (sum of inward minus outward)';
+
+-- =====================================================
+-- FIFO DISPATCH FUNCTION FOR PIECES
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION dispatch_pieces_fifo(
+    p_company_id UUID,
+    p_outward_id UUID,
+    p_product_id UUID,
+    p_quantity_to_dispatch DECIMAL(10,3)
+)
+RETURNS TABLE(stock_unit_id UUID, quantity_dispatched DECIMAL(10,3)) AS $$
+DECLARE
+    v_remaining_quantity DECIMAL(10,3);
+    v_stock_unit RECORD;
+    v_available_in_unit DECIMAL(10,3);
+    v_dispatch_from_unit DECIMAL(10,3);
+BEGIN
+    v_remaining_quantity := p_quantity_to_dispatch;
+
+    -- Loop through stock units in FIFO order (oldest first)
+    FOR v_stock_unit IN
+        SELECT
+            su.id,
+            su.initial_quantity,
+            COALESCE(SUM(goi.quantity_dispatched), 0) AS total_dispatched
+        FROM stock_units su
+        LEFT JOIN goods_outward_items goi ON goi.stock_unit_id = su.id
+        WHERE su.company_id = p_company_id
+          AND su.product_id = p_product_id
+          AND su.deleted_at IS NULL
+        GROUP BY su.id, su.initial_quantity
+        ORDER BY su.created_at ASC, su.id ASC
+    LOOP
+        -- Calculate available quantity in this unit
+        v_available_in_unit := v_stock_unit.initial_quantity - v_stock_unit.total_dispatched;
+
+        -- If nothing available, skip to next unit
+        IF v_available_in_unit <= 0 THEN
+            CONTINUE;
+        END IF;
+
+        -- Dispatch as much as possible from this unit
+        v_dispatch_from_unit := LEAST(v_available_in_unit, v_remaining_quantity);
+
+        -- Insert outward item
+        INSERT INTO goods_outward_items (
+            company_id,
+            outward_id,
+            stock_unit_id,
+            quantity_dispatched
+        ) VALUES (
+            p_company_id,
+            p_outward_id,
+            v_stock_unit.id,
+            v_dispatch_from_unit
+        );
+
+        -- Return the dispatch record
+        stock_unit_id := v_stock_unit.id;
+        quantity_dispatched := v_dispatch_from_unit;
+        RETURN NEXT;
+
+        -- Reduce remaining quantity
+        v_remaining_quantity := v_remaining_quantity - v_dispatch_from_unit;
+
+        -- If we've dispatched everything, exit loop
+        IF v_remaining_quantity <= 0 THEN
+            EXIT;
+        END IF;
+    END LOOP;
+
+    -- If we still have remaining quantity, it means insufficient stock
+    IF v_remaining_quantity > 0 THEN
+        RAISE EXCEPTION 'Insufficient stock: requested %, only % available',
+            p_quantity_to_dispatch,
+            p_quantity_to_dispatch - v_remaining_quantity;
+    END IF;
+
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
+COMMENT ON FUNCTION dispatch_pieces_fifo IS 'Atomically dispatch pieces using FIFO (First In First Out) inventory method. Creates goods_outward_items records automatically.';
