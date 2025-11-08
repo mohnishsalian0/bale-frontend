@@ -28,7 +28,7 @@ export function QRProductSelectionStep({
 		const m = new Set<string>(), c = new Set<string>(), t = new Set<string>();
 		for (const p of products) {
 			if (p.material) m.add(p.material);
-			if (p.color) c.add(p.color);
+			if (p.color_name) c.add(p.color_name);
 			p.tags?.forEach(tag => t.add(tag));
 		}
 		return {
@@ -48,14 +48,14 @@ export function QRProductSelectionStep({
 			if (query && !(
 				product.name.toLowerCase().includes(query) ||
 				product.material?.toLowerCase().includes(query) ||
-				product.color?.toLowerCase().includes(query)
+				product.color_name?.toLowerCase().includes(query)
 			)) return false;
 
 			// Material filter
 			if (materialFilter !== 'all' && product.material !== materialFilter) return false;
 
 			// Color filter
-			if (colorFilter !== 'all' && product.color !== colorFilter) return false;
+			if (colorFilter !== 'all' && product.color_name !== colorFilter) return false;
 
 			// Tags filter
 			if (tagsFilter !== 'all' && !product.tags?.includes(tagsFilter)) return false;
@@ -142,7 +142,7 @@ export function QRProductSelectionStep({
 						{filteredProducts.map(product => {
 							const imageUrl = product.product_images?.[0];
 
-							const productInfo = [product.material, product.color].filter(Boolean).join(', ');
+							const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
 
 							return (
 								<button
@@ -173,7 +173,7 @@ export function QRProductSelectionStep({
 											{product.name}
 										</p>
 										<p title={productInfo} className="text-xs text-gray-500 truncate">
-											{[product.material, product.color].filter(Boolean).join(', ')}
+											{[product.material, product.color_name].filter(Boolean).join(', ')}
 										</p>
 									</div>
 

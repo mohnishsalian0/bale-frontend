@@ -67,7 +67,6 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 	const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 	const [imageError, setImageError] = useState<string | null>(null);
 	const [showFeaturesImages, setShowFeaturesImages] = useState(false);
-	const [showStockDetails, setShowStockDetails] = useState(false);
 	const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
@@ -143,7 +142,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 				product_number: formData.productNumber,
 				show_on_catalog: formData.showOnCatalog,
 				material: formData.material || null,
-				color: formData.color || null,
+				color_name: formData.color || null,
 				gsm: formData.gsm ? parseFloat(formData.gsm) : null,
 				thread_count_cm: formData.threadCount ? parseFloat(formData.threadCount) : null,
 				tags: tagsArray,

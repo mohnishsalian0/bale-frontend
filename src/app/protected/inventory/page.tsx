@@ -55,7 +55,7 @@ export default function InventoryPage() {
 				name: p.name,
 				productNumber: p.product_number,
 				material: p.material,
-				color: p.color,
+				color: p.color_name,
 				totalQuantity: 0, // TODO: Calculate from stock_units
 				unit: p.measuring_unit,
 				imageUrl: p.product_images?.[0] || undefined,

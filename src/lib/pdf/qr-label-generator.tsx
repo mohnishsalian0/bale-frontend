@@ -11,7 +11,7 @@ export type LabelData = Pick<
 > & {
 	product: Pick<
 		Tables<'products'>,
-		'name' | 'product_number' | 'hsn_code' | 'material' | 'color' | 'gsm' | 'selling_price_per_unit'
+		'name' | 'product_number' | 'hsn_code' | 'material' | 'color_name' | 'gsm' | 'selling_price_per_unit'
 	>;
 };
 
@@ -122,7 +122,7 @@ function getFieldValue(unit: LabelData, field: QRTemplateField): string {
 			value = unit.product.material;
 			break;
 		case 'color':
-			value = unit.product.color;
+			value = unit.product.color_name;
 			break;
 		case 'gsm':
 			value = unit.product.gsm;

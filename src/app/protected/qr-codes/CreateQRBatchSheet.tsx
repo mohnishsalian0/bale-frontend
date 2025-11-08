@@ -163,7 +163,7 @@ export function CreateQRBatchSheet({
 					product_number: unit.products?.product_number || '',
 					hsn_code: unit.products?.hsn_code,
 					material: unit.products?.material,
-					color: unit.products?.color,
+					color_name: unit.products?.color,
 					gsm: unit.products?.gsm,
 					selling_price_per_unit: unit.products?.selling_price_per_unit,
 				},

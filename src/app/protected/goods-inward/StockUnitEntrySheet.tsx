@@ -85,7 +85,7 @@ export function StockUnitEntrySheet({
 
 	const unitAbbreviation = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null);
 
-	const productInfo = [product.material, product.color].filter(Boolean).join(', ');
+	const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
 
 	const formContent = (
 		<div className="flex flex-col gap-8 p-4 md:px-0">
@@ -110,7 +110,7 @@ export function StockUnitEntrySheet({
 						<div className="flex-1 min-w-0">
 							<p title={product.name} className="text-base font-medium text-gray-700 truncate">{product.name}</p>
 							<p title={productInfo} className="text-xs text-gray-500 truncate">
-								{[product.material, product.color].filter(Boolean).join(', ')}
+								{[product.material, product.color_name].filter(Boolean).join(', ')}
 							</p>
 						</div>
 					</div>
