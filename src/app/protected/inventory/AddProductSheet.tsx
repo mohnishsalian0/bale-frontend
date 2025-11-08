@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group-pills';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -253,6 +254,96 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 								}
 								required
 							/>
+
+							{/* Stock Type */}
+							<div className="flex flex-col gap-2">
+								<Label required>Stock Type</Label>
+								<RadioGroup
+									value={formData.stockType}
+									onValueChange={(value) => {
+										const stockType = value as StockType;
+										let measuringUnit: MeasuringUnit | '' = '';
+
+										// Auto-set measuring unit based on stock type
+										if (stockType === 'batch') {
+											measuringUnit = 'unit';
+										}
+
+										setFormData({ ...formData, stockType, measuringUnit });
+									}}
+									name="stock-type"
+								>
+									<RadioGroupItem value="roll">Roll</RadioGroupItem>
+									<RadioGroupItem value="batch">Batch</RadioGroupItem>
+									<RadioGroupItem value="piece">Piece</RadioGroupItem>
+								</RadioGroup>
+							</div>
+
+							{/* Measuring Unit - Only show for roll type */}
+							{formData.stockType === 'roll' && (
+								<div className="flex flex-col gap-2">
+									<Label required>Measuring Unit</Label>
+									<RadioGroup
+										value={formData.measuringUnit}
+										onValueChange={(value) =>
+											setFormData({ ...formData, measuringUnit: value as MeasuringUnit })
+										}
+										name="measuring-unit"
+									>
+										<RadioGroupItem value="metre">Metre</RadioGroupItem>
+										<RadioGroupItem value="kilogram">Kilogram</RadioGroupItem>
+										<RadioGroupItem value="yard">Yard</RadioGroupItem>
+									</RadioGroup>
+								</div>
+							)}
+
+							{/* Purchase & Sale Price */}
+							<div className="flex gap-4">
+								<Input
+									type="number"
+									placeholder="Purchase price"
+									value={formData.costPrice}
+									onChange={(e) =>
+										setFormData({ ...formData, costPrice: e.target.value })
+									}
+									className="flex-1"
+									step="0.01"
+								/>
+								<Input
+									type="number"
+									placeholder="Sale price"
+									value={formData.sellingPrice}
+									onChange={(e) =>
+										setFormData({ ...formData, sellingPrice: e.target.value })
+									}
+									className="flex-1"
+									step="0.01"
+								/>
+							</div>
+
+							{/* Minimum Stock Alert */}
+							<div className="flex items-center justify-between">
+								<Label>Minimum stock alert</Label>
+								<Switch
+									checked={formData.minStockAlert}
+									onCheckedChange={(checked) =>
+										setFormData({ ...formData, minStockAlert: checked })
+									}
+								/>
+							</div>
+
+							{/* Minimum Stock Threshold */}
+							{formData.minStockAlert && (
+								<Input
+									type="number"
+									placeholder="Minimum stock threshold"
+									value={formData.minStockThreshold}
+									onChange={(e) =>
+										setFormData({ ...formData, minStockThreshold: e.target.value })
+									}
+									step="0.01"
+								/>
+							)}
 						</div>
 
 						{/* Features & Images Section */}
@@ -342,9 +433,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 
 									{/* Image Upload */}
 									<div className="flex flex-col gap-3">
-										<label className="text-sm font-medium text-gray-700">
-											Product Images (Max {MAX_PRODUCT_IMAGES})
-										</label>
+										<Label>Product Images (Max {MAX_PRODUCT_IMAGES})</Label>
 
 										{/* Image Previews */}
 										{imagePreviews.length > 0 && (
@@ -399,119 +488,6 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 							</CollapsibleContent>
 						</Collapsible>
 
-						{/* Stock Details Section */}
-						<Collapsible
-							open={showStockDetails}
-							onOpenChange={setShowStockDetails}
-							className="border-t border-gray-200 px-4 py-5"
-						>
-							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showStockDetails ? 'mb-5' : 'mb-0'}`}>
-								<h3 className="text-lg font-medium text-gray-900">Stock Details</h3>
-								<IconChevronDown
-									className={`size-6 text-gray-500 transition-transform ${showStockDetails ? 'rotate-180' : 'rotate-0'}`}
-								/>
-							</CollapsibleTrigger>
-
-							<CollapsibleContent>
-								<div className="flex flex-col gap-6">
-									{/* Stock Type */}
-									<div className="flex flex-col gap-2">
-										<label className="text-sm font-medium text-gray-700">
-											Stock Type <span className="text-red-500">*</span>
-										</label>
-										<RadioGroup
-											value={formData.stockType}
-											onValueChange={(value) => {
-												const stockType = value as StockType;
-												let measuringUnit: MeasuringUnit | '' = '';
-
-												// Auto-set measuring unit based on stock type
-												if (stockType === 'batch') {
-													measuringUnit = 'unit';
-												}
-
-												setFormData({ ...formData, stockType, measuringUnit });
-											}}
-											name="stock-type"
-										>
-											<RadioGroupItem value="roll">Roll</RadioGroupItem>
-											<RadioGroupItem value="batch">Batch</RadioGroupItem>
-											<RadioGroupItem value="piece">Piece</RadioGroupItem>
-										</RadioGroup>
-									</div>
-
-									{/* Measuring Unit - Only show for roll type */}
-									{formData.stockType === 'roll' && (
-										<div className="flex flex-col gap-2">
-											<label className="text-sm font-medium text-gray-700">
-												Measuring Unit <span className="text-red-500">*</span>
-											</label>
-											<RadioGroup
-												value={formData.measuringUnit}
-												onValueChange={(value) =>
-													setFormData({ ...formData, measuringUnit: value as MeasuringUnit })
-												}
-												name="measuring-unit"
-											>
-												<RadioGroupItem value="metre">Metre</RadioGroupItem>
-												<RadioGroupItem value="kilogram">Kilogram</RadioGroupItem>
-												<RadioGroupItem value="yard">Yard</RadioGroupItem>
-											</RadioGroup>
-										</div>
-									)}
-
-									{/* Purchase & Sale Price */}
-									<div className="flex gap-4">
-										<Input
-											type="number"
-											placeholder="Purchase price"
-											value={formData.costPrice}
-											onChange={(e) =>
-												setFormData({ ...formData, costPrice: e.target.value })
-											}
-											className="flex-1"
-											step="0.01"
-										/>
-										<Input
-											type="number"
-											placeholder="Sale price"
-											value={formData.sellingPrice}
-											onChange={(e) =>
-												setFormData({ ...formData, sellingPrice: e.target.value })
-											}
-											className="flex-1"
-											step="0.01"
-										/>
-									</div>
-
-									{/* Minimum Stock Alert */}
-									<div className="flex items-center justify-between">
-										<label className="text-sm font-medium text-gray-700">
-											Minimum stock alert
-										</label>
-										<Switch
-											checked={formData.minStockAlert}
-											onCheckedChange={(checked) =>
-												setFormData({ ...formData, minStockAlert: checked })
-											}
-										/>
-									</div>
-
-									{/* Minimum Stock Threshold */}
-									{formData.minStockAlert && (
-										<Input
-											type="number"
-											placeholder="Minimum stock threshold"
-											value={formData.minStockThreshold}
-											onChange={(e) =>
-												setFormData({ ...formData, minStockThreshold: e.target.value })
-											}
-											step="0.01"
-										/>
-									)}
-								</div>
-							</CollapsibleContent>
-						</Collapsible>
 
 						{/* Additional Details Section */}
 						<Collapsible
@@ -531,7 +507,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 									{/* Show on Catalog */}
 									<div className="flex items-start justify-between">
 										<div className="flex flex-col">
-											<label className="text-sm font-medium text-gray-700">Show on catalog</label>
+											<Label>Show on catalog</Label>
 											<span className="text-sm font-light text-gray-500">
 												Display this product on your public sales catalog
 											</span>

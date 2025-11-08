@@ -1,0 +1,377 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { IconUser, IconPhone, IconChevronDown, IconBuildingWarehouse } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { validateImageFile, uploadWarehouseImage } from '@/lib/storage';
+import { createClient, getCurrentUser } from '@/lib/supabase/client';
+import type { TablesInsert, Tables } from '@/types/database/supabase';
+
+interface AddWarehouseSheetProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	onWarehouseAdded?: () => void;
+	warehouse?: Tables<'warehouses'> | null; // For edit mode
+}
+
+interface WarehouseFormData {
+	name: string;
+	contactName: string;
+	contactNumber: string;
+	addressLine1: string;
+	addressLine2: string;
+	city: string;
+	state: string;
+	country: string;
+	pinCode: string;
+	image: File | null;
+}
+
+export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, warehouse }: AddWarehouseSheetProps) {
+	const [formData, setFormData] = useState<WarehouseFormData>({
+		name: '',
+		contactName: '',
+		contactNumber: '',
+		addressLine1: '',
+		addressLine2: '',
+		city: '',
+		state: '',
+		country: 'India',
+		pinCode: '',
+		image: null,
+	});
+
+	const [imagePreview, setImagePreview] = useState<string | null>(null);
+	const [imageError, setImageError] = useState<string | null>(null);
+	const [showAddress, setShowAddress] = useState(false);
+	const [saving, setSaving] = useState(false);
+	const [saveError, setSaveError] = useState<string | null>(null);
+
+	const isEditMode = !!warehouse;
+
+	// Pre-populate form data when editing
+	useEffect(() => {
+		if (warehouse && open) {
+			setFormData({
+				name: warehouse.name || '',
+				contactName: warehouse.contact_name || '',
+				contactNumber: warehouse.contact_number || '',
+				addressLine1: warehouse.address_line1 || '',
+				addressLine2: warehouse.address_line2 || '',
+				city: warehouse.city || '',
+				state: warehouse.state || '',
+				country: warehouse.country || 'India',
+				pinCode: warehouse.pin_code || '',
+				image: null,
+			});
+			setImagePreview(warehouse.image_url || null);
+		}
+	}, [warehouse, open]);
+
+	const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		const validation = validateImageFile(file);
+		if (!validation.valid) {
+			setImageError(validation.error!);
+			return;
+		}
+
+		setImageError(null);
+		setFormData({ ...formData, image: file });
+
+		// Create preview
+		const reader = new FileReader();
+		reader.onloadend = () => {
+			setImagePreview(reader.result as string);
+		};
+		reader.readAsDataURL(file);
+	};
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setSaving(true);
+		setSaveError(null);
+
+		try {
+			const supabase = createClient();
+
+			// Get current user
+			const currentUser = await getCurrentUser();
+			if (!currentUser || !currentUser.company_id) {
+				throw new Error('User not found');
+			}
+
+			let imageUrl: string | null = warehouse?.image_url || null;
+
+			// Upload image if new file is provided
+			if (formData.image) {
+				try {
+					// Generate warehouse ID for new warehouse or use existing ID
+					const warehouseId = warehouse?.id || crypto.randomUUID();
+					const { publicUrl } = await uploadWarehouseImage(
+						currentUser.company_id,
+						warehouseId,
+						formData.image
+					);
+					imageUrl = publicUrl;
+				} catch (uploadError) {
+					console.error('Image upload failed:', uploadError);
+					throw new Error('Failed to upload image. Please try again.');
+				}
+			}
+
+			if (isEditMode && warehouse) {
+				// Update existing warehouse
+				const warehouseUpdate: Partial<TablesInsert<'warehouses'>> = {
+					name: formData.name,
+					contact_name: formData.contactName || null,
+					contact_number: formData.contactNumber || null,
+					address_line1: formData.addressLine1 || null,
+					address_line2: formData.addressLine2 || null,
+					city: formData.city || null,
+					state: formData.state || null,
+					country: formData.country || null,
+					pin_code: formData.pinCode || null,
+					image_url: imageUrl,
+					modified_by: currentUser.id,
+				};
+
+				const { error: updateError } = await supabase
+					.from('warehouses')
+					.update(warehouseUpdate)
+					.eq('id', warehouse.id);
+
+				if (updateError) throw updateError;
+			} else {
+				// Create new warehouse
+				const warehouseInsert: TablesInsert<'warehouses'> = {
+					company_id: currentUser.company_id,
+					name: formData.name,
+					contact_name: formData.contactName || null,
+					contact_number: formData.contactNumber || null,
+					address_line1: formData.addressLine1 || null,
+					address_line2: formData.addressLine2 || null,
+					city: formData.city || null,
+					state: formData.state || null,
+					country: formData.country || null,
+					pin_code: formData.pinCode || null,
+					image_url: imageUrl,
+					created_by: currentUser.id,
+				};
+
+				const { error: insertError } = await supabase
+					.from('warehouses')
+					.insert(warehouseInsert);
+
+				if (insertError) throw insertError;
+			}
+
+			// Success! Close sheet and notify parent
+			handleCancel();
+			if (onWarehouseAdded) {
+				onWarehouseAdded();
+			}
+		} catch (error) {
+			console.error('Error saving warehouse:', error);
+			setSaveError(error instanceof Error ? error.message : 'Failed to save warehouse');
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const handleCancel = () => {
+		// Reset form
+		setFormData({
+			name: '',
+			contactName: '',
+			contactNumber: '',
+			addressLine1: '',
+			addressLine2: '',
+			city: '',
+			state: '',
+			country: 'India',
+			pinCode: '',
+			image: null,
+		});
+		setImagePreview(null);
+		setImageError(null);
+		setSaveError(null);
+		onOpenChange(false);
+	};
+
+	return (
+		<Sheet open={open} onOpenChange={onOpenChange}>
+			<SheetContent>
+				{/* Header */}
+				<SheetHeader>
+					<SheetTitle>{isEditMode ? 'Edit warehouse' : 'Create warehouse'}</SheetTitle>
+				</SheetHeader>
+
+				{/* Form Content - Scrollable */}
+				<form onSubmit={handleSubmit} className="flex flex-col h-full overflow-y-hidden">
+					<div className="flex-1 overflow-y-auto">
+						{/* Image Upload & Basic Info */}
+						<div className="flex flex-col gap-5 px-4 py-5">
+							{/* Image Upload */}
+							<div className="flex justify-center">
+								<label
+									htmlFor="warehouse-image"
+									className="relative flex flex-col items-center justify-center size-40 rounded-full border-shadow-gray bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors"
+								>
+									{imagePreview ? (
+										<Image
+											src={imagePreview}
+											alt="Warehouse preview"
+											fill
+											className="object-cover rounded-full"
+										/>
+									) : (
+										<>
+											<IconBuildingWarehouse className="size-12 text-gray-700 mb-2" />
+											<span className="text-base text-gray-700">Add image</span>
+										</>
+									)}
+									<input
+										id="warehouse-image"
+										type="file"
+										accept="image/jpeg,image/png,image/webp"
+										onChange={handleImageSelect}
+										className="sr-only"
+									/>
+								</label>
+							</div>
+							{imageError && (
+								<p className="text-sm text-red-600 text-center">{imageError}</p>
+							)}
+
+							{/* Warehouse Name */}
+							<Input
+								placeholder="Warehouse name"
+								value={formData.name}
+								onChange={(e) =>
+									setFormData({ ...formData, name: e.target.value })
+								}
+								required
+							/>
+
+							{/* Contact Person Name */}
+							<div className="relative">
+								<IconUser className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
+								<Input
+									placeholder="Contact person name"
+									value={formData.contactName}
+									onChange={(e) =>
+										setFormData({ ...formData, contactName: e.target.value })
+									}
+									className="pl-12"
+								/>
+							</div>
+
+							{/* Contact Person Number */}
+							<div className="relative">
+								<IconPhone className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
+								<Input
+									type="tel"
+									placeholder="Contact person number"
+									value={formData.contactNumber}
+									onChange={(e) =>
+										setFormData({ ...formData, contactNumber: e.target.value })
+									}
+									className="pl-12"
+								/>
+							</div>
+						</div>
+
+						{/* Address Section */}
+						<Collapsible
+							open={showAddress}
+							onOpenChange={setShowAddress}
+							className="border-t border-gray-200 px-4 py-5"
+						>
+							<CollapsibleTrigger className={`flex items-center justify-between w-full ${showAddress ? 'mb-5' : 'mb-0'}`}>
+								<h3 className="text-lg font-medium text-gray-900">Address</h3>
+								<IconChevronDown
+									className={`size-6 text-gray-500 transition-transform ${showAddress ? 'rotate-180' : 'rotate-0'}`}
+								/>
+							</CollapsibleTrigger>
+
+							<CollapsibleContent>
+								<div className="flex flex-col gap-5">
+									<Input
+										placeholder="Address line 1"
+										value={formData.addressLine1}
+										onChange={(e) =>
+											setFormData({ ...formData, addressLine1: e.target.value })
+										}
+									/>
+									<Input
+										placeholder="Address line 2"
+										value={formData.addressLine2}
+										onChange={(e) =>
+											setFormData({ ...formData, addressLine2: e.target.value })
+										}
+									/>
+									<div className="flex gap-4">
+										<Input
+											placeholder="City"
+											value={formData.city}
+											onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+										/>
+										<Input
+											placeholder="State"
+											value={formData.state}
+											onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+										/>
+									</div>
+									<div className="flex gap-4">
+										<Input
+											placeholder="Country"
+											value={formData.country}
+											onChange={(e) =>
+												setFormData({ ...formData, country: e.target.value })
+											}
+										/>
+										<Input
+											placeholder="Pin code"
+											value={formData.pinCode}
+											onChange={(e) =>
+												setFormData({ ...formData, pinCode: e.target.value })
+											}
+										/>
+									</div>
+								</div>
+							</CollapsibleContent>
+						</Collapsible>
+					</div>
+
+					<SheetFooter>
+						{saveError && (
+							<p className="text-sm text-red-600 text-center">{saveError}</p>
+						)}
+						<div className="flex gap-3">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={handleCancel}
+								disabled={saving}
+								className="flex-1"
+							>
+								Cancel
+							</Button>
+							<Button type="submit" disabled={saving} className="flex-1">
+								{saving ? 'Saving...' : 'Save'}
+							</Button>
+						</div>
+					</SheetFooter>
+				</form>
+			</SheetContent>
+		</Sheet>
+	);
+}

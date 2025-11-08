@@ -8,22 +8,25 @@
 CREATE TABLE warehouses (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-    
+
     name VARCHAR(100) NOT NULL,
+    contact_name VARCHAR(100),
+    contact_number VARCHAR(20),
+    image_url TEXT,
     address_line1 VARCHAR(255),
     address_line2 VARCHAR(255),
     city VARCHAR(100),
     state VARCHAR(100),
     country VARCHAR(100) DEFAULT 'India',
     pin_code VARCHAR(10),
-    
+
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by UUID REFERENCES users(id),
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
-    
+
     UNIQUE(company_id, name)
 );
 

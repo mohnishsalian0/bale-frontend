@@ -11,6 +11,7 @@ export const STORAGE_BUCKETS = {
 	PROFILE_IMAGES: 'profile-images',
 	PRODUCT_IMAGES: 'product-images',
 	PARTNER_IMAGES: 'partner-images',
+	WAREHOUSE_IMAGES: 'warehouse-images',
 } as const;
 
 // File validation constants
@@ -180,6 +181,49 @@ export async function uploadPartnerImage(
 }
 
 /**
+ * Upload a warehouse image
+ * Path format: {company_id}/{warehouse_id}/image.{ext}
+ */
+export async function uploadWarehouseImage(
+	companyId: string,
+	warehouseId: string,
+	file: File
+): Promise<{ publicUrl: string; path: string }> {
+	const validation = validateImageFile(file);
+	if (!validation.valid) {
+		throw new StorageError(validation.error!);
+	}
+
+	const supabase = createClient();
+	const fileExt = file.name.split('.').pop();
+	const filePath = `${companyId}/${warehouseId}/image.${fileExt}`;
+
+	// Delete existing warehouse image if any
+	await supabase.storage.from(STORAGE_BUCKETS.WAREHOUSE_IMAGES).remove([filePath]);
+
+	// Upload warehouse image
+	const { data, error } = await supabase.storage
+		.from(STORAGE_BUCKETS.WAREHOUSE_IMAGES)
+		.upload(filePath, file, {
+			cacheControl: '3600',
+			upsert: true,
+		});
+
+	if (error) {
+		throw new StorageError(error.message, error.name);
+	}
+
+	const { data: urlData } = supabase.storage
+		.from(STORAGE_BUCKETS.WAREHOUSE_IMAGES)
+		.getPublicUrl(data.path);
+
+	return {
+		publicUrl: urlData.publicUrl,
+		path: data.path,
+	};
+}
+
+/**
  * Upload a product image
  * Path format: {company_id}/{product_id}/{index}.{ext}
  */
@@ -234,6 +278,40 @@ export async function deleteFile(bucket: string, path: string): Promise<void> {
 
 	if (error) {
 		throw new StorageError(error.message, error.name);
+	}
+}
+
+/**
+ * Delete a warehouse image
+ */
+export async function deleteWarehouseImage(
+	companyId: string,
+	warehouseId: string
+): Promise<void> {
+	const supabase = createClient();
+	const folderPath = `${companyId}/${warehouseId}`;
+
+	// List all files in the warehouse folder
+	const { data: files, error: listError } = await supabase.storage
+		.from(STORAGE_BUCKETS.WAREHOUSE_IMAGES)
+		.list(folderPath);
+
+	if (listError) {
+		throw new StorageError(listError.message, listError.name);
+	}
+
+	if (!files || files.length === 0) {
+		return; // No files to delete
+	}
+
+	// Delete all files
+	const filePaths = files.map((file) => `${folderPath}/${file.name}`);
+	const { error: deleteError } = await supabase.storage
+		.from(STORAGE_BUCKETS.WAREHOUSE_IMAGES)
+		.remove(filePaths);
+
+	if (deleteError) {
+		throw new StorageError(deleteError.message, deleteError.name);
 	}
 }
 

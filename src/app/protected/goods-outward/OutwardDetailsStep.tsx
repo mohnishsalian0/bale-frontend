@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group-pills';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Label } from '@/components/ui/label';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
 import { dateToISOString } from '@/lib/utils/date';
@@ -96,7 +97,7 @@ export function OutwardDetailsStep({ formData, onChange }: OutwardDetailsStepPro
 
 			{/* Outward To Section */}
 			<div className="flex flex-col gap-2 px-4">
-				<label className="text-sm font-medium text-gray-700">Outward to</label>
+				<Label>Outward to</Label>
 				<RadioGroup
 					value={formData.dispatchToType}
 					onValueChange={(value) => onChange({
@@ -150,7 +151,7 @@ export function OutwardDetailsStep({ formData, onChange }: OutwardDetailsStepPro
 
 			{/* Reason for Outward Section */}
 			<div className="flex flex-col gap-2 text-nowrap px-4">
-				<label className="text-sm font-medium text-gray-700">Reason for outward</label>
+				<Label>Reason for outward</Label>
 				<RadioGroup
 					value={formData.linkToType}
 					onValueChange={(value) => onChange({

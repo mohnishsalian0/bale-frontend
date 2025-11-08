@@ -1,105 +1,232 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { IconMapPin, IconBuildingWarehouse } from '@tabler/icons-react';
+import { IconBuildingWarehouse, IconPencil, IconShare } from '@tabler/icons-react';
+import { Fab } from '../ui/fab';
+import { Button } from '../ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../ui/sheet';
+import { createClient } from '@/lib/supabase/client';
+import { AddWarehouseSheet } from '@/app/protected/warehouses/AddWarehouseSheet';
+import type { Tables } from '@/types/database/supabase';
 
-interface Warehouse {
-	id: string;
-	name: string;
-	address?: string;
-	color?: string;
-}
+type Warehouse = Tables<'warehouses'>;
 
 interface WarehouseSelectorProps {
-	warehouses: Warehouse[];
+	open: boolean;
 	currentWarehouse: string;
 	onSelect: (warehouseId: string) => void;
-	onClose: () => void;
+	onOpenChange: (open: boolean) => void;
+	isAdmin: boolean;
 }
 
 export default function WarehouseSelector({
-	warehouses,
+	open,
 	currentWarehouse,
 	onSelect,
-	onClose,
+	onOpenChange,
+	isAdmin,
 }: WarehouseSelectorProps) {
+	const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
+	const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
+
+	const supabase = createClient();
+
+	useEffect(() => {
+		if (open) {
+			fetchWarehouses();
+		}
+	}, [open]);
+
+	const fetchWarehouses = async () => {
+		try {
+			setLoading(true);
+			const { data, error } = await supabase
+				.from('warehouses')
+				.select('*')
+				.order('created_at');
+
+			if (error) throw error;
+			setWarehouses(data || []);
+		} catch (error) {
+			console.error('Error fetching warehouses:', error);
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	const handleSelect = (warehouseId: string) => {
 		onSelect(warehouseId);
-		onClose();
+		onOpenChange(false);
+	};
+
+	const handleEdit = (warehouse: Warehouse, e: React.MouseEvent) => {
+		e.stopPropagation();
+		setEditingWarehouse(warehouse);
+		setIsCreateSheetOpen(true);
+	};
+
+	const handleShare = (warehouse: Warehouse, e: React.MouseEvent) => {
+		e.stopPropagation();
+
+		// Build address string
+		const addressParts = [
+			warehouse.name,
+			warehouse.address_line1,
+			warehouse.address_line2,
+			warehouse.city && warehouse.state ? `${warehouse.city}, ${warehouse.state}` : warehouse.city || warehouse.state,
+			warehouse.pin_code ? `- ${warehouse.pin_code}` : '',
+			warehouse.country,
+		].filter(Boolean);
+
+		const message = `📍 Warehouse Location\n\n${addressParts.join('\n')}`;
+		const encodedMessage = encodeURIComponent(message);
+		window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+	};
+
+	const handleWarehouseAdded = () => {
+		fetchWarehouses();
+		setEditingWarehouse(null);
+	};
+
+	const handleFabClick = () => {
+		setEditingWarehouse(null);
+		setIsCreateSheetOpen(true);
+	};
+
+	const handleSheetClose = (open: boolean) => {
+		setIsCreateSheetOpen(open);
+		if (!open) {
+			setEditingWarehouse(null);
+		}
 	};
 
 	return (
 		<>
-			{/* Backdrop */}
-			<div
-				className="fixed inset-0 bg-black/20 z-10 animate-in fade-in-0 duration-300"
-				onClick={onClose}
-			/>
+			<Sheet open={open} onOpenChange={onOpenChange}>
+				<SheetContent side="bottom" className='items-center'>
+					<div className='w-full max-w-md px-4'>
+						{/* Header with illustration */}
+						<SheetHeader className="flex flex-row flex-1 items-end justify-between my-6 p-0">
+							<SheetTitle className="text-3xl text-gray-900">Warehouses</SheetTitle>
+							<div className="relative size-25">
+								<Image
+									src="/illustrations/warehouse.png"
+									alt="Warehouse"
+									fill
+									sizes='100px'
+									className="object-contain"
+								/>
+							</div>
+						</SheetHeader>
 
-			{/* Dropdown Panel */}
-			<div
-				className="z-20 absolute w-full top-[64px] bg-background-100 border-b border-gray-200 overflow-hidden animate-in slide-in-from-top duration-300"
-			>
-				<div className="max-w-md mx-auto px-4 py-6">
-					{/* Header with illustration */}
-					<div className="flex items-end justify-between mb-6">
-						<h2 className="text-3xl font-semibold text-gray-900">
-							Warehouses
-						</h2>
-						<div className="relative w-24 h-24">
-							<Image
-								src="/illustrations/warehouse.png"
-								alt="Warehouse"
-								fill
-								className="object-contain"
-							/>
+						{/* Warehouse Cards - Scrollable */}
+						<div className="flex-1 overflow-y-auto">
+							{loading ? (
+								<p className="text-sm text-gray-500 text-center py-4">Loading warehouses...</p>
+							) : warehouses.length === 0 ? (
+								<p className="text-sm text-gray-500 text-center py-4">No warehouses found</p>
+							) : (
+								<div className="flex flex-col gap-3 pb-20 overflow-y-auto">
+									{warehouses.map((warehouse) => {
+										const isSelected = warehouse.id === currentWarehouse;
+
+										// Build address string
+										const addressParts = [
+											warehouse.address_line1,
+											warehouse.address_line2,
+											warehouse.city && warehouse.state ? `${warehouse.city}, ${warehouse.state}` : warehouse.city || warehouse.state,
+											warehouse.pin_code,
+										].filter(Boolean);
+										const addressString = addressParts.join(', ') || 'No address';
+
+										return (
+											<div
+												key={warehouse.id}
+												onClick={() => handleSelect(warehouse.id)}
+												className={`flex gap-3 p-4 rounded-lg cursor-pointer transition-all bg-background border ${isSelected ? 'border-primary-500 shadow-primary-md' : 'border-border shadow-gray-md'}`}
+											>
+												{/* Icon */}
+												<div
+													className={`flex-shrink-0 w-14 h-14 rounded-lg flex items-center justify-center ${isSelected ? 'bg-primary-100' : 'bg-gray-100'
+														}`}
+												>
+													{warehouse.image_url ? (
+														<Image
+															src={warehouse.image_url}
+															alt={warehouse.name}
+															width={56}
+															height={56}
+															className="rounded-lg object-cover"
+														/>
+													) : (
+														<IconBuildingWarehouse
+															className={`size-6 ${isSelected ? 'text-primary-700' : 'text-gray-500'
+																}`}
+														/>
+													)}
+												</div>
+
+												{/* Content */}
+												<div className="flex-1 min-w-0">
+													<div className="text-base font-medium text-gray-900 truncate" title={warehouse.name}>
+														{warehouse.name}
+													</div>
+													<div className="text-sm text-gray-500 truncate" title={addressString}>
+														{addressString}
+													</div>
+
+													{/* Action buttons - Only show for admins */}
+													{isAdmin && (
+														<div className="flex items-center gap-2 mt-2 text-sm">
+															<Button
+																variant="ghost"
+																size="sm"
+																onClick={(e) => handleEdit(warehouse, e)}
+															>
+																<IconPencil />
+																Edit
+															</Button>
+															<Button
+																variant="ghost"
+																size="sm"
+																onClick={(e) => handleShare(warehouse, e)}
+															>
+																<IconShare />
+																Share
+															</Button>
+														</div>
+													)}
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							)}
+
+							{/* Floating Action Button - Only show for admins */}
+							{isAdmin && (
+								<Fab
+									onClick={handleFabClick}
+									className="fixed bottom-4 right-4"
+								/>
+							)}
 						</div>
 					</div>
+				</SheetContent>
+			</Sheet>
 
-					{/* Warehouse List */}
-					<div className="border-1 border-gray-200 rounded-lg overflow-hidden">
-						{warehouses.map((warehouse, index) => {
-							const isSelected = warehouse.id === currentWarehouse;
-
-							return (
-								<button
-									key={warehouse.id}
-									onClick={() => handleSelect(warehouse.id)}
-									className={`w-full flex items-center gap-3 p-4 transition-colors cursor-pointer ${index !== warehouses.length - 1 ? 'border-b border-gray-200' : ''
-										} ${isSelected
-											? 'bg-primary-100'
-											: 'bg-white hover:bg-gray-50'
-										}`}
-								>
-									{/* Icon with background */}
-									<div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${isSelected ? 'bg-primary-100' : 'bg-gray-100'
-										}`}>
-										<IconBuildingWarehouse className={`w-5 h-5 ${isSelected ? 'text-primary-700' : 'text-gray-500'
-											}`} />
-									</div>
-
-									{/* Warehouse details */}
-									<div className="flex-1 text-left">
-										<div className="text-base font-medium text-gray-900">
-											{warehouse.name}
-										</div>
-										{warehouse.address && (
-											<div className="text-sm text-gray-500">
-												{warehouse.address}
-											</div>
-										)}
-									</div>
-
-									{/* Selected indicator */}
-									{isSelected && (
-										<IconMapPin className="w-5 h-5 text-primary-700 flex-shrink-0" />
-									)}
-								</button>
-							);
-						})}
-					</div>
-				</div>
-			</div>
+			{/* Add/Edit Warehouse Sheet */}
+			{isCreateSheetOpen &&
+				<AddWarehouseSheet
+					open={isCreateSheetOpen}
+					onOpenChange={handleSheetClose}
+					onWarehouseAdded={handleWarehouseAdded}
+					warehouse={editingWarehouse}
+				/>
+			}
 		</>
 	);
 }

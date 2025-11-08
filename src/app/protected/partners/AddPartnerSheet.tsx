@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group-pills';
+import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { validateImageFile, uploadPartnerImage } from '@/lib/storage';
@@ -237,7 +238,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 
 							{/* Partner Type */}
 							<div className="flex flex-col gap-2">
-								<label className="text-sm font-medium text-gray-700">Partner type</label>
+								<Label>Partner type</Label>
 								<RadioGroup
 									value={formData.partnerType}
 									onValueChange={(value) =>

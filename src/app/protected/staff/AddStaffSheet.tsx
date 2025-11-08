@@ -200,7 +200,7 @@ The Bale Team`;
 						<div className="flex flex-col gap-6 px-4 py-5">
 							{/* Role Selection */}
 							<div className="flex flex-col gap-2">
-								<label className="text-sm font-medium text-gray-700">Role</label>
+								<Label>Role</Label>
 								<RadioGroupPills
 									value={formData.role}
 									onValueChange={(value) =>
@@ -216,9 +216,7 @@ The Bale Team`;
 							{/* Warehouse Assignment (only for staff) */}
 							{formData.role === 'staff' && (
 								<div className="flex flex-col gap-3">
-									<label className="text-sm font-medium text-gray-700">
-										Assign warehouse
-									</label>
+									<Label>Assign warehouse</Label>
 									{loadingWarehouses ? (
 										<p className="text-sm text-gray-500">Loading warehouses...</p>
 									) : (

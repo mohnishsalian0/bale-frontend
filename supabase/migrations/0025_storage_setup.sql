@@ -49,6 +49,17 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
+-- Warehouse images bucket
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+    'warehouse-images',
+    'warehouse-images',
+    true, -- Public read access
+    2097152, -- 2MB in bytes
+    ARRAY['image/jpeg', 'image/png', 'image/webp']
+)
+ON CONFLICT (id) DO NOTHING;
+
 -- =====================================================
 -- STORAGE POLICIES - COMPANY LOGOS
 -- =====================================================
@@ -292,6 +303,71 @@ ON storage.objects FOR DELETE
 TO authenticated
 USING (
     bucket_id = 'partner-images'
+    AND (storage.foldername(name))[1] = (
+        SELECT company_id::text
+        FROM users
+        WHERE auth_user_id = auth.uid()
+        AND role = 'admin'
+        LIMIT 1
+    )
+);
+
+-- =====================================================
+-- STORAGE POLICIES - WAREHOUSE IMAGES
+-- =====================================================
+
+-- Anyone can view warehouse images
+CREATE POLICY "Anyone can view warehouse images"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'warehouse-images');
+
+-- Company admins can upload warehouse images
+-- Path format: {company_id}/{warehouse_id}/image.{ext}
+CREATE POLICY "Company admins can upload warehouse images"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (
+    bucket_id = 'warehouse-images'
+    AND (storage.foldername(name))[1] = (
+        SELECT company_id::text
+        FROM users
+        WHERE auth_user_id = auth.uid()
+        AND role = 'admin'
+        LIMIT 1
+    )
+);
+
+-- Company admins can update warehouse images
+CREATE POLICY "Company admins can update warehouse images"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (
+    bucket_id = 'warehouse-images'
+    AND (storage.foldername(name))[1] = (
+        SELECT company_id::text
+        FROM users
+        WHERE auth_user_id = auth.uid()
+        AND role = 'admin'
+        LIMIT 1
+    )
+)
+WITH CHECK (
+    bucket_id = 'warehouse-images'
+    AND (storage.foldername(name))[1] = (
+        SELECT company_id::text
+        FROM users
+        WHERE auth_user_id = auth.uid()
+        AND role = 'admin'
+        LIMIT 1
+    )
+);
+
+-- Company admins can delete warehouse images
+CREATE POLICY "Company admins can delete warehouse images"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (
+    bucket_id = 'warehouse-images'
     AND (storage.foldername(name))[1] = (
         SELECT company_id::text
         FROM users

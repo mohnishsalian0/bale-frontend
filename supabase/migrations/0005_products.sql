@@ -15,21 +15,8 @@ CREATE TABLE products (
     show_on_catalog BOOLEAN DEFAULT TRUE,
     
     -- Fabric specifications
-    material VARCHAR(50) CHECK (material IN (
-        -- Natural Fibers
-        'Cotton', 'Silk', 'Wool', 'Linen', 'Jute', 'Hemp', 'Cashmere', 'Mohair', 'Alpaca',
-        -- Synthetic Fibers  
-        'Polyester', 'Nylon', 'Acrylic', 'Spandex', 'Lycra', 'Rayon', 'Viscose', 'Modal',
-        -- Semi-Synthetic
-        'Bamboo', 'Tencel', 'Cupro',
-        -- Specialty/Technical
-        'Microfiber', 'Fleece', 'Denim', 'Canvas', 'Twill', 'Satin', 'Chiffon', 'Georgette', 
-        'Organza', 'Taffeta', 'Velvet', 'Corduroy', 'Jacquard', 'Brocade',
-        -- Blends & Custom
-        'Cotton-Polyester', 'Cotton-Spandex', 'Cotton-Linen', 'Poly-Cotton', 'Wool-Silk', 
-        'Silk-Cotton', 'Blend', 'Custom'
-    )),
-    color VARCHAR(50),
+    material VARCHAR(50),
+    color_name VARCHAR(50),
     color_hex VARCHAR(7), -- RGB hex code
     gsm INTEGER CHECK (gsm BETWEEN 50 AND 500),
     thread_count_cm INTEGER,
@@ -73,7 +60,7 @@ CREATE INDEX idx_products_name ON products(company_id, name);
 
 -- Material and color filtering
 CREATE INDEX idx_products_material ON products(company_id, material);
-CREATE INDEX idx_products_color ON products(company_id, color);
+CREATE INDEX idx_products_color ON products(company_id, color_name);
 
 -- Catalog visibility
 CREATE INDEX idx_products_catalog_visibility ON products(company_id, show_on_catalog);

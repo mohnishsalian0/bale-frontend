@@ -36,10 +36,10 @@ export default function TopBar({
 						onClick={onWarehouseClick}
 						className="h-10 px-2"
 					>
-						<span className="text-sm font-medium text-gray-700">
+						<span className="font-medium text-gray-700">
 							{warehouseName}
 						</span>
-						<IconChevronDown className={`w-5 h-5 text-gray-700 ${isWarehouseSelectorOpen ? 'rotate-180' : 'rotate-0'}`} />
+						<IconChevronDown className="w-5 h-5 text-gray-700" />
 					</Button>
 				</div>
 
