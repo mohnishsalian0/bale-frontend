@@ -447,13 +447,13 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 												Measuring Unit <span className="text-red-500">*</span>
 											</label>
 											<RadioGroup
-												value={formData.stockType}
+												value={formData.measuringUnit}
 												onValueChange={(value) =>
 													setFormData({ ...formData, measuringUnit: value as MeasuringUnit })
 												}
 												name="measuring-unit"
 											>
-												<RadioGroupItem value="meter">Meter</RadioGroupItem>
+												<RadioGroupItem value="metre">Metre</RadioGroupItem>
 												<RadioGroupItem value="kilogram">Kilogram</RadioGroupItem>
 												<RadioGroupItem value="yard">Yard</RadioGroupItem>
 											</RadioGroup>

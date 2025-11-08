@@ -305,13 +305,14 @@ export default function StockFlowPage() {
 				</div>
 
 				{/* Mascot */}
-				<div className="relative size-25 shrink-0">
+				<div className="relative size-35 shrink-0 flex items-end">
 					<Image
-						src="/mascot/stock-flow-diary.png"
+						src="/mascot/truck-delivery.png"
 						alt="Stock flow"
-						fill
+						width={140}
+						height={120}
+						// fill
 						priority
-						sizes="100px"
 						className="object-contain"
 					/>
 				</div>

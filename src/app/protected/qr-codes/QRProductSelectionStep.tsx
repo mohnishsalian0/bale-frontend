@@ -142,6 +142,8 @@ export function QRProductSelectionStep({
 						{filteredProducts.map(product => {
 							const imageUrl = product.product_images?.[0];
 
+							const productInfo = [product.material, product.color].filter(Boolean).join(', ');
+
 							return (
 								<button
 									key={product.id}
@@ -167,10 +169,10 @@ export function QRProductSelectionStep({
 
 									{/* Product Info */}
 									<div className="flex-1 min-w-0">
-										<p className="text-base font-medium text-gray-700 truncate">
+										<p title={product.name} className="text-base font-medium text-gray-700 truncate">
 											{product.name}
 										</p>
-										<p className="text-xs text-gray-500 truncate">
+										<p title={productInfo} className="text-xs text-gray-500 truncate">
 											{[product.material, product.color].filter(Boolean).join(', ')}
 										</p>
 									</div>

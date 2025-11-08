@@ -217,7 +217,7 @@ export function OrderDetailsStep({
 							<div className="flex flex-col gap-2">
 								{formData.files.map((file, index) => (
 									<div key={index} className="text-sm text-gray-700 flex items-center justify-between">
-										<span className="truncate">{file.name}</span>
+										<span title={file.name} className="truncate">{file.name}</span>
 										<button
 											type="button"
 											onClick={() => {

@@ -26,7 +26,8 @@ interface Partner {
 	phone?: string;
 }
 
-const PARTNER_TYPES: { value: PartnerType; label: string }[] = [
+const PARTNER_TYPES: { value: PartnerType | 'all'; label: string }[] = [
+	{ value: 'all', label: 'All' },
 	{ value: 'customer', label: 'Customer' },
 	{ value: 'supplier', label: 'Supplier' },
 	{ value: 'vendor', label: 'Vendor' },
@@ -55,7 +56,7 @@ function getActionLabel(type: PartnerType): string {
 }
 
 export default function PartnersPage() {
-	const [selectedType, setSelectedType] = useState<PartnerType>('customer');
+	const [selectedType, setSelectedType] = useState<PartnerType | 'all'>('all');
 	const [searchQuery, setSearchQuery] = useState('');
 	const [partners, setPartners] = useState<Partner[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -69,11 +70,15 @@ export default function PartnersPage() {
 			setLoading(true);
 			setError(null);
 
-			const { data, error: fetchError } = await supabase
+			let query = supabase
 				.from('partners')
-				.select('*')
-				.eq('partner_type', selectedType)
-				.order('first_name', { ascending: true });
+				.select('*');
+
+			if (selectedType !== 'all') {
+				query = query.eq('partner_type', selectedType);
+			}
+
+			const { data, error: fetchError } = await query.order('first_name', { ascending: true });
 
 			if (fetchError) throw fetchError;
 
@@ -179,7 +184,7 @@ export default function PartnersPage() {
 				<TabPills
 					options={PARTNER_TYPES}
 					value={selectedType}
-					onValueChange={(value) => setSelectedType(value as PartnerType)}
+					onValueChange={(value) => setSelectedType(value as PartnerType | 'all')}
 				/>
 			</div>
 

@@ -122,3 +122,5 @@ npm run build
 - Use Sonner for all toast notifications (already configured in layout)
 
 - Use utility functions from `@/lib/utils/date` for date formats
+
+- Add title attr wherever text is truncated

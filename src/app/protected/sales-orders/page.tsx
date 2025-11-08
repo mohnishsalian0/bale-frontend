@@ -319,7 +319,12 @@ export default function OrdersPage() {
 
 				{/* Mascot */}
 				<div className="relative size-25 shrink-0">
-					<Image src="/illustrations/sales-order-cart.png" alt="Sales orders" fill className="object-contain" />
+					<Image
+						src="/illustrations/sales-order-cart.png"
+						alt="Sales orders"
+						fill
+						sizes="100px"
+						className="object-contain" />
 				</div>
 			</div>
 

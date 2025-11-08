@@ -295,7 +295,7 @@ The Bale Team`;
 											{/* Warehouse */}
 											<div className="flex gap-1.5 items-center justify-center text-gray-500 w-full">
 												<IconBuilding className="size-3.5 shrink-0" />
-												<p className="text-xs text-gray-500 truncate">
+												<p title={member.warehouseName || 'Not assigned yet'} className="text-xs text-gray-500 truncate">
 													{member.warehouseName || 'Not assigned yet'}
 												</p>
 											</div>
@@ -343,7 +343,7 @@ The Bale Team`;
 											<div className="flex-1 flex flex-col gap-0.5 min-w-0">
 												{/* Warehouse (only for staff) */}
 												{invite.role === 'staff' && invite.warehouseName ? (
-													<p className="text-gray-900 truncate font-medium">
+													<p title={invite.warehouseName} className="text-gray-900 truncate font-medium">
 														{invite.warehouseName}
 													</p>
 												) : (

@@ -177,6 +177,7 @@ export function ProductSelectionStep({
 							const hasUnits = product.units.length > 0;
 							const totalUnits = product.units.reduce((sum, unit) => sum + unit.count, 0);
 							const stockTypeLabel = product.stock_type || 'roll'; // Fallback to roll
+							const productInfo = [product.material, product.color].filter(Boolean).join(', ');
 
 							return (
 								<div
@@ -201,10 +202,10 @@ export function ProductSelectionStep({
 
 									{/* Product Info */}
 									<div className="flex-1 min-w-0">
-										<p className="text-base font-medium text-gray-700 truncate">
+										<p title={product.name} className="text-base font-medium text-gray-700 truncate">
 											{product.name}
 										</p>
-										<p className="text-xs text-gray-500 truncate">
+										<p title={productInfo} className="text-xs text-gray-500 truncate">
 											{[product.material, product.color].filter(Boolean).join(', ')}
 										</p>
 									</div>

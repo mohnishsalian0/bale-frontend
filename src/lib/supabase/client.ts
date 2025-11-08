@@ -43,6 +43,8 @@ export async function getCurrentUser(): Promise<User | null> {
 		.eq('auth_user_id', authUser.id)
 		.single();
 
+	console.log(user);
+
 	if (userError) {
 		console.error('Error fetching user profile:', userError.message);
 		return null;

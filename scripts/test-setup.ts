@@ -779,15 +779,15 @@ async function createTestPartners() {
 						// Get stock unit details to determine quantity to dispatch
 						const { data: stockUnit } = await supabase
 							.from('stock_units')
-							.select('quantity')
+							.select('remaining_quantity')
 							.eq('id', stockUnits[stockUnitIndex].id)
 							.single();
 
-						const dispatchQty = stockUnit?.quantity || 0;
+						const dispatchQty = stockUnit?.remaining_quantity || 0;
 
 						stockUnitItems.push({
 							stock_unit_id: stockUnits[stockUnitIndex].id,
-							quantity_dispatched: dispatchQty, // Dispatch full quantity
+							quantity: dispatchQty, // Dispatch full quantity
 						});
 
 						stockUnitIndex++;

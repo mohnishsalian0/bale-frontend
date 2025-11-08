@@ -57,6 +57,8 @@ export function ProductQuantitySheet({
 
 	if (!product) return null;
 
+	const productInfo = [product.material, product.color].filter(Boolean).join(', ');
+
 	const formContent = (
 		<div className="flex flex-col gap-6 py-4">
 			<div className="flex flex-row gap-4">
@@ -77,9 +79,9 @@ export function ProductQuantitySheet({
 						)}
 					</div>
 					<div className="flex-1 min-w-0">
-						<p className="text-base font-medium text-gray-700 truncate">{product.name}</p>
-						<p className="text-xs text-gray-500 truncate">
-							{[product.material, product.color].filter(Boolean).join(', ')}
+						<p title={product.name} className="text-base font-medium text-gray-700 truncate">{product.name}</p>
+						<p title={productInfo} className="text-xs text-gray-500 truncate">
+							{productInfo}
 						</p>
 					</div>
 				</div>
