@@ -379,7 +379,7 @@ export default function StockFlowPage() {
 										<p className="text-base font-medium text-gray-900">{item.productName}</p>
 										<p className="text-xs text-gray-500">{item.partnerName}</p>
 										<p className="text-xs text-gray-500">
-											Goods {item.type === 'outward' ? 'outwarded' : 'inward'} on{' '}
+											Goods {item.type} on{' '}
 											{formatDate(item.date)}
 										</p>
 									</div>

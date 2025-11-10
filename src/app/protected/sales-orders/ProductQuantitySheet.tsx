@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery';
+import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import type { Tables } from '@/types/database/supabase';
+import { MeasuringUnit } from '@/types/database/enums';
 
 interface ProductQuantitySheetProps {
 	open: boolean;
@@ -57,13 +59,15 @@ export function ProductQuantitySheet({
 
 	if (!product) return null;
 
+	const unitAbbreviation = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null);
+
 	const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
 
 	const formContent = (
 		<div className="flex flex-col gap-6 py-4">
-			<div className="flex flex-row gap-4">
+			<div className="flex gap-4">
 				{/* Product Info */}
-				<div className="flex items-center gap-3 flex-3">
+				<div className="flex items-center gap-3 flex-3 min-w-0">
 					<div className="relative size-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
 						{product.product_images?.[0] ? (
 							<Image
@@ -87,7 +91,7 @@ export function ProductQuantitySheet({
 				</div>
 
 				{/* Quantity Input */}
-				<div className="flex items-center gap-1 flex-2">
+				<div className="flex items-center gap-1 shrink-0">
 					<Button
 						type="button"
 						variant="ghost"
@@ -96,18 +100,18 @@ export function ProductQuantitySheet({
 					>
 						<IconMinus />
 					</Button>
-					<div className="relative flex-1">
+					<div className="relative">
 						<Input
 							type="number"
 							value={quantity}
 							onChange={e => setQuantity(Math.max(0, parseFloat(e.target.value) || 0))}
-							className="text-center text-lg font-medium h-9"
+							className="text-center text-lg font-medium max-w-25 pr-10"
 							min="0"
 							step="0.01"
 						/>
-						{/* <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none"> */}
-						{/* 	{product.measuring_unit} */}
-						{/* </span> */}
+						<span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
+							{unitAbbreviation}
+						</span>
 					</div>
 					<Button
 						type="button"

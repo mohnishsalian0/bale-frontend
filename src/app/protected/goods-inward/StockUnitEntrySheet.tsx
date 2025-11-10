@@ -90,7 +90,7 @@ export function StockUnitEntrySheet({
 	const formContent = (
 		<div className="flex flex-col gap-8 p-4 md:px-0">
 			<div className="flex flex-col gap-4">
-				<div className="flex gap-4 min-w-0">
+				<div className="flex gap-4">
 					{/* Product Info */}
 					<div className="flex items-center gap-3 flex-1 min-w-0">
 						<div className="relative size-12 rounded-lg overflow-hidden bg-gray-100">
@@ -130,7 +130,7 @@ export function StockUnitEntrySheet({
 								type="number"
 								value={quantity}
 								onChange={e => setQuantity(Math.max(0, parseFloat(e.target.value) || 0))}
-								className="text-center text-lg font-medium max-w-20 pr-10"
+								className="text-center text-lg font-medium max-w-25 pr-10"
 								min="0"
 								step="0.01"
 							/>

@@ -176,7 +176,6 @@ export function ProductSelectionStep({
 							const imageUrl = product.product_images?.[0];
 							const hasUnits = product.units.length > 0;
 							const totalUnits = product.units.reduce((sum, unit) => sum + unit.count, 0);
-							const stockTypeLabel = product.stock_type || 'roll'; // Fallback to roll
 							const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
 
 							return (
@@ -216,10 +215,9 @@ export function ProductSelectionStep({
 											type="button"
 											size="sm"
 											onClick={() => onOpenUnitSheet(product, hasUnits)}
-											className='gap-2'
 										>
 											<IconMinus />
-											{pluralize(totalUnits, stockTypeLabel)}
+											{pluralize(totalUnits, product.stock_type)}
 											<IconPlus />
 										</Button>
 									) : (
@@ -230,7 +228,7 @@ export function ProductSelectionStep({
 											onClick={() => onOpenUnitSheet(product, hasUnits)}
 										>
 											<IconPlus />
-											Add {stockTypeLabel}
+											Add {product.stock_type}
 										</Button>
 									)}
 								</div>

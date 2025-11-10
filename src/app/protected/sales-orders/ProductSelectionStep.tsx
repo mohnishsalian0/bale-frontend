@@ -6,7 +6,9 @@ import { IconSearch, IconPlus } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import type { Tables } from '@/types/database/supabase';
+import { MeasuringUnit } from '@/types/database/enums';
 
 interface ProductWithSelection extends Tables<'products'> {
 	selected: boolean;
@@ -165,6 +167,8 @@ export function ProductSelectionStep({
 
 							const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
 
+							const unitAbbreviation = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null);
+
 							return (
 								<div
 									key={product.id}
@@ -203,7 +207,7 @@ export function ProductSelectionStep({
 											size="sm"
 											onClick={() => onOpenQuantitySheet(product)}
 										>
-											{product.quantity} {product.measuring_unit}
+											{product.quantity} {unitAbbreviation}
 										</Button>
 									) : (
 										<Button
@@ -213,7 +217,7 @@ export function ProductSelectionStep({
 											onClick={() => onOpenQuantitySheet(product)}
 										>
 											<IconPlus />
-											Add
+											Add {product.stock_type}
 										</Button>
 									)}
 								</div>
