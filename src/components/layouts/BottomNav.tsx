@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useWarehouse } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/warehouse-context';
 
 interface NavItem {
 	path: string;
@@ -20,7 +20,7 @@ const navItems: NavItem[] = [
 
 export default function BottomNav() {
 	const pathname = usePathname();
-	const { warehouseSlug } = useWarehouse();
+	const { warehouse } = useSession();
 
 	return (
 		<div className="fixed bottom-0 left-0 right-0 bg-background-100 border-t-1 border-gray-200 z-50">

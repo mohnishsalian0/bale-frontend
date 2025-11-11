@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { AddSalesOrderSheet } from './AddSalesOrderSheet';
-import { useWarehouse } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/warehouse-context';
 
 type SalesOrderRow = Tables<'sales_orders'>;
 
@@ -49,7 +49,7 @@ interface MonthGroup {
 }
 
 export default function OrdersPage() {
-	const { warehouseId } = useWarehouse();
+	const { warehouse } = useSession();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [selectedStatus, setSelectedStatus] = useState('all');
 	const [selectedProduct, setSelectedProduct] = useState('all');

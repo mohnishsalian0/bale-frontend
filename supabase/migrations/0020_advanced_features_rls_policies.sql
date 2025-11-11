@@ -1,23 +1,23 @@
 -- Bale Backend - Advanced Features RLS Policies
--- Security policies for barcode system and catalog configuration
+-- Security policies for QR code system and catalog configuration
 
 -- =====================================================
 -- ENABLE RLS ON ADVANCED FEATURE TABLES
 -- =====================================================
 
-ALTER TABLE barcode_batches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE barcode_batch_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE qr_batches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE qr_batch_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE catalog_configurations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_variants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_variant_items ENABLE ROW LEVEL SECURITY;
 
 -- =====================================================
--- BARCODE MANAGEMENT RLS POLICIES
+-- QR CODE MANAGEMENT RLS POLICIES
 -- =====================================================
 
--- Admins can view all barcode batches, staff can view batches for their assigned warehouse
-CREATE POLICY "Users can view barcode batches in their scope"
-ON barcode_batches
+-- Admins can view all QR batches, staff can view batches for their assigned warehouse
+CREATE POLICY "Users can view QR batches in their scope"
+ON qr_batches
 FOR SELECT
 TO authenticated
 USING (
@@ -26,9 +26,9 @@ USING (
     )
 );
 
--- Admins can create barcode batches for any warehouse, staff only for their assigned warehouse
-CREATE POLICY "Users can create barcode batches in their scope"
-ON barcode_batches
+-- Admins can create QR batches for any warehouse, staff only for their assigned warehouse
+CREATE POLICY "Users can create QR batches in their scope"
+ON qr_batches
 FOR INSERT
 TO authenticated
 WITH CHECK (
@@ -37,9 +37,9 @@ WITH CHECK (
     )
 );
 
--- Admins can update all barcode batches, staff only for their assigned warehouse
-CREATE POLICY "Users can update barcode batches in their scope"
-ON barcode_batches
+-- Admins can update all QR batches, staff only for their assigned warehouse
+CREATE POLICY "Users can update QR batches in their scope"
+ON qr_batches
 FOR UPDATE
 TO authenticated
 USING (
@@ -53,39 +53,30 @@ WITH CHECK (
     )
 );
 
--- Users can view barcode batch items if they can view the parent batch
-CREATE POLICY "Users can view barcode batch items in their scope"
-ON barcode_batch_items
+-- Users can view QR batch items in their scope
+CREATE POLICY "Users can view QR batch items in their scope"
+ON qr_batch_items
 FOR SELECT
 TO authenticated
 USING (
-    EXISTS (
-        SELECT 1 FROM barcode_batches bb 
-        WHERE bb.id = batch_id 
-        AND bb.company_id = get_user_company_id()
-        AND (is_company_admin() OR bb.warehouse_id = get_user_warehouse_id())
+    company_id = get_user_company_id() AND (
+        is_company_admin() OR warehouse_id = get_user_warehouse_id()
     )
 );
 
--- Users can manage barcode batch items if they can manage the parent batch
-CREATE POLICY "Users can manage barcode batch items in their scope"
-ON barcode_batch_items
+-- Users can manage QR batch items in their scope
+CREATE POLICY "Users can manage QR batch items in their scope"
+ON qr_batch_items
 FOR ALL
 TO authenticated
 USING (
-    EXISTS (
-        SELECT 1 FROM barcode_batches bb 
-        WHERE bb.id = batch_id 
-        AND bb.company_id = get_user_company_id()
-        AND (is_company_admin() OR bb.warehouse_id = get_user_warehouse_id())
+    company_id = get_user_company_id() AND (
+        is_company_admin() OR warehouse_id = get_user_warehouse_id()
     )
 )
 WITH CHECK (
-    EXISTS (
-        SELECT 1 FROM barcode_batches bb 
-        WHERE bb.id = batch_id 
-        AND bb.company_id = get_user_company_id()
-        AND (is_company_admin() OR bb.warehouse_id = get_user_warehouse_id())
+    company_id = get_user_company_id() AND (
+        is_company_admin() OR warehouse_id = get_user_warehouse_id()
     )
 );
 
@@ -130,17 +121,13 @@ WITH CHECK (
     company_id = get_user_company_id() AND is_company_admin()
 );
 
--- Users can view product variant items if they can view the parent variant
+-- Users can view product variant items in their company
 CREATE POLICY "Users can view product variant items in their scope"
 ON product_variant_items
 FOR SELECT
 TO authenticated
 USING (
-    EXISTS (
-        SELECT 1 FROM product_variants pv 
-        WHERE pv.id = variant_id 
-        AND pv.company_id = get_user_company_id()
-    )
+    company_id = get_user_company_id()
 );
 
 -- Only company admins can manage product variant items
@@ -149,20 +136,10 @@ ON product_variant_items
 FOR ALL
 TO authenticated
 USING (
-    EXISTS (
-        SELECT 1 FROM product_variants pv 
-        WHERE pv.id = variant_id 
-        AND pv.company_id = get_user_company_id()
-        AND is_company_admin()
-    )
+    company_id = get_user_company_id() AND is_company_admin()
 )
 WITH CHECK (
-    EXISTS (
-        SELECT 1 FROM product_variants pv 
-        WHERE pv.id = variant_id 
-        AND pv.company_id = get_user_company_id()
-        AND is_company_admin()
-    )
+    company_id = get_user_company_id() AND is_company_admin()
 );
 
 -- =====================================================
@@ -210,8 +187,8 @@ USING (
 -- =====================================================
 
 -- Grant permissions to authenticated users
-GRANT SELECT, INSERT, UPDATE, DELETE ON barcode_batches TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON barcode_batch_items TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON qr_batches TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON qr_batch_items TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON catalog_configurations TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON product_variants TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON product_variant_items TO authenticated;

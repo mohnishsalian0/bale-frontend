@@ -1,5 +1,5 @@
 -- Bale Backend - Stock Units and Inventory Management
--- Individual fabric rolls/pieces tracking with barcode management
+-- Individual fabric rolls/pieces tracking with qr code management
 
 -- =====================================================
 -- STOCK UNITS TABLE
@@ -7,7 +7,7 @@
 
 CREATE TABLE stock_units (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
     
@@ -33,8 +33,8 @@ CREATE TABLE stock_units (
 
     notes TEXT,
 
-    -- Barcode tracking
-    barcode_generated_at TIMESTAMPTZ,
+    -- QR Code tracking
+    qr_generated_at TIMESTAMPTZ,
 
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

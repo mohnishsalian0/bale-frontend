@@ -124,7 +124,6 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 
 			// Prepare typed insert data with image URL
 			const partnerInsert: Omit<TablesInsert<'partners'>, 'created_by' | 'modified_by'> = {
-				company_id: currentUser.company_id,
 				partner_type: formData.partnerType,
 				first_name: formData.firstName,
 				last_name: formData.lastName,

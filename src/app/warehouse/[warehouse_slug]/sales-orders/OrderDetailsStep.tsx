@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
-import { useWarehouse } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/warehouse-context';
 import type { Tables } from '@/types/database/supabase';
 import { DatePicker } from '@/components/ui/date-picker';
 import { dateToISOString } from '@/lib/utils/date';
@@ -33,7 +33,7 @@ export function OrderDetailsStep({
 	formData,
 	setFormData,
 }: OrderDetailsStepProps) {
-	const { warehouseId } = useWarehouse();
+	const { warehouse } = useSession();
 	const [warehouses, setWarehouses] = useState<Tables<'warehouses'>[]>([]);
 	const [customers, setCustomers] = useState<Tables<'partners'>[]>([]);
 	const [agents, setAgents] = useState<Tables<'partners'>[]>([]);
@@ -59,7 +59,6 @@ export function OrderDetailsStep({
 				const { data, error } = await supabase
 					.from('warehouses')
 					.select('*')
-					.eq('company_id', currentUser.company_id)
 					.order('name');
 
 				if (error) throw error;
@@ -72,7 +71,6 @@ export function OrderDetailsStep({
 						warehouse_id,
 						warehouses (*)
 					`)
-					.eq('user_id', currentUser.id);
 
 				if (error) throw error;
 
@@ -91,16 +89,11 @@ export function OrderDetailsStep({
 	const loadPartners = async () => {
 		try {
 			const supabase = createClient();
-			const currentUser = await getCurrentUser();
-			if (!currentUser || !currentUser.company_id) {
-				throw new Error('User not found');
-			}
 
 			// Load customers
 			const { data: customersData, error: customersError } = await supabase
 				.from('partners')
 				.select('*')
-				.eq('company_id', currentUser.company_id)
 				.eq('partner_type', 'customer')
 				.order('first_name', { ascending: true });
 
@@ -111,7 +104,6 @@ export function OrderDetailsStep({
 			const { data: agentsData, error: agentsError } = await supabase
 				.from('partners')
 				.select('*')
-				.eq('company_id', currentUser.company_id)
 				.eq('partner_type', 'agent')
 				.order('first_name', { ascending: true });
 
@@ -143,7 +135,7 @@ export function OrderDetailsStep({
 					onValueChange={(value) => setFormData({ ...formData, warehouseId: value })}
 					required
 				>
-					<SelectTrigger className="h-11">
+					<SelectTrigger>
 						<SelectValue placeholder="Warehouse" />
 					</SelectTrigger>
 					<SelectContent>
@@ -161,7 +153,7 @@ export function OrderDetailsStep({
 					onValueChange={(value) => setFormData({ ...formData, customerId: value })}
 					required
 				>
-					<SelectTrigger className="h-11">
+					<SelectTrigger>
 						<SelectValue placeholder="Customer" />
 					</SelectTrigger>
 					<SelectContent>
@@ -179,7 +171,7 @@ export function OrderDetailsStep({
 					value={formData.agentId || undefined}
 					onValueChange={(value) => setFormData({ ...formData, agentId: value })}
 				>
-					<SelectTrigger className="h-11">
+					<SelectTrigger>
 						<SelectValue placeholder="Agent (Optional)" />
 					</SelectTrigger>
 					<SelectContent>
@@ -266,6 +258,7 @@ export function OrderDetailsStep({
 						/>
 
 						{/* Add Files */}
+						{/* TODO: Update this component */}
 						<label className="border border-primary-700 rounded-lg h-11 flex items-center justify-center gap-3 cursor-pointer text-primary-700 hover:bg-primary-50 transition-colors shadow-gray-sm">
 							<IconPhoto className="size-4" />
 							<span className="text-sm font-normal">Add files</span>

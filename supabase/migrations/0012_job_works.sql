@@ -7,7 +7,7 @@
 
 CREATE TABLE job_works (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
     
     -- Job identification
@@ -53,7 +53,7 @@ CREATE TABLE job_works (
 
 CREATE TABLE job_work_raw_materials (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
     job_work_id UUID NOT NULL REFERENCES job_works(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id),
     
@@ -72,7 +72,7 @@ CREATE TABLE job_work_raw_materials (
 
 CREATE TABLE job_work_finished_goods (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
     job_work_id UUID NOT NULL REFERENCES job_works(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id),
     

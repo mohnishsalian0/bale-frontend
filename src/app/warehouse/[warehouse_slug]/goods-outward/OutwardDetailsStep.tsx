@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
 import { dateToISOString } from '@/lib/utils/date';
-import { useWarehouse } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/warehouse-context';
 
 interface DetailsFormData {
 	dispatchToType: 'partner' | 'warehouse';
@@ -34,7 +34,7 @@ interface OutwardDetailsStepProps {
 }
 
 export function OutwardDetailsStep({ formData, onChange }: OutwardDetailsStepProps) {
-	const { warehouseId } = useWarehouse();
+	const { warehouse } = useSession();
 	const [partners, setPartners] = useState<Tables<'partners'>[]>([]);
 	const [warehouses, setWarehouses] = useState<Tables<'warehouses'>[]>([]);
 	const [jobWorks, setJobWorks] = useState<{ id: string; name: string }[]>([]);

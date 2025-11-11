@@ -15,7 +15,7 @@ import IconGoodsOutward from '@/components/icons/IconGoodsOutward';
 import { AddGoodsInwardSheet } from '../goods-inward/AddGoodsInwardSheet';
 import { AddGoodsOutwardSheet } from '../goods-outward/AddGoodsOutwardSheet';
 import { LoadingState } from '@/components/layouts/loading-state';
-import { useWarehouse } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/warehouse-context';
 
 interface StockFlowItem {
 	id: string;
@@ -37,7 +37,7 @@ interface MonthGroup {
 }
 
 export default function StockFlowPage() {
-	const { warehouseId } = useWarehouse();
+	const { warehouse } = useSession();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [selectedFilter, setSelectedFilter] = useState<'all' | 'outward' | 'inward'>('all');
 	const [selectedPartner, setSelectedPartner] = useState('all');

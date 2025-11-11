@@ -8,7 +8,7 @@ import { ProductQuantitySheet } from './ProductQuantitySheet';
 import { ProductSelectionStep } from './ProductSelectionStep';
 import { OrderDetailsStep } from './OrderDetailsStep';
 import type { Tables, TablesInsert } from '@/types/database/supabase';
-import { useWarehouse } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/warehouse-context';
 
 interface AddSalesOrderSheetProps {
 	open: boolean;
@@ -36,7 +36,7 @@ interface OrderFormData {
 type FormStep = 'products' | 'details';
 
 export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSalesOrderSheetProps) {
-	const { warehouseId } = useWarehouse();
+	const { warehouse } = useSession();
 	const [currentStep, setCurrentStep] = useState<FormStep>('products');
 	const [products, setProducts] = useState<ProductWithSelection[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -146,16 +146,11 @@ export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSale
 
 		try {
 			const supabase = createClient();
-			const currentUser = await getCurrentUser();
-			if (!currentUser || !currentUser.company_id) {
-				throw new Error('User not found');
-			}
 
 			const selectedProducts = products.filter(p => p.selected && p.quantity > 0);
 
 			// Prepare sales order insert data
 			const salesOrderInsert: Omit<TablesInsert<'sales_orders'>, 'created_by' | 'modified_by'> = {
-				company_id: currentUser.company_id,
 				fulfillment_warehouse_id: formData.warehouseId,
 				order_number: '',
 				customer_id: formData.customerId,
@@ -181,7 +176,6 @@ export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSale
 			// Insert sales order line items
 			const lineItems: TablesInsert<'sales_order_items'>[] = selectedProducts.map(
 				(product) => ({
-					company_id: currentUser.company_id,
 					sales_order_id: salesOrder.id,
 					product_id: product.id,
 					required_quantity: product.quantity,

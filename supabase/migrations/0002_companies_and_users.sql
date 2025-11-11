@@ -45,7 +45,7 @@ CREATE TABLE users (
     
     -- Role and access
     role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'staff')),
-    warehouse_id UUID, -- Single warehouse assignment for staff (TODO: Fkey will be added later)
+    warehouse_id UUID, -- Single warehouse assignment for staff (Fkey will be added later)
     is_active BOOLEAN DEFAULT TRUE,
     
     -- Authentication (handled by Supabase Auth)
@@ -111,6 +111,7 @@ ALTER TABLE users ADD CONSTRAINT check_user_company_not_null
 
 CREATE TABLE user_warehouses (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     warehouse_id UUID NOT NULL, -- FK will be added after warehouses table is created
 

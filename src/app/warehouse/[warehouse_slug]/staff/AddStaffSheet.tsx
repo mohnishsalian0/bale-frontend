@@ -92,7 +92,6 @@ export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffShee
 			const { data: company } = await supabase
 				.from('companies')
 				.select('name')
-				.eq('id', currentUser.company_id)
 				.single();
 
 			if (!company) {

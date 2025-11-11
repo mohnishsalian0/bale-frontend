@@ -7,6 +7,7 @@ import { QRScannerStep, ScannedStockUnit } from './QRScannerStep';
 import { OutwardDetailsStep } from './OutwardDetailsStep';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
 import type { TablesInsert } from '@/types/database/supabase';
+import { useSession } from '@/contexts/warehouse-context';
 
 interface AddGoodsOutwardSheetProps {
 	open: boolean;
@@ -35,6 +36,7 @@ export function AddGoodsOutwardSheet({
 	onOpenChange,
 	onOutwardAdded,
 }: AddGoodsOutwardSheetProps) {
+	const { warehouse } = useSession();
 	const [currentStep, setCurrentStep] = useState<FormStep>('scanner');
 	const [scannedUnits, setScannedUnits] = useState<ScannedStockUnit[]>([]);
 	const [saving, setSaving] = useState(false);
@@ -87,23 +89,6 @@ export function AddGoodsOutwardSheet({
 		setSaveError(null);
 
 		try {
-			const currentUser = await getCurrentUser();
-			if (!currentUser || !currentUser.company_id) {
-				throw new Error('User not found');
-			}
-
-			// TODO: Get the first warehouse for now (should be selected in details form later)
-			const { data: warehouse } = await supabase
-				.from('warehouses')
-				.select('id')
-				.eq('company_id', currentUser.company_id)
-				.limit(1)
-				.single();
-
-			if (!warehouse) {
-				throw new Error('No warehouse found');
-			}
-
 			// Map linkToType to outward_type
 			const outwardTypeMap: Record<typeof detailsFormData.linkToType, string> = {
 				'sales_order': 'sales',
@@ -114,8 +99,7 @@ export function AddGoodsOutwardSheet({
 
 			// Prepare outward data
 			const outwardData: Omit<TablesInsert<'goods_outwards'>, 'outward_number'> = {
-				company_id: currentUser.company_id,
-				warehouse_id: warehouse.id,
+				warehouse_id: warehouseId,
 				outward_type: outwardTypeMap[detailsFormData.linkToType],
 
 				// Conditional partner/warehouse

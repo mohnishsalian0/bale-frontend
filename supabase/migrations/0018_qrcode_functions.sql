@@ -19,8 +19,8 @@ DECLARE
     v_stock_unit_id UUID;
     v_result JSONB;
 BEGIN
-    -- Insert barcode batch
-    INSERT INTO barcode_batches (
+    -- Insert QR batch
+    INSERT INTO qr_batches (
         company_id,
         warehouse_id,
         batch_name,
@@ -40,14 +40,16 @@ BEGIN
     )
     RETURNING id INTO v_batch_id;
 
-    -- Insert barcode batch items for each stock unit
+    -- Insert QR batch items for each stock unit
     FOREACH v_stock_unit_id IN ARRAY p_stock_unit_ids
     LOOP
-        INSERT INTO barcode_batch_items (
+        INSERT INTO qr_batch_items (
+            warehouse_id,
             batch_id,
             stock_unit_id
         )
         VALUES (
+            (p_batch_data->>'warehouse_id')::UUID,
             v_batch_id,
             v_stock_unit_id
         );

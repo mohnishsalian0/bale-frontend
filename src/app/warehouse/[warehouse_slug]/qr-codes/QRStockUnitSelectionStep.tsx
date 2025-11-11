@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 import { formatRelativeDate } from '@/lib/utils/date';
 import type { Tables } from '@/types/database/supabase';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useWarehouse } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/warehouse-context';
 
 interface StockUnit extends Tables<'stock_units'> {
 	product?: Tables<'products'>;
@@ -29,7 +29,7 @@ export function QRStockUnitSelectionStep({
 	selectedStockUnitIds,
 	onSelectionChange,
 }: QRStockUnitSelectionStepProps) {
-	const { warehouseId } = useWarehouse();
+	const { warehouse } = useSession();
 	const [loading, setLoading] = useState(true);
 	const [goodsInwards, setGoodsInwards] = useState<GoodsInward[]>([]);
 	const [expandedInwards, setExpandedInwards] = useState<Set<string>>(new Set());
@@ -145,8 +145,8 @@ export function QRStockUnitSelectionStep({
 	};
 
 	const getQRStatus = (unit: StockUnit): string => {
-		if (unit.barcode_generated_at) {
-			return `QR made ${formatRelativeDate(unit.barcode_generated_at)}`;
+		if (unit.qr_generated_at) {
+			return `QR made ${formatRelativeDate(unit.qr_generated_at)}`;
 		}
 		return 'QR pending';
 	};
@@ -239,8 +239,8 @@ export function QRStockUnitSelectionStep({
 													</div>
 												</div>
 												<Badge
-													color={unit.barcode_generated_at ? 'blue' : 'green'}
-													variant={unit.barcode_generated_at ? 'outline' : 'secondary'}
+													color={unit.qr_generated_at ? 'blue' : 'green'}
+													variant={unit.qr_generated_at ? 'outline' : 'secondary'}
 													className="text-xs"
 												>
 													{getQRStatus(unit)}

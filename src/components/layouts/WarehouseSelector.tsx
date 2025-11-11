@@ -9,6 +9,7 @@ import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../ui/sheet';
 import { createClient } from '@/lib/supabase/client';
 import { AddWarehouseSheet } from '@/app/warehouse/[warehouse_slug]/warehouses/AddWarehouseSheet';
+import { useSession } from '@/contexts/warehouse-context';
 import type { Tables } from '@/types/database/supabase';
 
 type Warehouse = Tables<'warehouses'>;
@@ -18,7 +19,6 @@ interface WarehouseSelectorProps {
 	currentWarehouse: string;
 	onSelect: (warehouseId: string) => void;
 	onOpenChange: (open: boolean) => void;
-	isAdmin: boolean;
 }
 
 export default function WarehouseSelector({
@@ -26,8 +26,8 @@ export default function WarehouseSelector({
 	currentWarehouse,
 	onSelect,
 	onOpenChange,
-	isAdmin,
 }: WarehouseSelectorProps) {
+	const { user } = useSession();
 	const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
@@ -35,6 +35,7 @@ export default function WarehouseSelector({
 	const pathname = usePathname();
 
 	const supabase = createClient();
+	const isAdmin = user.role === 'admin';
 
 	useEffect(() => {
 		if (open) {
@@ -46,27 +47,8 @@ export default function WarehouseSelector({
 		try {
 			setLoading(true);
 
-			// Get current user
-			const { data: { user: authUser } } = await supabase.auth.getUser();
-			if (!authUser) {
-				console.error('No authenticated user found');
-				return;
-			}
-
-			// Get user profile
-			const { data: userData } = await supabase
-				.from('users')
-				.select('id, role')
-				.eq('auth_user_id', authUser.id)
-				.single();
-
-			if (!userData) {
-				console.error('User profile not found');
-				return;
-			}
-
 			// Fetch warehouses based on role
-			if (userData.role === 'admin') {
+			if (user.role === 'admin') {
 				// Admin: fetch all company warehouses
 				const { data, error } = await supabase
 					.from('warehouses')
@@ -83,7 +65,7 @@ export default function WarehouseSelector({
 						warehouse_id,
 						warehouses (*)
 					`)
-					.eq('user_id', userData.id);
+					.eq('user_id', user.id);
 
 				if (error) throw error;
 
@@ -109,25 +91,6 @@ export default function WarehouseSelector({
 				return;
 			}
 
-			// Get current user
-			const { data: { user: authUser } } = await supabase.auth.getUser();
-			if (!authUser) {
-				console.error('No authenticated user found');
-				return;
-			}
-
-			// Get user profile to find user ID
-			const { data: userData } = await supabase
-				.from('users')
-				.select('id')
-				.eq('auth_user_id', authUser.id)
-				.single();
-
-			if (!userData) {
-				console.error('User profile not found');
-				return;
-			}
-
 			// Find selected warehouse to get slug
 			const selectedWarehouse = warehouses.find(w => w.id === warehouseId);
 			if (!selectedWarehouse) {
@@ -139,7 +102,7 @@ export default function WarehouseSelector({
 			const { error } = await supabase
 				.from('users')
 				.update({ warehouse_id: warehouseId })
-				.eq('id', userData.id);
+				.eq('id', user.id);
 
 			if (error) {
 				console.error('Error updating warehouse:', error);

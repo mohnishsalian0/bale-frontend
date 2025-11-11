@@ -1,52 +1,52 @@
 'use client';
 
 import { createContext, useContext, ReactNode } from 'react';
+import type { Tables } from '@/types/database/supabase';
 
-interface WarehouseContextType {
-	warehouseId: string;
-	warehouseSlug: string;
-	warehouseName: string;
+type User = Tables<'users'>;
+type Warehouse = Tables<'warehouses'>;
+
+interface SessionContextType {
+	warehouse: Warehouse;
+	user: User;
 }
 
-const WarehouseContext = createContext<WarehouseContextType | null>(null);
+const SessionContext = createContext<SessionContextType | null>(null);
 
-interface WarehouseProviderProps {
+interface SessionProviderProps {
 	children: ReactNode;
-	warehouseId: string;
-	warehouseSlug: string;
-	warehouseName: string;
+	warehouse: Warehouse;
+	user: User;
 }
 
-export function WarehouseProvider({
+export function SessionProvider({
 	children,
-	warehouseId,
-	warehouseSlug,
-	warehouseName,
-}: WarehouseProviderProps) {
+	warehouse,
+	user,
+}: SessionProviderProps) {
 	return (
-		<WarehouseContext.Provider
+		<SessionContext.Provider
 			value={{
-				warehouseId,
-				warehouseSlug,
-				warehouseName,
+				warehouse,
+				user,
 			}}
 		>
 			{children}
-		</WarehouseContext.Provider>
+		</SessionContext.Provider>
 	);
 }
 
 /**
- * Hook to access current warehouse context
+ * Hook to access current session context (warehouse + user info)
  *
- * @throws Error if used outside of WarehouseProvider
- * @returns Current warehouse information
+ * @throws Error if used outside of SessionProvider
+ * @returns Current session information including warehouse and user data
  */
-export function useWarehouse(): WarehouseContextType {
-	const context = useContext(WarehouseContext);
+export function useSession(): SessionContextType {
+	const context = useContext(SessionContext);
 
 	if (!context) {
-		throw new Error('useWarehouse must be used within a WarehouseProvider');
+		throw new Error('useSession must be used within a SessionProvider');
 	}
 
 	return context;

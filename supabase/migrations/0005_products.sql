@@ -7,7 +7,7 @@
 
 CREATE TABLE products (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
     
     -- Identity
     product_number VARCHAR(50) NOT NULL,

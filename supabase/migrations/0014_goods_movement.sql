@@ -7,7 +7,7 @@
 
 CREATE TABLE goods_outwards (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
 
     -- Outward identification
@@ -71,7 +71,7 @@ CREATE TABLE goods_outwards (
 
 CREATE TABLE goods_outward_items (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
     outward_id UUID NOT NULL REFERENCES goods_outwards(id) ON DELETE CASCADE,
     stock_unit_id UUID NOT NULL REFERENCES stock_units(id),
     quantity_dispatched DECIMAL(10,3) NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE goods_outward_items (
 
 CREATE TABLE goods_inwards (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
 
     -- Inward identification

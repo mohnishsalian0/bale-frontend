@@ -7,13 +7,14 @@ import BottomNav from '@/components/layouts/BottomNav';
 import WarehouseSelector from '@/components/layouts/WarehouseSelector';
 import { AppSidebar } from '@/components/layouts/AppSidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { WarehouseProvider } from '@/contexts/warehouse-context';
+import { SessionProvider } from '@/contexts/warehouse-context';
 import { getCurrentUser } from '@/lib/supabase/client';
 import { createClient } from '@/lib/supabase/client';
 import { LoadingState } from '@/components/layouts/loading-state';
 import type { Tables } from '@/types/database/supabase';
 
 type Warehouse = Tables<'warehouses'>;
+type User = Tables<'users'>;
 
 export default function WarehouseLayout({ children }: { children: ReactNode }) {
 	const params = useParams();
@@ -21,8 +22,8 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 	const warehouseSlug = params.warehouse_slug as string;
 
 	const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
+	const [user, setUser] = useState<User | null>(null);
 	const [isSelectorOpen, setIsSelectorOpen] = useState(false);
-	const [isAdmin, setIsAdmin] = useState(false);
 	const [loading, setLoading] = useState(true);
 
 	const supabase = createClient();
@@ -42,7 +43,7 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 				return;
 			}
 
-			setIsAdmin(currentUser.role === 'admin');
+			setUser(currentUser);
 
 			// Fetch warehouse by slug
 			const { data: warehouseData, error: warehouseError } = await supabase
@@ -103,15 +104,14 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 		return <LoadingState />;
 	}
 
-	if (!warehouse) {
+	if (!warehouse || !user) {
 		return null; // Redirecting
 	}
 
 	return (
-		<WarehouseProvider
-			warehouseId={warehouse.id}
-			warehouseSlug={warehouse.slug}
-			warehouseName={warehouse.name}
+		<SessionProvider
+			warehouse={warehouse}
+			user={user}
 		>
 			<SidebarProvider>
 				<AppSidebar />
@@ -130,8 +130,7 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 							currentWarehouse={warehouse.id}
 							onSelect={handleWarehouseSelect}
 							onOpenChange={setIsSelectorOpen}
-							isAdmin={isAdmin}
-						/>
+							/>
 					)}
 
 					<div className="flex-1 pb-16 overflow-y-auto">
@@ -141,6 +140,6 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 					<BottomNav />
 				</SidebarInset>
 			</SidebarProvider>
-		</WarehouseProvider>
+		</SessionProvider>
 	);
 }

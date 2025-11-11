@@ -34,110 +34,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      barcode_batch_items: {
-        Row: {
-          batch_id: string
-          id: string
-          stock_unit_id: string
-        }
-        Insert: {
-          batch_id: string
-          id?: string
-          stock_unit_id: string
-        }
-        Update: {
-          batch_id?: string
-          id?: string
-          stock_unit_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "barcode_batch_items_batch_id_fkey"
-            columns: ["batch_id"]
-            isOneToOne: false
-            referencedRelation: "barcode_batches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "barcode_batch_items_stock_unit_id_fkey"
-            columns: ["stock_unit_id"]
-            isOneToOne: false
-            referencedRelation: "stock_units"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      barcode_batches: {
-        Row: {
-          batch_name: string
-          company_id: string
-          created_at: string
-          created_by: string
-          fields_selected: string[] | null
-          id: string
-          image_url: string | null
-          modified_by: string | null
-          pdf_url: string | null
-          updated_at: string
-          warehouse_id: string
-        }
-        Insert: {
-          batch_name: string
-          company_id: string
-          created_at?: string
-          created_by?: string
-          fields_selected?: string[] | null
-          id?: string
-          image_url?: string | null
-          modified_by?: string | null
-          pdf_url?: string | null
-          updated_at?: string
-          warehouse_id: string
-        }
-        Update: {
-          batch_name?: string
-          company_id?: string
-          created_at?: string
-          created_by?: string
-          fields_selected?: string[] | null
-          id?: string
-          image_url?: string | null
-          modified_by?: string | null
-          pdf_url?: string | null
-          updated_at?: string
-          warehouse_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "barcode_batches_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "barcode_batches_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "barcode_batches_modified_by_fkey"
-            columns: ["modified_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "barcode_batches_warehouse_id_fkey"
-            columns: ["warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "warehouses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       catalog_configurations: {
         Row: {
           accepting_orders: boolean | null
@@ -167,7 +63,7 @@ export type Database = {
         Insert: {
           accepting_orders?: boolean | null
           catalog_name?: string | null
-          company_id: string
+          company_id?: string
           contact_address?: string | null
           contact_email?: string | null
           contact_phone?: string | null
@@ -326,7 +222,7 @@ export type Database = {
         Insert: {
           agent_id?: string | null
           attachments?: string[] | null
-          company_id: string
+          company_id?: string
           created_at?: string
           created_by?: string
           deleted_at?: string | null
@@ -448,7 +344,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          company_id: string
+          company_id?: string
           created_at?: string
           id?: string
           outward_id: string
@@ -525,7 +421,7 @@ export type Database = {
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
-          company_id: string
+          company_id?: string
           created_at?: string
           created_by?: string
           deleted_at?: string | null
@@ -652,24 +548,34 @@ export type Database = {
       }
       invite_warehouses: {
         Row: {
+          company_id: string
           created_at: string
           id: string
           invite_id: string
           warehouse_id: string
         }
         Insert: {
+          company_id?: string
           created_at?: string
           id?: string
           invite_id: string
           warehouse_id: string
         }
         Update: {
+          company_id?: string
           created_at?: string
           id?: string
           invite_id?: string
           warehouse_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "invite_warehouses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invite_warehouses_invite_id_fkey"
             columns: ["invite_id"]
@@ -700,7 +606,7 @@ export type Database = {
           used_by_user_id: string | null
         }
         Insert: {
-          company_id: string
+          company_id?: string
           company_name: string
           created_at?: string
           created_by?: string | null
@@ -753,7 +659,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          company_id: string
+          company_id?: string
           created_at?: string
           expected_quantity: number
           id?: string
@@ -811,7 +717,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          company_id: string
+          company_id?: string
           created_at?: string
           dispatched_quantity?: number | null
           id?: string
@@ -883,7 +789,7 @@ export type Database = {
         Insert: {
           agent_id?: string | null
           attachments?: string[] | null
-          company_id: string
+          company_id?: string
           created_at?: string
           created_by?: string
           deleted_at?: string | null
@@ -1015,7 +921,7 @@ export type Database = {
           address_line1?: string | null
           address_line2?: string | null
           city?: string | null
-          company_id: string
+          company_id?: string
           company_name?: string | null
           country?: string | null
           created_at?: string
@@ -1087,6 +993,7 @@ export type Database = {
       }
       product_variant_items: {
         Row: {
+          company_id: string
           display_order: number | null
           id: string
           product_id: string
@@ -1094,6 +1001,7 @@ export type Database = {
           variant_value: string
         }
         Insert: {
+          company_id?: string
           display_order?: number | null
           id?: string
           product_id: string
@@ -1101,6 +1009,7 @@ export type Database = {
           variant_value: string
         }
         Update: {
+          company_id?: string
           display_order?: number | null
           id?: string
           product_id?: string
@@ -1108,6 +1017,13 @@ export type Database = {
           variant_value?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "product_variant_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "product_variant_items_product_id_fkey"
             columns: ["product_id"]
@@ -1135,7 +1051,7 @@ export type Database = {
           variant_type: string | null
         }
         Insert: {
-          company_id: string
+          company_id?: string
           created_at?: string
           display_order?: number | null
           id?: string
@@ -1193,7 +1109,7 @@ export type Database = {
         Insert: {
           color_hex?: string | null
           color_name?: string | null
-          company_id: string
+          company_id?: string
           cost_price_per_unit?: number | null
           created_at?: string
           created_by?: string
@@ -1268,6 +1184,130 @@ export type Database = {
           },
         ]
       }
+      qr_batch_items: {
+        Row: {
+          batch_id: string
+          company_id: string
+          id: string
+          stock_unit_id: string
+          warehouse_id: string
+        }
+        Insert: {
+          batch_id: string
+          company_id?: string
+          id?: string
+          stock_unit_id: string
+          warehouse_id: string
+        }
+        Update: {
+          batch_id?: string
+          company_id?: string
+          id?: string
+          stock_unit_id?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qr_batch_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "qr_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_batch_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_batch_items_stock_unit_id_fkey"
+            columns: ["stock_unit_id"]
+            isOneToOne: false
+            referencedRelation: "stock_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_batch_items_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qr_batches: {
+        Row: {
+          batch_name: string
+          company_id: string
+          created_at: string
+          created_by: string
+          fields_selected: string[] | null
+          id: string
+          image_url: string | null
+          modified_by: string | null
+          pdf_url: string | null
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          batch_name: string
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          fields_selected?: string[] | null
+          id?: string
+          image_url?: string | null
+          modified_by?: string | null
+          pdf_url?: string | null
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          batch_name?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          fields_selected?: string[] | null
+          id?: string
+          image_url?: string | null
+          modified_by?: string | null
+          pdf_url?: string | null
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qr_batches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_batches_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_batches_modified_by_fkey"
+            columns: ["modified_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_batches_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_order_items: {
         Row: {
           company_id: string
@@ -1284,7 +1324,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          company_id: string
+          company_id?: string
           created_at?: string
           dispatched_quantity?: number | null
           id?: string
@@ -1364,7 +1404,7 @@ export type Database = {
           advance_amount?: number | null
           agent_id?: string | null
           attachments?: string[] | null
-          company_id: string
+          company_id?: string
           created_at?: string
           created_by?: string
           customer_id: string
@@ -1462,7 +1502,6 @@ export type Database = {
       }
       stock_units: {
         Row: {
-          barcode_generated_at: string | null
           company_id: string
           created_at: string
           created_by: string
@@ -1474,6 +1513,7 @@ export type Database = {
           modified_by: string | null
           notes: string | null
           product_id: string
+          qr_generated_at: string | null
           quality_grade: string | null
           remaining_quantity: number
           status: string
@@ -1484,8 +1524,7 @@ export type Database = {
           warehouse_location: string | null
         }
         Insert: {
-          barcode_generated_at?: string | null
-          company_id: string
+          company_id?: string
           created_at?: string
           created_by?: string
           created_from_inward_id?: string | null
@@ -1496,6 +1535,7 @@ export type Database = {
           modified_by?: string | null
           notes?: string | null
           product_id: string
+          qr_generated_at?: string | null
           quality_grade?: string | null
           remaining_quantity: number
           status?: string
@@ -1506,7 +1546,6 @@ export type Database = {
           warehouse_location?: string | null
         }
         Update: {
-          barcode_generated_at?: string | null
           company_id?: string
           created_at?: string
           created_by?: string
@@ -1518,6 +1557,7 @@ export type Database = {
           modified_by?: string | null
           notes?: string | null
           product_id?: string
+          qr_generated_at?: string | null
           quality_grade?: string | null
           remaining_quantity?: number
           status?: string
@@ -1574,6 +1614,7 @@ export type Database = {
       }
       user_warehouses: {
         Row: {
+          company_id: string
           created_at: string
           created_by: string | null
           id: string
@@ -1581,6 +1622,7 @@ export type Database = {
           warehouse_id: string
         }
         Insert: {
+          company_id: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -1588,6 +1630,7 @@ export type Database = {
           warehouse_id: string
         }
         Update: {
+          company_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -1600,6 +1643,13 @@ export type Database = {
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_warehouses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
@@ -1718,7 +1768,7 @@ export type Database = {
           address_line1?: string | null
           address_line2?: string | null
           city?: string | null
-          company_id: string
+          company_id?: string
           contact_name?: string | null
           contact_number?: string | null
           country?: string | null

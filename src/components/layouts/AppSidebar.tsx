@@ -15,7 +15,7 @@ import {
 } from '@tabler/icons-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useWarehouse } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/warehouse-context';
 import {
 	Sidebar,
 	SidebarContent,
@@ -75,7 +75,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const pathname = usePathname();
-	const { warehouseSlug } = useWarehouse();
+	const { warehouse } = useSession();
 
 	return (
 		<Sidebar {...props}>

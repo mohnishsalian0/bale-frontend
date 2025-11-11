@@ -14,20 +14,6 @@ ALTER TABLE user_warehouses ENABLE ROW LEVEL SECURITY;
 -- UTILITY FUNCTIONS FOR RLS
 -- =====================================================
 
--- Function to get current user's company_id
-CREATE OR REPLACE FUNCTION get_user_company_id()
-RETURNS UUID AS $$
-DECLARE
-    user_company UUID;
-BEGIN
-    SELECT company_id INTO user_company
-    FROM users
-    WHERE auth_user_id = auth.uid();
-
-    RETURN user_company;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
 -- Function to get current user's role
 CREATE OR REPLACE FUNCTION get_user_role()
 RETURNS TEXT AS $$
@@ -191,9 +177,7 @@ ON user_warehouses
 FOR SELECT
 TO authenticated
 USING (
-    user_id IN (
-        SELECT id FROM users WHERE company_id = get_user_company_id()
-    ) AND (
+    company_id = get_user_company_id() AND (
         is_company_admin() OR
         user_id = (SELECT id FROM users WHERE auth_user_id = auth.uid())
     )
@@ -205,14 +189,10 @@ ON user_warehouses
 FOR ALL
 TO authenticated
 USING (
-    user_id IN (
-        SELECT id FROM users WHERE company_id = get_user_company_id()
-    ) AND is_company_admin()
+    company_id = get_user_company_id() AND is_company_admin()
 )
 WITH CHECK (
-    user_id IN (
-        SELECT id FROM users WHERE company_id = get_user_company_id()
-    ) AND is_company_admin()
+    company_id = get_user_company_id() AND is_company_admin()
 );
 
 -- =====================================================

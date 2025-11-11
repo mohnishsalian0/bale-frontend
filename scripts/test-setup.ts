@@ -1110,7 +1110,7 @@ async function createTestPartners() {
 		for (const batch of testBatches) {
 			// Check if batch already exists
 			const { data: existingBatch } = await supabase
-				.from('barcode_batches')
+				.from('qr_batches')
 				.select('id, batch_name')
 				.eq('company_id', companyId)
 				.eq('batch_name', batch.batch_name)
@@ -1123,7 +1123,7 @@ async function createTestPartners() {
 				batchId = existingBatch.id;
 			} else {
 				const { data, error } = await supabase
-					.from('barcode_batches')
+					.from('qr_batches')
 					.insert(batch)
 					.select()
 					.single();
@@ -1140,7 +1140,7 @@ async function createTestPartners() {
 
 			// Check if batch items already exist
 			const { data: existingItems, error: checkItemsError } = await supabase
-				.from('barcode_batch_items')
+				.from('qr_batch_items')
 				.select('id')
 				.eq('batch_id', batchId);
 
@@ -1163,8 +1163,9 @@ async function createTestPartners() {
 
 			for (let i = 0; i < itemCount && stockUnitIndex < availableStockUnits.length; i++) {
 				const { error: itemError } = await supabase
-					.from('barcode_batch_items')
+					.from('qr_batch_items')
 					.insert({
+						warehouse_id: warehouseId,
 						batch_id: batchId,
 						stock_unit_id: availableStockUnits[stockUnitIndex].id,
 					});

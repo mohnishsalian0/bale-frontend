@@ -137,7 +137,6 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 
 			// Prepare typed insert data
 			const productInsert: Omit<TablesInsert<'products'>, 'created_by' | 'modified_by'> = {
-				company_id: currentUser.company_id,
 				name: formData.name,
 				product_number: formData.productNumber,
 				show_on_catalog: formData.showOnCatalog,

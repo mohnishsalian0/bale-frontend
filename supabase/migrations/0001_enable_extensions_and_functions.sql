@@ -32,6 +32,20 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Function to get current user's company_id
+CREATE OR REPLACE FUNCTION get_user_company_id()
+RETURNS UUID AS $$
+DECLARE
+    user_company UUID;
+BEGIN
+    SELECT company_id INTO user_company
+    FROM users
+    WHERE auth_user_id = auth.uid();
+
+    RETURN user_company;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Function to set modified_by on UPDATE
 CREATE OR REPLACE FUNCTION set_modified_by()
 RETURNS TRIGGER AS $$

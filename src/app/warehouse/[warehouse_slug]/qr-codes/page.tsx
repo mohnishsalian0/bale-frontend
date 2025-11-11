@@ -7,16 +7,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Fab } from '@/components/ui/fab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { createClient, getCurrentUser } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { formatCreatedAt, formatAbsoluteDate } from '@/lib/utils/date';
-import type { Tables } from '@/types/database/supabase';
 import { toast } from 'sonner';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { CreateQRBatchSheet } from './CreateQRBatchSheet';
+import { useSession } from '@/contexts/warehouse-context';
 
-type BarcodeBatchRow = Tables<'barcode_batches'>;
-
-interface BarcodeBatch {
+interface QRBatch {
 	id: string;
 	batchName: string;
 	imageUrl: string | null;
@@ -31,7 +29,8 @@ interface Product {
 }
 
 export default function QRCodesPage() {
-	const [batches, setBatches] = useState<BarcodeBatch[]>([]);
+	const { warehouse } = useSession();
+	const [batches, setBatches] = useState<QRBatch[]>([]);
 	const [products, setProducts] = useState<Product[]>([]);
 	const [selectedProduct, setSelectedProduct] = useState<string>('all');
 	const [loading, setLoading] = useState(true);
@@ -60,27 +59,21 @@ export default function QRCodesPage() {
 			setLoading(true);
 			setError(null);
 
-			// Get current user's warehouse
-			const currentUser = await getCurrentUser();
-			if (!currentUser || !currentUser.warehouse_id) {
-				throw new Error('User warehouse not found');
-			}
-
 			// Base query
 			let query = supabase
-				.from('barcode_batches')
+				.from('qr_batches')
 				.select(`
 					id,
 					batch_name,
 					image_url,
 					pdf_url,
 					created_at,
-					barcode_batch_items (
+					qr_batch_items (
 						id,
 						stock_unit_id
 					)
 				`)
-				.eq('warehouse_id', currentUser.warehouse_id)
+				.eq('warehouse_id', warehouseId)
 				.order('created_at', { ascending: false });
 
 			const { data, error: fetchError } = await query;
@@ -88,19 +81,19 @@ export default function QRCodesPage() {
 			if (fetchError) throw fetchError;
 
 			// Transform data
-			let transformedBatches: BarcodeBatch[] = (data || []).map((batch: any) => ({
+			let transformedBatches: QRBatch[] = (data || []).map((batch: any) => ({
 				id: batch.id,
 				batchName: batch.batch_name,
 				imageUrl: batch.image_url,
 				pdfUrl: batch.pdf_url,
-				itemCount: batch.barcode_batch_items?.length || 0,
+				itemCount: batch.qr_batch_items?.length || 0,
 				createdAt: batch.created_at,
 			}));
 
 			// Filter by product if selected
 			if (selectedProduct !== 'all') {
 				const { data: batchItemsData } = await supabase
-					.from('barcode_batch_items')
+					.from('qr_batch_items')
 					.select(`
 						batch_id,
 						stock_units (
@@ -127,7 +120,7 @@ export default function QRCodesPage() {
 		fetchBatches();
 	}, [selectedProduct]);
 
-	const handleShare = async (batch: BarcodeBatch) => {
+	const handleShare = async (batch: QRBatch) => {
 		if (!batch.pdfUrl) {
 			toast.error('No PDF available to share');
 			return;
@@ -156,7 +149,7 @@ export default function QRCodesPage() {
 		}
 	};
 
-	const handleDownload = (batch: BarcodeBatch) => {
+	const handleDownload = (batch: QRBatch) => {
 		if (!batch.pdfUrl) {
 			toast.error('No PDF available to download');
 			return;

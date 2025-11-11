@@ -7,7 +7,7 @@
 
 CREATE TABLE warehouses (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
 
     name VARCHAR(100) NOT NULL,
     slug VARCHAR(100) NOT NULL, -- URL-friendly identifier

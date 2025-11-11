@@ -11,6 +11,7 @@ import { createClient, getCurrentUser } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import type { Tables } from '@/types/database/supabase';
 import { generateAndDownloadPDF, type LabelData } from '@/lib/pdf/qr-label-generator';
+import { useSession } from '@/contexts/warehouse-context';
 
 interface CreateQRBatchSheetProps {
 	open: boolean;
@@ -25,6 +26,7 @@ export function CreateQRBatchSheet({
 	onOpenChange,
 	onBatchCreated,
 }: CreateQRBatchSheetProps) {
+	const { warehouse } = useSession();
 	const [currentStep, setCurrentStep] = useState<FormStep>('product');
 	const [products, setProducts] = useState<Tables<'products'>[]>([]);
 	const [productsLoading, setProductsLoading] = useState(false);
@@ -100,8 +102,7 @@ export function CreateQRBatchSheet({
 
 			// Prepare batch data
 			const batchData = {
-				company_id: currentUser.company_id,
-				warehouse_id: currentUser.warehouse_id,
+				warehouse_id: warehouse.id,
 				batch_name: batchName,
 				image_url: null,
 				fields_selected: selectedFields,
@@ -144,7 +145,6 @@ export function CreateQRBatchSheet({
 			const { data: companyData, error: companyError } = await supabase
 				.from('companies')
 				.select('logo_url')
-				.eq('id', currentUser.company_id)
 				.single();
 
 			if (companyError) throw companyError;
