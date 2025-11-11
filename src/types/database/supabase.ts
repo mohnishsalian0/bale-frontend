@@ -85,7 +85,7 @@ export type Database = {
           batch_name: string
           company_id: string
           created_at?: string
-          created_by: string
+          created_by?: string
           fields_selected?: string[] | null
           id?: string
           image_url?: string | null
@@ -172,7 +172,7 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string
           domain_slug?: string | null
           favicon_url?: string | null
           filter_options?: Json | null
@@ -328,7 +328,7 @@ export type Database = {
           attachments?: string[] | null
           company_id: string
           created_at?: string
-          created_by: string
+          created_by?: string
           deleted_at?: string | null
           from_warehouse_id?: string | null
           id?: string
@@ -527,7 +527,7 @@ export type Database = {
           cancelled_by?: string | null
           company_id: string
           created_at?: string
-          created_by: string
+          created_by?: string
           deleted_at?: string | null
           due_date?: string | null
           id?: string
@@ -885,7 +885,7 @@ export type Database = {
           attachments?: string[] | null
           company_id: string
           created_at?: string
-          created_by: string
+          created_by?: string
           deleted_at?: string | null
           due_date?: string | null
           id?: string
@@ -1019,7 +1019,7 @@ export type Database = {
           company_name?: string | null
           country?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string
           deleted_at?: string | null
           email?: string | null
           first_name: string
@@ -1196,7 +1196,7 @@ export type Database = {
           company_id: string
           cost_price_per_unit?: number | null
           created_at?: string
-          created_by: string
+          created_by?: string
           deleted_at?: string | null
           gsm?: number | null
           hsn_code?: string | null
@@ -1366,7 +1366,7 @@ export type Database = {
           attachments?: string[] | null
           company_id: string
           created_at?: string
-          created_by: string
+          created_by?: string
           customer_id: string
           deleted_at?: string | null
           discount_percentage?: number | null
@@ -1487,7 +1487,7 @@ export type Database = {
           barcode_generated_at?: string | null
           company_id: string
           created_at?: string
-          created_by: string
+          created_by?: string
           created_from_inward_id?: string | null
           deleted_at?: string | null
           id?: string
@@ -1800,7 +1800,6 @@ export type Database = {
         Args: {
           p_company_id: string
           p_company_name: string
-          p_created_by: string
           p_expires_at: string
           p_role: string
           p_warehouse_ids: string[]
@@ -1840,6 +1839,7 @@ export type Database = {
         Args: { p_company_id: string; p_product_id: string }
         Returns: number
       }
+      get_current_user_id: { Args: never; Returns: string }
       get_job_type_suggestions: {
         Args: { company_id_param?: string; search_term?: string }
         Returns: {

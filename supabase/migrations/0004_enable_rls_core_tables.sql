@@ -20,10 +20,10 @@ RETURNS UUID AS $$
 DECLARE
     user_company UUID;
 BEGIN
-    SELECT company_id INTO user_company 
-    FROM users 
+    SELECT company_id INTO user_company
+    FROM users
     WHERE auth_user_id = auth.uid();
-    
+
     RETURN user_company;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -34,10 +34,10 @@ RETURNS TEXT AS $$
 DECLARE
     user_role TEXT;
 BEGIN
-    SELECT role INTO user_role 
-    FROM users 
+    SELECT role INTO user_role
+    FROM users
     WHERE auth_user_id = auth.uid();
-    
+
     RETURN user_role;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

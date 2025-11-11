@@ -39,7 +39,7 @@ CREATE TABLE stock_units (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL REFERENCES users(id),
+    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
     
@@ -78,9 +78,14 @@ CREATE INDEX idx_stock_units_fifo ON stock_units(company_id, product_id, created
 -- =====================================================
 
 -- Auto-update timestamps
-CREATE TRIGGER update_stock_units_updated_at 
-    BEFORE UPDATE ON stock_units 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_stock_units_updated_at
+    BEFORE UPDATE ON stock_units
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Auto-set modified_by
+CREATE TRIGGER set_stock_units_modified_by
+    BEFORE UPDATE ON stock_units
+    FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
 -- Auto-generate stock unit numbers
 CREATE OR REPLACE FUNCTION auto_generate_unit_number()

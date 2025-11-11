@@ -86,8 +86,7 @@ CREATE OR REPLACE FUNCTION create_staff_invite(
     p_company_name TEXT,
     p_role TEXT,
     p_warehouse_ids UUID[],
-    p_expires_at TIMESTAMPTZ,
-    p_created_by UUID
+    p_expires_at TIMESTAMPTZ
 )
 RETURNS TEXT
 LANGUAGE plpgsql
@@ -118,14 +117,12 @@ BEGIN
         company_name,
         role,
         expires_at,
-        created_by,
         token
     ) VALUES (
         p_company_id,
         p_company_name,
         p_role,
         p_expires_at,
-        p_created_by,
         v_token
     ) RETURNING id INTO v_invite_id;
 

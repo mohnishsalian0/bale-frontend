@@ -22,7 +22,7 @@ CREATE TABLE companies (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID,
+    created_by UUID DEFAULT get_current_user_id(),
     modified_by UUID,
     deleted_at TIMESTAMPTZ
 );
@@ -54,7 +54,7 @@ CREATE TABLE users (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID,
+    created_by UUID DEFAULT get_current_user_id(),
     modified_by UUID,
     deleted_at TIMESTAMPTZ
 );
@@ -80,13 +80,22 @@ CREATE INDEX idx_users_role ON users(company_id, role);
 -- =====================================================
 
 -- Auto-update timestamps
-CREATE TRIGGER update_companies_updated_at 
-    BEFORE UPDATE ON companies 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_companies_updated_at
+    BEFORE UPDATE ON companies
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
-CREATE TRIGGER update_users_updated_at 
-    BEFORE UPDATE ON users 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Auto-set modified_by
+CREATE TRIGGER set_companies_modified_by
+    BEFORE UPDATE ON companies
+    FOR EACH ROW EXECUTE FUNCTION set_modified_by();
+
+CREATE TRIGGER set_users_modified_by
+    BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
 -- =====================================================
 -- SECURITY CONSTRAINTS
@@ -107,7 +116,7 @@ CREATE TABLE user_warehouses (
 
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES users(id),
+    created_by UUID DEFAULT get_current_user_id() REFERENCES users(id),
 
     -- Ensure unique user-warehouse pairs
     UNIQUE(user_id, warehouse_id)

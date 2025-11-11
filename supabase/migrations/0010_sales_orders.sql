@@ -41,7 +41,7 @@ CREATE TABLE sales_orders (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL REFERENCES users(id),
+    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
     
@@ -96,13 +96,18 @@ CREATE INDEX idx_sales_order_items_product ON sales_order_items(product_id);
 -- =====================================================
 
 -- Auto-update timestamps
-CREATE TRIGGER update_sales_orders_updated_at 
-    BEFORE UPDATE ON sales_orders 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_sales_orders_updated_at
+    BEFORE UPDATE ON sales_orders
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Auto-set modified_by
+CREATE TRIGGER set_sales_orders_modified_by
+    BEFORE UPDATE ON sales_orders
+    FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
 CREATE TRIGGER update_sales_order_items_updated_at 
     BEFORE UPDATE ON sales_order_items 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- Auto-generate order numbers
 CREATE OR REPLACE FUNCTION auto_generate_order_number()

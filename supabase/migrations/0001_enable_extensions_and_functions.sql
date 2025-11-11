@@ -10,10 +10,33 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto" SCHEMA extensions;
 -- =====================================================
 
 -- Function to update 'updated_at' timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get current user's ID
+CREATE OR REPLACE FUNCTION get_current_user_id()
+RETURNS UUID AS $$
+DECLARE
+    current_user_id UUID;
+BEGIN
+    SELECT id INTO current_user_id
+    FROM users
+    WHERE auth_user_id = auth.uid();
+
+    RETURN current_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to set modified_by on UPDATE
+CREATE OR REPLACE FUNCTION set_modified_by()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.modified_by := get_current_user_id();
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

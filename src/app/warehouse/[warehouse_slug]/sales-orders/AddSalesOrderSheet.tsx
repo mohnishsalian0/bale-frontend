@@ -154,7 +154,7 @@ export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSale
 			const selectedProducts = products.filter(p => p.selected && p.quantity > 0);
 
 			// Prepare sales order insert data
-			const salesOrderInsert: TablesInsert<'sales_orders'> = {
+			const salesOrderInsert: Omit<TablesInsert<'sales_orders'>, 'created_by' | 'modified_by'> = {
 				company_id: currentUser.company_id,
 				fulfillment_warehouse_id: formData.warehouseId,
 				order_number: '',
@@ -166,7 +166,6 @@ export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSale
 				discount_percentage: formData.discount ? parseFloat(formData.discount) : 0,
 				notes: formData.notes || null,
 				attachments: [], // TODO: Implement file upload
-				created_by: currentUser.id,
 				status: 'approval_pending',
 			};
 

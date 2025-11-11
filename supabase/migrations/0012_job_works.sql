@@ -40,7 +40,7 @@ CREATE TABLE job_works (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL REFERENCES users(id),
+    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
     
@@ -113,17 +113,22 @@ CREATE INDEX idx_job_work_finished_goods_product_id ON job_work_finished_goods(p
 -- =====================================================
 
 -- Auto-update timestamps
-CREATE TRIGGER update_job_works_updated_at 
-    BEFORE UPDATE ON job_works 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_job_works_updated_at
+    BEFORE UPDATE ON job_works
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Auto-set modified_by
+CREATE TRIGGER set_job_works_modified_by
+    BEFORE UPDATE ON job_works
+    FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
 CREATE TRIGGER update_job_work_raw_materials_updated_at 
     BEFORE UPDATE ON job_work_raw_materials 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TRIGGER update_job_work_finished_goods_updated_at 
     BEFORE UPDATE ON job_work_finished_goods 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- Auto-generate job numbers
 CREATE OR REPLACE FUNCTION auto_generate_job_number()

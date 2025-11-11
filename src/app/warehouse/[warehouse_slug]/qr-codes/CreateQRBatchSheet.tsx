@@ -106,7 +106,6 @@ export function CreateQRBatchSheet({
 				image_url: null,
 				fields_selected: selectedFields,
 				pdf_url: null,
-				created_by: currentUser.id,
 			};
 
 			// Call RPC function to create batch atomically

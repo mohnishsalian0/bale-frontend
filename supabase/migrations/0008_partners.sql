@@ -40,7 +40,7 @@ CREATE TABLE partners (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL REFERENCES users(id),
+    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
     
@@ -80,9 +80,14 @@ CREATE INDEX idx_partners_city ON partners(company_id, city);
 -- =====================================================
 
 -- Auto-update timestamps
-CREATE TRIGGER update_partners_updated_at 
-    BEFORE UPDATE ON partners 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_partners_updated_at
+    BEFORE UPDATE ON partners
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Auto-set modified_by
+CREATE TRIGGER set_partners_modified_by
+    BEFORE UPDATE ON partners
+    FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
 -- =====================================================
 -- SECURITY CONSTRAINTS

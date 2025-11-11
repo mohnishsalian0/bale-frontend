@@ -111,7 +111,6 @@ export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffShee
 					p_role: formData.role,
 					p_warehouse_ids: formData.role === 'staff' ? formData.warehouseIds : null,
 					p_expires_at: expiresAt.toISOString(),
-					p_created_by: currentUser.id,
 				});
 
 			if (inviteError || !token) {

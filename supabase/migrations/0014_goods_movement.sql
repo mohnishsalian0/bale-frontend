@@ -45,7 +45,7 @@ CREATE TABLE goods_outwards (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL REFERENCES users(id),
+    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
 
@@ -118,7 +118,7 @@ CREATE TABLE goods_inwards (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL REFERENCES users(id),
+    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
 
@@ -178,15 +178,25 @@ CREATE INDEX idx_goods_inwards_job_work ON goods_inwards(job_work_id);
 -- Auto-update timestamps
 CREATE TRIGGER update_goods_outwards_updated_at
     BEFORE UPDATE ON goods_outwards
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Auto-set modified_by
+CREATE TRIGGER set_goods_outwards_modified_by
+    BEFORE UPDATE ON goods_outwards
+    FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
 CREATE TRIGGER update_goods_outward_items_updated_at
     BEFORE UPDATE ON goods_outward_items
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TRIGGER update_goods_inwards_updated_at
     BEFORE UPDATE ON goods_inwards
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Auto-set modified_by
+CREATE TRIGGER set_goods_inwards_modified_by
+    BEFORE UPDATE ON goods_inwards
+    FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
 -- Auto-generate outward numbers
 CREATE OR REPLACE FUNCTION auto_generate_outward_number()

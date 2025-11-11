@@ -134,7 +134,6 @@ export function AddGoodsOutwardSheet({
 				invoice_amount: detailsFormData.invoiceAmount ? parseFloat(detailsFormData.invoiceAmount) : null,
 				transport_details: detailsFormData.transportDetails || null,
 				notes: detailsFormData.notes || null,
-				created_by: currentUser.id,
 			};
 
 			// Prepare stock unit items from scannedUnits

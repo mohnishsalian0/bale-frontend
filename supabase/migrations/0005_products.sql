@@ -38,7 +38,7 @@ CREATE TABLE products (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL REFERENCES users(id),
+    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
     
@@ -79,9 +79,14 @@ CREATE INDEX idx_products_stock_type ON products(company_id, stock_type);
 -- =====================================================
 
 -- Auto-update timestamps
-CREATE TRIGGER update_products_updated_at 
-    BEFORE UPDATE ON products 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_products_updated_at
+    BEFORE UPDATE ON products
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Auto-set modified_by
+CREATE TRIGGER set_products_modified_by
+    BEFORE UPDATE ON products
+    FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
 -- Auto-generate product numbers
 CREATE OR REPLACE FUNCTION auto_generate_product_number()

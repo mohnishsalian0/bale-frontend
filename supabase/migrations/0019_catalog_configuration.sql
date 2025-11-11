@@ -39,7 +39,7 @@ CREATE TABLE catalog_configurations (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL REFERENCES users(id),
+    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
     modified_by UUID REFERENCES users(id),
     
     UNIQUE(company_id)
@@ -100,13 +100,18 @@ CREATE INDEX idx_product_variant_items_display_order ON product_variant_items(va
 -- =====================================================
 
 -- Auto-update timestamps
-CREATE TRIGGER update_catalog_configurations_updated_at 
-    BEFORE UPDATE ON catalog_configurations 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_catalog_configurations_updated_at
+    BEFORE UPDATE ON catalog_configurations
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Auto-set modified_by
+CREATE TRIGGER set_catalog_configurations_modified_by
+    BEFORE UPDATE ON catalog_configurations
+    FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
 CREATE TRIGGER update_product_variants_updated_at 
     BEFORE UPDATE ON product_variants 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- Auto-generate domain slug from company name with random number
 CREATE OR REPLACE FUNCTION generate_domain_slug()

@@ -249,11 +249,10 @@ export function AddGoodsInwardSheet({
 				sales_order_id: detailsFormData.linkToType === 'sales_return' && detailsFormData.linkToValue ? detailsFormData.linkToValue : undefined,
 				other_reason: detailsFormData.linkToType === 'other' && detailsFormData.linkToValue ? detailsFormData.linkToValue : undefined,
 				notes: detailsFormData.notes || undefined,
-				created_by: currentUser.id,
 			};
 
 			// Prepare stock units
-			const stockUnits: TablesInsert<'stock_units'>[] = [];
+			const stockUnits: Omit<TablesInsert<'stock_units'>, 'created_by' | 'modified_by'>[] = [];
 			for (const product of products) {
 				if (product.units.length === 0) continue;
 
@@ -272,7 +271,6 @@ export function AddGoodsInwardSheet({
 							supplier_number: unit.supplier_number || null,
 							warehouse_location: unit.location || null,
 							notes: unit.notes || null,
-							created_by: currentUser.id,
 						});
 					}
 				}

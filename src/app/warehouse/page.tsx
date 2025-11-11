@@ -3,11 +3,8 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { IconBuildingWarehouse, IconPencil, IconShare } from '@tabler/icons-react';
-import { Fab } from '@/components/ui/fab';
-import { Button } from '@/components/ui/button';
+import { IconBuildingWarehouse } from '@tabler/icons-react';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
-import { AddWarehouseSheet } from './[warehouse_slug]/warehouses/AddWarehouseSheet';
 import type { Tables } from '@/types/database/supabase';
 import { LoadingState } from '@/components/layouts/loading-state';
 
@@ -16,9 +13,6 @@ type Warehouse = Tables<'warehouses'>;
 export default function WarehouseSelectionPage() {
 	const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [isAdmin, setIsAdmin] = useState(false);
-	const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
-	const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
 	const router = useRouter();
 	const supabase = createClient();
 
@@ -36,8 +30,6 @@ export default function WarehouseSelectionPage() {
 				router.push('/auth/login');
 				return;
 			}
-
-			setIsAdmin(currentUser.role === 'admin');
 
 			// Fetch warehouses based on role
 			if (currentUser.role === 'admin') {
@@ -99,47 +91,6 @@ export default function WarehouseSelectionPage() {
 			router.push(`/warehouse/${warehouse.slug}/dashboard`);
 		} catch (error) {
 			console.error('Error selecting warehouse:', error);
-		}
-	};
-
-	const handleEdit = (warehouse: Warehouse, e: React.MouseEvent) => {
-		e.stopPropagation();
-		setEditingWarehouse(warehouse);
-		setIsCreateSheetOpen(true);
-	};
-
-	const handleShare = (warehouse: Warehouse, e: React.MouseEvent) => {
-		e.stopPropagation();
-
-		// Build address string
-		const addressParts = [
-			warehouse.name,
-			warehouse.address_line1,
-			warehouse.address_line2,
-			warehouse.city && warehouse.state ? `${warehouse.city}, ${warehouse.state}` : warehouse.city || warehouse.state,
-			warehouse.pin_code ? `- ${warehouse.pin_code}` : '',
-			warehouse.country,
-		].filter(Boolean);
-
-		const message = `📍 Warehouse Location\\n\\n${addressParts.join('\\n')}`;
-		const encodedMessage = encodeURIComponent(message);
-		window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
-	};
-
-	const handleWarehouseAdded = () => {
-		fetchWarehousesAndUser();
-		setEditingWarehouse(null);
-	};
-
-	const handleFabClick = () => {
-		setEditingWarehouse(null);
-		setIsCreateSheetOpen(true);
-	};
-
-	const handleSheetClose = (open: boolean) => {
-		setIsCreateSheetOpen(open);
-		if (!open) {
-			setEditingWarehouse(null);
 		}
 	};
 
@@ -211,53 +162,13 @@ export default function WarehouseSelectionPage() {
 										<div className="text-sm text-gray-500 truncate" title={addressString}>
 											{addressString}
 										</div>
-
-										{/* Action buttons - Only show for admins */}
-										{isAdmin && (
-											<div className="flex items-center gap-2 mt-2 text-sm">
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={(e) => handleEdit(warehouse, e)}
-												>
-													<IconPencil />
-													Edit
-												</Button>
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={(e) => handleShare(warehouse, e)}
-												>
-													<IconShare />
-													Share
-												</Button>
-											</div>
-										)}
 									</div>
 								</div>
 							);
 						})}
 					</div>
 				)}
-
-				{/* Floating Action Button - Only show for admins */}
-				{isAdmin && (
-					<Fab
-						onClick={handleFabClick}
-						className="fixed bottom-4 right-4"
-					/>
-				)}
 			</div>
-
-			{/* Add/Edit Warehouse Sheet */}
-			{isCreateSheetOpen && (
-				<AddWarehouseSheet
-					open={isCreateSheetOpen}
-					onOpenChange={handleSheetClose}
-					onWarehouseAdded={handleWarehouseAdded}
-					warehouse={editingWarehouse}
-				/>
-			)}
 		</div>
 	);
 }

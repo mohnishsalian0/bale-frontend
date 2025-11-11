@@ -18,7 +18,7 @@ CREATE TABLE barcode_batches (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL REFERENCES users(id),
+    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
     modified_by UUID REFERENCES users(id)
 );
 
@@ -50,9 +50,14 @@ CREATE INDEX idx_barcode_batch_items_stock_unit ON barcode_batch_items(stock_uni
 -- =====================================================
 
 -- Auto-update timestamps
-CREATE TRIGGER update_barcode_batches_updated_at 
-    BEFORE UPDATE ON barcode_batches 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_barcode_batches_updated_at
+    BEFORE UPDATE ON barcode_batches
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Auto-set modified_by
+CREATE TRIGGER set_barcode_batches_modified_by
+    BEFORE UPDATE ON barcode_batches
+    FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
 -- Update barcode tracking when stock units are added to barcode batch
 CREATE OR REPLACE FUNCTION update_barcode_tracking()

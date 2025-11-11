@@ -24,7 +24,7 @@ CREATE TABLE warehouses (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES users(id),
+    created_by UUID DEFAULT get_current_user_id() REFERENCES users(id),
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
 
@@ -58,9 +58,14 @@ CREATE INDEX idx_warehouses_name ON warehouses(company_id, name);
 -- =====================================================
 
 -- Auto-update timestamps
-CREATE TRIGGER update_warehouses_updated_at 
-    BEFORE UPDATE ON warehouses 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_warehouses_updated_at
+    BEFORE UPDATE ON warehouses
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Auto-set modified_by
+CREATE TRIGGER set_warehouses_modified_by
+    BEFORE UPDATE ON warehouses
+    FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
 -- =====================================================
 -- SECURITY CONSTRAINTS

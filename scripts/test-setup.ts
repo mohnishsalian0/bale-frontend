@@ -138,26 +138,11 @@ async function createTestPartners() {
 		warehouseName = warehouses[0].name;
 	}
 
-	// Get a user to use as created_by
-	const { data: users, error: userError } = await supabase
-		.from('users')
-		.select('id')
-		.eq('company_id', companyId)
-		.limit(1);
-
-	if (userError || !users || users.length === 0) {
-		console.error('❌ No users found for this company. Cannot create partners.');
-		return;
-	}
-
-	const createdBy = users[0].id;
-	console.log(`👤 Using user ${createdBy} as creator\n`);
 
 	const testPartners = [
 		// Customers
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			partner_type: 'customer',
 			first_name: 'Rajesh',
 			last_name: 'Kumar',
@@ -171,7 +156,6 @@ async function createTestPartners() {
 		},
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			partner_type: 'customer',
 			first_name: 'Priya',
 			last_name: 'Sharma',
@@ -185,7 +169,6 @@ async function createTestPartners() {
 		},
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			partner_type: 'customer',
 			first_name: 'Amit',
 			last_name: 'Patel',
@@ -198,7 +181,6 @@ async function createTestPartners() {
 		// Suppliers
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			partner_type: 'supplier',
 			first_name: 'Suresh',
 			last_name: 'Reddy',
@@ -212,7 +194,6 @@ async function createTestPartners() {
 		},
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			partner_type: 'supplier',
 			first_name: 'Lakshmi',
 			last_name: 'Naidu',
@@ -226,7 +207,6 @@ async function createTestPartners() {
 		// Vendors
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			partner_type: 'vendor',
 			first_name: 'Arjun',
 			last_name: 'singh',
@@ -240,7 +220,6 @@ async function createTestPartners() {
 		},
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			partner_type: 'vendor',
 			first_name: 'Meera',
 			last_name: 'Desai',
@@ -254,7 +233,6 @@ async function createTestPartners() {
 		// Agents
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			partner_type: 'agent',
 			first_name: 'Vikram',
 			last_name: 'Mehta',
@@ -267,7 +245,6 @@ async function createTestPartners() {
 		},
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			partner_type: 'agent',
 			first_name: 'Anjali',
 			last_name: 'Gupta',
@@ -305,7 +282,6 @@ async function createTestPartners() {
 	const testProducts = [
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			name: 'Premium Silk Saree',
 			product_number: 'PROD-001',
 			material: 'Silk',
@@ -325,7 +301,6 @@ async function createTestPartners() {
 		},
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			name: 'Cotton Kurta Fabric',
 			product_number: 'PROD-002',
 			material: 'Cotton',
@@ -345,7 +320,6 @@ async function createTestPartners() {
 		},
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			name: 'Woolen Shawl Material',
 			product_number: 'PROD-003',
 			material: 'Wool',
@@ -364,7 +338,6 @@ async function createTestPartners() {
 		},
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			name: 'Polyester Blend Dress Material',
 			product_number: 'PROD-004',
 			material: 'Polyester',
@@ -383,7 +356,6 @@ async function createTestPartners() {
 		},
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			name: 'Linen Summer Fabric',
 			product_number: 'PROD-005',
 			material: 'Linen',
@@ -403,7 +375,6 @@ async function createTestPartners() {
 		},
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			name: 'Designer Silk Fabric',
 			product_number: 'PROD-006',
 			material: 'Silk',
@@ -421,7 +392,6 @@ async function createTestPartners() {
 		},
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			name: 'Cotton Denim',
 			product_number: 'PROD-007',
 			material: 'Denim',
@@ -441,7 +411,6 @@ async function createTestPartners() {
 		},
 		{
 			company_id: companyId,
-			created_by: createdBy,
 			name: 'Yellow Cotton Print',
 			product_number: 'PROD-008',
 			material: 'Cotton',
@@ -528,7 +497,6 @@ async function createTestPartners() {
 				{
 					company_id: companyId,
 					warehouse_id: warehouseId,
-					created_by: createdBy,
 					inward_number: 'GR-001',
 					inward_type: 'other',
 					other_reason: 'Purchase',
@@ -541,7 +509,6 @@ async function createTestPartners() {
 				{
 					company_id: companyId,
 					warehouse_id: warehouseId,
-					created_by: createdBy,
 					inward_number: 'GR-002',
 					inward_type: 'other',
 					other_reason: 'Purchase',
@@ -554,7 +521,6 @@ async function createTestPartners() {
 				{
 					company_id: companyId,
 					warehouse_id: warehouseId,
-					created_by: createdBy,
 					inward_number: 'GR-003',
 					inward_type: 'other',
 					other_reason: 'Purchase',
@@ -567,7 +533,6 @@ async function createTestPartners() {
 				{
 					company_id: companyId,
 					warehouse_id: warehouseId,
-					created_by: createdBy,
 					inward_number: 'GR-004',
 					inward_type: 'other',
 					other_reason: 'Purchase',
@@ -580,7 +545,6 @@ async function createTestPartners() {
 				{
 					company_id: companyId,
 					warehouse_id: warehouseId,
-					created_by: createdBy,
 					inward_number: 'GR-005',
 					inward_type: 'other',
 					other_reason: 'Purchase',
@@ -658,8 +622,7 @@ async function createTestPartners() {
 								warehouse_id: warehouseId,
 								product_id: productsList[i].id,
 								created_from_inward_id: inwardId,
-								created_by: createdBy,
-								initial_quantity: quantity,
+											initial_quantity: quantity,
 								remaining_quantity: quantity,
 								quality_grade: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
 								warehouse_location: `Rack ${String.fromCharCode(65 + Math.floor(Math.random() * 5))}-${Math.floor(Math.random() * 10) + 1}`,
@@ -691,8 +654,7 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-						created_by: createdBy,
-						outward_number: 'GD-001',
+							outward_number: 'GD-001',
 						partner_id: customerId1,
 						outward_type: 'other',
 						other_reason: 'Sample outward for exhibition',
@@ -704,8 +666,7 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-						created_by: createdBy,
-						outward_number: 'GD-002',
+							outward_number: 'GD-002',
 						partner_id: customerId2,
 						outward_type: 'other',
 						other_reason: 'Quality testing at external lab',
@@ -716,8 +677,7 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-						created_by: createdBy,
-						outward_number: 'GD-003',
+							outward_number: 'GD-003',
 						partner_id: customerId1,
 						outward_type: 'other',
 						other_reason: 'Customer sample approval',
@@ -729,8 +689,7 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-						created_by: createdBy,
-						outward_number: 'GD-004',
+							outward_number: 'GD-004',
 						partner_id: customerId2,
 						outward_type: 'other',
 						other_reason: 'Marketing material outward',
@@ -741,8 +700,7 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-						created_by: createdBy,
-						outward_number: 'GD-005',
+							outward_number: 'GD-005',
 						partner_id: customerId1,
 						outward_type: 'other',
 						other_reason: 'Demo pieces for new collection',
@@ -846,7 +804,6 @@ async function createTestPartners() {
 				// Two months ago - all completed/cancelled
 				{
 					company_id: companyId,
-					created_by: createdBy,
 					fulfillment_warehouse_id: warehouseId,
 					customer_id: customerId1,
 					order_number: 'SO-001',
@@ -860,7 +817,6 @@ async function createTestPartners() {
 				},
 				{
 					company_id: companyId,
-					created_by: createdBy,
 					fulfillment_warehouse_id: warehouseId,
 					customer_id: customerId2,
 					order_number: 'SO-002',
@@ -874,7 +830,6 @@ async function createTestPartners() {
 				},
 				{
 					company_id: companyId,
-					created_by: createdBy,
 					fulfillment_warehouse_id: warehouseId,
 					customer_id: customerId1,
 					order_number: 'SO-003',
@@ -890,7 +845,6 @@ async function createTestPartners() {
 				// Last month - mix of statuses
 				{
 					company_id: companyId,
-					created_by: createdBy,
 					fulfillment_warehouse_id: warehouseId,
 					customer_id: customerId2,
 					order_number: 'SO-004',
@@ -904,7 +858,6 @@ async function createTestPartners() {
 				},
 				{
 					company_id: companyId,
-					created_by: createdBy,
 					fulfillment_warehouse_id: warehouseId,
 					customer_id: customerId1,
 					order_number: 'SO-005',
@@ -918,7 +871,6 @@ async function createTestPartners() {
 				},
 				{
 					company_id: companyId,
-					created_by: createdBy,
 					fulfillment_warehouse_id: warehouseId,
 					customer_id: customerId2,
 					order_number: 'SO-006',
@@ -934,7 +886,6 @@ async function createTestPartners() {
 				// Current month - mostly pending/in progress
 				{
 					company_id: companyId,
-					created_by: createdBy,
 					fulfillment_warehouse_id: warehouseId,
 					customer_id: customerId1,
 					order_number: 'SO-007',
@@ -948,7 +899,6 @@ async function createTestPartners() {
 				},
 				{
 					company_id: companyId,
-					created_by: createdBy,
 					fulfillment_warehouse_id: warehouseId,
 					customer_id: customerId2,
 					order_number: 'SO-008',
@@ -962,7 +912,6 @@ async function createTestPartners() {
 				},
 				{
 					company_id: companyId,
-					created_by: createdBy,
 					fulfillment_warehouse_id: warehouseId,
 					customer_id: customerId1,
 					order_number: 'SO-009',
@@ -976,7 +925,6 @@ async function createTestPartners() {
 				},
 				{
 					company_id: companyId,
-					created_by: createdBy,
 					fulfillment_warehouse_id: warehouseId,
 					customer_id: customerId2,
 					order_number: 'SO-010',
@@ -1095,7 +1043,6 @@ async function createTestPartners() {
 			{
 				company_id: companyId,
 				warehouse_id: warehouseId,
-				created_by: createdBy,
 				batch_name: 'Silk Saree Collection - Jan 2025',
 				fields_selected: ['product_name', 'quality_grade', 'location', 'qr_code'],
 				pdf_url: null, // Would be generated when batch is actually created
@@ -1105,7 +1052,6 @@ async function createTestPartners() {
 			{
 				company_id: companyId,
 				warehouse_id: warehouseId,
-				created_by: createdBy,
 				batch_name: 'Cotton Fabric Batch #2',
 				fields_selected: ['product_name', 'size', 'quality_grade', 'qr_code'],
 				pdf_url: null,
@@ -1115,7 +1061,6 @@ async function createTestPartners() {
 			{
 				company_id: companyId,
 				warehouse_id: warehouseId,
-				created_by: createdBy,
 				batch_name: 'Premium Woolen Stock',
 				fields_selected: ['product_name', 'quality_grade', 'supplier_number', 'location', 'qr_code'],
 				pdf_url: null,
@@ -1125,7 +1070,6 @@ async function createTestPartners() {
 			{
 				company_id: companyId,
 				warehouse_id: warehouseId,
-				created_by: createdBy,
 				batch_name: 'New Arrivals - March',
 				fields_selected: ['product_name', 'color', 'size', 'qr_code'],
 				pdf_url: null,
@@ -1135,7 +1079,6 @@ async function createTestPartners() {
 			{
 				company_id: companyId,
 				warehouse_id: warehouseId,
-				created_by: createdBy,
 				batch_name: 'Export Ready Stock',
 				fields_selected: ['product_name', 'quality_grade', 'location', 'manufacturing_date', 'qr_code'],
 				pdf_url: null,
@@ -1145,7 +1088,6 @@ async function createTestPartners() {
 			{
 				company_id: companyId,
 				warehouse_id: warehouseId,
-				created_by: createdBy,
 				batch_name: 'Warehouse Audit Batch',
 				fields_selected: ['product_name', 'size', 'location', 'qr_code'],
 				pdf_url: null,
@@ -1155,7 +1097,6 @@ async function createTestPartners() {
 			{
 				company_id: companyId,
 				warehouse_id: warehouseId,
-				created_by: createdBy,
 				batch_name: 'Festival Collection QRs',
 				fields_selected: ['product_name', 'color', 'quality_grade', 'qr_code'],
 				pdf_url: null,
@@ -1252,7 +1193,6 @@ async function createTestPartners() {
 		p_role: 'admin',
 		p_warehouse_ids: null, // Admin doesn't need warehouse assignment
 		p_expires_at: expiresAt.toISOString(),
-		p_created_by: createdBy,
 	});
 
 	if (adminInviteError || !adminToken) {
@@ -1270,7 +1210,6 @@ async function createTestPartners() {
 		p_role: 'staff',
 		p_warehouse_ids: [warehouseId], // Assign to main warehouse
 		p_expires_at: expiresAt.toISOString(),
-		p_created_by: createdBy,
 	});
 
 	if (staffInviteError || !staffToken) {

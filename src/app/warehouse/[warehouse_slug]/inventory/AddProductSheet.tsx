@@ -136,7 +136,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 				: null;
 
 			// Prepare typed insert data
-			const productInsert: TablesInsert<'products'> = {
+			const productInsert: Omit<TablesInsert<'products'>, 'created_by' | 'modified_by'> = {
 				company_id: currentUser.company_id,
 				name: formData.name,
 				product_number: formData.productNumber,
@@ -154,7 +154,6 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 				min_stock_threshold: formData.minStockThreshold ? parseFloat(formData.minStockThreshold) : null,
 				hsn_code: formData.hsnCode || null,
 				notes: formData.notes || null,
-				created_by: currentUser.id,
 			};
 
 			// Insert product record
