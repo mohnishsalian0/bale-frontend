@@ -73,7 +73,7 @@ export default function QRCodesPage() {
 						stock_unit_id
 					)
 				`)
-				.eq('warehouse_id', warehouseId)
+				.eq('warehouse_id', warehouse.id)
 				.order('created_at', { ascending: false });
 
 			const { data, error: fetchError } = await query;

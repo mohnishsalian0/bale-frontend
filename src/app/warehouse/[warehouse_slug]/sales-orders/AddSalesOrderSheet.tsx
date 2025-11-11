@@ -46,7 +46,7 @@ export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSale
 	const [saveError, setSaveError] = useState<string | null>(null);
 
 	const [formData, setFormData] = useState<OrderFormData>({
-		warehouseId: warehouseId,
+		warehouseId: warehouse.id,
 		customerId: '',
 		agentId: '',
 		orderDate: '',
@@ -117,7 +117,7 @@ export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSale
 		setCurrentStep('products');
 		setProducts([]);
 		setFormData({
-			warehouseId: warehouseId,
+			warehouseId: warehouse.id,
 			customerId: '',
 			agentId: '',
 			orderDate: '',

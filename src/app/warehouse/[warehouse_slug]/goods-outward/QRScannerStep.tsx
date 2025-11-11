@@ -65,7 +65,7 @@ export function QRScannerStep({
 				.from('stock_units')
 				.select('*')
 				.eq('id', decodedText)
-				.eq('warehouse_id', warehouseId)
+				.eq('warehouse_id', warehouse.id)
 				.eq('status', 'in_stock')
 				.single();
 

@@ -99,7 +99,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			<SidebarContent>
 				<SidebarMenu className="gap-0">
 					{NAV_ITEMS.map((item) => {
-						const href = item.external ? item.path : `/warehouse/${warehouseSlug}/${item.path}`;
+						const href = item.external ? item.path : `/warehouse/${warehouse.slug}/${item.path}`;
 						const isActive = pathname === href;
 						const TrailingIcon = item.trailingIcon;
 

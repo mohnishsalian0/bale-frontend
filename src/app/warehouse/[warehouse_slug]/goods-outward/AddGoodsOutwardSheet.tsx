@@ -99,7 +99,7 @@ export function AddGoodsOutwardSheet({
 
 			// Prepare outward data
 			const outwardData: Omit<TablesInsert<'goods_outwards'>, 'outward_number'> = {
-				warehouse_id: warehouseId,
+				warehouse_id: warehouse.id,
 				outward_type: outwardTypeMap[detailsFormData.linkToType],
 
 				// Conditional partner/warehouse

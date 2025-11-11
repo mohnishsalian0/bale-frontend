@@ -82,7 +82,7 @@ export default function OrdersPage() {
 						dispatched_quantity
 					)
 				`)
-				.eq('fulfillment_warehouse_id', warehouseId)
+				.eq('fulfillment_warehouse_id', warehouse.id)
 				.order('order_date', { ascending: false });
 
 			if (ordersError) throw ordersError;

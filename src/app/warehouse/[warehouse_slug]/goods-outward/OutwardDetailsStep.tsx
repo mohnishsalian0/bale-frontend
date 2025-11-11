@@ -65,14 +65,14 @@ export function OutwardDetailsStep({ formData, onChange }: OutwardDetailsStepPro
 				const { data: jobWorksData } = await supabase
 					.from('job_works')
 					.select('id, job_work_number')
-					.eq('warehouse_id', warehouseId)
+					.eq('warehouse_id', warehouse.id)
 					.order('created_at', { ascending: false });
 
 				// Fetch sales orders
 				const { data: salesOrdersData } = await supabase
 					.from('sales_orders')
 					.select('id, order_number')
-					.eq('warehouse_id', warehouseId)
+					.eq('warehouse_id', warehouse.id)
 					.order('created_at', { ascending: false });
 
 				setPartners(partnersData || []);

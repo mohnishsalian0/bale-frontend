@@ -67,7 +67,7 @@ export default function StockFlowPage() {
 						initial_quantity
 					)
 				`)
-				.eq('warehouse_id', warehouseId)
+				.eq('warehouse_id', warehouse.id)
 				.order('inward_date', { ascending: false });
 
 			if (inwardError) throw inwardError;
@@ -85,7 +85,7 @@ export default function StockFlowPage() {
 						)
 					)
 				`)
-				.eq('warehouse_id', warehouseId)
+				.eq('warehouse_id', warehouse.id)
 				.order('outward_date', { ascending: false });
 
 			if (outwardError) throw outwardError;

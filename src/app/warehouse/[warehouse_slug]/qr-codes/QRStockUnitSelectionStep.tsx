@@ -50,7 +50,7 @@ export function QRStockUnitSelectionStep({
 					product:products(*)
 				`)
 				.eq('product_id', productId)
-				.eq('warehouse_id', warehouseId)
+				.eq('warehouse_id', warehouse.id)
 				.eq('status', 'in_stock')
 				.order('created_at', { ascending: false });
 
@@ -71,7 +71,7 @@ export function QRStockUnitSelectionStep({
 			const { data: inwardsData, error: inwardsError } = await supabase
 				.from('goods_inwards')
 				.select('*')
-				.eq('warehouse_id', warehouseId)
+				.eq('warehouse_id', warehouse.id)
 				.in('id', inwardIds);
 
 			if (inwardsError) throw inwardsError;
