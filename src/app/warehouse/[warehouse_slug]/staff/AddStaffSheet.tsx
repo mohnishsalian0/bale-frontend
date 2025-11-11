@@ -181,30 +181,15 @@ ${company.name} Team`;
 							<div className="space-y-3">
 								<Label className="text-base font-medium">Role</Label>
 								<RadioGroupPills
+									name="role"
 									value={formData.role}
 									onValueChange={(value) =>
 										setFormData({ ...formData, role: value as UserRole, warehouseIds: [] })
 									}
 									className="grid grid-cols-2 gap-3"
 								>
-									<div>
-										<RadioGroupItemPills value="staff" id="role-staff" className="peer sr-only" />
-										<Label
-											htmlFor="role-staff"
-											className="flex items-center justify-center rounded-lg border-2 border-gray-200 bg-white p-4 hover:bg-gray-50 peer-data-[state=checked]:border-primary-500 peer-data-[state=checked]:bg-primary-50 cursor-pointer transition-all"
-										>
-											<span className="text-sm font-medium">Staff</span>
-										</Label>
-									</div>
-									<div>
-										<RadioGroupItemPills value="admin" id="role-admin" className="peer sr-only" />
-										<Label
-											htmlFor="role-admin"
-											className="flex items-center justify-center rounded-lg border-2 border-gray-200 bg-white p-4 hover:bg-gray-50 peer-data-[state=checked]:border-primary-500 peer-data-[state=checked]:bg-primary-50 cursor-pointer transition-all"
-										>
-											<span className="text-sm font-medium">Admin</span>
-										</Label>
-									</div>
+									<RadioGroupItemPills value="staff">Staff</RadioGroupItemPills>
+									<RadioGroupItemPills value="admin">Admin</RadioGroupItemPills>
 								</RadioGroupPills>
 							</div>
 

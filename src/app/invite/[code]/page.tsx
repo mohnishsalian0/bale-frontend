@@ -92,7 +92,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
     <InviteAcceptance
       inviteCode={code}
       companyName={invite.company_name}
-      warehouseName={invite.warehouse_name || undefined}
+      warehouseName={undefined}
       role={invite.role}
     />
   );

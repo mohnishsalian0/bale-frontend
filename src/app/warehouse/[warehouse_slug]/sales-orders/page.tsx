@@ -257,7 +257,7 @@ export default function OrdersPage() {
 	const getStatusBadge = (status: string): { color: 'blue' | 'green' | 'orange' | 'red' | 'gray'; variant: 'default' | 'secondary' | 'outline'; label: string } => {
 		switch (status) {
 			case 'approval_pending':
-				return { color: 'orange', variant: 'default', label: 'Approval Pending' };
+				return { color: 'blue', variant: 'default', label: 'Approval Pending' };
 			case 'in_progress':
 				return { color: 'blue', variant: 'secondary', label: 'In Progress' };
 			case 'overdue':

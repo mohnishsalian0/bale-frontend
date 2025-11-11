@@ -75,7 +75,7 @@ ALTER TABLE warehouses ADD CONSTRAINT check_warehouse_company_not_null
 -- =====================================================
 
 -- Function to generate unique warehouse slug
-CREATE OR REPLACE FUNCTION generate_warehouse_slug(warehouse_name TEXT, p_company_id UUID)
+CREATE OR REPLACE FUNCTION generate_warehouse_slug(warehouse_name TEXT)
 RETURNS TEXT AS $$
 DECLARE
     base_slug TEXT;
@@ -107,7 +107,7 @@ CREATE OR REPLACE FUNCTION set_warehouse_slug()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.slug IS NULL OR NEW.slug = '' THEN
-        NEW.slug := generate_warehouse_slug(NEW.name, NEW.company_id);
+        NEW.slug := generate_warehouse_slug(NEW.name);
     END IF;
     RETURN NEW;
 END;
