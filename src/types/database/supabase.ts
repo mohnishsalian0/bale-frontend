@@ -1833,7 +1833,7 @@ export type Database = {
         Returns: string
       }
       generate_warehouse_slug: {
-        Args: { p_company_id: string; warehouse_name: string }
+        Args: { warehouse_name: string }
         Returns: string
       }
       get_available_pieces_quantity: {

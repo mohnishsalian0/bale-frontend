@@ -150,20 +150,13 @@ async function setupCompany() {
 		const expiresAt = new Date();
 		expiresAt.setDate(expiresAt.getDate() + 7); // Expires in 7 days
 
-		const { data: invite, error: inviteError } = await supabase
-			.from('invites')
-			.insert({
-				token: inviteCode,
-				company_id: company.id,
-				company_name: company.name,
-				role: ADMIN_INVITE.role,
-				// Admin users don't need warehouse assignment
-				warehouse_id: null,
-				warehouse_name: null,
-				expires_at: expiresAt.toISOString(),
-			})
-			.select()
-			.single();
+		const { data: invite, error: inviteError } = await supabase.rpc('create_staff_invite', {
+			p_company_id: company.id,
+			p_company_name: company.name,
+			p_role: ADMIN_INVITE.role,
+			p_warehouse_ids: null, // Admin doesn't need warehouse assignment
+			p_expires_at: expiresAt.toISOString(),
+		});
 
 		if (inviteError || !invite) {
 			console.error('❌ Failed to create invite:', inviteError);

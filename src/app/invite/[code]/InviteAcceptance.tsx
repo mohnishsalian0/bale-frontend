@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { IconBrandGoogleFilled, IconBuildingWarehouse } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 interface InviteAcceptanceProps {
 	inviteCode: string;
@@ -109,9 +110,11 @@ export default function InviteAcceptance({
 								<span className="text-sm font-normal">{warehouseName ? warehouseName : 'All warehouses'}</span>
 							</div>
 						</div>
-						<span className="text-sm px-2 py-0.5 rounded-sm bg-green-100 text-green-700">
-							{role.charAt(0).toUpperCase() + role.slice(1)}
-						</span>
+
+						{/* Role Badge */}
+						<Badge color={role === 'admin' ? 'blue' : 'green'}>
+							{role === 'admin' ? 'Admin' : 'Staff'}
+						</Badge>
 					</div>
 				</div>
 
