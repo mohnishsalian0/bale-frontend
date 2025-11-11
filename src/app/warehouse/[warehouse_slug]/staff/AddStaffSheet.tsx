@@ -139,117 +139,123 @@ Here's your invite link:
 
 We're excited to have you onboard with us!
 
-Best regards,
-${company.name} Team`;
+Thanks,
+The Bale Team`;
 
-			const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
+			// Copy to clipboard as fallback
+			try {
+				await navigator.clipboard.writeText(inviteUrl);
+			} catch (err) {
+				console.error('Failed to copy to clipboard:', err);
+			}
 
-			// Open WhatsApp
-			window.open(whatsappUrl, '_blank');
+			// Open WhatsApp with message
+			const encodedMessage = encodeURIComponent(whatsappMessage);
+			window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
 
-			// Reset form
-			setFormData({
-				role: 'staff',
-				warehouseIds: [],
-			});
-
-			// Close sheet
-			onOpenChange(false);
-
-			// Notify parent
-			onStaffAdded?.();
+			// Success! Close sheet and notify parent
+			handleCancel();
+			if (onStaffAdded) {
+				onStaffAdded();
+			}
 		} catch (error) {
-			console.error('Error creating invite:', error);
-			setSendError(error instanceof Error ? error.message : 'Failed to create invite');
+			console.error('Error sending invite:', error);
+			setSendError(error instanceof Error ? error.message : 'Failed to send invite');
 		} finally {
 			setSending(false);
 		}
 	};
 
+	const handleCancel = () => {
+		// Reset form
+		setFormData({
+			role: 'staff',
+			warehouseIds: [],
+		});
+		setSendError(null);
+		onOpenChange(false);
+	};
+
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent side="bottom" className="h-[90vh]">
-				<div className="flex flex-col h-full max-w-md mx-auto">
-					<SheetHeader>
-						<SheetTitle className="text-2xl">Invite Staff Member</SheetTitle>
-					</SheetHeader>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle>Staff invite</SheetTitle>
+				</SheetHeader>
 
-					<form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden mt-6">
-						<div className="flex-1 overflow-y-auto space-y-6">
+				{/* Form Content - Scrollable */}
+				<form onSubmit={handleSubmit} className="flex flex-col h-full">
+					<div className="flex-1 overflow-y-auto">
+						<div className="flex flex-col gap-6 px-4 py-5">
 							{/* Role Selection */}
-							<div className="space-y-3">
-								<Label className="text-base font-medium">Role</Label>
+							<div className="flex flex-col gap-2">
+								<Label>Role</Label>
 								<RadioGroupPills
-									name="role"
 									value={formData.role}
 									onValueChange={(value) =>
-										setFormData({ ...formData, role: value as UserRole, warehouseIds: [] })
+										setFormData({ ...formData, role: value as UserRole, warehouseIds: value === 'admin' ? [] : formData.warehouseIds })
 									}
-									className="grid grid-cols-2 gap-3"
+									name="role"
 								>
-									<RadioGroupItemPills value="staff">Staff</RadioGroupItemPills>
 									<RadioGroupItemPills value="admin">Admin</RadioGroupItemPills>
+									<RadioGroupItemPills value="staff">Staff</RadioGroupItemPills>
 								</RadioGroupPills>
 							</div>
 
-							{/* Warehouse Selection - Only for Staff */}
+							{/* Warehouse Assignment (only for staff) */}
 							{formData.role === 'staff' && (
-								<div className="space-y-3">
-									<Label className="text-base font-medium">Assign Warehouses</Label>
+								<div className="flex flex-col gap-3">
+									<Label>Assign warehouses</Label>
 									{loadingWarehouses ? (
 										<p className="text-sm text-gray-500">Loading warehouses...</p>
-									) : warehouses.length === 0 ? (
-										<p className="text-sm text-gray-500">No warehouses available</p>
 									) : (
-										<div className="space-y-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-3">
+										<div className="flex flex-col gap-3">
 											{warehouses.map((warehouse) => (
-												<div key={warehouse.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
+												<div key={warehouse.id} className="flex items-start space-x-2">
 													<Checkbox
 														id={`warehouse-${warehouse.id}`}
 														checked={formData.warehouseIds.includes(warehouse.id)}
 														onCheckedChange={() => handleWarehouseToggle(warehouse.id)}
+														className="mt-1.5"
 													/>
 													<Label
 														htmlFor={`warehouse-${warehouse.id}`}
-														className="flex-1 cursor-pointer text-sm font-normal"
+														className="flex flex-col items-start gap-0 cursor-pointer flex-1"
 													>
-														{warehouse.name}
+														<span className="text-base font-normal text-gray-900">{warehouse.name}</span>
+														<span className="text-xs font-normal text-gray-500 leading-relaxed">
+															{warehouse.address_line1 || 'No address'}
+														</span>
 													</Label>
 												</div>
 											))}
 										</div>
 									)}
-									{formData.warehouseIds.length > 0 && (
-										<p className="text-sm text-gray-600">
-											{formData.warehouseIds.length} warehouse{formData.warehouseIds.length > 1 ? 's' : ''} selected
-										</p>
-									)}
-								</div>
-							)}
-
-							{sendError && (
-								<div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-									<p className="text-sm text-red-600">{sendError}</p>
 								</div>
 							)}
 						</div>
+					</div>
 
-						<SheetFooter className="flex-row gap-3 mt-6">
+					{/* Footer */}
+					<SheetFooter>
+						{sendError && (
+							<p className="text-sm text-red-600 text-center">{sendError}</p>
+						)}
+						<div className="flex gap-3">
 							<Button
 								type="button"
 								variant="outline"
-								onClick={() => onOpenChange(false)}
+								onClick={handleCancel}
 								className="flex-1"
-								disabled={sending}
-							>
+								disabled={sending}>
 								Cancel
 							</Button>
 							<Button type="submit" className="flex-1" disabled={sending}>
-								{sending ? 'Creating Invite...' : 'Create & Share'}
+								{sending ? 'Sending...' : 'Create & Send Invite'}
 							</Button>
-						</SheetFooter>
-					</form>
-				</div>
+						</div>
+					</SheetFooter>
+				</form>
 			</SheetContent>
 		</Sheet>
 	);

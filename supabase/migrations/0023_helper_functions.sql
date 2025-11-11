@@ -109,7 +109,7 @@ BEGIN
     END IF;
 
     -- Generate unique token
-    v_token := encode(extensions.gen_random_bytes(32), 'hex');
+    v_token := encode(extensions.gen_random_bytes(16), 'hex');
 
     -- Create invite record
     INSERT INTO invites (

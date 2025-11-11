@@ -80,10 +80,6 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 	},
 });
 
-function generateInviteCode(): string {
-	return randomBytes(16).toString('hex');
-}
-
 async function setupCompany() {
 	console.log('🚀 Setting up production company...\n');
 
@@ -146,11 +142,10 @@ async function setupCompany() {
 
 		// Generate invite code
 		console.log('🎫 Generating admin invite...');
-		const inviteCode = generateInviteCode();
 		const expiresAt = new Date();
 		expiresAt.setDate(expiresAt.getDate() + 7); // Expires in 7 days
 
-		const { data: invite, error: inviteError } = await supabase.rpc('create_staff_invite', {
+		const { data: inviteToken, error: inviteTokenError } = await supabase.rpc('create_staff_invite', {
 			p_company_id: company.id,
 			p_company_name: company.name,
 			p_role: ADMIN_INVITE.role,
@@ -158,15 +153,22 @@ async function setupCompany() {
 			p_expires_at: expiresAt.toISOString(),
 		});
 
+		if (inviteTokenError || !inviteToken) {
+			console.error('❌ Failed to create invite:', inviteTokenError);
+			return;
+		}
+
+		const { data: invite, error: inviteError } = await supabase.from('invites').select('*').eq('token', inviteToken).single();
+
 		if (inviteError || !invite) {
-			console.error('❌ Failed to create invite:', inviteError);
+			console.error('❌ Failed to create invite:', inviteTokenError);
 			return;
 		}
 
 		console.log(`✅ Created invite\n`);
 
 		// Generate invite URL
-		const inviteUrl = `${appUrl}/invite/${inviteCode}`;
+		const inviteUrl = `${appUrl}/invite/${inviteToken}`;
 
 		// Print summary
 		console.log('\n' + '='.repeat(60));
