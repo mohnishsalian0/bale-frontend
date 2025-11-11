@@ -130,8 +130,8 @@ BEGIN
     IF p_warehouse_ids IS NOT NULL AND array_length(p_warehouse_ids, 1) > 0 THEN
         FOREACH v_warehouse_id IN ARRAY p_warehouse_ids
         LOOP
-            INSERT INTO invite_warehouses (invite_id, warehouse_id)
-            VALUES (v_invite_id, v_warehouse_id);
+            INSERT INTO invite_warehouses (company_id, invite_id, warehouse_id)
+            VALUES (p_company_id, v_invite_id, v_warehouse_id);
         END LOOP;
     END IF;
 

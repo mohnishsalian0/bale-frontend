@@ -23,6 +23,7 @@ async function createTestPartners() {
 	let companyName: string;
 	let warehouseId: string;
 	let warehouseName: string;
+	let userId: string;
 
 	const { data: companies, error: companyError } = await supabase
 		.from('companies')
@@ -96,6 +97,7 @@ async function createTestPartners() {
 
 		if (authError || !authUser.user) {
 			console.error('❌ Failed to create auth user:', authError);
+			return;
 		} else {
 			const { data: user, error: userError } = await supabase
 				.from('users')
@@ -111,9 +113,11 @@ async function createTestPartners() {
 				.select()
 				.single();
 
-			if (userError) {
+			if (userError || !user) {
 				console.error('❌ Failed to create user profile:', userError);
+				return;
 			} else {
+				userId = user.id;
 				console.log(`✅ Created admin user: ${user.id}\n`);
 			}
 		}
@@ -136,6 +140,20 @@ async function createTestPartners() {
 
 		warehouseId = warehouses[0].id;
 		warehouseName = warehouses[0].name;
+
+		// Get existing user
+		const { data: existingUsers, error: userError } = await supabase
+			.from('users')
+			.select('id')
+			.eq('company_id', companyId)
+			.limit(1);
+
+		if (userError || !existingUsers || existingUsers.length === 0) {
+			console.error('❌ No user found for company');
+			return;
+		}
+
+		userId = existingUsers[0].id;
 	}
 
 
@@ -259,7 +277,10 @@ async function createTestPartners() {
 	for (const partner of testPartners) {
 		const { data, error } = await supabase
 			.from('partners')
-			.insert(partner)
+			.insert({
+				...partner,
+				created_by: userId,
+			})
 			.select()
 			.single();
 
@@ -432,7 +453,10 @@ async function createTestPartners() {
 	for (const product of testProducts) {
 		const { data, error } = await supabase
 			.from('products')
-			.insert(product)
+			.insert({
+				...product,
+				created_by: userId,
+			})
 			.select()
 			.single();
 
@@ -576,7 +600,10 @@ async function createTestPartners() {
 				} else {
 					const { data, error } = await supabase
 						.from('goods_inwards')
-						.insert(inwards)
+						.insert({
+							...inwards,
+							created_by: userId,
+						})
 						.select()
 						.single();
 
@@ -622,11 +649,12 @@ async function createTestPartners() {
 								warehouse_id: warehouseId,
 								product_id: productsList[i].id,
 								created_from_inward_id: inwardId,
-											initial_quantity: quantity,
+								initial_quantity: quantity,
 								remaining_quantity: quantity,
 								quality_grade: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
 								warehouse_location: `Rack ${String.fromCharCode(65 + Math.floor(Math.random() * 5))}-${Math.floor(Math.random() * 10) + 1}`,
 								manufacturing_date: inwards.inward_date,
+								created_by: userId,
 							});
 
 						if (stockError) {
@@ -654,7 +682,7 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-							outward_number: 'GD-001',
+						outward_number: 'GD-001',
 						partner_id: customerId1,
 						outward_type: 'other',
 						other_reason: 'Sample outward for exhibition',
@@ -666,7 +694,7 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-							outward_number: 'GD-002',
+						outward_number: 'GD-002',
 						partner_id: customerId2,
 						outward_type: 'other',
 						other_reason: 'Quality testing at external lab',
@@ -677,7 +705,7 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-							outward_number: 'GD-003',
+						outward_number: 'GD-003',
 						partner_id: customerId1,
 						outward_type: 'other',
 						other_reason: 'Customer sample approval',
@@ -689,7 +717,7 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-							outward_number: 'GD-004',
+						outward_number: 'GD-004',
 						partner_id: customerId2,
 						outward_type: 'other',
 						other_reason: 'Marketing material outward',
@@ -700,7 +728,7 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-							outward_number: 'GD-005',
+						outward_number: 'GD-005',
 						partner_id: customerId1,
 						outward_type: 'other',
 						other_reason: 'Demo pieces for new collection',
@@ -757,7 +785,10 @@ async function createTestPartners() {
 
 					// Use the atomic function to create outward with items
 					const { data, error } = await supabase.rpc('create_goods_outward_with_items', {
-						p_outward_data: outward,
+						p_outward_data: {
+							...outward,
+							created_by: userId,
+						},
 						p_stock_unit_items: stockUnitItems,
 					});
 
@@ -955,7 +986,10 @@ async function createTestPartners() {
 				} else {
 					const { data, error } = await supabase
 						.from('sales_orders')
-						.insert(order)
+						.insert({
+							...order,
+							created_by: userId,
+						})
 						.select()
 						.single();
 
@@ -1124,7 +1158,10 @@ async function createTestPartners() {
 			} else {
 				const { data, error } = await supabase
 					.from('qr_batches')
-					.insert(batch)
+					.insert({
+						...batch,
+						created_by: userId,
+					})
 					.select()
 					.single();
 
@@ -1165,6 +1202,7 @@ async function createTestPartners() {
 				const { error: itemError } = await supabase
 					.from('qr_batch_items')
 					.insert({
+						company_id: companyId,
 						warehouse_id: warehouseId,
 						batch_id: batchId,
 						stock_unit_id: availableStockUnits[stockUnitIndex].id,
