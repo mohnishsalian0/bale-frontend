@@ -3,6 +3,7 @@
 import { useState, useEffect, Fragment } from 'react';
 import { IconChevronDown } from '@tabler/icons-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { createClient } from '@/lib/supabase/client';
 import { formatRelativeDate } from '@/lib/utils/date';
 import type { Tables } from '@/types/database/supabase';
@@ -237,12 +238,13 @@ export function QRStockUnitSelectionStep({
 														</span>
 													</div>
 												</div>
-												<span className={`text-xs px-2 py-0.5 rounded-sm ${unit.barcode_generated_at
-													? 'bg-gray-100 text-gray-500'
-													: 'bg-green-100 text-green-700'
-													}`}>
+												<Badge
+													color={unit.barcode_generated_at ? 'blue' : 'green'}
+													variant={unit.barcode_generated_at ? 'outline' : 'secondary'}
+													className="text-xs"
+												>
 													{getQRStatus(unit)}
-												</span>
+												</Badge>
 											</div>
 										</div>
 									))}

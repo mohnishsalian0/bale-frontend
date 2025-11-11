@@ -6,6 +6,7 @@ import { IconSearch } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Fab } from '@/components/ui/fab';
+import { Badge } from '@/components/ui/badge';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
 import { LoadingState } from '@/components/layouts/loading-state';
@@ -81,7 +82,7 @@ export default function OrdersPage() {
 						dispatched_quantity
 					)
 				`)
-				// .eq('warehouse_id', warehouseId)
+				.eq('fulfillment_warehouse_id', warehouseId)
 				.order('order_date', { ascending: false });
 
 			if (ordersError) throw ordersError;
@@ -253,20 +254,20 @@ export default function OrdersPage() {
 		return `${products[0].name} x${products[0].quantity}, ${products[1].name} x${products[1].quantity}, ${remaining} more`;
 	};
 
-	const getStatusBadge = (status: string) => {
+	const getStatusBadge = (status: string): { color: 'blue' | 'green' | 'orange' | 'red' | 'gray'; variant: 'default' | 'secondary' | 'outline'; label: string } => {
 		switch (status) {
 			case 'approval_pending':
-				return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Approval Pending' };
+				return { color: 'orange', variant: 'default', label: 'Approval Pending' };
 			case 'in_progress':
-				return { bg: 'bg-primary-100', text: 'text-primary-700', label: 'In Progress' };
+				return { color: 'blue', variant: 'secondary', label: 'In Progress' };
 			case 'overdue':
-				return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Overdue' };
+				return { color: 'orange', variant: 'secondary', label: 'Overdue' };
 			case 'completed':
-				return { bg: 'bg-green-100', text: 'text-green-700', label: 'Completed' };
+				return { color: 'green', variant: 'secondary', label: 'Completed' };
 			case 'cancelled':
-				return { bg: 'bg-gray-100', text: 'text-gray-500', label: 'Cancelled' };
+				return { color: 'gray', variant: 'secondary', label: 'Cancelled' };
 			default:
-				return { bg: 'bg-gray-100', text: 'text-gray-500', label: status };
+				return { color: 'blue', variant: 'secondary', label: status };
 		}
 	};
 
@@ -417,22 +418,25 @@ export default function OrdersPage() {
 												</p>
 											</div>
 											<div className="flex flex-col items-end justify-between gap-1 self-stretch">
-												<span className={`${badge.bg} ${badge.text} px-2 py-0.5 rounded-2xl text-xs`}>
+												<Badge color={badge.color} variant={badge.variant} className="rounded-2xl">
 													{badge.label}
-												</span>
-												<p className="text-xs text-gray-500">{order.completionPercentage}% completed</p>
+												</Badge>
+												{order.status !== 'approval_pending' &&
+													<p className="text-xs text-gray-500">{order.completionPercentage}% completed</p>}
 											</div>
 										</div>
 
 										{/* Progress Bar */}
-										{showProgressBar && (
-											<div className="relative w-full h-2.5 border border-gray-500 rounded-xs">
-												<div
-													className={`absolute top-0 left-0 bottom-0 rounded-xs ${progressColor}`}
-													style={{ width: `${order.completionPercentage}%` }}
-												/>
-											</div>
-										)}
+										{
+											showProgressBar && (
+												<div className="relative w-full h-2.5 border border-gray-500 rounded-xs">
+													<div
+														className={`absolute top-0 left-0 bottom-0 rounded-xs ${progressColor}`}
+														style={{ width: `${order.completionPercentage}%` }}
+													/>
+												</div>
+											)
+										}
 									</button>
 								);
 							})}
@@ -445,13 +449,15 @@ export default function OrdersPage() {
 			<Fab onClick={() => setShowAddOrderSheet(true)} className="fixed bottom-20 right-4" />
 
 			{/* Add Sales Order Sheet */}
-			{showAddOrderSheet && (
-				<AddSalesOrderSheet
-					open={showAddOrderSheet}
-					onOpenChange={setShowAddOrderSheet}
-					onOrderAdded={fetchSalesOrders}
-				/>
-			)}
-		</div>
+			{
+				showAddOrderSheet && (
+					<AddSalesOrderSheet
+						open={showAddOrderSheet}
+						onOpenChange={setShowAddOrderSheet}
+						onOrderAdded={fetchSalesOrders}
+					/>
+				)
+			}
+		</div >
 	);
 }

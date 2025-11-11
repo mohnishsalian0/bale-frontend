@@ -22,6 +22,7 @@ interface ProductWithSelection extends Tables<'products'> {
 }
 
 interface OrderFormData {
+	warehouseId: string;
 	customerId: string;
 	agentId: string;
 	orderDate: string;
@@ -45,6 +46,7 @@ export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSale
 	const [saveError, setSaveError] = useState<string | null>(null);
 
 	const [formData, setFormData] = useState<OrderFormData>({
+		warehouseId: warehouseId,
 		customerId: '',
 		agentId: '',
 		orderDate: '',
@@ -115,6 +117,7 @@ export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSale
 		setCurrentStep('products');
 		setProducts([]);
 		setFormData({
+			warehouseId: warehouseId,
 			customerId: '',
 			agentId: '',
 			orderDate: '',
@@ -153,7 +156,7 @@ export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSale
 			// Prepare sales order insert data
 			const salesOrderInsert: TablesInsert<'sales_orders'> = {
 				company_id: currentUser.company_id,
-				warehouse_id: warehouseId,
+				fulfillment_warehouse_id: formData.warehouseId,
 				order_number: '',
 				customer_id: formData.customerId,
 				agent_id: formData.agentId || null,

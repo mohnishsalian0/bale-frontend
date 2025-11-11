@@ -396,7 +396,7 @@ The Bale Team`;
 											</div>
 
 											{/* Role Badge */}
-											<Badge type={invite.role === 'admin' ? 'info' : 'success'}>
+											<Badge color={invite.role === 'admin' ? 'blue' : 'green'}>
 												{invite.role === 'admin' ? 'Admin' : 'Staff'}
 											</Badge>
 										</div>

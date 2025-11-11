@@ -1347,7 +1347,7 @@ export type Database = {
           deleted_at: string | null
           discount_percentage: number | null
           expected_delivery_date: string | null
-          fulfillment_warehouse_id: string | null
+          fulfillment_warehouse_id: string
           id: string
           modified_by: string | null
           notes: string | null
@@ -1371,7 +1371,7 @@ export type Database = {
           deleted_at?: string | null
           discount_percentage?: number | null
           expected_delivery_date?: string | null
-          fulfillment_warehouse_id?: string | null
+          fulfillment_warehouse_id: string
           id?: string
           modified_by?: string | null
           notes?: string | null
@@ -1395,7 +1395,7 @@ export type Database = {
           deleted_at?: string | null
           discount_percentage?: number | null
           expected_delivery_date?: string | null
-          fulfillment_warehouse_id?: string | null
+          fulfillment_warehouse_id?: string
           id?: string
           modified_by?: string | null
           notes?: string | null

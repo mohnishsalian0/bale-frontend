@@ -7,11 +7,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
+import { useWarehouse } from '@/contexts/warehouse-context';
 import type { Tables } from '@/types/database/supabase';
 import { DatePicker } from '@/components/ui/date-picker';
 import { dateToISOString } from '@/lib/utils/date';
 
 interface OrderFormData {
+	warehouseId: string;
 	customerId: string;
 	agentId: string;
 	orderDate: string;
@@ -31,14 +33,60 @@ export function OrderDetailsStep({
 	formData,
 	setFormData,
 }: OrderDetailsStepProps) {
+	const { warehouseId } = useWarehouse();
+	const [warehouses, setWarehouses] = useState<Tables<'warehouses'>[]>([]);
 	const [customers, setCustomers] = useState<Tables<'partners'>[]>([]);
 	const [agents, setAgents] = useState<Tables<'partners'>[]>([]);
 	const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 
-	// Load customers and agents on mount
+	// Load warehouses, customers and agents on mount
 	useEffect(() => {
+		loadWarehouses();
 		loadPartners();
 	}, []);
+
+	const loadWarehouses = async () => {
+		try {
+			const supabase = createClient();
+			const currentUser = await getCurrentUser();
+			if (!currentUser || !currentUser.company_id) {
+				throw new Error('User not found');
+			}
+
+			// Fetch warehouses based on user role
+			if (currentUser.role === 'admin') {
+				// Admin: fetch all company warehouses
+				const { data, error } = await supabase
+					.from('warehouses')
+					.select('*')
+					.eq('company_id', currentUser.company_id)
+					.order('name');
+
+				if (error) throw error;
+				setWarehouses(data || []);
+			} else {
+				// Staff: fetch only assigned warehouses
+				const { data, error } = await supabase
+					.from('user_warehouses')
+					.select(`
+						warehouse_id,
+						warehouses (*)
+					`)
+					.eq('user_id', currentUser.id);
+
+				if (error) throw error;
+
+				// Extract warehouses from the join result
+				const userWarehouses = (data || [])
+					.map((uw: any) => uw.warehouses)
+					.filter(Boolean) as Tables<'warehouses'>[];
+
+				setWarehouses(userWarehouses);
+			}
+		} catch (error) {
+			console.error('Error loading warehouses:', error);
+		}
+	};
 
 	const loadPartners = async () => {
 		try {
@@ -89,6 +137,24 @@ export function OrderDetailsStep({
 		<div className="flex-1 overflow-y-auto">
 			{/* Main Fields */}
 			<div className="flex flex-col gap-5 px-4 py-5">
+				{/* Warehouse Dropdown */}
+				<Select
+					value={formData.warehouseId}
+					onValueChange={(value) => setFormData({ ...formData, warehouseId: value })}
+					required
+				>
+					<SelectTrigger className="h-11">
+						<SelectValue placeholder="Warehouse" />
+					</SelectTrigger>
+					<SelectContent>
+						{warehouses.map(warehouse => (
+							<SelectItem key={warehouse.id} value={warehouse.id}>
+								{warehouse.name}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+
 				{/* Customer Dropdown */}
 				<Select
 					value={formData.customerId}

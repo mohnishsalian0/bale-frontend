@@ -19,7 +19,7 @@ CREATE TABLE sales_orders (
     -- Order details
     order_date DATE NOT NULL DEFAULT CURRENT_DATE,
     expected_delivery_date DATE, -- Optional, can be set later during order processing
-    fulfillment_warehouse_id UUID REFERENCES warehouses(id),
+    fulfillment_warehouse_id UUID NOT NULL REFERENCES warehouses(id),
     
     -- Financial
     advance_amount DECIMAL(10,2) DEFAULT 0,
