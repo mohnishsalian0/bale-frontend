@@ -10,6 +10,7 @@ CREATE TABLE warehouses (
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
 
     name VARCHAR(100) NOT NULL,
+    slug VARCHAR(100) NOT NULL, -- URL-friendly identifier
     contact_name VARCHAR(100),
     contact_number VARCHAR(20),
     image_url TEXT,
@@ -27,12 +28,17 @@ CREATE TABLE warehouses (
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
 
-    UNIQUE(company_id, name)
+    UNIQUE(company_id, name),
+    UNIQUE(company_id, slug)
 );
 
 -- Add foreign key constraint for warehouse assignment in users table
-ALTER TABLE users ADD CONSTRAINT fk_user_warehouse 
+ALTER TABLE users ADD CONSTRAINT fk_user_warehouse
     FOREIGN KEY (warehouse_id) REFERENCES warehouses(id);
+
+-- Add foreign key constraint for user_warehouses table
+ALTER TABLE user_warehouses ADD CONSTRAINT fk_user_warehouse_warehouse
+    FOREIGN KEY (warehouse_id) REFERENCES warehouses(id) ON DELETE CASCADE;
 
 -- =====================================================
 -- INDEXES FOR PERFORMANCE
@@ -64,6 +70,50 @@ CREATE TRIGGER update_warehouses_updated_at
 ALTER TABLE warehouses ADD CONSTRAINT check_warehouse_company_not_null 
     CHECK (company_id IS NOT NULL);
 
--- Ensure staff users have warehouse assignment
-ALTER TABLE users ADD CONSTRAINT check_staff_has_warehouse 
-    CHECK (role != 'staff' OR warehouse_id IS NOT NULL);
+-- =====================================================
+-- WAREHOUSE SLUG GENERATION
+-- =====================================================
+
+-- Function to generate unique warehouse slug
+CREATE OR REPLACE FUNCTION generate_warehouse_slug(warehouse_name TEXT, p_company_id UUID)
+RETURNS TEXT AS $$
+DECLARE
+    base_slug TEXT;
+    final_slug TEXT;
+    random_suffix TEXT;
+BEGIN
+    -- Convert to lowercase and replace spaces with hyphens
+    base_slug := lower(trim(warehouse_name));
+    base_slug := regexp_replace(base_slug, '[^a-z0-9]+', '-', 'g');
+    base_slug := regexp_replace(base_slug, '^-+|-+$', '', 'g'); -- Remove leading/trailing hyphens
+
+    -- Generate random 3-digit number
+    random_suffix := lpad(floor(random() * 1000)::text, 3, '0');
+
+    -- Combine base slug with random suffix
+    final_slug := base_slug || '-' || random_suffix;
+
+    -- Ensure it's not longer than 100 characters
+    IF length(final_slug) > 100 THEN
+        final_slug := substring(final_slug, 1, 100);
+    END IF;
+
+    RETURN final_slug;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to auto-generate slug on INSERT
+CREATE OR REPLACE FUNCTION set_warehouse_slug()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.slug IS NULL OR NEW.slug = '' THEN
+        NEW.slug := generate_warehouse_slug(NEW.name, NEW.company_id);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_set_warehouse_slug
+    BEFORE INSERT ON warehouses
+    FOR EACH ROW
+    EXECUTE FUNCTION set_warehouse_slug();

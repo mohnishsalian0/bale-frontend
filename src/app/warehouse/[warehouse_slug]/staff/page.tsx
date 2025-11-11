@@ -19,14 +19,14 @@ interface StaffMember {
 	id: string;
 	name: string;
 	phoneNumber: string | null;
-	warehouseName: string | null;
+	warehouseNames: string[];
 	profileImageUrl: string | null;
 }
 
 interface ActiveInvite {
 	id: string;
 	role: UserRole;
-	warehouseName: string | null;
+	warehouseNames: string[];
 	companyName: string;
 	token: string;
 	expiresAt: string;
@@ -58,33 +58,38 @@ export default function StaffPage() {
 			setLoading(true);
 			setError(null);
 
-			const { data, error: fetchError } = await supabase
+			const { data: usersData, error: fetchError } = await supabase
 				.from('users')
-				.select(`
-					id,
-					first_name,
-					last_name,
-					phone_number,
-					profile_image_url,
-					warehouse_id,
-					warehouses!fk_user_warehouse (
-						name
-					)
-				`)
+				.select('id, first_name, last_name, phone_number, profile_image_url')
 				.order('first_name', { ascending: true });
 
 			if (fetchError) throw fetchError;
 
-			// Transform data to match StaffMember interface
-			const transformedStaff: StaffMember[] = (data || []).map((user: any) => ({
-				id: user.id,
-				name: `${user.first_name} ${user.last_name}`.trim(),
-				phoneNumber: user.phone_number,
-				warehouseName: user.warehouses?.name || null,
-				profileImageUrl: user.profile_image_url,
-			}));
+			// Fetch warehouse assignments for each user
+			const staffWithWarehouses = await Promise.all(
+				(usersData || []).map(async (user: any) => {
+					const { data: userWarehouses } = await supabase
+						.from('user_warehouses')
+						.select(`
+							warehouses (name)
+						`)
+						.eq('user_id', user.id);
 
-			setStaff(transformedStaff);
+					const warehouseNames = (userWarehouses || [])
+						.map((uw: any) => uw.warehouses?.name)
+						.filter(Boolean);
+
+					return {
+						id: user.id,
+						name: `${user.first_name} ${user.last_name}`.trim(),
+						phoneNumber: user.phone_number,
+						warehouseNames,
+						profileImageUrl: user.profile_image_url,
+					};
+				})
+			);
+
+			setStaff(staffWithWarehouses);
 		} catch (err) {
 			console.error('Error fetching staff:', err);
 			setError(err instanceof Error ? err.message : 'Failed to load staff');
@@ -98,7 +103,7 @@ export default function StaffPage() {
 			setLoading(true);
 			setError(null);
 
-			const { data, error: fetchError } = await supabase
+			const { data: invitesData, error: fetchError} = await supabase
 				.from('invites')
 				.select('*')
 				.is('used_at', null)
@@ -107,18 +112,33 @@ export default function StaffPage() {
 
 			if (fetchError) throw fetchError;
 
-			// Transform data to match ActiveInvite interface
-			const transformedInvites: ActiveInvite[] = (data || []).map((invite: any) => ({
-				id: invite.id,
-				role: invite.role,
-				warehouseName: invite.warehouse_name,
-				companyName: invite.company_name,
-				token: invite.token,
-				expiresAt: invite.expires_at,
-				createdAt: invite.created_at,
-			}));
+			// Fetch warehouse names for each invite
+			const invitesWithWarehouses = await Promise.all(
+				(invitesData || []).map(async (invite: any) => {
+					const { data: inviteWarehouses } = await supabase
+						.from('invite_warehouses')
+						.select(`
+							warehouses (name)
+						`)
+						.eq('invite_id', invite.id);
 
-			setInvites(transformedInvites);
+					const warehouseNames = (inviteWarehouses || [])
+						.map((iw: any) => iw.warehouses?.name)
+						.filter(Boolean);
+
+					return {
+						id: invite.id,
+						role: invite.role,
+						warehouseNames,
+						companyName: invite.company_name,
+						token: invite.token,
+						expiresAt: invite.expires_at,
+						createdAt: invite.created_at,
+					};
+				})
+			);
+
+			setInvites(invitesWithWarehouses);
 		} catch (err) {
 			console.error('Error fetching invites:', err);
 			setError(err instanceof Error ? err.message : 'Failed to load invites');
@@ -137,8 +157,11 @@ export default function StaffPage() {
 
 	const handleShareWhatsApp = (invite: ActiveInvite) => {
 		const inviteUrl = `${window.location.origin}/invite/${invite.token}`;
-		const systemDescription = invite.role === 'staff' && invite.warehouseName
-			? `${invite.warehouseName} inventory system`
+		const warehouseText = invite.warehouseNames.length > 0
+			? invite.warehouseNames.join(', ')
+			: '';
+		const systemDescription = invite.role === 'staff' && warehouseText
+			? `${warehouseText} inventory system`
 			: 'our inventory system';
 
 		const whatsappMessage = `Hi,
@@ -206,7 +229,7 @@ The Bale Team`;
 	// Error state
 	if (error) {
 		return (
-			<div className="relative flex flex-col min-h-screen pb-16">
+			<div className="relative flex flex-col min-h-dvh pb-16">
 				<div className="flex items-center justify-center h-screen p-4">
 					<div className="flex flex-col items-center gap-3 text-center max-w-md">
 						<div className="size-12 rounded-full bg-red-100 flex items-center justify-center">
@@ -226,7 +249,7 @@ The Bale Team`;
 	}
 
 	return (
-		<div className="relative flex flex-col min-h-screen pb-16">
+		<div className="relative flex flex-col min-h-dvh pb-16">
 			{/* Header */}
 			<div className="flex items-end justify-between gap-4 p-4">
 				<h1 className="text-3xl font-bold text-gray-900">Staff</h1>
@@ -295,8 +318,13 @@ The Bale Team`;
 											{/* Warehouse */}
 											<div className="flex gap-1.5 items-center justify-center text-gray-500 w-full">
 												<IconBuilding className="size-3.5 shrink-0" />
-												<p title={member.warehouseName || 'Not assigned yet'} className="text-xs text-gray-500 truncate">
-													{member.warehouseName || 'Not assigned yet'}
+												<p title={member.warehouseNames.length > 0 ? member.warehouseNames.join(', ') : 'Not assigned yet'} className="text-xs text-gray-500 truncate">
+													{member.warehouseNames.length > 0
+														? member.warehouseNames.length === 1
+															? member.warehouseNames[0]
+															: `${member.warehouseNames[0]}, +${member.warehouseNames.length - 1} more`
+														: 'Not assigned yet'
+													}
 												</p>
 											</div>
 
@@ -342,9 +370,12 @@ The Bale Team`;
 											{/* Warehouse & Expiry Info */}
 											<div className="flex-1 flex flex-col gap-0.5 min-w-0">
 												{/* Warehouse (only for staff) */}
-												{invite.role === 'staff' && invite.warehouseName ? (
-													<p title={invite.warehouseName} className="text-gray-900 truncate font-medium">
-														{invite.warehouseName}
+												{invite.role === 'staff' && invite.warehouseNames.length > 0 ? (
+													<p title={invite.warehouseNames.join(', ')} className="text-gray-900 truncate font-medium">
+														{invite.warehouseNames.length === 1
+															? invite.warehouseNames[0]
+															: `${invite.warehouseNames[0]}, +${invite.warehouseNames.length - 1} more`
+														}
 													</p>
 												) : (
 													<p className="text-gray-900 font-medium">

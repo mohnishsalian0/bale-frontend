@@ -35,7 +35,7 @@ export default function TestPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background-100 p-8">
+    <div className="min-h-dvh bg-background-100 p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold text-gray-900 mb-8">
           Bale Frontend - Database Connection Test

@@ -14,8 +14,6 @@ CREATE TABLE invites (
 
     -- Invitation details
     role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'staff')),
-    warehouse_id UUID REFERENCES warehouses(id) ON DELETE CASCADE,
-    warehouse_name VARCHAR(255),
 
     -- Usage tracking
     used_at TIMESTAMPTZ,
@@ -26,12 +24,23 @@ CREATE TABLE invites (
 
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID,
+    created_by UUID
+);
 
-    -- Ensure warehouse is provided for staff role
-    CONSTRAINT staff_requires_warehouse CHECK (
-        role != 'staff' OR (warehouse_id IS NOT NULL AND warehouse_name IS NOT NULL)
-    )
+-- =====================================================
+-- INVITE_WAREHOUSES JUNCTION TABLE (MULTI-WAREHOUSE INVITES)
+-- =====================================================
+
+CREATE TABLE invite_warehouses (
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
+    invite_id UUID NOT NULL REFERENCES invites(id) ON DELETE CASCADE,
+    warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
+
+    -- Audit fields
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- Ensure unique invite-warehouse pairs
+    UNIQUE(invite_id, warehouse_id)
 );
 
 -- =====================================================
@@ -40,6 +49,10 @@ CREATE TABLE invites (
 
 -- Token lookup
 CREATE INDEX idx_invites_token ON invites(token);
+
+-- Invite warehouses lookup
+CREATE INDEX idx_invite_warehouses_invite_id ON invite_warehouses(invite_id);
+CREATE INDEX idx_invite_warehouses_warehouse_id ON invite_warehouses(warehouse_id);
 
 -- =====================================================
 -- CLEANUP FUNCTIONS

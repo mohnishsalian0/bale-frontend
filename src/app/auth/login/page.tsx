@@ -6,12 +6,13 @@ import Image from 'next/image';
 import { IconBrandGoogleFilled } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { useSearchParams } from 'next/navigation';
+import { LoadingState } from '@/components/layouts/loading-state';
 
 function LoginForm() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
 	const searchParams = useSearchParams();
-	const redirectTo = searchParams.get('redirectTo') || '/protected/dashboard';
+	const redirectTo = searchParams.get('redirectTo') || '/warehouse';
 
 	const handleLogin = async () => {
 		setLoading(true);
@@ -43,7 +44,7 @@ function LoginForm() {
 	};
 
 	return (
-		<div className="min-h-screen flex items-start justify-center px-4 pt-[66px]">
+		<div className="min-h-dvh flex items-start justify-center px-4 pt-[66px]">
 			<div className="w-full max-w-[380px] flex flex-col gap-8 items-center">
 				{/* Mascot Image */}
 				<div className="relative size-80 shrink-0">
@@ -100,14 +101,7 @@ function LoginForm() {
 export default function LoginPage() {
 	return (
 		<Suspense fallback={(
-			<div className="relative flex flex-col min-h-screen pb-16">
-				<div className="flex items-center justify-center h-screen">
-					<div className="flex flex-col items-center gap-3">
-						<div className="size-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-						<p className="text-sm text-gray-600">Loading login...</p>
-					</div>
-				</div>
-			</div>
+			<LoadingState />
 		)} >
 			<LoginForm />
 		</Suspense >

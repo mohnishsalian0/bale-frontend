@@ -93,5 +93,64 @@ CREATE TRIGGER update_users_updated_at
 -- =====================================================
 
 -- Ensure users belong to a company
-ALTER TABLE users ADD CONSTRAINT check_user_company_not_null 
+ALTER TABLE users ADD CONSTRAINT check_user_company_not_null
     CHECK (company_id IS NOT NULL);
+
+-- =====================================================
+-- USER_WAREHOUSES JUNCTION TABLE (MULTI-WAREHOUSE ACCESS)
+-- =====================================================
+
+CREATE TABLE user_warehouses (
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    warehouse_id UUID NOT NULL, -- FK will be added after warehouses table is created
+
+    -- Audit fields
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by UUID REFERENCES users(id),
+
+    -- Ensure unique user-warehouse pairs
+    UNIQUE(user_id, warehouse_id)
+);
+
+-- =====================================================
+-- INDEXES FOR USER_WAREHOUSES
+-- =====================================================
+
+-- Lookup user's warehouses
+CREATE INDEX idx_user_warehouses_user_id ON user_warehouses(user_id);
+
+-- Lookup warehouse's users
+CREATE INDEX idx_user_warehouses_warehouse_id ON user_warehouses(warehouse_id);
+
+-- =====================================================
+-- VALIDATION TRIGGER FOR USERS.WAREHOUSE_ID
+-- =====================================================
+
+-- Function to validate warehouse_id exists in user_warehouses before update
+CREATE OR REPLACE FUNCTION validate_user_warehouse_assignment()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Skip validation if warehouse_id is NULL or unchanged
+    IF NEW.warehouse_id IS NULL OR NEW.warehouse_id = OLD.warehouse_id THEN
+        RETURN NEW;
+    END IF;
+
+    -- For staff role, validate warehouse_id exists in user_warehouses
+    IF NEW.role = 'staff' THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM user_warehouses
+            WHERE user_id = NEW.id AND warehouse_id = NEW.warehouse_id
+        ) THEN
+            RAISE EXCEPTION 'Warehouse ID % is not assigned to user %', NEW.warehouse_id, NEW.id;
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_validate_user_warehouse
+    BEFORE UPDATE OF warehouse_id ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION validate_user_warehouse_assignment();

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { useMediaQuery } from '@/lib/hooks/useMediaQuery';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import type { Tables } from '@/types/database/supabase';
 import { MeasuringUnit } from '@/types/database/enums';
@@ -28,7 +28,7 @@ export function ProductQuantitySheet({
 	onConfirm,
 }: ProductQuantitySheetProps) {
 	const [quantity, setQuantity] = useState(initialQuantity);
-	const isMobile = useMediaQuery('(max-width: 768px)');
+	const isMobile = useIsMobile();
 
 	useEffect(() => {
 		if (open) {

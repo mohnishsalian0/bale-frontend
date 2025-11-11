@@ -6,7 +6,7 @@ interface LoadingStateProps {
 
 export function LoadingState({ message = 'Loading...' }: LoadingStateProps) {
 	return (
-		<div className="relative flex flex-col items-center justify-center gap-4 h-full">
+		<div className="min-h-dvh relative flex flex-col items-center justify-center gap-4">
 			<Image
 				src="/mascot/loading-trolley-truck.png"
 				alt="Loading"

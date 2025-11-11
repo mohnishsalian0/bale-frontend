@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DatePicker } from '@/components/ui/date-picker';
-import { useMediaQuery } from '@/lib/hooks/useMediaQuery';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { Tables } from '@/types/database/supabase';
 import type { MeasuringUnit } from '@/types/database/enums';
 import type { StockUnitSpec } from './ProductSelectionStep';
@@ -39,7 +39,7 @@ export function StockUnitEntrySheet({
 	const [location, setLocation] = useState('');
 	const [notes, setNotes] = useState('');
 	const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
-	const isMobile = useMediaQuery('(max-width: 768px)');
+	const isMobile = useIsMobile();
 
 	useEffect(() => {
 		if (open) {

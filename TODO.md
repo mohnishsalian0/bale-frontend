@@ -56,8 +56,23 @@
 - [x] Implement sidebar toggle functionality with offcanvas collapsible mode
 - [x] Set up protected route middleware for all routes
 - [x] Handle redirectTo parameter in auth callback for post-login redirects
-- [ ] Create warehouse-scoped routes (/warehouse/[id]/...)
-- [ ] Fetch warehouses from Supabase and implement warehouse context/state management
+- [x] Create warehouse-scoped routes (/warehouse/[warehouse_slug]/...)
+- [x] Fetch warehouses from Supabase and implement warehouse context/state management
+- [x] Implement multi-warehouse staff assignment (user_warehouses junction table)
+- [x] Create warehouse slug generation function (lowercase, hyphens, random 3-digit suffix)
+- [x] Update invites schema to support multiple warehouses (invite_warehouses junction table)
+- [x] Create RPC functions for atomic operations (create_staff_invite, create_user_from_invite)
+- [x] Update auth callback to use RPC function for user creation
+- [x] Create WarehouseProvider context and useWarehouse hook
+- [x] Create warehouse selection page (/warehouse) with assigned warehouse listing
+- [x] Update layout to validate warehouse access and sync user profile with URL
+- [x] Update WarehouseSelector to fetch and filter by role (admin: all, staff: assigned)
+- [x] Update AddStaffSheet with multi-select warehouse checkboxes
+- [x] Update staff page to display multiple warehouses per staff/invite
+- [x] Add getUserWarehouseIds() utility function
+- [x] Batch update all data-fetching components to use useWarehouse hook (7 files)
+- [x] Update middleware to redirect /protected/* to /warehouse
+- [x] Regenerate TypeScript types with new tables
 
 ## Phase 4: Core UI Components
 - [x] Install and configure shadcn/ui components (button, input, label, form, select, textarea, card, dialog, table, sidebar)

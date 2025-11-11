@@ -8,6 +8,7 @@ import { ProductQuantitySheet } from './ProductQuantitySheet';
 import { ProductSelectionStep } from './ProductSelectionStep';
 import { OrderDetailsStep } from './OrderDetailsStep';
 import type { Tables, TablesInsert } from '@/types/database/supabase';
+import { useWarehouse } from '@/contexts/warehouse-context';
 
 interface AddSalesOrderSheetProps {
 	open: boolean;
@@ -34,6 +35,7 @@ interface OrderFormData {
 type FormStep = 'products' | 'details';
 
 export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSalesOrderSheetProps) {
+	const { warehouseId } = useWarehouse();
 	const [currentStep, setCurrentStep] = useState<FormStep>('products');
 	const [products, setProducts] = useState<ProductWithSelection[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -151,6 +153,7 @@ export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSale
 			// Prepare sales order insert data
 			const salesOrderInsert: TablesInsert<'sales_orders'> = {
 				company_id: currentUser.company_id,
+				warehouse_id: warehouseId,
 				order_number: '',
 				customer_id: formData.customerId,
 				agent_id: formData.agentId || null,

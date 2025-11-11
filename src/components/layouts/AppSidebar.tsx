@@ -15,6 +15,7 @@ import {
 } from '@tabler/icons-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useWarehouse } from '@/contexts/warehouse-context';
 import {
 	Sidebar,
 	SidebarContent,
@@ -27,7 +28,7 @@ import {
 
 type NavItem = {
 	label: string;
-	href: string;
+	path: string;
 	icon: ComponentType<{ className?: string }>;
 	trailingIcon?: ComponentType<{ className?: string }>;
 	external?: boolean;
@@ -36,43 +37,45 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
 	{
 		label: 'Job work',
-		href: '/protected/job-work',
+		path: 'job-work',
 		icon: IconClipboardList,
 	},
 	{
 		label: 'QR codes',
-		href: '/protected/qr-codes',
+		path: 'qr-codes',
 		icon: IconQrcode,
 	},
 	{
 		label: 'Partners',
-		href: '/protected/partners',
+		path: 'partners',
 		icon: IconUsers,
 	},
 	{
 		label: 'Staff',
-		href: '/protected/staff',
+		path: 'staff',
 		icon: IconIdBadge2,
 	},
 	{
 		label: 'Reports',
-		href: '/protected/reports',
+		path: 'reports',
 		icon: IconChartBar,
 	},
 	{
 		label: 'Settings',
-		href: '/protected/settings',
+		path: 'settings',
 		icon: IconSettings,
 	},
 	{
 		label: 'Online store',
-		href: '/catalog',
+		path: '/catalog',
 		icon: IconBuildingStore,
+		external: true,
 	},
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const pathname = usePathname();
+	const { warehouseSlug } = useWarehouse();
 
 	return (
 		<Sidebar {...props}>
@@ -96,7 +99,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			<SidebarContent>
 				<SidebarMenu className="gap-0">
 					{NAV_ITEMS.map((item) => {
-						const isActive = pathname === item.href;
+						const href = item.external ? item.path : `/warehouse/${warehouseSlug}/${item.path}`;
+						const isActive = pathname === href;
 						const TrailingIcon = item.trailingIcon;
 
 						return (
@@ -108,7 +112,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 									className='text-base [&>svg]:size-5 p-4 gap-3 text-gray-700'
 								>
 									<Link
-										href={item.href}
+										href={href}
 										target={item.external ? '_blank' : undefined}
 										rel={item.external ? 'noreferrer' : undefined}
 										className='flex items-center rounded-none'

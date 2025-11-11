@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { useMediaQuery } from '@/lib/hooks/useMediaQuery';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { Tables } from '@/types/database/supabase';
 import type { StockUnitSpec } from './ProductSelectionStep';
 
@@ -32,7 +32,7 @@ export function AllSpecificationsSheet({
 	onDeleteUnit,
 	onAddNewUnit,
 }: AllSpecificationsSheetProps) {
-	const isMobile = useMediaQuery('(max-width: 768px)');
+	const isMobile = useIsMobile();
 
 	if (!product) return null;
 

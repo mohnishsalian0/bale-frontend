@@ -14,6 +14,6 @@ export const MEASURING_UNIT_ABBREVIATIONS: Record<MeasuringUnit, string> = {
  * Get the abbreviated form of a measuring unit
  */
 export function getMeasuringUnitAbbreviation(unit: MeasuringUnit | null | undefined): string {
-	if (!unit) return 'pieces';
+	if (!unit) return 'pc';
 	return MEASURING_UNIT_ABBREVIATIONS[unit] || unit;
 }

@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { formatRelativeDate } from '@/lib/utils/date';
 import type { Tables } from '@/types/database/supabase';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useWarehouse } from '@/contexts/warehouse-context';
 
 interface StockUnit extends Tables<'stock_units'> {
 	product?: Tables<'products'>;
@@ -27,6 +28,7 @@ export function QRStockUnitSelectionStep({
 	selectedStockUnitIds,
 	onSelectionChange,
 }: QRStockUnitSelectionStepProps) {
+	const { warehouseId } = useWarehouse();
 	const [loading, setLoading] = useState(true);
 	const [goodsInwards, setGoodsInwards] = useState<GoodsInward[]>([]);
 	const [expandedInwards, setExpandedInwards] = useState<Set<string>>(new Set());
@@ -47,6 +49,7 @@ export function QRStockUnitSelectionStep({
 					product:products(*)
 				`)
 				.eq('product_id', productId)
+				.eq('warehouse_id', warehouseId)
 				.eq('status', 'in_stock')
 				.order('created_at', { ascending: false });
 
@@ -67,6 +70,7 @@ export function QRStockUnitSelectionStep({
 			const { data: inwardsData, error: inwardsError } = await supabase
 				.from('goods_inwards')
 				.select('*')
+				.eq('warehouse_id', warehouseId)
 				.in('id', inwardIds);
 
 			if (inwardsError) throw inwardsError;

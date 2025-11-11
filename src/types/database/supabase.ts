@@ -650,6 +650,42 @@ export type Database = {
           },
         ]
       }
+      invite_warehouses: {
+        Row: {
+          created_at: string
+          id: string
+          invite_id: string
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invite_id: string
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invite_id?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_warehouses_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "invites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_warehouses_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invites: {
         Row: {
           company_id: string
@@ -662,8 +698,6 @@ export type Database = {
           token: string
           used_at: string | null
           used_by_user_id: string | null
-          warehouse_id: string | null
-          warehouse_name: string | null
         }
         Insert: {
           company_id: string
@@ -676,8 +710,6 @@ export type Database = {
           token: string
           used_at?: string | null
           used_by_user_id?: string | null
-          warehouse_id?: string | null
-          warehouse_name?: string | null
         }
         Update: {
           company_id?: string
@@ -690,8 +722,6 @@ export type Database = {
           token?: string
           used_at?: string | null
           used_by_user_id?: string | null
-          warehouse_id?: string | null
-          warehouse_name?: string | null
         }
         Relationships: [
           {
@@ -706,13 +736,6 @@ export type Database = {
             columns: ["used_by_user_id"]
             isOneToOne: false
             referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invites_warehouse_id_fkey"
-            columns: ["warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]
@@ -1549,6 +1572,52 @@ export type Database = {
           },
         ]
       }
+      user_warehouses: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          user_id: string
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          user_id: string
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          user_id?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_warehouse_warehouse"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_warehouses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_warehouses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           additional_notes: string | null
@@ -1641,6 +1710,7 @@ export type Database = {
           modified_by: string | null
           name: string
           pin_code: string | null
+          slug: string
           state: string | null
           updated_at: string
         }
@@ -1660,6 +1730,7 @@ export type Database = {
           modified_by?: string | null
           name: string
           pin_code?: string | null
+          slug: string
           state?: string | null
           updated_at?: string
         }
@@ -1679,6 +1750,7 @@ export type Database = {
           modified_by?: string | null
           name?: string
           pin_code?: string | null
+          slug?: string
           state?: string | null
           updated_at?: string
         }
@@ -1724,6 +1796,26 @@ export type Database = {
         Args: { p_batch_data: Json; p_stock_unit_ids: string[] }
         Returns: Json
       }
+      create_staff_invite: {
+        Args: {
+          p_company_id: string
+          p_company_name: string
+          p_created_by: string
+          p_expires_at: string
+          p_role: string
+          p_warehouse_ids: string[]
+        }
+        Returns: string
+      }
+      create_user_from_invite: {
+        Args: {
+          p_auth_user_id: string
+          p_first_name: string
+          p_invite_token: string
+          p_last_name: string
+        }
+        Returns: string
+      }
       dispatch_pieces_fifo: {
         Args: {
           p_company_id: string
@@ -1738,6 +1830,10 @@ export type Database = {
       }
       generate_sequence_number: {
         Args: { company_uuid: string; prefix: string; table_name: string }
+        Returns: string
+      }
+      generate_warehouse_slug: {
+        Args: { p_company_id: string; warehouse_name: string }
         Returns: string
       }
       get_available_pieces_quantity: {

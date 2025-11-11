@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { randomBytes } from 'crypto';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
@@ -1244,26 +1243,19 @@ async function createTestPartners() {
 
 	// Create invite for the test company
 	console.log('\n🎟️  Creating admin invite for test company...');
-	const adminToken = randomBytes(32).toString('hex');
 	const expiresAt = new Date();
 	expiresAt.setDate(expiresAt.getDate() + 7); // Expires in 7 days
 
-	const { data: adminInvite, error: adminInviteError } = await supabase
-		.from('invites')
-		.insert({
-			token: adminToken,
-			company_id: companyId,
-			company_name: companyName,
-			// Admin users don't need warehouse assignment
-			warehouse_id: null,
-			warehouse_name: null,
-			role: 'admin',
-			expires_at: expiresAt.toISOString(),
-		})
-		.select()
-		.single();
+	const { data: adminToken, error: adminInviteError } = await supabase.rpc('create_staff_invite', {
+		p_company_id: companyId,
+		p_company_name: companyName,
+		p_role: 'admin',
+		p_warehouse_ids: null, // Admin doesn't need warehouse assignment
+		p_expires_at: expiresAt.toISOString(),
+		p_created_by: createdBy,
+	});
 
-	if (adminInviteError) {
+	if (adminInviteError || !adminToken) {
 		console.error('❌ Error creating admin invite:', adminInviteError);
 	} else {
 		console.log(`✅ Admin invite created\n`);
@@ -1271,23 +1263,17 @@ async function createTestPartners() {
 
 	// 6. Create staff invite
 	console.log('🎟️  Creating staff invite for test company...');
-	const staffToken = randomBytes(32).toString('hex');
 
-	const { data: staffInvite, error: staffInviteError } = await supabase
-		.from('invites')
-		.insert({
-			token: staffToken,
-			company_id: companyId,
-			company_name: companyName,
-			warehouse_id: warehouseId,
-			warehouse_name: warehouseName,
-			role: 'staff',
-			expires_at: expiresAt.toISOString(),
-		})
-		.select()
-		.single();
+	const { data: staffToken, error: staffInviteError } = await supabase.rpc('create_staff_invite', {
+		p_company_id: companyId,
+		p_company_name: companyName,
+		p_role: 'staff',
+		p_warehouse_ids: [warehouseId], // Assign to main warehouse
+		p_expires_at: expiresAt.toISOString(),
+		p_created_by: createdBy,
+	});
 
-	if (staffInviteError) {
+	if (staffInviteError || !staffToken) {
 		console.error('❌ Error creating staff invite:', staffInviteError);
 	} else {
 		console.log(`✅ Staff invite created\n`);

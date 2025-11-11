@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
 import { dateToISOString } from '@/lib/utils/date';
+import { useWarehouse } from '@/contexts/warehouse-context';
 
 interface DetailsFormData {
 	dispatchToType: 'partner' | 'warehouse';
@@ -33,6 +34,7 @@ interface OutwardDetailsStepProps {
 }
 
 export function OutwardDetailsStep({ formData, onChange }: OutwardDetailsStepProps) {
+	const { warehouseId } = useWarehouse();
 	const [partners, setPartners] = useState<Tables<'partners'>[]>([]);
 	const [warehouses, setWarehouses] = useState<Tables<'warehouses'>[]>([]);
 	const [jobWorks, setJobWorks] = useState<{ id: string; name: string }[]>([]);
@@ -63,12 +65,14 @@ export function OutwardDetailsStep({ formData, onChange }: OutwardDetailsStepPro
 				const { data: jobWorksData } = await supabase
 					.from('job_works')
 					.select('id, job_work_number')
+					.eq('warehouse_id', warehouseId)
 					.order('created_at', { ascending: false });
 
 				// Fetch sales orders
 				const { data: salesOrdersData } = await supabase
 					.from('sales_orders')
 					.select('id, order_number')
+					.eq('warehouse_id', warehouseId)
 					.order('created_at', { ascending: false });
 
 				setPartners(partnersData || []);

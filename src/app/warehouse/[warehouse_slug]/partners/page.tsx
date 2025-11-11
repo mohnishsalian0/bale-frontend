@@ -122,7 +122,7 @@ export default function PartnersPage() {
 	// Error state
 	if (error) {
 		return (
-			<div className="relative flex flex-col min-h-screen pb-16">
+			<div className="relative flex flex-col min-h-dvh pb-16">
 				<div className="flex items-center justify-center h-screen p-4">
 					<div className="flex flex-col items-center gap-3 text-center max-w-md">
 						<div className="size-12 rounded-full bg-red-100 flex items-center justify-center">
@@ -140,7 +140,7 @@ export default function PartnersPage() {
 	}
 
 	return (
-		<div className="relative flex flex-col min-h-screen pb-16">
+		<div className="relative flex flex-col min-h-dvh pb-16">
 			{/* Header */}
 			<div className="flex items-end justify-between gap-4 p-4">
 				<div className="flex-1">

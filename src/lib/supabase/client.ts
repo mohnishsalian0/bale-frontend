@@ -43,8 +43,6 @@ export async function getCurrentUser(): Promise<User | null> {
 		.eq('auth_user_id', authUser.id)
 		.single();
 
-	console.log(user);
-
 	if (userError) {
 		console.error('Error fetching user profile:', userError.message);
 		return null;
@@ -89,6 +87,45 @@ export async function getCompanyId(): Promise<string | null> {
 export async function getWarehouseId(): Promise<string | null> {
 	const user = await getCurrentUser();
 	return user?.warehouse_id || null;
+}
+
+/**
+ * Get all warehouse IDs assigned to the current user
+ * Returns all warehouses for admin, assigned warehouses for staff
+ */
+export async function getUserWarehouseIds(): Promise<string[]> {
+	const user = await getCurrentUser();
+	if (!user) return [];
+
+	const supabase = createClient();
+
+	// Admin has access to all warehouses
+	if (user.role === 'admin') {
+		const { data, error } = await supabase
+			.from('warehouses')
+			.select('id')
+			.eq('company_id', user.company_id);
+
+		if (error) {
+			console.error('Error fetching warehouses:', error.message);
+			return [];
+		}
+
+		return (data || []).map(w => w.id);
+	}
+
+	// Staff has access to assigned warehouses only
+	const { data, error } = await supabase
+		.from('user_warehouses')
+		.select('warehouse_id')
+		.eq('user_id', user.id);
+
+	if (error) {
+		console.error('Error fetching user warehouses:', error.message);
+		return [];
+	}
+
+	return (data || []).map(uw => uw.warehouse_id);
 }
 
 export async function requireAdmin() {

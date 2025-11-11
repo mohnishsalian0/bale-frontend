@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { IconBuildingWarehouse, IconPencil, IconShare } from '@tabler/icons-react';
 import { Fab } from '../ui/fab';
 import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../ui/sheet';
 import { createClient } from '@/lib/supabase/client';
-import { AddWarehouseSheet } from '@/app/protected/warehouses/AddWarehouseSheet';
+import { AddWarehouseSheet } from '@/app/warehouse/[warehouse_slug]/warehouses/AddWarehouseSheet';
 import type { Tables } from '@/types/database/supabase';
 
 type Warehouse = Tables<'warehouses'>;
@@ -31,6 +32,7 @@ export default function WarehouseSelector({
 	const [loading, setLoading] = useState(true);
 	const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
 	const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
+	const pathname = usePathname();
 
 	const supabase = createClient();
 
@@ -43,13 +45,55 @@ export default function WarehouseSelector({
 	const fetchWarehouses = async () => {
 		try {
 			setLoading(true);
-			const { data, error } = await supabase
-				.from('warehouses')
-				.select('*')
-				.order('created_at');
 
-			if (error) throw error;
-			setWarehouses(data || []);
+			// Get current user
+			const { data: { user: authUser } } = await supabase.auth.getUser();
+			if (!authUser) {
+				console.error('No authenticated user found');
+				return;
+			}
+
+			// Get user profile
+			const { data: userData } = await supabase
+				.from('users')
+				.select('id, role')
+				.eq('auth_user_id', authUser.id)
+				.single();
+
+			if (!userData) {
+				console.error('User profile not found');
+				return;
+			}
+
+			// Fetch warehouses based on role
+			if (userData.role === 'admin') {
+				// Admin: fetch all company warehouses
+				const { data, error } = await supabase
+					.from('warehouses')
+					.select('*')
+					.order('created_at');
+
+				if (error) throw error;
+				setWarehouses(data || []);
+			} else {
+				// Staff: fetch only assigned warehouses
+				const { data, error } = await supabase
+					.from('user_warehouses')
+					.select(`
+						warehouse_id,
+						warehouses (*)
+					`)
+					.eq('user_id', userData.id);
+
+				if (error) throw error;
+
+				// Extract warehouses from the join result
+				const userWarehouses = (data || [])
+					.map((uw: any) => uw.warehouses)
+					.filter(Boolean) as Warehouse[];
+
+				setWarehouses(userWarehouses);
+			}
 		} catch (error) {
 			console.error('Error fetching warehouses:', error);
 		} finally {
@@ -57,9 +101,67 @@ export default function WarehouseSelector({
 		}
 	};
 
-	const handleSelect = (warehouseId: string) => {
-		onSelect(warehouseId);
-		onOpenChange(false);
+	const handleSelect = async (warehouseId: string) => {
+		try {
+			// If selecting the same warehouse, just close the sheet
+			if (warehouseId === currentWarehouse) {
+				onOpenChange(false);
+				return;
+			}
+
+			// Get current user
+			const { data: { user: authUser } } = await supabase.auth.getUser();
+			if (!authUser) {
+				console.error('No authenticated user found');
+				return;
+			}
+
+			// Get user profile to find user ID
+			const { data: userData } = await supabase
+				.from('users')
+				.select('id')
+				.eq('auth_user_id', authUser.id)
+				.single();
+
+			if (!userData) {
+				console.error('User profile not found');
+				return;
+			}
+
+			// Find selected warehouse to get slug
+			const selectedWarehouse = warehouses.find(w => w.id === warehouseId);
+			if (!selectedWarehouse) {
+				console.error('Warehouse not found');
+				return;
+			}
+
+			// Update user's selected warehouse
+			const { error } = await supabase
+				.from('users')
+				.update({ warehouse_id: warehouseId })
+				.eq('id', userData.id);
+
+			if (error) {
+				console.error('Error updating warehouse:', error);
+				return;
+			}
+
+			// Determine redirect path - preserve current page if within warehouse context
+			let redirectPath = `/warehouse/${selectedWarehouse.slug}/dashboard`;
+
+			// Match pattern: /warehouse/[warehouse_slug]/[...rest]
+			const warehouseRouteMatch = pathname.match(/^\/warehouse\/[^\/]+\/(.+)$/);
+			if (warehouseRouteMatch) {
+				// Preserve the page path after the warehouse slug
+				const pagePath = warehouseRouteMatch[1];
+				redirectPath = `/warehouse/${selectedWarehouse.slug}/${pagePath}`;
+			}
+
+			// Redirect to warehouse
+			window.location.href = redirectPath;
+		} catch (error) {
+			console.error('Error selecting warehouse:', error);
+		}
 	};
 
 	const handleEdit = (warehouse: Warehouse, e: React.MouseEvent) => {
@@ -170,7 +272,7 @@ export default function WarehouseSelector({
 												</div>
 
 												{/* Content */}
-												<div className="flex-1 min-w-0">
+												<div className="flex-1 min-w-0 flex flex-col gap-1">
 													<div className="text-base font-medium text-gray-900 truncate" title={warehouse.name}>
 														{warehouse.name}
 													</div>

@@ -2,7 +2,7 @@ import Image from 'next/image';
 
 export default function LoadingState() {
 	return (
-		<div className="relative flex flex-col items-center justify-center gap-4 h-dvh">
+		<div className="h-dvh relative flex flex-col items-center justify-center gap-4">
 			<Image
 				src="/mascot/loading-trolley-truck.png"
 				alt="Loading"

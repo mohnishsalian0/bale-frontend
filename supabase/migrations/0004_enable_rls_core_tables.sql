@@ -8,6 +8,7 @@
 ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE warehouses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_warehouses ENABLE ROW LEVEL SECURITY;
 
 -- =====================================================
 -- UTILITY FUNCTIONS FOR RLS
@@ -41,16 +42,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to get current user's warehouse_id
+-- Function to get current user's selected warehouse_id
 CREATE OR REPLACE FUNCTION get_user_warehouse_id()
 RETURNS UUID AS $$
 DECLARE
     user_warehouse UUID;
 BEGIN
-    SELECT warehouse_id INTO user_warehouse 
-    FROM users 
+    SELECT warehouse_id INTO user_warehouse
+    FROM users
     WHERE auth_user_id = auth.uid();
-    
+
     RETURN user_warehouse;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -149,14 +150,18 @@ USING (
 -- WAREHOUSES TABLE RLS POLICIES
 -- =====================================================
 
--- Admins can view all warehouses, staff can view their assigned warehouse
+-- Admins can view all warehouses, staff can view their assigned warehouses
 CREATE POLICY "Users can view warehouses in their company"
 ON warehouses
 FOR SELECT
 TO authenticated
 USING (
     company_id = get_user_company_id() AND (
-        is_company_admin() OR id = get_user_warehouse_id()
+        is_company_admin() OR
+        id IN (
+            SELECT warehouse_id FROM user_warehouses
+            WHERE user_id = (SELECT id FROM users WHERE auth_user_id = auth.uid())
+        )
     )
 );
 
@@ -176,9 +181,48 @@ WITH CHECK (
 -- GRANT PERMISSIONS TO AUTHENTICATED USERS
 -- =====================================================
 
+-- =====================================================
+-- USER_WAREHOUSES TABLE RLS POLICIES
+-- =====================================================
+
+-- Users can view their own warehouse assignments, admins can view all in their company
+CREATE POLICY "Users can view warehouse assignments in their company"
+ON user_warehouses
+FOR SELECT
+TO authenticated
+USING (
+    user_id IN (
+        SELECT id FROM users WHERE company_id = get_user_company_id()
+    ) AND (
+        is_company_admin() OR
+        user_id = (SELECT id FROM users WHERE auth_user_id = auth.uid())
+    )
+);
+
+-- Only company admins can manage warehouse assignments
+CREATE POLICY "Company admins can manage warehouse assignments"
+ON user_warehouses
+FOR ALL
+TO authenticated
+USING (
+    user_id IN (
+        SELECT id FROM users WHERE company_id = get_user_company_id()
+    ) AND is_company_admin()
+)
+WITH CHECK (
+    user_id IN (
+        SELECT id FROM users WHERE company_id = get_user_company_id()
+    ) AND is_company_admin()
+);
+
+-- =====================================================
+-- GRANT PERMISSIONS TO AUTHENTICATED USERS
+-- =====================================================
+
 -- Grant basic permissions to authenticated users
 GRANT SELECT, INSERT, UPDATE, DELETE ON companies TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON users TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON warehouses TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON user_warehouses TO authenticated;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;

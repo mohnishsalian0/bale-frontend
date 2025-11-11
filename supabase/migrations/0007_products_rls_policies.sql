@@ -53,52 +53,72 @@ USING (
 -- STOCK UNITS TABLE RLS POLICIES
 -- =====================================================
 
--- Admins can view all stock units, staff can view units in their assigned warehouse
+-- Admins can view all stock units, staff can view units in their assigned warehouses
 CREATE POLICY "Users can view stock units in their scope"
 ON stock_units
 FOR SELECT
 TO authenticated
 USING (
     company_id = get_user_company_id() AND (
-        is_company_admin() OR warehouse_id = get_user_warehouse_id()
+        is_company_admin() OR
+        warehouse_id IN (
+            SELECT warehouse_id FROM user_warehouses
+            WHERE user_id = (SELECT id FROM users WHERE auth_user_id = auth.uid())
+        )
     )
 );
 
--- Admins can create stock units in any warehouse, staff only in their assigned warehouse
+-- Admins can create stock units in any warehouse, staff only in their assigned warehouses
 CREATE POLICY "Users can create stock units in their scope"
 ON stock_units
 FOR INSERT
 TO authenticated
 WITH CHECK (
     company_id = get_user_company_id() AND (
-        is_company_admin() OR warehouse_id = get_user_warehouse_id()
+        is_company_admin() OR
+        warehouse_id IN (
+            SELECT warehouse_id FROM user_warehouses
+            WHERE user_id = (SELECT id FROM users WHERE auth_user_id = auth.uid())
+        )
     )
 );
 
--- Admins can update all stock units, staff only in their assigned warehouse
+-- Admins can update all stock units, staff only in their assigned warehouses
 CREATE POLICY "Users can update stock units in their scope"
 ON stock_units
 FOR UPDATE
 TO authenticated
 USING (
     company_id = get_user_company_id() AND (
-        is_company_admin() OR warehouse_id = get_user_warehouse_id()
+        is_company_admin() OR
+        warehouse_id IN (
+            SELECT warehouse_id FROM user_warehouses
+            WHERE user_id = (SELECT id FROM users WHERE auth_user_id = auth.uid())
+        )
     )
 )
 WITH CHECK (
     company_id = get_user_company_id() AND (
-        is_company_admin() OR warehouse_id = get_user_warehouse_id()
+        is_company_admin() OR
+        warehouse_id IN (
+            SELECT warehouse_id FROM user_warehouses
+            WHERE user_id = (SELECT id FROM users WHERE auth_user_id = auth.uid())
+        )
     )
 );
 
--- Admins can delete stock units in any warehouse, staff only in their assigned warehouse
+-- Admins can delete stock units in any warehouse, staff only in their assigned warehouses
 CREATE POLICY "Users can delete stock units in their scope"
 ON stock_units
 FOR DELETE
 TO authenticated
 USING (
     company_id = get_user_company_id() AND (
-        is_company_admin() OR warehouse_id = get_user_warehouse_id()
+        is_company_admin() OR
+        warehouse_id IN (
+            SELECT warehouse_id FROM user_warehouses
+            WHERE user_id = (SELECT id FROM users WHERE auth_user_id = auth.uid())
+        )
     )
 );
 

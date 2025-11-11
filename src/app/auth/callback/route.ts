@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
   const inviteCode = requestUrl.searchParams.get('invite_code');
-  const redirectTo = requestUrl.searchParams.get('redirectTo') || '/protected/dashboard';
+  const redirectTo = requestUrl.searchParams.get('redirectTo') || '/warehouse';
 
   console.log('🔍 Auth callback received');
   console.log('Code:', code);
@@ -73,8 +73,8 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${requestUrl.origin}/error?message=invalid_invite`);
     }
 
-    // Create user profile using service role (bypasses RLS)
-    console.log('📝 Creating user profile...');
+    // Create user profile using RPC function (bypasses RLS)
+    console.log('📝 Creating user profile using RPC...');
     const supabaseAdmin = createServiceClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -86,40 +86,27 @@ export async function GET(request: Request) {
       }
     );
 
-    const { data: newUser, error: createError } = await supabaseAdmin
-      .from('users')
-      .insert({
-        auth_user_id: authUser.id,
-        company_id: invite.company_id,
-        warehouse_id: invite.warehouse_id,
-        role: invite.role,
-        first_name: authUser.user_metadata?.given_name ||
-                    authUser.user_metadata?.name?.split(' ')[0] || 'User',
-        last_name: authUser.user_metadata?.family_name ||
-                   authUser.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
-        email: authUser.email,
-        is_active: true,
-      })
-      .select()
-      .single();
+    // Extract names from user metadata
+    const firstName = authUser.user_metadata?.given_name ||
+                      authUser.user_metadata?.name?.split(' ')[0] || 'User';
+    const lastName = authUser.user_metadata?.family_name ||
+                     authUser.user_metadata?.name?.split(' ').slice(1).join(' ') || '';
 
-    console.log('New user:', newUser);
+    const { data: newUserId, error: createError } = await supabaseAdmin
+      .rpc('create_user_from_invite', {
+        p_auth_user_id: authUser.id,
+        p_invite_token: inviteCode,
+        p_first_name: firstName,
+        p_last_name: lastName,
+      });
+
+    console.log('New user ID:', newUserId);
     console.log('Create error:', createError);
 
-    if (createError) {
+    if (createError || !newUserId) {
       console.error('❌ Error creating user profile:', createError);
       return NextResponse.redirect(`${requestUrl.origin}/error?message=profile_creation_failed`);
     }
-
-    // Mark invite as used
-    console.log('✅ Marking invite as used...');
-    await supabaseAdmin
-      .from('invites')
-      .update({
-        used_at: new Date().toISOString(),
-        used_by_user_id: newUser.id,
-      })
-      .eq('id', invite.id);
 
     // Redirect to original destination or dashboard
     console.log('🎉 Success! Redirecting to', redirectTo);

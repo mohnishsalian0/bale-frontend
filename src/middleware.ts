@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
 		pathname.startsWith(route)
 	);
 
-	// If not authenticated and trying to access protected route
+	// If not authenticated and trying to access warehouse route
 	if (!user && !isPublicRoute) {
 		const redirectUrl = request.nextUrl.clone();
 		redirectUrl.pathname = '/auth/login';
@@ -50,10 +50,17 @@ export async function middleware(request: NextRequest) {
 		return NextResponse.redirect(redirectUrl);
 	}
 
-	// If authenticated and trying to access auth pages, redirect to protected/dashboard
+	// If authenticated and trying to access auth pages, redirect to warehouse selection
 	if (user && pathname.startsWith('/auth/login')) {
 		const redirectUrl = request.nextUrl.clone();
-		redirectUrl.pathname = '/protected/dashboard';
+		redirectUrl.pathname = '/warehouse';
+		return NextResponse.redirect(redirectUrl);
+	}
+
+	// If authenticated and accessing root, redirect to warehouse
+	if (user && pathname === '/') {
+		const redirectUrl = request.nextUrl.clone();
+		redirectUrl.pathname = '/warehouse';
 		return NextResponse.redirect(redirectUrl);
 	}
 

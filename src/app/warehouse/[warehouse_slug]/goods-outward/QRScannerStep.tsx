@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
 import type { MeasuringUnit } from '@/types/database/enums';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
+import { useWarehouse } from '@/contexts/warehouse-context';
 
 const SCAN_DELAY: number = 1200;
 
@@ -29,6 +30,7 @@ export function QRScannerStep({
 	scannedUnits,
 	onScannedUnitsChange,
 }: QRScannerStepProps) {
+	const { warehouseId } = useWarehouse();
 	const [error, setError] = useState<string | null>(null);
 	const [torch, setTorch] = useState(false);
 	const [paused, setPaused] = useState(false);
@@ -63,6 +65,7 @@ export function QRScannerStep({
 				.from('stock_units')
 				.select('*')
 				.eq('id', decodedText)
+				.eq('warehouse_id', warehouseId)
 				.eq('status', 'in_stock')
 				.single();
 

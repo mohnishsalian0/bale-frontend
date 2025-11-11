@@ -15,6 +15,7 @@ import IconGoodsOutward from '@/components/icons/IconGoodsOutward';
 import { AddGoodsInwardSheet } from '../goods-inward/AddGoodsInwardSheet';
 import { AddGoodsOutwardSheet } from '../goods-outward/AddGoodsOutwardSheet';
 import { LoadingState } from '@/components/layouts/loading-state';
+import { useWarehouse } from '@/contexts/warehouse-context';
 
 interface StockFlowItem {
 	id: string;
@@ -36,6 +37,7 @@ interface MonthGroup {
 }
 
 export default function StockFlowPage() {
+	const { warehouseId } = useWarehouse();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [selectedFilter, setSelectedFilter] = useState<'all' | 'outward' | 'inward'>('all');
 	const [selectedPartner, setSelectedPartner] = useState('all');
@@ -65,6 +67,7 @@ export default function StockFlowPage() {
 						initial_quantity
 					)
 				`)
+				.eq('warehouse_id', warehouseId)
 				.order('inward_date', { ascending: false });
 
 			if (inwardError) throw inwardError;
@@ -82,6 +85,7 @@ export default function StockFlowPage() {
 						)
 					)
 				`)
+				.eq('warehouse_id', warehouseId)
 				.order('outward_date', { ascending: false });
 
 			if (outwardError) throw outwardError;
@@ -262,7 +266,7 @@ export default function StockFlowPage() {
 	// Error state
 	if (error) {
 		return (
-			<div className="relative flex flex-col min-h-screen pb-16">
+			<div className="relative flex flex-col min-h-dvh pb-16">
 				<div className="flex items-center justify-center h-screen p-4">
 					<div className="flex flex-col items-center gap-3 text-center max-w-md">
 						<div className="size-12 rounded-full bg-red-100 flex items-center justify-center">
@@ -277,7 +281,7 @@ export default function StockFlowPage() {
 	}
 
 	return (
-		<div className="relative flex flex-col min-h-screen pb-16">
+		<div className="relative flex flex-col min-h-dvh pb-16">
 			{/* Header */}
 			<div className="flex items-end justify-between gap-4 p-4">
 				<div className="flex-1 flex flex-col gap-2">

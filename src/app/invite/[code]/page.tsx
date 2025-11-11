@@ -22,7 +22,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
 
   if (error || !invite) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background-100">
+      <div className="min-h-dvh flex items-center justify-center bg-background-100">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Invalid Invite</h1>
           <p className="text-gray-600">
@@ -36,7 +36,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
   // Check if already used
   if (invite.used_at) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background-100">
+      <div className="min-h-dvh flex items-center justify-center bg-background-100">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Invite Already Used</h1>
           <p className="text-gray-600 mb-6">
@@ -57,7 +57,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
   const expiresAt = new Date(invite.expires_at);
   if (expiresAt < new Date()) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background-100">
+      <div className="min-h-dvh flex items-center justify-center bg-background-100">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Invite Expired</h1>
           <p className="text-gray-600">
@@ -82,8 +82,8 @@ export default async function InvitePage({ params }: InvitePageProps) {
       .single();
 
     if (existingUser) {
-      // Already registered - redirect to protected/dashboard
-      redirect('/protected/dashboard');
+      // Already registered - redirect to warehouse selection
+      redirect('/warehouse');
     }
   }
 
