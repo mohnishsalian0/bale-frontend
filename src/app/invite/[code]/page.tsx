@@ -43,7 +43,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
 						This invite has already been used. If you already have an account, please log in.
 					</p>
 					<a
-						href="/login"
+						href="auth/login"
 						className="block w-full text-center bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700"
 					>
 						Go to Login

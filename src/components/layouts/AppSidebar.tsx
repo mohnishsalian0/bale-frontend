@@ -6,7 +6,6 @@ import {
 	IconBuildingStore,
 	IconChartBar,
 	IconClipboardList,
-	IconExternalLink,
 	IconIdBadge2,
 	IconPhotoScan,
 	IconQrcode,
@@ -24,6 +23,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarRail,
+	useSidebar,
 } from "@/components/ui/sidebar"
 
 type NavItem = {
@@ -76,6 +76,13 @@ const NAV_ITEMS: NavItem[] = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const pathname = usePathname();
 	const { warehouse } = useSession();
+	const { setOpenMobile, isMobile } = useSidebar();
+
+	const handleClick = () => {
+		if (isMobile) {
+			setOpenMobile(false);
+		}
+	}
 
 	return (
 		<Sidebar {...props}>
@@ -110,6 +117,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 									isActive={isActive}
 									size='lg'
 									className='text-base [&>svg]:size-5 p-4 gap-3 text-gray-700'
+									onClick={handleClick}
 								>
 									<Link
 										href={href}
