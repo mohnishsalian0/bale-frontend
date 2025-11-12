@@ -69,60 +69,40 @@ CREATE POLICY "Anyone can view company logos"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'company-logos');
 
--- Admins can upload company logos
+-- Authorized users can upload company logos
 -- Path format: {company_id}/logo.{ext}
-CREATE POLICY "Admins can upload their company logo"
+CREATE POLICY "Authorized users can upload their company logo"
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (
     bucket_id = 'company-logos'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        AND role = 'admin'
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.create')
 );
 
--- Admins can update their company logo
-CREATE POLICY "Admins can update their company logo"
+-- Authorized users can update their company logo
+CREATE POLICY "Authorized users can update their company logo"
 ON storage.objects FOR UPDATE
 TO authenticated
 USING (
     bucket_id = 'company-logos'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        AND role = 'admin'
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.update')
 )
 WITH CHECK (
     bucket_id = 'company-logos'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        AND role = 'admin'
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.update')
 );
 
--- Admins can delete their company logo
-CREATE POLICY "Admins can delete their company logo"
+-- Authorized users can delete their company logo
+CREATE POLICY "Authorized users can delete their company logo"
 ON storage.objects FOR DELETE
 TO authenticated
 USING (
     bucket_id = 'company-logos'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        AND role = 'admin'
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.delete')
 );
 
 -- =====================================================
@@ -142,10 +122,7 @@ TO authenticated
 WITH CHECK (
     bucket_id = 'profile-images'
     AND (storage.foldername(name))[1] = (
-        SELECT id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        LIMIT 1
+        SELECT id::text FROM public.users WHERE auth_user_id = auth.uid() LIMIT 1
     )
 );
 
@@ -156,19 +133,13 @@ TO authenticated
 USING (
     bucket_id = 'profile-images'
     AND (storage.foldername(name))[1] = (
-        SELECT id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        LIMIT 1
+        SELECT id::text FROM public.users WHERE auth_user_id = auth.uid() LIMIT 1
     )
 )
 WITH CHECK (
     bucket_id = 'profile-images'
     AND (storage.foldername(name))[1] = (
-        SELECT id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        LIMIT 1
+        SELECT id::text FROM public.users WHERE auth_user_id = auth.uid() LIMIT 1
     )
 );
 
@@ -179,10 +150,7 @@ TO authenticated
 USING (
     bucket_id = 'profile-images'
     AND (storage.foldername(name))[1] = (
-        SELECT id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        LIMIT 1
+        SELECT id::text FROM public.users WHERE auth_user_id = auth.uid() LIMIT 1
     )
 );
 
@@ -195,56 +163,40 @@ CREATE POLICY "Anyone can view product images"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'product-images');
 
--- Authenticated users can upload product images for their company
+-- Authorized users can upload product images for their company
 -- Path format: {company_id}/{product_id}/{image_number}.{ext}
-CREATE POLICY "Company users can upload product images"
+CREATE POLICY "Authorized users can upload product images"
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (
     bucket_id = 'product-images'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.create')
 );
 
--- Company users can update their product images
-CREATE POLICY "Company users can update product images"
+-- Authorized users can update their product images
+CREATE POLICY "Authorized users can update product images"
 ON storage.objects FOR UPDATE
 TO authenticated
 USING (
     bucket_id = 'product-images'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.update')
 )
 WITH CHECK (
     bucket_id = 'product-images'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.update')
 );
 
--- Company users can delete their product images
-CREATE POLICY "Company users can delete product images"
+-- Authorized users can delete their product images
+CREATE POLICY "Authorized users can delete product images"
 ON storage.objects FOR DELETE
 TO authenticated
 USING (
     bucket_id = 'product-images'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.delete')
 );
 
 -- =====================================================
@@ -256,60 +208,40 @@ CREATE POLICY "Anyone can view partner images"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'partner-images');
 
--- Company admins can upload partner images
+-- Authorized users can upload partner images
 -- Path format: {company_id}/{partner_id}/image.{ext}
-CREATE POLICY "Company admins can upload partner images"
+CREATE POLICY "Authorized users can upload partner images"
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (
     bucket_id = 'partner-images'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        AND role = 'admin'
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.create')
 );
 
--- Company admins can update partner images
-CREATE POLICY "Company admins can update partner images"
+-- Authorized users can update partner images
+CREATE POLICY "Authorized users can update partner images"
 ON storage.objects FOR UPDATE
 TO authenticated
 USING (
     bucket_id = 'partner-images'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        AND role = 'admin'
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.update')
 )
 WITH CHECK (
     bucket_id = 'partner-images'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        AND role = 'admin'
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.update')
 );
 
--- Company admins can delete partner images
-CREATE POLICY "Company admins can delete partner images"
+-- Authorized users can delete partner images
+CREATE POLICY "Authorized users can delete partner images"
 ON storage.objects FOR DELETE
 TO authenticated
 USING (
     bucket_id = 'partner-images'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        AND role = 'admin'
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.delete')
 );
 
 -- =====================================================
@@ -321,58 +253,38 @@ CREATE POLICY "Anyone can view warehouse images"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'warehouse-images');
 
--- Company admins can upload warehouse images
+-- Authorized users can upload warehouse images
 -- Path format: {company_id}/{warehouse_id}/image.{ext}
-CREATE POLICY "Company admins can upload warehouse images"
+CREATE POLICY "Authorized users can upload warehouse images"
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (
     bucket_id = 'warehouse-images'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        AND role = 'admin'
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.create')
 );
 
--- Company admins can update warehouse images
-CREATE POLICY "Company admins can update warehouse images"
+-- Authorized users can update warehouse images
+CREATE POLICY "Authorized users can update warehouse images"
 ON storage.objects FOR UPDATE
 TO authenticated
 USING (
     bucket_id = 'warehouse-images'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        AND role = 'admin'
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.update')
 )
 WITH CHECK (
     bucket_id = 'warehouse-images'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        AND role = 'admin'
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.update')
 );
 
--- Company admins can delete warehouse images
-CREATE POLICY "Company admins can delete warehouse images"
+-- Authorized users can delete warehouse images
+CREATE POLICY "Authorized users can delete warehouse images"
 ON storage.objects FOR DELETE
 TO authenticated
 USING (
     bucket_id = 'warehouse-images'
-    AND (storage.foldername(name))[1] = (
-        SELECT company_id::text
-        FROM users
-        WHERE auth_user_id = auth.uid()
-        AND role = 'admin'
-        LIMIT 1
-    )
+    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
+    AND public.authorize('storage.delete')
 );

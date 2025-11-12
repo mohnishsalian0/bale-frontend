@@ -89,3 +89,54 @@ CREATE TRIGGER set_partners_modified_by
     BEFORE UPDATE ON partners
     FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
+-- =====================================================
+-- PARTNERS TABLE RLS POLICIES
+-- =====================================================
+
+ALTER TABLE partners ENABLE ROW LEVEL SECURITY;
+
+-- Authorized users can view partners in their company
+CREATE POLICY "Authorized users can view partners"
+ON partners
+FOR SELECT
+TO authenticated
+USING (
+    company_id = get_jwt_company_id() AND authorize('partners.read')
+);
+
+-- Authorized users can create partners
+CREATE POLICY "Authorized users can create partners"
+ON partners
+FOR INSERT
+TO authenticated
+WITH CHECK (
+    company_id = get_jwt_company_id() AND authorize('partners.create')
+);
+
+-- Authorized users can update partners
+CREATE POLICY "Authorized users can update partners"
+ON partners
+FOR UPDATE
+TO authenticated
+USING (
+    company_id = get_jwt_company_id() AND authorize('partners.update')
+)
+WITH CHECK (
+    company_id = get_jwt_company_id() AND authorize('partners.update')
+);
+
+-- Authorized users can delete partners
+CREATE POLICY "Authorized users can delete partners"
+ON partners
+FOR DELETE
+TO authenticated
+USING (
+    company_id = get_jwt_company_id() AND authorize('partners.delete')
+);
+
+-- =====================================================
+-- GRANT PERMISSIONS
+-- =====================================================
+
+-- Grant permissions to authenticated users
+GRANT SELECT, INSERT, UPDATE, DELETE ON partners TO authenticated;

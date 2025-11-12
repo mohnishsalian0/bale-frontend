@@ -15,131 +15,143 @@ ALTER TABLE product_variant_items ENABLE ROW LEVEL SECURITY;
 -- QR CODE MANAGEMENT RLS POLICIES
 -- =====================================================
 
--- Admins can view all QR batches, staff can view batches for their assigned warehouse
-CREATE POLICY "Users can view QR batches in their scope"
+-- Authorized users can view QR batches in their assigned warehouses
+CREATE POLICY "Authorized users can view QR batches"
 ON qr_batches
 FOR SELECT
 TO authenticated
 USING (
-    company_id = get_user_company_id() AND (
-        is_company_admin() OR warehouse_id = get_user_warehouse_id()
-    )
+    company_id = get_jwt_company_id() AND
+    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    authorize('qr_batches.read')
 );
 
--- Admins can create QR batches for any warehouse, staff only for their assigned warehouse
-CREATE POLICY "Users can create QR batches in their scope"
+-- Authorized users can create QR batches in their assigned warehouses
+CREATE POLICY "Authorized users can create QR batches"
 ON qr_batches
 FOR INSERT
 TO authenticated
 WITH CHECK (
-    company_id = get_user_company_id() AND (
-        is_company_admin() OR warehouse_id = get_user_warehouse_id()
-    )
+    company_id = get_jwt_company_id() AND
+    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    authorize('qr_batches.create')
 );
 
--- Admins can update all QR batches, staff only for their assigned warehouse
-CREATE POLICY "Users can update QR batches in their scope"
+-- Authorized users can update QR batches in their assigned warehouses
+CREATE POLICY "Authorized users can update QR batches"
 ON qr_batches
 FOR UPDATE
 TO authenticated
 USING (
-    company_id = get_user_company_id() AND (
-        is_company_admin() OR warehouse_id = get_user_warehouse_id()
-    )
+    company_id = get_jwt_company_id() AND
+    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    authorize('qr_batches.update')
 )
 WITH CHECK (
-    company_id = get_user_company_id() AND (
-        is_company_admin() OR warehouse_id = get_user_warehouse_id()
-    )
+    company_id = get_jwt_company_id() AND
+    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    authorize('qr_batches.update')
 );
 
--- Users can view QR batch items in their scope
-CREATE POLICY "Users can view QR batch items in their scope"
+-- Authorized users can view QR batch items in their assigned warehouses
+CREATE POLICY "Authorized users can view QR batch items"
 ON qr_batch_items
 FOR SELECT
 TO authenticated
 USING (
-    company_id = get_user_company_id() AND (
-        is_company_admin() OR warehouse_id = get_user_warehouse_id()
-    )
+    company_id = get_jwt_company_id() AND
+    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    authorize('qr_batches.read')
 );
 
--- Users can manage QR batch items in their scope
-CREATE POLICY "Users can manage QR batch items in their scope"
+-- Authorized users can manage QR batch items in their assigned warehouses
+CREATE POLICY "Authorized users can manage QR batch items"
 ON qr_batch_items
 FOR ALL
 TO authenticated
 USING (
-    company_id = get_user_company_id() AND (
-        is_company_admin() OR warehouse_id = get_user_warehouse_id()
-    )
+    company_id = get_jwt_company_id() AND
+    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    (authorize('qr_batches.update') OR authorize('qr_batches.delete'))
 )
 WITH CHECK (
-    company_id = get_user_company_id() AND (
-        is_company_admin() OR warehouse_id = get_user_warehouse_id()
-    )
+    company_id = get_jwt_company_id() AND
+    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    (authorize('qr_batches.create') OR authorize('qr_batches.update'))
 );
 
 -- =====================================================
 -- CATALOG CONFIGURATION RLS POLICIES
 -- =====================================================
 
--- Only company admins can manage catalog configuration (one per company)
-CREATE POLICY "Company admins can manage catalog configuration"
+-- Authorized users can manage catalog configuration
+CREATE POLICY "Authorized users can manage catalog configuration"
 ON catalog_configurations
 FOR ALL
 TO authenticated
 USING (
-    company_id = get_user_company_id() AND is_company_admin()
+    company_id = get_jwt_company_id() AND (
+        authorize('catalog.read') OR authorize('catalog.update') OR authorize('catalog.delete')
+    )
 )
 WITH CHECK (
-    company_id = get_user_company_id() AND is_company_admin()
+    company_id = get_jwt_company_id() AND (
+        authorize('catalog.create') OR authorize('catalog.update')
+    )
 );
 
 -- =====================================================
 -- PRODUCT VARIANTS RLS POLICIES
 -- =====================================================
 
--- Users can view product variants in their company
-CREATE POLICY "Users can view product variants in their company"
+-- Authorized users can view product variants in their company
+CREATE POLICY "Authorized users can view product variants"
 ON product_variants
 FOR SELECT
 TO authenticated
 USING (
-    company_id = get_user_company_id()
+    company_id = get_jwt_company_id() AND authorize('products.read')
 );
 
--- Only company admins can manage product variants
-CREATE POLICY "Company admins can manage product variants"
+-- Authorized users can manage product variants
+CREATE POLICY "Authorized users can manage product variants"
 ON product_variants
 FOR ALL
 TO authenticated
 USING (
-    company_id = get_user_company_id() AND is_company_admin()
+    company_id = get_jwt_company_id() AND (
+        authorize('products.update') OR authorize('products.delete')
+    )
 )
 WITH CHECK (
-    company_id = get_user_company_id() AND is_company_admin()
+    company_id = get_jwt_company_id() AND (
+        authorize('products.create') OR authorize('products.update')
+    )
 );
 
--- Users can view product variant items in their company
-CREATE POLICY "Users can view product variant items in their scope"
+-- Authorized users can view product variant items in their company
+CREATE POLICY "Authorized users can view product variant items"
 ON product_variant_items
 FOR SELECT
 TO authenticated
 USING (
-    company_id = get_user_company_id()
+    company_id = get_jwt_company_id() AND authorize('products.read')
 );
 
--- Only company admins can manage product variant items
-CREATE POLICY "Company admins can manage product variant items"
+-- Authorized users can manage product variant items
+CREATE POLICY "Authorized users can manage product variant items"
 ON product_variant_items
 FOR ALL
 TO authenticated
 USING (
-    company_id = get_user_company_id() AND is_company_admin()
+    company_id = get_jwt_company_id() AND (
+        authorize('products.update') OR authorize('products.delete')
+    )
 )
 WITH CHECK (
-    company_id = get_user_company_id() AND is_company_admin()
+    company_id = get_jwt_company_id() AND (
+        authorize('products.create') OR authorize('products.update')
+    )
 );
 
 -- =====================================================

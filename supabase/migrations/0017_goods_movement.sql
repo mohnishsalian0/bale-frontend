@@ -7,7 +7,7 @@
 
 CREATE TABLE goods_outwards (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
 
     -- Outward identification
@@ -45,7 +45,7 @@ CREATE TABLE goods_outwards (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
+    created_by UUID NOT NULL REFERENCES users(id),
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
 
@@ -71,7 +71,7 @@ CREATE TABLE goods_outwards (
 
 CREATE TABLE goods_outward_items (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     outward_id UUID NOT NULL REFERENCES goods_outwards(id) ON DELETE CASCADE,
     stock_unit_id UUID NOT NULL REFERENCES stock_units(id),
     quantity_dispatched DECIMAL(10,3) NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE goods_outward_items (
 
 CREATE TABLE goods_inwards (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
 
     -- Inward identification
@@ -118,7 +118,7 @@ CREATE TABLE goods_inwards (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
+    created_by UUID NOT NULL REFERENCES users(id),
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
 
@@ -178,53 +178,42 @@ CREATE INDEX idx_goods_inwards_job_work ON goods_inwards(job_work_id);
 -- Auto-update timestamps
 CREATE TRIGGER update_goods_outwards_updated_at
     BEFORE UPDATE ON goods_outwards
-    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
--- Auto-set modified_by
-CREATE TRIGGER set_goods_outwards_modified_by
-    BEFORE UPDATE ON goods_outwards
-    FOR EACH ROW EXECUTE FUNCTION set_modified_by();
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_goods_outward_items_updated_at
     BEFORE UPDATE ON goods_outward_items
-    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_goods_inwards_updated_at
     BEFORE UPDATE ON goods_inwards
-    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
--- Auto-set modified_by
-CREATE TRIGGER set_goods_inwards_modified_by
-    BEFORE UPDATE ON goods_inwards
-    FOR EACH ROW EXECUTE FUNCTION set_modified_by();
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Auto-generate outward numbers
-CREATE OR REPLACE FUNCTION auto_generate_outward_number()
+CREATE OR REPLACE FUNCTION auto_generate_outward_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.outward_number IS NULL OR NEW.outward_number = '' THEN
-        NEW.outward_number := generate_sequence_number('GO', 'goods_outwards', NEW.company_id);
+    IF NEW.sequence_number IS NULL THEN
+        NEW.sequence_number := get_next_sequence('goods_outwards');
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_auto_outward_number
+CREATE TRIGGER trigger_auto_outward_sequence
     BEFORE INSERT ON goods_outwards
     FOR EACH ROW EXECUTE FUNCTION auto_generate_outward_number();
 
 -- Auto-generate inward numbers
-CREATE OR REPLACE FUNCTION auto_generate_inward_number()
+CREATE OR REPLACE FUNCTION auto_generate_inward_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.inward_number IS NULL OR NEW.inward_number = '' THEN
-        NEW.inward_number := generate_sequence_number('GI', 'goods_inwards', NEW.company_id);
+    IF NEW.sequence_number IS NULL THEN
+        NEW.sequence_number := get_next_sequence('goods_inwards');
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_auto_inward_number
+CREATE TRIGGER trigger_auto_inward_sequence
     BEFORE INSERT ON goods_inwards
     FOR EACH ROW EXECUTE FUNCTION auto_generate_inward_number();
-

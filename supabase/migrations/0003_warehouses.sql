@@ -32,14 +32,6 @@ CREATE TABLE warehouses (
     UNIQUE(company_id, slug)
 );
 
--- Add foreign key constraint for warehouse assignment in users table
-ALTER TABLE users ADD CONSTRAINT fk_user_warehouse
-    FOREIGN KEY (warehouse_id) REFERENCES warehouses(id);
-
--- Add foreign key constraint for user_warehouses table
-ALTER TABLE user_warehouses ADD CONSTRAINT fk_user_warehouse_warehouse
-    FOREIGN KEY (warehouse_id) REFERENCES warehouses(id) ON DELETE CASCADE;
-
 -- =====================================================
 -- INDEXES FOR PERFORMANCE
 -- =====================================================
@@ -115,3 +107,38 @@ CREATE TRIGGER trigger_set_warehouse_slug
     BEFORE INSERT ON warehouses
     FOR EACH ROW
     EXECUTE FUNCTION set_warehouse_slug();
+
+-- =====================================================
+-- RLS POLICIES
+-- =====================================================
+
+ALTER TABLE warehouses ENABLE ROW LEVEL SECURITY;
+
+-- Users can view warehouses in their company (their assigned warehouses in JWT)
+CREATE POLICY "Users can view warehouses in their company"
+ON warehouses
+FOR SELECT
+TO authenticated
+USING (
+    company_id = get_jwt_company_id() AND
+    id = ANY(get_jwt_warehouse_ids()) AND
+    authorize('warehouses.read')
+);
+
+-- Authorized users can create, update, delete warehouses
+CREATE POLICY "Authorized users can manage warehouses"
+ON warehouses
+FOR ALL
+TO authenticated
+USING (
+    company_id = get_jwt_company_id() AND authorize('warehouses.update')
+)
+WITH CHECK (
+    company_id = get_jwt_company_id() AND authorize('warehouses.create')
+);
+
+-- =====================================================
+-- GRANT PERMISSIONS TO AUTHENTICATED USERS
+-- =====================================================
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON warehouses TO authenticated;

@@ -12,7 +12,7 @@ CREATE TABLE stock_units (
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
     
     -- Identity
-    unit_number VARCHAR(100) NOT NULL,
+    sequence_number INTEGER NOT NULL,
 
     -- Physical specifications
     remaining_quantity DECIMAL(10,3) NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE stock_units (
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
     
-    UNIQUE(company_id, unit_number)
+    UNIQUE(company_id, sequence_number)
 );
 
 -- =====================================================
@@ -60,8 +60,8 @@ CREATE INDEX idx_stock_units_status ON stock_units(warehouse_id, status);
 -- Product relationship
 CREATE INDEX idx_stock_units_product_id ON stock_units(product_id);
 
--- Unit number lookup within company
-CREATE INDEX idx_stock_units_unit_number ON stock_units(company_id, unit_number);
+-- Sequence number lookup within company
+CREATE INDEX idx_stock_units_sequence_number ON stock_units(company_id, sequence_number);
 
 -- Inward tracking (for audit trail)
 CREATE INDEX idx_stock_units_inward_id ON stock_units(created_from_inward_id);
@@ -87,30 +87,78 @@ CREATE TRIGGER set_stock_units_modified_by
     BEFORE UPDATE ON stock_units
     FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
--- Auto-generate stock unit numbers
-CREATE OR REPLACE FUNCTION auto_generate_unit_number()
+-- Auto-generate sequence numbers
+CREATE OR REPLACE FUNCTION auto_generate_unit_sequence()
 RETURNS TRIGGER AS $$
-DECLARE
-    product_num TEXT;
-    next_seq INTEGER;
 BEGIN
-    IF NEW.unit_number IS NULL OR NEW.unit_number = '' THEN
-        SELECT product_number INTO product_num FROM products WHERE id = NEW.product_id;
-        
-        -- Get next sequence for this product
-        SELECT COALESCE(MAX(CAST(SUBSTRING(unit_number FROM product_num || '-SU(\d+)$') AS INTEGER)), 0) + 1
-        INTO next_seq
-        FROM stock_units 
-        WHERE product_id = NEW.product_id;
-        
-        NEW.unit_number := product_num || '-SU' || LPAD(next_seq::TEXT, 6, '0');
+    IF NEW.sequence_number IS NULL THEN
+        NEW.sequence_number := get_next_sequence('stock_units');
     END IF;
-
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_auto_unit_number
+CREATE TRIGGER trigger_auto_unit_sequence
     BEFORE INSERT ON stock_units
-    FOR EACH ROW EXECUTE FUNCTION auto_generate_unit_number();
+    FOR EACH ROW EXECUTE FUNCTION auto_generate_unit_sequence();
 
+-- =====================================================
+-- STOCK UNITS TABLE RLS POLICIES
+-- =====================================================
+
+ALTER TABLE stock_units ENABLE ROW LEVEL SECURITY;
+
+-- Authorized users can view stock units in their assigned warehouses
+CREATE POLICY "Authorized users can view stock units"
+ON stock_units
+FOR SELECT
+TO authenticated
+USING (
+    company_id = get_jwt_company_id() AND
+    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    authorize('stock_units.read')
+);
+
+-- Authorized users can create stock units in their assigned warehouses
+CREATE POLICY "Authorized users can create stock units"
+ON stock_units
+FOR INSERT
+TO authenticated
+WITH CHECK (
+    company_id = get_jwt_company_id() AND
+    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    authorize('stock_units.create')
+);
+
+-- Authorized users can update stock units in their assigned warehouses
+CREATE POLICY "Authorized users can update stock units"
+ON stock_units
+FOR UPDATE
+TO authenticated
+USING (
+    company_id = get_jwt_company_id() AND
+    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    authorize('stock_units.update')
+)
+WITH CHECK (
+    company_id = get_jwt_company_id() AND
+    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    authorize('stock_units.update')
+);
+
+-- Authorized users can delete stock units in their assigned warehouses
+CREATE POLICY "Authorized users can delete stock units"
+ON stock_units
+FOR DELETE
+TO authenticated
+USING (
+    company_id = get_jwt_company_id() AND
+    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    authorize('stock_units.delete')
+);
+
+-- =====================================================
+-- GRANT PERMISSIONS
+-- =====================================================
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON stock_units TO authenticated;

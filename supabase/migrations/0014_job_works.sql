@@ -11,7 +11,7 @@ CREATE TABLE job_works (
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
     
     -- Job identification
-    job_number VARCHAR(50) NOT NULL,
+    sequence_number INTEGER NOT NULL,
     job_type TEXT NOT NULL, -- Custom job type with auto-suggestions from previously used values
     
     -- Partners
@@ -44,7 +44,7 @@ CREATE TABLE job_works (
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
     
-    UNIQUE(company_id, job_number)
+    UNIQUE(company_id, sequence_number)
 );
 
 -- =====================================================
@@ -54,13 +54,14 @@ CREATE TABLE job_works (
 CREATE TABLE job_work_raw_materials (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
+    warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
     job_work_id UUID NOT NULL REFERENCES job_works(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id),
-    
+
     required_quantity DECIMAL(10,3) NOT NULL,
     dispatched_quantity DECIMAL(10,3) DEFAULT 0,
     pending_quantity DECIMAL(10,3) GENERATED ALWAYS AS (required_quantity - dispatched_quantity) STORED,
-    
+
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -73,13 +74,14 @@ CREATE TABLE job_work_raw_materials (
 CREATE TABLE job_work_finished_goods (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
+    warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
     job_work_id UUID NOT NULL REFERENCES job_works(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id),
-    
+
     expected_quantity DECIMAL(10,3) NOT NULL,
     received_quantity DECIMAL(10,3) DEFAULT 0,
     pending_quantity DECIMAL(10,3) GENERATED ALWAYS AS (expected_quantity - received_quantity) STORED,
-    
+
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -94,17 +96,19 @@ CREATE INDEX idx_job_works_company_id ON job_works(company_id);
 CREATE INDEX idx_job_works_warehouse_id ON job_works(warehouse_id);
 CREATE INDEX idx_job_works_vendor ON job_works(vendor_id);
 CREATE INDEX idx_job_works_status ON job_works(company_id, status);
-CREATE INDEX idx_job_works_job_number ON job_works(company_id, job_number);
+CREATE INDEX idx_job_works_sequence_number ON job_works(company_id, sequence_number);
 CREATE INDEX idx_job_works_job_type ON job_works(company_id, job_type);
 CREATE INDEX idx_job_works_start_date ON job_works(company_id, start_date);
 
 -- Raw Materials indexes
 CREATE INDEX idx_job_work_raw_materials_company_id ON job_work_raw_materials(company_id);
+CREATE INDEX idx_job_work_raw_materials_warehouse_id ON job_work_raw_materials(warehouse_id);
 CREATE INDEX idx_job_work_raw_materials_job_work_id ON job_work_raw_materials(job_work_id);
 CREATE INDEX idx_job_work_raw_materials_product_id ON job_work_raw_materials(product_id);
 
 -- Finished Goods indexes
 CREATE INDEX idx_job_work_finished_goods_company_id ON job_work_finished_goods(company_id);
+CREATE INDEX idx_job_work_finished_goods_warehouse_id ON job_work_finished_goods(warehouse_id);
 CREATE INDEX idx_job_work_finished_goods_job_work_id ON job_work_finished_goods(job_work_id);
 CREATE INDEX idx_job_work_finished_goods_product_id ON job_work_finished_goods(product_id);
 
@@ -130,18 +134,17 @@ CREATE TRIGGER update_job_work_finished_goods_updated_at
     BEFORE UPDATE ON job_work_finished_goods 
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
--- Auto-generate job numbers
-CREATE OR REPLACE FUNCTION auto_generate_job_number()
+-- Auto-generate sequence numbers
+CREATE OR REPLACE FUNCTION auto_generate_job_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.job_number IS NULL OR NEW.job_number = '' THEN
-        NEW.job_number := generate_sequence_number('JW', 'job_works', NEW.company_id);
+    IF NEW.sequence_number IS NULL THEN
+        NEW.sequence_number := get_next_sequence('job_works');
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_auto_job_number
+CREATE TRIGGER trigger_auto_job_sequence
     BEFORE INSERT ON job_works
-    FOR EACH ROW EXECUTE FUNCTION auto_generate_job_number();
-
+    FOR EACH ROW EXECUTE FUNCTION auto_generate_job_sequence();

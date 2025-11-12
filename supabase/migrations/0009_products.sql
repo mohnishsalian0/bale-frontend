@@ -10,7 +10,7 @@ CREATE TABLE products (
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
     
     -- Identity
-    product_number VARCHAR(50) NOT NULL,
+    sequence_number INTEGER NOT NULL,
     name VARCHAR(200) NOT NULL,
     show_on_catalog BOOLEAN DEFAULT TRUE,
     
@@ -42,7 +42,7 @@ CREATE TABLE products (
     modified_by UUID REFERENCES users(id),
     deleted_at TIMESTAMPTZ,
     
-    UNIQUE(company_id, product_number)
+    UNIQUE(company_id, sequence_number)
 );
 
 -- =====================================================
@@ -52,8 +52,8 @@ CREATE TABLE products (
 -- Multi-tenant index
 CREATE INDEX idx_products_company_id ON products(company_id);
 
--- Product number lookup within company
-CREATE INDEX idx_products_product_number ON products(company_id, product_number);
+-- Sequence number lookup within company
+CREATE INDEX idx_products_sequence_number ON products(company_id, sequence_number);
 
 -- Product name search
 CREATE INDEX idx_products_name ON products(company_id, name);
@@ -88,20 +88,20 @@ CREATE TRIGGER set_products_modified_by
     BEFORE UPDATE ON products
     FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
--- Auto-generate product numbers
-CREATE OR REPLACE FUNCTION auto_generate_product_number()
+-- Auto-generate sequence numbers
+CREATE OR REPLACE FUNCTION auto_generate_product_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.product_number IS NULL OR NEW.product_number = '' THEN
-        NEW.product_number := generate_sequence_number('PROD', 'products', NEW.company_id);
+    IF NEW.sequence_number IS NULL THEN
+        NEW.sequence_number := get_next_sequence('products');
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_auto_product_number
+CREATE TRIGGER trigger_auto_product_sequence
     BEFORE INSERT ON products
-    FOR EACH ROW EXECUTE FUNCTION auto_generate_product_number();
+    FOR EACH ROW EXECUTE FUNCTION auto_generate_product_sequence();
 
 
 -- Ensure measuring_unit matches stock_type
@@ -111,3 +111,57 @@ ALTER TABLE products ADD CONSTRAINT check_stock_type_measuring_unit
         (stock_type = 'batch' AND measuring_unit = 'unit') OR
         (stock_type = 'piece' AND measuring_unit IS NULL)
     );
+
+-- =====================================================
+-- PRODUCTS TABLE RLS POLICIES
+-- =====================================================
+
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+
+-- Authorized users can view products in their company
+CREATE POLICY "Authorized users can view products"
+ON products
+FOR SELECT
+TO authenticated
+USING (
+    company_id = get_jwt_company_id() AND authorize('products.read')
+);
+
+-- Authorized users can create products
+CREATE POLICY "Authorized users can create products"
+ON products
+FOR INSERT
+TO authenticated
+WITH CHECK (
+    company_id = get_jwt_company_id() AND authorize('products.create')
+);
+
+-- Authorized users can update products
+CREATE POLICY "Authorized users can update products"
+ON products
+FOR UPDATE
+TO authenticated
+USING (
+    company_id = get_jwt_company_id() AND authorize('products.update')
+)
+WITH CHECK (
+    company_id = get_jwt_company_id() AND authorize('products.update')
+);
+
+-- Authorized users can delete products
+CREATE POLICY "Authorized users can delete products"
+ON products
+FOR DELETE
+TO authenticated
+USING (
+    company_id = get_jwt_company_id() AND authorize('products.delete')
+);
+
+-- =====================================================
+-- GRANT PERMISSIONS
+-- =====================================================
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON products TO authenticated;
+
+-- Grant limited permissions to anonymous users (for public catalog)
+GRANT SELECT ON products TO anon;

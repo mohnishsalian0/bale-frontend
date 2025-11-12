@@ -1,3 +1,0 @@
--- Bale Backend - Cross-Domain Views and Final Setup
--- Complex views that span multiple business domains and final database setup
--- NOTE: All views removed in favor of frontend joins for development flexibility
