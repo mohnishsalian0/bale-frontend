@@ -6,33 +6,8 @@ import { IconX } from "@tabler/icons-react"
 
 import { cn } from "@/lib/utils"
 
-function Sheet({ open, onOpenChange, ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-
-	// Handle mobile back button to close sheet instead of navigating
-	React.useEffect(() => {
-		if (open) {
-			// Push a new history state when sheet opens
-			window.history.pushState({ sheet: 'open' }, '');
-
-			const handlePopState = () => {
-				// When back button is pressed, close the sheet
-				onOpenChange?.(false);
-			};
-
-			window.addEventListener('popstate', handlePopState);
-
-			return () => {
-				window.removeEventListener('popstate', handlePopState);
-			};
-		} else {
-			// Sheet closed normally (not via back button), remove the history entry
-			if (window.history.state?.sheet === 'open') {
-				window.history.back();
-			}
-		}
-	}, [open, onOpenChange]);
-
-	return <SheetPrimitive.Root data-slot="sheet" open={open} onOpenChange={onOpenChange} {...props} />
+function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
+	return <SheetPrimitive.Root data-slot="sheet" {...props} />
 }
 
 function SheetTrigger({
