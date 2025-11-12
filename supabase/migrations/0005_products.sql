@@ -103,13 +103,6 @@ CREATE TRIGGER trigger_auto_product_number
     BEFORE INSERT ON products
     FOR EACH ROW EXECUTE FUNCTION auto_generate_product_number();
 
--- =====================================================
--- SECURITY CONSTRAINTS
--- =====================================================
-
--- Ensure products belong to a company
-ALTER TABLE products ADD CONSTRAINT check_product_company_not_null
-    CHECK (company_id IS NOT NULL);
 
 -- Ensure measuring_unit matches stock_type
 ALTER TABLE products ADD CONSTRAINT check_stock_type_measuring_unit

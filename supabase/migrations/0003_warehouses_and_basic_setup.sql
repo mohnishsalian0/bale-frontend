@@ -67,13 +67,6 @@ CREATE TRIGGER set_warehouses_modified_by
     BEFORE UPDATE ON warehouses
     FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
--- =====================================================
--- SECURITY CONSTRAINTS
--- =====================================================
-
--- Ensure warehouses belong to a company
-ALTER TABLE warehouses ADD CONSTRAINT check_warehouse_company_not_null 
-    CHECK (company_id IS NOT NULL);
 
 -- =====================================================
 -- WAREHOUSE SLUG GENERATION

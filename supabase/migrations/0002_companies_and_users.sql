@@ -98,14 +98,6 @@ CREATE TRIGGER set_users_modified_by
     FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
 -- =====================================================
--- SECURITY CONSTRAINTS
--- =====================================================
-
--- Ensure users belong to a company
-ALTER TABLE users ADD CONSTRAINT check_user_company_not_null
-    CHECK (company_id IS NOT NULL);
-
--- =====================================================
 -- USER_WAREHOUSES JUNCTION TABLE (MULTI-WAREHOUSE ACCESS)
 -- =====================================================
 

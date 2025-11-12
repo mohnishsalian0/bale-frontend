@@ -239,10 +239,3 @@ CREATE TRIGGER trigger_validate_required_quantity
     BEFORE UPDATE ON sales_order_items
     FOR EACH ROW EXECUTE FUNCTION validate_required_quantity();
 
--- =====================================================
--- SECURITY CONSTRAINTS
--- =====================================================
-
--- Ensure sales orders belong to a company
-ALTER TABLE sales_orders ADD CONSTRAINT check_sales_order_company_not_null 
-    CHECK (company_id IS NOT NULL);

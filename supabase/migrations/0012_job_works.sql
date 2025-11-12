@@ -145,10 +145,3 @@ CREATE TRIGGER trigger_auto_job_number
     BEFORE INSERT ON job_works
     FOR EACH ROW EXECUTE FUNCTION auto_generate_job_number();
 
--- =====================================================
--- SECURITY CONSTRAINTS
--- =====================================================
-
--- Ensure job works belong to a company
-ALTER TABLE job_works ADD CONSTRAINT check_job_work_company_not_null 
-    CHECK (company_id IS NOT NULL);

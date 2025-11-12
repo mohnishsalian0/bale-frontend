@@ -114,10 +114,3 @@ CREATE TRIGGER trigger_auto_unit_number
     BEFORE INSERT ON stock_units
     FOR EACH ROW EXECUTE FUNCTION auto_generate_unit_number();
 
--- =====================================================
--- SECURITY CONSTRAINTS
--- =====================================================
-
--- Ensure stock units belong to a company
-ALTER TABLE stock_units ADD CONSTRAINT check_stock_unit_company_not_null 
-    CHECK (company_id IS NOT NULL);

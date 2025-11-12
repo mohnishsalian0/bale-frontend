@@ -89,10 +89,3 @@ CREATE TRIGGER set_partners_modified_by
     BEFORE UPDATE ON partners
     FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
--- =====================================================
--- SECURITY CONSTRAINTS
--- =====================================================
-
--- Ensure partners belong to a company
-ALTER TABLE partners ADD CONSTRAINT check_partner_company_not_null 
-    CHECK (company_id IS NOT NULL);
