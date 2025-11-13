@@ -32,7 +32,7 @@ interface SalesOrderWithDetails extends SalesOrderRow {
 
 interface OrderListItem {
 	id: string;
-	orderNumber: string;
+	orderNumber: number;
 	customerName: string;
 	products: Array<{ name: string; quantity: number }>;
 	dueDate: string | null;
@@ -128,7 +128,7 @@ export default function OrdersPage() {
 
 				return {
 					id: order.id,
-					orderNumber: order.order_number,
+					orderNumber: order.sequence_number,
 					customerName,
 					products,
 					dueDate: order.expected_delivery_date,
@@ -219,7 +219,7 @@ export default function OrdersPage() {
 				...group,
 				orders: group.orders.filter((order) => {
 					const matchesSearch =
-						order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+						order.orderNumber.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
 						order.customerName.toLowerCase().includes(searchQuery.toLowerCase());
 
 					const matchesStatus = selectedStatus === 'all' || order.status === selectedStatus;

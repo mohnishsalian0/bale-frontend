@@ -26,7 +26,7 @@ CREATE TABLE warehouses (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID DEFAULT get_current_user_id(),
+    created_by UUID DEFAULT get_jwt_user_id(),
     modified_by UUID,
     deleted_at TIMESTAMPTZ,
 

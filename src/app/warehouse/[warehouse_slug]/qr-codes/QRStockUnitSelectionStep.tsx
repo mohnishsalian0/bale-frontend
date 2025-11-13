@@ -87,9 +87,9 @@ export function QRStockUnitSelectionStep({
 			if (orphanedUnits.length > 0) {
 				groupedInwards.push({
 					id: 'orphaned',
-					inward_number: 'No Goods Inward',
+					sequence_number: 0,
 					stock_units: orphanedUnits,
-				} as GoodsInward);
+				} as any);
 			}
 
 			setGoodsInwards(groupedInwards);
@@ -203,7 +203,7 @@ export function QRStockUnitSelectionStep({
 								/>
 								<CollapsibleTrigger className="flex items-center justify-between w-full">
 									<span className="flex-1 text-sm font-medium text-gray-900 text-start">
-										{inward.inward_number} ({selectedInwardCount}/{inward.stock_units.length} selected)
+										GI-{inward.sequence_number} ({selectedInwardCount}/{inward.stock_units.length} selected)
 									</span>
 									<IconChevronDown
 										className={`size-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : 'rotate-0'}`}
@@ -225,7 +225,7 @@ export function QRStockUnitSelectionStep({
 											/>
 											<div className="flex items-center gap-3 flex-1">
 												<div className="flex-1 min-w-0">
-													<p className="text-xs font-medium text-gray-900">{unit.unit_number}</p>
+													<p className="text-xs font-medium text-gray-900">SU-{unit.sequence_number}</p>
 													<div className="flex items-center gap-1.5 text-xs text-gray-500">
 														{unit.manufacturing_date && (
 															<Fragment>

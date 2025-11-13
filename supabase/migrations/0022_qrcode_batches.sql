@@ -18,7 +18,7 @@ CREATE TABLE qr_batches (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL DEFAULT get_current_user_id(),
+    created_by UUID NOT NULL DEFAULT get_jwt_user_id(),
     modified_by UUID
 );
 

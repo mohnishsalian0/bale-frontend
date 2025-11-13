@@ -150,9 +150,8 @@ export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSale
 			const selectedProducts = products.filter(p => p.selected && p.quantity > 0);
 
 			// Prepare sales order insert data
-			const salesOrderInsert: Omit<TablesInsert<'sales_orders'>, 'created_by' | 'modified_by'> = {
-				fulfillment_warehouse_id: formData.warehouseId,
-				order_number: '',
+			const salesOrderInsert: Omit<TablesInsert<'sales_orders'>, 'created_by' | 'modified_by' | 'sequence_number'> = {
+				warehouse_id: formData.warehouseId,
 				customer_id: formData.customerId,
 				agent_id: formData.agentId || null,
 				order_date: formData.orderDate,
@@ -176,6 +175,7 @@ export function AddSalesOrderSheet({ open, onOpenChange, onOrderAdded }: AddSale
 			// Insert sales order line items
 			const lineItems: TablesInsert<'sales_order_items'>[] = selectedProducts.map(
 				(product) => ({
+					warehouse_id: formData.warehouseId,
 					sales_order_id: salesOrder.id,
 					product_id: product.id,
 					required_quantity: product.quantity,

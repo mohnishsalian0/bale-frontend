@@ -136,9 +136,8 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 				: null;
 
 			// Prepare typed insert data
-			const productInsert: Omit<TablesInsert<'products'>, 'created_by' | 'modified_by'> = {
+			const productInsert: Omit<TablesInsert<'products'>, 'created_by' | 'modified_by' | 'sequence_number'> = {
 				name: formData.name,
-				product_number: formData.productNumber,
 				show_on_catalog: formData.showOnCatalog,
 				material: formData.material || null,
 				color_name: formData.color || null,

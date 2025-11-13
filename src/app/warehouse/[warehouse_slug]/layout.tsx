@@ -130,7 +130,7 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 							currentWarehouse={warehouse.id}
 							onSelect={handleWarehouseSelect}
 							onOpenChange={setIsSelectorOpen}
-							/>
+						/>
 					)}
 
 					<div className="flex-1 pb-16 overflow-y-auto">

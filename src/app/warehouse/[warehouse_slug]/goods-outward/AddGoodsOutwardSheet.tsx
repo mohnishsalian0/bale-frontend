@@ -98,7 +98,7 @@ export function AddGoodsOutwardSheet({
 			};
 
 			// Prepare outward data
-			const outwardData: Omit<TablesInsert<'goods_outwards'>, 'outward_number'> = {
+			const outwardData: Omit<TablesInsert<'goods_outwards'>, 'created_by' | 'sequence_number'> = {
 				warehouse_id: warehouse.id,
 				outward_type: outwardTypeMap[detailsFormData.linkToType],
 

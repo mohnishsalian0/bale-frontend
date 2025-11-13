@@ -50,7 +50,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION set_modified_by()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.modified_by := get_current_user_id();
+    NEW.modified_by := get_jwt_user_id();
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -60,6 +60,21 @@ $$ LANGUAGE plpgsql;
 -- =====================================================
 -- These functions extract claims from JWT tokens
 -- Must be defined early as they're used in DEFAULT and RLS policies
+
+-- Function to get user_id from JWT claims
+CREATE OR REPLACE FUNCTION get_jwt_user_id()
+RETURNS UUID
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN (current_setting('request.jwt.claims', true)::jsonb->>'user_id')::uuid;
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN NULL;
+END;
+$$;
 
 -- Function to get company_id from JWT claims
 CREATE OR REPLACE FUNCTION get_jwt_company_id()

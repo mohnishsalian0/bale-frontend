@@ -7,11 +7,11 @@ import type { Tables } from '@/types/database/supabase';
 // Type for label data combining stock unit and product information
 export type LabelData = Pick<
 	Tables<'stock_units'>,
-	'id' | 'unit_number' | 'manufacturing_date' | 'initial_quantity' | 'quality_grade' | 'warehouse_location'
+	'id' | 'sequence_number' | 'manufacturing_date' | 'initial_quantity' | 'quality_grade' | 'warehouse_location'
 > & {
 	product: Pick<
 		Tables<'products'>,
-		'name' | 'product_number' | 'hsn_code' | 'material' | 'color_name' | 'gsm' | 'selling_price_per_unit'
+		'name' | 'sequence_number' | 'hsn_code' | 'material' | 'color_name' | 'gsm' | 'selling_price_per_unit'
 	>;
 };
 
@@ -113,7 +113,7 @@ function getFieldValue(unit: LabelData, field: QRTemplateField): string {
 			value = unit.product.name;
 			break;
 		case 'product_number':
-			value = unit.product.product_number;
+			value = unit.product.sequence_number;
 			break;
 		case 'hsn_code':
 			value = unit.product.hsn_code;
@@ -131,7 +131,7 @@ function getFieldValue(unit: LabelData, field: QRTemplateField): string {
 			value = unit.product.selling_price_per_unit;
 			break;
 		case 'unit_number':
-			value = unit.unit_number;
+			value = unit.sequence_number;
 			break;
 		case 'manufacturing_date':
 			value = unit.manufacturing_date;

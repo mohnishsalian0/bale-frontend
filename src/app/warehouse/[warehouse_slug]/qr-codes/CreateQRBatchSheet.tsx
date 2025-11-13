@@ -122,17 +122,17 @@ export function CreateQRBatchSheet({
 				.from('stock_units')
 				.select(`
 					id,
-					unit_number,
+					sequence_number,
 					manufacturing_date,
 					initial_quantity,
 					quality_grade,
 					warehouse_location,
 					products (
 						name,
-						product_number,
+						sequence_number,
 						hsn_code,
 						material,
-						color,
+						color_name,
 						gsm,
 						selling_price_per_unit
 					)
@@ -152,17 +152,17 @@ export function CreateQRBatchSheet({
 			// Map data to LabelData format
 			const stockUnits: LabelData[] = stockUnitsData.map((unit: any) => ({
 				id: unit.id,
-				unit_number: unit.unit_number,
+				sequence_number: unit.sequence_number,
 				manufacturing_date: unit.manufacturing_date,
 				initial_quantity: unit.initial_quantity,
 				quality_grade: unit.quality_grade,
 				warehouse_location: unit.warehouse_location,
 				product: {
 					name: unit.products?.name || '',
-					product_number: unit.products?.product_number || '',
+					sequence_number: unit.products?.sequence_number || 0,
 					hsn_code: unit.products?.hsn_code,
 					material: unit.products?.material,
-					color_name: unit.products?.color,
+					color_name: unit.products?.color_name,
 					gsm: unit.products?.gsm,
 					selling_price_per_unit: unit.products?.selling_price_per_unit,
 				},

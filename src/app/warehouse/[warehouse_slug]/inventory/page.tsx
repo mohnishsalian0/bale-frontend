@@ -53,7 +53,7 @@ export default function InventoryPage() {
 			const transformedProducts: Product[] = (data || []).map((p: ProductRow) => ({
 				id: p.id,
 				name: p.name,
-				productNumber: p.product_number,
+				productNumber: p.sequence_number?.toString() || '',
 				material: p.material,
 				color: p.color_name,
 				totalQuantity: 0, // TODO: Calculate from stock_units

@@ -108,6 +108,10 @@ export async function GET(request: Request) {
 			return NextResponse.redirect(`${requestUrl.origin}/error?message=profile_creation_failed`);
 		}
 
+		// 🔄 Refresh session so custom_access_auth_hook runs and injects claims
+		console.log('🔄 Refreshing session to trigger access token hook');
+		await supabase.auth.refreshSession();
+
 		// Redirect to original destination or dashboard
 		console.log('🎉 Success! Redirecting to', redirectTo);
 		return NextResponse.redirect(`${requestUrl.origin}${redirectTo}`);

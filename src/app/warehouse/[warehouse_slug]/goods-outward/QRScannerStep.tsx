@@ -268,8 +268,8 @@ export function QRScannerStep({
 										<p title={item.product.name} className="text-base font-medium text-gray-900 truncate">
 											{item.product.name}
 										</p>
-										<p title={`#${item.stockUnit.unit_number}`} className="text-xs text-gray-500 truncate">
-											#{item.stockUnit.unit_number}
+										<p title={`#${item.stockUnit.sequence_number}`} className="text-xs text-gray-500 truncate">
+											#{item.stockUnit.sequence_number}
 										</p>
 									</div>
 

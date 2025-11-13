@@ -19,7 +19,6 @@ DECLARE
 BEGIN
     -- Insert goods inward
     INSERT INTO goods_inwards (
-        company_id,
         warehouse_id,
         inward_type,
         inward_date,
@@ -33,7 +32,6 @@ BEGIN
         created_by
     )
     VALUES (
-        (p_inward_data->>'company_id')::UUID,
         (p_inward_data->>'warehouse_id')::UUID,
         p_inward_data->>'inward_type',
         (p_inward_data->>'inward_date')::DATE,
@@ -50,7 +48,6 @@ BEGIN
 
     -- Insert stock units
     INSERT INTO stock_units (
-        company_id,
         warehouse_id,
         product_id,
         created_from_inward_id,
@@ -65,7 +62,6 @@ BEGIN
         created_by
     )
     SELECT
-        (unit->>'company_id')::UUID,
         (unit->>'warehouse_id')::UUID,
         (unit->>'product_id')::UUID,
         v_inward_id,
@@ -108,7 +104,6 @@ DECLARE
 BEGIN
     -- Insert goods outward
     INSERT INTO goods_outwards (
-        company_id,
         warehouse_id,
         outward_type,
         partner_id,
@@ -125,7 +120,6 @@ BEGIN
         created_by
     )
     VALUES (
-        (p_outward_data->>'company_id')::UUID,
         (p_outward_data->>'warehouse_id')::UUID,
         p_outward_data->>'outward_type',
         (p_outward_data->>'partner_id')::UUID,
@@ -159,14 +153,12 @@ BEGIN
 
         -- Insert goods outward item
         INSERT INTO goods_outward_items (
-            company_id,
             warehouse_id,
             outward_id,
             stock_unit_id,
             quantity_dispatched
         )
         VALUES (
-            (p_outward_data->>'company_id')::UUID,
             (p_outward_data->>'warehouse_id')::UUID,
             v_outward_id,
             v_stock_unit_id,
