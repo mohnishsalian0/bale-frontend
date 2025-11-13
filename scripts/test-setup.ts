@@ -304,7 +304,6 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			name: 'Premium Silk Saree',
-			product_number: 'PROD-001',
 			material: 'Silk',
 			color_name: 'Red',
 			gsm: 120,
@@ -323,7 +322,6 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			name: 'Cotton Kurta Fabric',
-			product_number: 'PROD-002',
 			material: 'Cotton',
 			color_name: 'White',
 			gsm: 150,
@@ -342,7 +340,6 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			name: 'Woolen Shawl Material',
-			product_number: 'PROD-003',
 			material: 'Wool',
 			color_name: 'Black',
 			gsm: 200,
@@ -360,7 +357,6 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			name: 'Polyester Blend Dress Material',
-			product_number: 'PROD-004',
 			material: 'Polyester',
 			color_name: 'Blue',
 			gsm: 180,
@@ -378,7 +374,6 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			name: 'Linen Summer Fabric',
-			product_number: 'PROD-005',
 			material: 'Linen',
 			color_name: 'White',
 			gsm: 140,
@@ -397,7 +392,6 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			name: 'Designer Silk Fabric',
-			product_number: 'PROD-006',
 			material: 'Silk',
 			color_name: 'Green',
 			gsm: 110,
@@ -414,7 +408,6 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			name: 'Cotton Denim',
-			product_number: 'PROD-007',
 			material: 'Denim',
 			color_name: 'Blue',
 			gsm: 300,
@@ -433,7 +426,6 @@ async function createTestPartners() {
 		{
 			company_id: companyId,
 			name: 'Yellow Cotton Print',
-			product_number: 'PROD-008',
 			material: 'Cotton',
 			color_name: 'Yellow',
 			gsm: 130,
@@ -464,7 +456,7 @@ async function createTestPartners() {
 			console.error(`❌ Failed to create product: ${product.name}`);
 			console.error(`   Error: ${error.message}`);
 		} else {
-			console.log(`✅ Created product: ${product.name} (${product.product_number})`);
+			console.log(`✅ Created product: ${product.name} (SEQ-${data.sequence_number})`);
 		}
 	}
 
@@ -521,7 +513,6 @@ async function createTestPartners() {
 				{
 					company_id: companyId,
 					warehouse_id: warehouseId,
-					inward_number: 'GR-001',
 					inward_type: 'other',
 					other_reason: 'Purchase',
 					partner_id: supplierId1,
@@ -533,7 +524,6 @@ async function createTestPartners() {
 				{
 					company_id: companyId,
 					warehouse_id: warehouseId,
-					inward_number: 'GR-002',
 					inward_type: 'other',
 					other_reason: 'Purchase',
 					partner_id: supplierId2,
@@ -545,7 +535,6 @@ async function createTestPartners() {
 				{
 					company_id: companyId,
 					warehouse_id: warehouseId,
-					inward_number: 'GR-003',
 					inward_type: 'other',
 					other_reason: 'Purchase',
 					partner_id: supplierId1,
@@ -557,7 +546,6 @@ async function createTestPartners() {
 				{
 					company_id: companyId,
 					warehouse_id: warehouseId,
-					inward_number: 'GR-004',
 					inward_type: 'other',
 					other_reason: 'Purchase',
 					partner_id: supplierId2,
@@ -569,7 +557,6 @@ async function createTestPartners() {
 				{
 					company_id: companyId,
 					warehouse_id: warehouseId,
-					inward_number: 'GR-005',
 					inward_type: 'other',
 					other_reason: 'Purchase',
 					partner_id: supplierId1,
@@ -583,40 +570,23 @@ async function createTestPartners() {
 			const inwardIds: string[] = [];
 
 			for (const inwards of testInwards) {
-				// Check if inwards already exists
-				const { data: existingInward } = await supabase
+				const { data, error } = await supabase
 					.from('goods_inwards')
-					.select('id, inward_number')
-					.eq('company_id', companyId)
-					.eq('inward_number', inwards.inward_number)
+					.insert({
+						...inwards,
+						created_by: userId,
+					})
+					.select()
 					.single();
 
-				let inwardId: string;
-
-				if (existingInward) {
-					console.log(`⏭️  Inward ${inwards.inward_number} already exists`);
-					inwardId = existingInward.id;
-					inwardIds.push(inwardId);
-				} else {
-					const { data, error } = await supabase
-						.from('goods_inwards')
-						.insert({
-							...inwards,
-							created_by: userId,
-						})
-						.select()
-						.single();
-
-					if (error) {
-						console.error(`❌ Failed to create inwards: ${inwards.inward_number}`);
-						console.error(`   Error: ${error.message}`);
-						continue;
-					} else {
-						inwardId = data.id;
-						inwardIds.push(inwardId);
-						console.log(`✅ Created goods inwards: ${inwards.inward_number}`);
-					}
+				if (error) {
+					console.error(`❌ Failed to create inwards: ${error.message}`);
+					continue;
 				}
+
+				const inwardId = data.id;
+				inwardIds.push(inwardId);
+				console.log(`✅ Created goods inwards: SEQ-${data.sequence_number}`);
 
 				// Check if stock units already exist for this inwards
 				const { data: existingStockUnits, error: checkStockError } = await supabase
@@ -682,7 +652,6 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-						outward_number: 'GD-001',
 						partner_id: customerId1,
 						outward_type: 'other',
 						other_reason: 'Sample outward for exhibition',
@@ -694,7 +663,6 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-						outward_number: 'GD-002',
 						partner_id: customerId2,
 						outward_type: 'other',
 						other_reason: 'Quality testing at external lab',
@@ -705,7 +673,6 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-						outward_number: 'GD-003',
 						partner_id: customerId1,
 						outward_type: 'other',
 						other_reason: 'Customer sample approval',
@@ -717,7 +684,6 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-						outward_number: 'GD-004',
 						partner_id: customerId2,
 						outward_type: 'other',
 						other_reason: 'Marketing material outward',
@@ -728,7 +694,6 @@ async function createTestPartners() {
 					{
 						company_id: companyId,
 						warehouse_id: warehouseId,
-						outward_number: 'GD-005',
 						partner_id: customerId1,
 						outward_type: 'other',
 						other_reason: 'Demo pieces for new collection',
@@ -742,20 +707,6 @@ async function createTestPartners() {
 				let stockUnitIndex = 0;
 
 				for (const outward of testOutwards) {
-					// Check if outward already exists
-					const { data: existingOutward } = await supabase
-						.from('goods_outwards')
-						.select('id, outward_number')
-						.eq('company_id', companyId)
-						.eq('outward_number', outward.outward_number)
-						.single();
-
-					if (existingOutward) {
-						console.log(`⏭️  Outward ${outward.outward_number} already exists`);
-						stockUnitIndex += 3; // Skip stock units that would have been used
-						continue;
-					}
-
 					// Prepare stock unit items (1-3 stock units per outward)
 					const itemCount = Math.min(3, stockUnits.length - stockUnitIndex);
 					const stockUnitItems = [];
@@ -779,7 +730,7 @@ async function createTestPartners() {
 					}
 
 					if (stockUnitItems.length === 0) {
-						console.log(`⏭️  No stock units available for ${outward.outward_number}`);
+						console.log(`⏭️  No stock units available for this outward`);
 						continue;
 					}
 
@@ -793,10 +744,9 @@ async function createTestPartners() {
 					});
 
 					if (error) {
-						console.error(`❌ Failed to create outward: ${outward.outward_number}`);
-						console.error(`   Error: ${error.message}`);
+						console.error(`❌ Failed to create outward: ${error.message}`);
 					} else {
-						console.log(`✅ Created goods outward: ${outward.outward_number} with ${stockUnitItems.length} items`);
+						console.log(`✅ Created goods outward with ${stockUnitItems.length} items`);
 					}
 				}
 			}
@@ -835,9 +785,8 @@ async function createTestPartners() {
 				// Two months ago - all completed/cancelled
 				{
 					company_id: companyId,
-					fulfillment_warehouse_id: warehouseId,
+					warehouse_id: warehouseId,
 					customer_id: customerId1,
-					order_number: 'SO-001',
 					order_date: twoMonthsAgo.toISOString().split('T')[0],
 					expected_delivery_date: new Date(twoMonthsAgo.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					status: 'completed',
@@ -848,9 +797,8 @@ async function createTestPartners() {
 				},
 				{
 					company_id: companyId,
-					fulfillment_warehouse_id: warehouseId,
+					warehouse_id: warehouseId,
 					customer_id: customerId2,
-					order_number: 'SO-002',
 					order_date: new Date(twoMonthsAgo.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					expected_delivery_date: new Date(twoMonthsAgo.getTime() + 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					status: 'completed',
@@ -861,9 +809,8 @@ async function createTestPartners() {
 				},
 				{
 					company_id: companyId,
-					fulfillment_warehouse_id: warehouseId,
+					warehouse_id: warehouseId,
 					customer_id: customerId1,
-					order_number: 'SO-003',
 					order_date: new Date(twoMonthsAgo.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					expected_delivery_date: new Date(twoMonthsAgo.getTime() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					status: 'cancelled',
@@ -876,9 +823,8 @@ async function createTestPartners() {
 				// Last month - mix of statuses
 				{
 					company_id: companyId,
-					fulfillment_warehouse_id: warehouseId,
+					warehouse_id: warehouseId,
 					customer_id: customerId2,
-					order_number: 'SO-004',
 					order_date: lastMonth.toISOString().split('T')[0],
 					expected_delivery_date: new Date(lastMonth.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					status: 'completed',
@@ -889,9 +835,8 @@ async function createTestPartners() {
 				},
 				{
 					company_id: companyId,
-					fulfillment_warehouse_id: warehouseId,
+					warehouse_id: warehouseId,
 					customer_id: customerId1,
-					order_number: 'SO-005',
 					order_date: new Date(lastMonth.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					expected_delivery_date: new Date(lastMonth.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Overdue
 					status: 'in_progress',
@@ -902,9 +847,8 @@ async function createTestPartners() {
 				},
 				{
 					company_id: companyId,
-					fulfillment_warehouse_id: warehouseId,
+					warehouse_id: warehouseId,
 					customer_id: customerId2,
-					order_number: 'SO-006',
 					order_date: new Date(lastMonth.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					expected_delivery_date: new Date(lastMonth.getTime() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					status: 'completed',
@@ -917,9 +861,8 @@ async function createTestPartners() {
 				// Current month - mostly pending/in progress
 				{
 					company_id: companyId,
-					fulfillment_warehouse_id: warehouseId,
+					warehouse_id: warehouseId,
 					customer_id: customerId1,
-					order_number: 'SO-007',
 					order_date: currentMonth.toISOString().split('T')[0],
 					expected_delivery_date: new Date(currentMonth.getTime() + 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					status: 'approval_pending',
@@ -930,9 +873,8 @@ async function createTestPartners() {
 				},
 				{
 					company_id: companyId,
-					fulfillment_warehouse_id: warehouseId,
+					warehouse_id: warehouseId,
 					customer_id: customerId2,
-					order_number: 'SO-008',
 					order_date: new Date(currentMonth.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					expected_delivery_date: new Date(currentMonth.getTime() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					status: 'in_progress',
@@ -943,9 +885,8 @@ async function createTestPartners() {
 				},
 				{
 					company_id: companyId,
-					fulfillment_warehouse_id: warehouseId,
+					warehouse_id: warehouseId,
 					customer_id: customerId1,
-					order_number: 'SO-009',
 					order_date: new Date(currentMonth.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					expected_delivery_date: new Date(currentMonth.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Overdue
 					status: 'in_progress',
@@ -956,9 +897,8 @@ async function createTestPartners() {
 				},
 				{
 					company_id: companyId,
-					fulfillment_warehouse_id: warehouseId,
+					warehouse_id: warehouseId,
 					customer_id: customerId2,
-					order_number: 'SO-010',
 					order_date: new Date(currentMonth.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					expected_delivery_date: new Date(currentMonth.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 					status: 'approval_pending',
@@ -970,54 +910,22 @@ async function createTestPartners() {
 			];
 
 			for (const order of testSalesOrders) {
-				// Check if order already exists
-				const { data: existingOrder } = await supabase
+				const { data, error } = await supabase
 					.from('sales_orders')
-					.select('id, order_number')
-					.eq('company_id', companyId)
-					.eq('order_number', order.order_number)
+					.insert({
+						...order,
+						created_by: userId,
+					})
+					.select()
 					.single();
 
-				let orderId: string;
-
-				if (existingOrder) {
-					console.log(`⏭️  Sales order ${order.order_number} already exists`);
-					orderId = existingOrder.id;
-				} else {
-					const { data, error } = await supabase
-						.from('sales_orders')
-						.insert({
-							...order,
-							created_by: userId,
-						})
-						.select()
-						.single();
-
-					if (error) {
-						console.error(`❌ Failed to create sales order: ${order.order_number}`);
-						console.error(`   Error: ${error.message}`);
-						continue;
-					} else {
-						orderId = data.id;
-						console.log(`✅ Created sales order: ${order.order_number} (${order.status})`);
-					}
-				}
-
-				// Check if order items already exist
-				const { data: existingItems, error: checkItemsError } = await supabase
-					.from('sales_order_items')
-					.select('id')
-					.eq('sales_order_id', orderId);
-
-				if (checkItemsError) {
-					console.error(`   ❌ Failed to check existing items: ${checkItemsError.message}`);
+				if (error) {
+					console.error(`❌ Failed to create sales order: ${error.message}`);
 					continue;
 				}
 
-				if (existingItems && existingItems.length > 0) {
-					console.log(`   ⏭️  Order items already exist (${existingItems.length} items)`);
-					continue;
-				}
+				const orderId = data.id;
+				console.log(`✅ Created sales order: SEQ-${data.sequence_number} (${order.status})`);
 
 				// Create order items (2-4 products per order)
 				const itemCount = Math.floor(Math.random() * 3) + 2; // 2-4 items
@@ -1033,6 +941,7 @@ async function createTestPartners() {
 						.from('sales_order_items')
 						.insert({
 							company_id: companyId,
+							warehouse_id: warehouseId,
 							sales_order_id: orderId,
 							product_id: productsList[i].id,
 							required_quantity: requiredQty,

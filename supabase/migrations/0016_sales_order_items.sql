@@ -8,7 +8,7 @@
 
 CREATE TABLE sales_order_items (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_jwt_company_id(),
     warehouse_id UUID NOT NULL REFERENCES warehouses(id),
     sales_order_id UUID NOT NULL REFERENCES sales_orders(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id),
@@ -42,8 +42,8 @@ CREATE INDEX idx_sales_order_items_product ON sales_order_items(product_id);
 -- TRIGGERS FOR AUTO-UPDATES
 -- =====================================================
 
-CREATE TRIGGER update_sales_order_items_updated_at 
-    BEFORE UPDATE ON sales_order_items 
+CREATE TRIGGER update_sales_order_items_updated_at
+    BEFORE UPDATE ON sales_order_items
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- Auto-populate unit rate from product master

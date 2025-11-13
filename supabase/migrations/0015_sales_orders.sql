@@ -7,7 +7,7 @@
 
 CREATE TABLE sales_orders (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_jwt_company_id(),
     
     -- Order identification
     sequence_number INTEGER NOT NULL,
@@ -32,17 +32,17 @@ CREATE TABLE sales_orders (
     
     -- Status change tracking
     status_changed_at TIMESTAMPTZ,
-    status_changed_by UUID REFERENCES users(id),
+    status_changed_by UUID,
     status_notes TEXT, -- Completion notes or cancellation reason
-    
+
     notes TEXT,
     attachments TEXT[], -- Array of file URLs
-    
+
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
-    modified_by UUID REFERENCES users(id),
+    created_by UUID NOT NULL DEFAULT get_current_user_id(),
+    modified_by UUID,
     deleted_at TIMESTAMPTZ,
     
     UNIQUE(company_id, sequence_number)
@@ -78,7 +78,7 @@ CREATE OR REPLACE FUNCTION auto_generate_order_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.sequence_number IS NULL THEN
-        NEW.sequence_number := get_next_sequence('sales_orders');
+        NEW.sequence_number := get_next_sequence('sales_orders', NEW.company_id);
     END IF;
     RETURN NEW;
 END;

@@ -14,7 +14,7 @@ CREATE TABLE user_warehouses (
 
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID DEFAULT get_current_user_id() REFERENCES users(id),
+    created_by UUID DEFAULT get_current_user_id(),
 
     -- Ensure unique user-warehouse pairs
     UNIQUE(user_id, warehouse_id)

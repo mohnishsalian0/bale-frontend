@@ -27,13 +27,17 @@ CREATE TRIGGER update_sequence_counters_updated_at
 -- FUNCTION TO GET NEXT SEQUENCE NUMBER
 -- =====================================================
 
-CREATE OR REPLACE FUNCTION get_next_sequence(p_table_name TEXT)
+CREATE OR REPLACE FUNCTION get_next_sequence(p_table_name TEXT, p_company_id UUID DEFAULT NULL)
 RETURNS INTEGER AS $$
 DECLARE
     next_val INTEGER;
+    v_company_id UUID;
 BEGIN
+    -- Use provided company_id, fallback to JWT if not provided
+    v_company_id := COALESCE(p_company_id, get_jwt_company_id());
+
     INSERT INTO sequence_counters (company_id, table_name, current_value)
-    VALUES (get_jwt_company_id(), p_table_name, 1)
+    VALUES (v_company_id, p_table_name, 1)
     ON CONFLICT (company_id, table_name)
     DO UPDATE SET current_value = sequence_counters.current_value + 1
     RETURNING current_value INTO next_val;

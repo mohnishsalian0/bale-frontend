@@ -1,5 +1,5 @@
--- Bale Backend - Catalog Configuration System
--- Public sales catalog with branding and product organization
+-- Bale Backend - Catalog Configuration
+-- Public sales catalog configuration with branding
 
 -- =====================================================
 -- CATALOG CONFIGURATION TABLE
@@ -7,8 +7,8 @@
 
 CREATE TABLE catalog_configurations (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
-    
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_jwt_company_id(),
+
     -- Branding
     catalog_name VARCHAR(100),
     logo_url TEXT,
@@ -16,85 +16,42 @@ CREATE TABLE catalog_configurations (
     secondary_color VARCHAR(7),
     font_family VARCHAR(50),
     favicon_url TEXT,
-    
+
     -- Product display configuration
     show_fields JSONB, -- Which product fields to show
     filter_options JSONB, -- Available filter options
     sort_options JSONB, -- Available sort options
-    
+
     -- Legal pages
     terms_conditions TEXT,
     return_policy TEXT,
     privacy_policy TEXT,
-    
+
     -- Contact information
     contact_phone VARCHAR(15),
     contact_email VARCHAR(100),
     contact_address TEXT,
-    
+
     -- Public settings
     accepting_orders BOOLEAN DEFAULT FALSE,
     domain_slug VARCHAR(50) UNIQUE,
-    
+
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
-    modified_by UUID REFERENCES users(id),
-    
+    created_by UUID NOT NULL DEFAULT get_current_user_id(),
+    modified_by UUID,
+
     UNIQUE(company_id)
-);
-
--- =====================================================
--- PRODUCT VARIANTS/GROUPS FOR CATALOG
--- =====================================================
-
-CREATE TABLE product_variants (
-    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
-    
-    variant_name VARCHAR(100) NOT NULL, -- e.g., "Cotton Solids", "Embroidered Collection"
-    variant_type VARCHAR(50), -- e.g., "Color", "Material", "Custom"
-    display_order INTEGER DEFAULT 0,
-    
-    -- Audit fields
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- =====================================================
--- PRODUCT VARIANT ITEMS (products grouped into variants)
--- =====================================================
-
-CREATE TABLE product_variant_items (
-    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
-    variant_id UUID NOT NULL REFERENCES product_variants(id) ON DELETE CASCADE,
-    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    
-    variant_value VARCHAR(100) NOT NULL, -- e.g., "Red", "Blue", "Cotton"
-    display_order INTEGER DEFAULT 0,
-    
-    UNIQUE(variant_id, product_id)
 );
 
 -- =====================================================
 -- INDEXES FOR PERFORMANCE
 -- =====================================================
 
--- Catalog Configuration indexes
 CREATE INDEX idx_catalog_configurations_company_id ON catalog_configurations(company_id);
 CREATE INDEX idx_catalog_configurations_domain_slug ON catalog_configurations(domain_slug);
 CREATE INDEX idx_catalog_configurations_accepting_orders ON catalog_configurations(accepting_orders);
-
--- Product Variants indexes
-CREATE INDEX idx_product_variants_company_id ON product_variants(company_id);
-CREATE INDEX idx_product_variants_display_order ON product_variants(company_id, display_order);
-
--- Product Variant Items indexes
-CREATE INDEX idx_product_variant_items_variant_id ON product_variant_items(variant_id);
-CREATE INDEX idx_product_variant_items_product_id ON product_variant_items(product_id);
-CREATE INDEX idx_product_variant_items_display_order ON product_variant_items(variant_id, display_order);
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES
@@ -110,10 +67,6 @@ CREATE TRIGGER set_catalog_configurations_modified_by
     BEFORE UPDATE ON catalog_configurations
     FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
-CREATE TRIGGER update_product_variants_updated_at 
-    BEFORE UPDATE ON product_variants 
-    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
 -- Auto-generate domain slug from company name with random number
 CREATE OR REPLACE FUNCTION generate_domain_slug()
 RETURNS TRIGGER AS $$
@@ -128,18 +81,18 @@ BEGIN
     base_slug := REGEXP_REPLACE(base_slug, '\s+', '-', 'g'); -- Replace spaces with hyphens
     base_slug := REGEXP_REPLACE(base_slug, '-+', '-', 'g'); -- Remove multiple hyphens
     base_slug := TRIM(base_slug, '-'); -- Remove leading/trailing hyphens
-    
+
     -- Generate random 4-digit number (1000-9999)
     random_num := 1000 + (RANDOM() * 9000)::INTEGER;
-    
+
     -- Combine base slug with random number
     final_slug := base_slug || '-' || random_num;
-    
+
     -- Update catalog configuration with generated slug
-    UPDATE catalog_configurations 
-    SET domain_slug = final_slug 
+    UPDATE catalog_configurations
+    SET domain_slug = final_slug
     WHERE company_id = NEW.id;
-    
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -147,3 +100,64 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_generate_domain_slug
     AFTER INSERT OR UPDATE OF name ON companies
     FOR EACH ROW EXECUTE FUNCTION generate_domain_slug();
+
+-- =====================================================
+-- CATALOG CONFIGURATION RLS POLICIES
+-- =====================================================
+
+ALTER TABLE catalog_configurations ENABLE ROW LEVEL SECURITY;
+
+-- Authorized users can view catalog configuration
+CREATE POLICY "Authorized users can view catalog configuration"
+ON catalog_configurations
+FOR SELECT
+TO authenticated
+USING (
+    company_id = get_jwt_company_id() AND authorize('catalog.read')
+);
+
+-- Authorized users can create catalog configuration
+CREATE POLICY "Authorized users can create catalog configuration"
+ON catalog_configurations
+FOR INSERT
+TO authenticated
+WITH CHECK (
+    company_id = get_jwt_company_id() AND authorize('catalog.create')
+);
+
+-- Authorized users can update catalog configuration
+CREATE POLICY "Authorized users can update catalog configuration"
+ON catalog_configurations
+FOR UPDATE
+TO authenticated
+USING (
+    company_id = get_jwt_company_id() AND authorize('catalog.update')
+)
+WITH CHECK (
+    company_id = get_jwt_company_id() AND authorize('catalog.update')
+);
+
+-- Authorized users can delete catalog configuration
+CREATE POLICY "Authorized users can delete catalog configuration"
+ON catalog_configurations
+FOR DELETE
+TO authenticated
+USING (
+    company_id = get_jwt_company_id() AND authorize('catalog.delete')
+);
+
+-- Allow anonymous users to view public catalog configurations
+CREATE POLICY "Anonymous users can view public catalog configurations"
+ON catalog_configurations
+FOR SELECT
+TO anon
+USING (
+    accepting_orders = true
+);
+
+-- =====================================================
+-- GRANT PERMISSIONS
+-- =====================================================
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON catalog_configurations TO authenticated;
+GRANT SELECT ON catalog_configurations TO anon;

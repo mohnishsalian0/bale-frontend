@@ -7,10 +7,9 @@
 
 CREATE TABLE warehouses (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_jwt_company_id(),
 
     name VARCHAR(100) NOT NULL,
-    slug VARCHAR(100) NOT NULL, -- URL-friendly identifier
     contact_name VARCHAR(100),
     contact_number VARCHAR(20),
     image_url TEXT,
@@ -21,11 +20,14 @@ CREATE TABLE warehouses (
     country VARCHAR(100) DEFAULT 'India',
     pin_code VARCHAR(10),
 
+    -- URL-friendly identifier
+    slug VARCHAR(100) NOT NULL,
+
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID DEFAULT get_current_user_id() REFERENCES users(id),
-    modified_by UUID REFERENCES users(id),
+    created_by UUID DEFAULT get_current_user_id(),
+    modified_by UUID,
     deleted_at TIMESTAMPTZ,
 
     UNIQUE(company_id, name),
@@ -38,9 +40,6 @@ CREATE TABLE warehouses (
 
 -- Multi-tenant index
 CREATE INDEX idx_warehouses_company_id ON warehouses(company_id);
-
--- Staff assignment lookup
-CREATE INDEX idx_users_warehouse_id ON users(warehouse_id);
 
 -- Warehouse name lookup within company
 CREATE INDEX idx_warehouses_name ON warehouses(company_id, name);

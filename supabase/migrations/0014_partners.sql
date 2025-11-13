@@ -7,7 +7,7 @@
 
 CREATE TABLE partners (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_jwt_company_id(),
     
     -- Identity
     first_name VARCHAR(50) NOT NULL,
@@ -40,8 +40,8 @@ CREATE TABLE partners (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
-    modified_by UUID REFERENCES users(id),
+    created_by UUID NOT NULL DEFAULT get_current_user_id(),
+    modified_by UUID,
     deleted_at TIMESTAMPTZ,
     
     UNIQUE(company_id, phone_number)

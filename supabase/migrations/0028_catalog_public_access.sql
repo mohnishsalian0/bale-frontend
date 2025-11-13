@@ -1,5 +1,5 @@
--- Bale Backend - Catalog RLS Policies
--- Public catalog access policies (must run after catalog_configurations table is created)
+-- Bale Backend - Catalog Public Access Policies
+-- Anonymous user access for public catalog (must run after catalog_configurations)
 
 -- =====================================================
 -- PUBLIC CATALOG ACCESS (ANONYMOUS USERS) - PRODUCTS
@@ -29,7 +29,7 @@ ON partners
 FOR INSERT
 TO anon
 WITH CHECK (
-    partner_type = 'Customer' AND
+    partner_type = 'customer' AND
     EXISTS (
         SELECT 1 FROM catalog_configurations cc
         WHERE cc.company_id = partners.company_id

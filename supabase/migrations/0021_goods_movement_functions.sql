@@ -10,19 +10,17 @@ CREATE OR REPLACE FUNCTION create_goods_inward_with_units(
     p_inward_data JSONB,
     p_stock_units JSONB[]
 )
-RETURNS JSONB
+RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
     v_inward_id UUID;
-    v_result JSONB;
 BEGIN
     -- Insert goods inward
     INSERT INTO goods_inwards (
         company_id,
         warehouse_id,
-        inward_number,
         inward_type,
         inward_date,
         invoice_number,
@@ -37,7 +35,6 @@ BEGIN
     VALUES (
         (p_inward_data->>'company_id')::UUID,
         (p_inward_data->>'warehouse_id')::UUID,
-        p_inward_data->>'inward_number',
         p_inward_data->>'inward_type',
         (p_inward_data->>'inward_date')::DATE,
         p_inward_data->>'invoice_number',
@@ -84,8 +81,7 @@ BEGIN
     FROM unnest(p_stock_units) AS unit;
 
     -- Return the inward ID
-    v_result := jsonb_build_object('id', v_inward_id);
-    RETURN v_result;
+    RETURN v_inward_id;
 END;
 $$;
 
@@ -98,7 +94,7 @@ CREATE OR REPLACE FUNCTION create_goods_outward_with_items(
     p_outward_data JSONB,
     p_stock_unit_items JSONB[]
 )
-RETURNS JSONB
+RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
@@ -109,13 +105,11 @@ DECLARE
     v_dispatch_quantity DECIMAL;
     v_current_quantity DECIMAL;
     v_new_quantity DECIMAL;
-    v_result JSONB;
 BEGIN
     -- Insert goods outward
     INSERT INTO goods_outwards (
         company_id,
         warehouse_id,
-        outward_number,
         outward_type,
         partner_id,
         to_warehouse_id,
@@ -133,7 +127,6 @@ BEGIN
     VALUES (
         (p_outward_data->>'company_id')::UUID,
         (p_outward_data->>'warehouse_id')::UUID,
-        p_outward_data->>'outward_number',
         p_outward_data->>'outward_type',
         (p_outward_data->>'partner_id')::UUID,
         (p_outward_data->>'to_warehouse_id')::UUID,
@@ -167,12 +160,14 @@ BEGIN
         -- Insert goods outward item
         INSERT INTO goods_outward_items (
             company_id,
+            warehouse_id,
             outward_id,
             stock_unit_id,
             quantity_dispatched
         )
         VALUES (
             (p_outward_data->>'company_id')::UUID,
+            (p_outward_data->>'warehouse_id')::UUID,
             v_outward_id,
             v_stock_unit_id,
             v_dispatch_quantity
@@ -198,8 +193,7 @@ BEGIN
     END LOOP;
 
     -- Return the outward ID
-    v_result := jsonb_build_object('id', v_outward_id);
-    RETURN v_result;
+    RETURN v_outward_id;
 END;
 $$;
 

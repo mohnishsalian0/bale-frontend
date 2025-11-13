@@ -7,7 +7,7 @@
 
 CREATE TABLE stock_units (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_jwt_company_id(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
     
@@ -39,8 +39,8 @@ CREATE TABLE stock_units (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
-    modified_by UUID REFERENCES users(id),
+    created_by UUID NOT NULL DEFAULT get_current_user_id(),
+    modified_by UUID,
     deleted_at TIMESTAMPTZ,
     
     UNIQUE(company_id, sequence_number)
@@ -92,7 +92,7 @@ CREATE OR REPLACE FUNCTION auto_generate_unit_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.sequence_number IS NULL THEN
-        NEW.sequence_number := get_next_sequence('stock_units');
+        NEW.sequence_number := get_next_sequence('stock_units', NEW.company_id);
     END IF;
     RETURN NEW;
 END;

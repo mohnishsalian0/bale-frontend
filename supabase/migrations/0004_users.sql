@@ -19,7 +19,7 @@ CREATE TABLE users (
     additional_notes TEXT,
     
     -- Role and access
-    role VARCHAR(20) NOT NULL REFERENCES roles(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+    role VARCHAR(20) NOT NULL,
     warehouse_id UUID REFERENCES warehouses(id),
     is_active BOOLEAN DEFAULT TRUE,
     
@@ -40,6 +40,9 @@ CREATE TABLE users (
 
 -- Multi-tenant indexes (company_id is always in WHERE clause)
 CREATE INDEX idx_users_company_id ON users(company_id);
+
+-- Staff assignment lookup
+CREATE INDEX idx_users_warehouse_id ON users(warehouse_id);
 
 -- Authentication lookup
 CREATE INDEX idx_users_auth_user_id ON users(auth_user_id);

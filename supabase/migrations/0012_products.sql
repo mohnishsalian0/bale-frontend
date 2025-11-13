@@ -7,7 +7,7 @@
 
 CREATE TABLE products (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_user_company_id(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_jwt_company_id(),
     
     -- Identity
     sequence_number INTEGER NOT NULL,
@@ -38,9 +38,16 @@ CREATE TABLE products (
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID NOT NULL DEFAULT get_current_user_id() REFERENCES users(id),
-    modified_by UUID REFERENCES users(id),
+    created_by UUID NOT NULL DEFAULT get_current_user_id(),
+    modified_by UUID,
     deleted_at TIMESTAMPTZ,
+
+		CONSTRAINT stock_type_measuring_unit
+    CHECK (
+        (stock_type = 'roll' AND measuring_unit IN ('metre', 'yard', 'kilogram')) OR
+        (stock_type = 'batch' AND measuring_unit = 'unit') OR
+        (stock_type = 'piece' AND measuring_unit IS NULL)
+    ),
     
     UNIQUE(company_id, sequence_number)
 );
@@ -93,7 +100,7 @@ CREATE OR REPLACE FUNCTION auto_generate_product_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.sequence_number IS NULL THEN
-        NEW.sequence_number := get_next_sequence('products');
+        NEW.sequence_number := get_next_sequence('products', NEW.company_id);
     END IF;
     RETURN NEW;
 END;
@@ -103,14 +110,6 @@ CREATE TRIGGER trigger_auto_product_sequence
     BEFORE INSERT ON products
     FOR EACH ROW EXECUTE FUNCTION auto_generate_product_sequence();
 
-
--- Ensure measuring_unit matches stock_type
-ALTER TABLE products ADD CONSTRAINT check_stock_type_measuring_unit
-    CHECK (
-        (stock_type = 'roll' AND measuring_unit IN ('metre', 'yard', 'kilogram')) OR
-        (stock_type = 'batch' AND measuring_unit = 'unit') OR
-        (stock_type = 'piece' AND measuring_unit IS NULL)
-    );
 
 -- =====================================================
 -- PRODUCTS TABLE RLS POLICIES
