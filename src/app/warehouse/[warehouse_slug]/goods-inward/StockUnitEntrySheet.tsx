@@ -88,7 +88,7 @@ export function StockUnitEntrySheet({
 	const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
 
 	const formContent = (
-		<div className="flex flex-col gap-8 p-4 md:px-0">
+		<div className="flex flex-col gap-8 p-4 md:px-0 overflow-x-hidden">
 			<div className="flex flex-col gap-4">
 				<div className="flex gap-4">
 					{/* Product Info */}
