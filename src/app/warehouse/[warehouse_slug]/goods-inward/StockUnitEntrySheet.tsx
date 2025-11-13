@@ -53,7 +53,9 @@ export function StockUnitEntrySheet({
 		}
 	}, [open, initialUnit]);
 
-	const handleConfirm = () => {
+	const handleConfirm = (e?: React.MouseEvent) => {
+		e?.preventDefault();
+		e?.stopPropagation();
 		if (quantity > 0) {
 			onConfirm({
 				quantity,
@@ -237,10 +239,24 @@ export function StockUnitEntrySheet({
 
 	const footerButtons = (
 		<div className="flex gap-3 w-full">
-			<Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+			<Button
+				type="button"
+				variant="outline"
+				onClick={(e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					onOpenChange(false);
+				}}
+				className="flex-1"
+			>
 				Cancel
 			</Button>
-			<Button onClick={handleConfirm} disabled={quantity <= 0} className="flex-1">
+			<Button
+				type="button"
+				onClick={handleConfirm}
+				disabled={quantity <= 0}
+				className="flex-1"
+			>
 				Add
 			</Button>
 		</div>

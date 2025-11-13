@@ -211,7 +211,7 @@ export default function WarehouseSelector({
 											<div
 												key={warehouse.id}
 												onClick={() => handleSelect(warehouse.id)}
-												className={`flex gap-3 p-4 rounded-lg cursor-pointer transition-all bg-background border ${isSelected ? 'border-primary-500 shadow-primary-md' : 'border-border shadow-gray-md'}`}
+												className={`flex gap-3 p-4 rounded-lg cursor-pointer select-none transition-all bg-background border ${isSelected ? 'border-primary-500 shadow-primary-md' : 'border-border shadow-gray-md'}`}
 											>
 												{/* Icon */}
 												<div

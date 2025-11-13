@@ -137,7 +137,7 @@ export default function WarehouseSelectionPage() {
 								<div
 									key={warehouse.id}
 									onClick={() => handleWarehouseSelect(warehouse)}
-									className="flex gap-3 p-4 rounded-lg cursor-pointer transition-all bg-background border border-border shadow-gray-md hover:border-primary-500 hover:shadow-primary-md"
+									className="flex gap-3 p-4 rounded-lg cursor-pointer transition-all bg-background border border-border shadow-gray-md hover:border-primary-500 hover:shadow-primary-md select-none"
 								>
 									{/* Icon */}
 									<div className="flex-shrink-0 w-14 h-14 rounded-lg flex items-center justify-center bg-gray-100">
