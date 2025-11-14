@@ -18,6 +18,9 @@ export function createClient() {
 /**
  * Get the current authenticated user with their profile (client-side)
  * Use inside React components or other client code.
+ *
+ * Performance: Uses getSession() to read from localStorage (fast, ~1-5ms)
+ * Security: Session data is trusted in client-side context with auto-refresh enabled
  */
 export async function getCurrentUser(): Promise<User | null> {
 	const supabase = createBrowserClient(
@@ -25,14 +28,14 @@ export async function getCurrentUser(): Promise<User | null> {
 		process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 	);
 
-	// 1. Get authenticated user from Supabase Auth
+	// 1. Get session from localStorage (no API call unless token expired)
 	const {
-		data: { user: authUser },
-		error: authError,
-	} = await supabase.auth.getUser();
+		data: { session },
+		error: sessionError,
+	} = await supabase.auth.getSession();
 
-	if (authError || !authUser) {
-		console.warn('Auth error or no user:', authError?.message);
+	if (sessionError || !session?.user) {
+		console.warn('Session error or no user:', sessionError?.message);
 		return null;
 	}
 
@@ -40,7 +43,7 @@ export async function getCurrentUser(): Promise<User | null> {
 	const { data: user, error: userError } = await supabase
 		.from('users')
 		.select('*')
-		.eq('auth_user_id', authUser.id)
+		.eq('auth_user_id', session.user.id)
 		.single();
 
 	if (userError) {

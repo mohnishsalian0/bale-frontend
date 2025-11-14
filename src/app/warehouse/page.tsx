@@ -31,34 +31,22 @@ export default function WarehouseSelectionPage() {
 				return;
 			}
 
-			// Fetch warehouses based on role
-			if (currentUser.role === 'admin') {
-				// Admin: fetch all company warehouses
-				const { data, error } = await supabase
-					.from('warehouses')
-					.select('*')
-					.order('created_at');
+			// Fetch warehouses - RLS automatically filters based on user's warehouse access
+			const { data, error } = await supabase
+				.from('warehouses')
+				.select('*')
+				.order('created_at');
 
-				if (error) throw error;
-				setWarehouses(data || []);
-			} else {
-				// Staff: fetch only assigned warehouses
-				const { data, error } = await supabase
-					.from('user_warehouses')
-					.select(`
-						warehouse_id,
-						warehouses (*)
-					`)
-					.eq('user_id', currentUser.id);
+			if (error) throw error;
 
-				if (error) throw error;
+			const userWarehouses = data || [];
+			setWarehouses(userWarehouses);
 
-				// Extract warehouses from the join result
-				const userWarehouses = (data || [])
-					.map((uw: any) => uw.warehouses)
-					.filter(Boolean) as Warehouse[];
-
-				setWarehouses(userWarehouses);
+			// If user has exactly one warehouse, auto-select it
+			if (userWarehouses.length === 1) {
+				console.log('✅ Single warehouse detected, auto-selecting:', userWarehouses[0].slug);
+				await handleWarehouseSelect(userWarehouses[0], currentUser);
+				return;
 			}
 		} catch (error) {
 			console.error('Error fetching warehouses:', error);
@@ -67,10 +55,10 @@ export default function WarehouseSelectionPage() {
 		}
 	};
 
-	const handleWarehouseSelect = async (warehouse: Warehouse) => {
+	const handleWarehouseSelect = async (warehouse: Warehouse, user?: Tables<'users'>) => {
 		try {
-			// Get current user
-			const currentUser = await getCurrentUser();
+			// Get current user if not provided (for manual selection)
+			const currentUser = user || await getCurrentUser();
 			if (!currentUser) {
 				console.error('No user found');
 				return;
