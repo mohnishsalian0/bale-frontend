@@ -164,7 +164,7 @@ FOR SELECT
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('job_works.read')
 );
 
@@ -209,7 +209,7 @@ FOR SELECT
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('job_work_raw_materials.read')
 );
 
@@ -220,7 +220,7 @@ FOR INSERT
 TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('job_work_raw_materials.create')
 );
 
@@ -231,12 +231,12 @@ FOR UPDATE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('job_work_raw_materials.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('job_work_raw_materials.update')
 );
 
@@ -247,7 +247,7 @@ FOR DELETE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('job_work_raw_materials.delete')
 );
 
@@ -262,7 +262,7 @@ FOR SELECT
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('job_work_finished_goods.read')
 );
 
@@ -273,7 +273,7 @@ FOR INSERT
 TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('job_work_finished_goods.create')
 );
 
@@ -284,12 +284,12 @@ FOR UPDATE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('job_work_finished_goods.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('job_work_finished_goods.update')
 );
 
@@ -300,7 +300,7 @@ FOR DELETE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('job_work_finished_goods.delete')
 );
 

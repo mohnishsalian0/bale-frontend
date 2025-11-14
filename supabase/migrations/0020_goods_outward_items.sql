@@ -50,7 +50,7 @@ FOR SELECT
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('goods_outwards.read')
 );
 
@@ -61,7 +61,7 @@ FOR INSERT
 TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('goods_outward_items.create')
 );
 
@@ -72,12 +72,12 @@ FOR UPDATE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('goods_outward_items.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('goods_outward_items.update')
 );
 
@@ -88,7 +88,7 @@ FOR DELETE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('goods_outward_items.delete')
 );
 

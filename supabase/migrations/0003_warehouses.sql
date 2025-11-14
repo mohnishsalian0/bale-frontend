@@ -113,14 +113,14 @@ CREATE TRIGGER trigger_set_warehouse_slug
 
 ALTER TABLE warehouses ENABLE ROW LEVEL SECURITY;
 
--- Users can view warehouses in their company (their assigned warehouses in JWT)
+-- Users can view warehouses they have access to
 CREATE POLICY "Users can view warehouses in their company"
 ON warehouses
 FOR SELECT
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(id) AND
     authorize('warehouses.read')
 );
 

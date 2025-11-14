@@ -53,9 +53,15 @@ export function StockUnitEntrySheet({
 		}
 	}, [open, initialUnit]);
 
-	const handleConfirm = (e?: React.MouseEvent) => {
-		e?.preventDefault();
-		e?.stopPropagation();
+	const handleCancel = (e: React.MouseEvent) => {
+		// e.preventDefault();
+		// e.stopPropagation();
+		onOpenChange(false);
+	};
+
+	const handleConfirm = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
 		if (quantity > 0) {
 			onConfirm({
 				quantity,
@@ -242,11 +248,7 @@ export function StockUnitEntrySheet({
 			<Button
 				type="button"
 				variant="outline"
-				onClick={(e) => {
-					e.preventDefault();
-					e.stopPropagation();
-					onOpenChange(false);
-				}}
+				onClick={handleCancel}
 				className="flex-1"
 			>
 				Cancel

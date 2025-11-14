@@ -24,11 +24,14 @@ CREATE TABLE user_warehouses (
 -- INDEXES FOR USER_WAREHOUSES
 -- =====================================================
 
--- Lookup user's warehouses
+-- Lookup user's warehouses (used by has_warehouse_access function)
 CREATE INDEX idx_user_warehouses_user_id ON user_warehouses(user_id);
 
 -- Lookup warehouse's users
 CREATE INDEX idx_user_warehouses_warehouse_id ON user_warehouses(warehouse_id);
+
+-- Composite index for has_warehouse_access lookups (most common query)
+CREATE INDEX idx_user_warehouses_access_lookup ON user_warehouses(user_id, warehouse_id);
 
 -- =====================================================
 -- VALIDATION TRIGGER FOR USERS.WAREHOUSE_ID

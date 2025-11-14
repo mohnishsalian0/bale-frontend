@@ -131,7 +131,7 @@ FOR SELECT
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
     authorize('sales_orders.read')
 );
 
@@ -142,7 +142,7 @@ FOR INSERT
 TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
 		authorize('sales_orders.create')
 );
 
@@ -153,12 +153,12 @@ FOR UPDATE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
 		authorize('sales_orders.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
 		authorize('sales_orders.update')
 );
 
@@ -169,7 +169,7 @@ FOR DELETE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    warehouse_id = ANY(get_jwt_warehouse_ids()) AND
+    has_warehouse_access(warehouse_id) AND
 		authorize('sales_orders.delete')
 );
 

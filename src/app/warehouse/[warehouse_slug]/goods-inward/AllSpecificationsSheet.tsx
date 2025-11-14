@@ -36,6 +36,18 @@ export function AllSpecificationsSheet({
 
 	if (!product) return null;
 
+	const handleCancel = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		onOpenChange(false);
+	};
+
+	const handleAddNewUnit = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		onAddNewUnit();
+	};
+
 	// Format date as DD/MM/YY
 	const formatDate = (date: Date): string => {
 		const day = String(date.getDate()).padStart(2, '0');
@@ -116,10 +128,19 @@ export function AllSpecificationsSheet({
 
 	const footerButtons = (
 		<div className="flex gap-3 w-full">
-			<Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+			<Button
+				type="button"
+				variant="outline"
+				onClick={handleCancel}
+				className="flex-1"
+			>
 				Cancel
 			</Button>
-			<Button onClick={onAddNewUnit} className="flex-1">
+			<Button
+				type="button"
+				onClick={handleAddNewUnit}
+				className="flex-1"
+			>
 				<IconPlus className="size-4" />
 				Add new specification
 			</Button>

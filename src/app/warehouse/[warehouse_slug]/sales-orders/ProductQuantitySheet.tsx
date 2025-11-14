@@ -36,7 +36,15 @@ export function ProductQuantitySheet({
 		}
 	}, [open, initialQuantity]);
 
-	const handleConfirm = () => {
+	const handleCancel = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		onOpenChange(false);
+	};
+
+	const handleConfirm = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
 		if (quantity > 0) {
 			onConfirm(quantity);
 			onOpenChange(false);
@@ -145,10 +153,20 @@ export function ProductQuantitySheet({
 
 	const footerButtons = (
 		<div className="flex gap-3 w-full">
-			<Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+			<Button
+				type="button"
+				variant="outline"
+				onClick={handleCancel}
+				className="flex-1"
+			>
 				Cancel
 			</Button>
-			<Button onClick={handleConfirm} disabled={quantity <= 0} className="flex-1">
+			<Button
+				type="button"
+				onClick={handleConfirm}
+				disabled={quantity <= 0}
+				className="flex-1"
+			>
 				Confirm
 			</Button>
 		</div>

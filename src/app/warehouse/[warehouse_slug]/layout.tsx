@@ -58,21 +58,18 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 				return;
 			}
 
-			// Validate user has access to this warehouse
-			if (currentUser.role === 'staff') {
-				// Check if staff has access via user_warehouses
-				const { data: accessData, error: accessError } = await supabase
-					.from('user_warehouses')
-					.select('id')
-					.eq('user_id', currentUser.id)
-					.eq('warehouse_id', warehouseData.id)
-					.single();
+			// Validate user has access to this warehouse by checking if they can read it via RLS
+			// RLS will filter warehouses based on user's all_warehouses_access flag or user_warehouses
+			const { data: accessCheck, error: accessError} = await supabase
+				.from('warehouses')
+				.select('id')
+				.eq('id', warehouseData.id)
+				.single();
 
-				if (accessError || !accessData) {
-					console.error('Access denied to warehouse:', accessError);
-					router.push('/warehouse');
-					return;
-				}
+			if (accessError || !accessCheck) {
+				console.error('Access denied to warehouse:', accessError);
+				router.push('/warehouse');
+				return;
 			}
 
 			// Check if user's selected warehouse matches the URL

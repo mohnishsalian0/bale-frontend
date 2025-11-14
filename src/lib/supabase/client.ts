@@ -91,41 +91,22 @@ export async function getWarehouseId(): Promise<string | null> {
 
 /**
  * Get all warehouse IDs assigned to the current user
- * Returns all warehouses for admin, assigned warehouses for staff
+ * Queries database directly - RLS filters based on user's warehouse access
  */
 export async function getUserWarehouseIds(): Promise<string[]> {
-	const user = await getCurrentUser();
-	if (!user) return [];
-
 	const supabase = createClient();
 
-	// Admin has access to all warehouses
-	if (user.role === 'admin') {
-		const { data, error } = await supabase
-			.from('warehouses')
-			.select('id')
-			.eq('company_id', user.company_id);
-
-		if (error) {
-			console.error('Error fetching warehouses:', error.message);
-			return [];
-		}
-
-		return (data || []).map(w => w.id);
-	}
-
-	// Staff has access to assigned warehouses only
+	// Query warehouses - RLS automatically filters based on all_warehouses_access or user_warehouses
 	const { data, error } = await supabase
-		.from('user_warehouses')
-		.select('warehouse_id')
-		.eq('user_id', user.id);
+		.from('warehouses')
+		.select('id');
 
 	if (error) {
-		console.error('Error fetching user warehouses:', error.message);
+		console.error('Error fetching user warehouse IDs:', error.message);
 		return [];
 	}
 
-	return (data || []).map(uw => uw.warehouse_id);
+	return (data || []).map(w => w.id);
 }
 
 export async function requireAdmin() {

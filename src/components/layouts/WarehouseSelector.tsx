@@ -47,35 +47,14 @@ export default function WarehouseSelector({
 		try {
 			setLoading(true);
 
-			// Fetch warehouses based on role
-			if (user.role === 'admin') {
-				// Admin: fetch all company warehouses
-				const { data, error } = await supabase
-					.from('warehouses')
-					.select('*')
-					.order('created_at');
+			// Fetch warehouses - RLS automatically filters based on user's warehouse access
+			const { data, error } = await supabase
+				.from('warehouses')
+				.select('*')
+				.order('created_at');
 
-				if (error) throw error;
-				setWarehouses(data || []);
-			} else {
-				// Staff: fetch only assigned warehouses
-				const { data, error } = await supabase
-					.from('user_warehouses')
-					.select(`
-						warehouse_id,
-						warehouses (*)
-					`)
-					.eq('user_id', user.id);
-
-				if (error) throw error;
-
-				// Extract warehouses from the join result
-				const userWarehouses = (data || [])
-					.map((uw: any) => uw.warehouses)
-					.filter(Boolean) as Warehouse[];
-
-				setWarehouses(userWarehouses);
-			}
+			if (error) throw error;
+			setWarehouses(data || []);
 		} catch (error) {
 			console.error('Error fetching warehouses:', error);
 		} finally {

@@ -62,6 +62,9 @@ CREATE INDEX idx_permissions_resource_action ON permissions(resource, action);
 CREATE INDEX idx_role_permissions_role_id ON role_permissions(role_id);
 CREATE INDEX idx_role_permissions_permission_id ON role_permissions(permission_id);
 
+-- Composite index for authorize() function lookups
+CREATE INDEX idx_role_permissions_lookup ON role_permissions(role_id, permission_id);
+
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES
 -- =====================================================

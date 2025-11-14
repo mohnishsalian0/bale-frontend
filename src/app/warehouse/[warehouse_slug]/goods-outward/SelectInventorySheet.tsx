@@ -56,7 +56,9 @@ export function SelectInventorySheet({
 		}
 	};
 
-	const handleCancel = () => {
+	const handleCancel = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
 		onOpenChange(false);
 	};
 
@@ -78,7 +80,12 @@ export function SelectInventorySheet({
 
 					{/* Footer */}
 					<SheetFooter>
-						<Button variant="outline" onClick={handleCancel} className="w-full">
+						<Button
+							type="button"
+							variant="outline"
+							onClick={handleCancel}
+							className="w-full"
+						>
 							Cancel
 						</Button>
 					</SheetFooter>

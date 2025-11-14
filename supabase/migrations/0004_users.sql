@@ -21,6 +21,7 @@ CREATE TABLE users (
     -- Role and access
     role VARCHAR(20) NOT NULL,
     warehouse_id UUID REFERENCES warehouses(id),
+    all_warehouses_access BOOLEAN DEFAULT false,
     is_active BOOLEAN DEFAULT TRUE,
     
     -- Authentication (handled by Supabase Auth)
