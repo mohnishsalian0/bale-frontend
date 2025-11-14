@@ -17,7 +17,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 	const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
 	return (
-		<SidebarProvider>
+		<SidebarProvider defaultOpen={false}>
 			<AppSidebar />
 
 			<SidebarInset>

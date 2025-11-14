@@ -84,7 +84,7 @@ const NAV_ITEMS: NavItem[] = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const pathname = usePathname();
 	const { warehouse, hasPermission } = useSession();
-	const { setOpenMobile, isMobile } = useSidebar();
+	const { setOpenMobile, isMobile, setOpen, open } = useSidebar();
 
 	const handleClick = () => {
 		if (isMobile) {
@@ -92,24 +92,47 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		}
 	}
 
+	const handleMouseEnter = () => {
+		if (!isMobile) {
+			setOpen(true);
+		}
+	}
+
+	const handleMouseLeave = () => {
+		if (!isMobile) {
+			setOpen(false);
+		}
+	}
+
 	// Filter navigation items based on user permissions
 	const visibleNavItems = NAV_ITEMS.filter((item) => hasPermission(item.permission));
 
 	return (
-		<Sidebar {...props}>
+		<Sidebar
+			collapsible="icon"
+			onMouseEnter={handleMouseEnter}
+			onMouseLeave={handleMouseLeave}
+			{...props}
+		>
 			<SidebarHeader>
 				<SidebarMenu>
 					<SidebarMenuItem>
-						<SidebarMenuButton asChild className='p-2 h-auto'>
-							<a href="#">
-								<div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-11 items-center justify-center rounded-lg">
+						<SidebarMenuButton
+							asChild
+							size='lg'
+							onClick={handleClick}
+						>
+							<Link
+								href="#"
+								className='flex items-center rounded-none'
+							>
+								<div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
 									<IconPhotoScan className="size-6" />
 								</div>
 								<div className="flex flex-col leading-none">
-									<span className="text-lg font-medium">Bale Inventory</span>
-									<span className="text-sm text-gray-500">v1.0.0</span>
+									<span className="text-lg font-medium text-nowrap">Bale Inventory</span>
 								</div>
-							</a>
+							</Link>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 				</SidebarMenu>
@@ -127,7 +150,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 									asChild
 									isActive={isActive}
 									size='lg'
-									className='text-base [&>svg]:size-5 p-4 gap-3 text-gray-700'
 									onClick={handleClick}
 								>
 									<Link

@@ -86,11 +86,11 @@
 
 	/* Sidebar colors */
   --sidebar: var(--color-background-100);
-  --sidebar-foreground: var(--color-gray-900);
+  --sidebar-foreground: var(--color-gray-700);
   --sidebar-primary: var(--color-primary-100);
   --sidebar-primary-foreground: var(--color-primary-900);
   --sidebar-accent: var(--color-gray-100);
-  --sidebar-accent-foreground: var(--color-gray-900);
+  --sidebar-accent-foreground: var(--color-gray-700);
   --sidebar-border: var(--color-gray-200);
   --sidebar-ring: var(--color-gray-200);
 }
