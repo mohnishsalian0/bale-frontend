@@ -125,8 +125,13 @@ END;
 $$;
 
 -- Main authorization function - checks if user has specific permission
+-- Supports flexible dot-path permissions with greedy wildcard matching
+-- Uses backtracking algorithm for efficient wildcard matching
+-- Examples:
+--   'inventory.*' matches 'inventory.products.read', 'inventory.a.b.c.read'
+--   'inventory.*.view' matches 'inventory.page.view', 'inventory.page.stats.view'
 CREATE OR REPLACE FUNCTION authorize(
-    required_permission TEXT  -- Format: 'resource.action' e.g., 'products.create'
+    required_permission TEXT  -- Format: flexible dot-path e.g., 'inventory.products.create'
 )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -134,32 +139,75 @@ STABLE
 SECURITY DEFINER
 AS $$
 DECLARE
-    user_role TEXT;
-    has_permission BOOLEAN;
+    permission_record RECORD;
+    required_parts TEXT[];
+    granted_parts TEXT[];
+    req_idx INT;
+    grant_idx INT;
+    last_star_grant INT;
+    last_star_req INT;
 BEGIN
-    -- Get user role from JWT
-    user_role := get_jwt_user_role();
+    -- Split required permission once
+    required_parts := string_to_array(required_permission, '.');
 
-    -- Admin role has all permissions except companies.delete
-    IF user_role = 'admin' THEN
-        IF required_permission = 'companies.delete' THEN
-            RETURN FALSE;
-        END IF;
-        RETURN TRUE;
-    END IF;
-
-    -- For non-admin users, query permissions from database
-    SELECT EXISTS(
-        SELECT 1
+    -- Single loop: check all user permissions (exact match OR wildcard match)
+    FOR permission_record IN
+        SELECT p.permission_path
         FROM users u
         JOIN roles r ON r.name = u.role
         JOIN role_permissions rp ON rp.role_id = r.id
         JOIN permissions p ON p.id = rp.permission_id
         WHERE u.id = get_jwt_user_id()
-        AND p.resource || '.' || p.action = required_permission
-    ) INTO has_permission;
+    LOOP
+        granted_parts := string_to_array(permission_record.permission_path, '.');
 
-    RETURN has_permission;
+        -- Backtracking wildcard matcher
+        req_idx := 1;
+        grant_idx := 1;
+        last_star_grant := 0;
+        last_star_req := 0;
+
+        WHILE req_idx <= array_length(required_parts, 1) LOOP
+            IF grant_idx <= array_length(granted_parts, 1)
+               AND granted_parts[grant_idx] = '*' THEN
+
+                -- Record wildcard positions
+                last_star_grant := grant_idx;
+                last_star_req := req_idx;
+
+                grant_idx := grant_idx + 1;  -- move past '*'
+
+            ELSIF grant_idx <= array_length(granted_parts, 1)
+                  AND granted_parts[grant_idx] = required_parts[req_idx] THEN
+
+                -- Direct match
+                grant_idx := grant_idx + 1;
+                req_idx := req_idx + 1;
+
+            ELSIF last_star_grant > 0 THEN
+                -- Backtrack: extend '*' to include this segment
+                last_star_req := last_star_req + 1;
+                req_idx := last_star_req;
+                grant_idx := last_star_grant + 1;
+
+            ELSE
+                -- No match possible
+                EXIT;
+            END IF;
+        END LOOP;
+
+        -- After consuming required_parts, remaining granted_parts must be '*' only
+        WHILE grant_idx <= array_length(granted_parts, 1)
+              AND granted_parts[grant_idx] = '*' LOOP
+            grant_idx := grant_idx + 1;
+        END LOOP;
+
+        IF grant_idx > array_length(granted_parts, 1) THEN
+            RETURN TRUE;
+        END IF;
+    END LOOP;
+
+    RETURN FALSE;
 EXCEPTION
     WHEN OTHERS THEN
         RETURN FALSE;

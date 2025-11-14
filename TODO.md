@@ -30,6 +30,14 @@
 - [x] Set up storage buckets for images/files (company-logos, profile-images, product-images)
 - [x] Configure storage policies with RLS (multi-tenant access control)
 - [x] Create storage utility functions (upload, delete, get URLs)
+- [x] Implement flexible permission system with dot-path notation (0006_rbac_schema.sql)
+- [x] Update authorize() function with backtracking wildcard matcher (0001_enable_extensions_and_functions.sql)
+- [x] Remove hardcoded admin role checks - all permissions from database
+- [x] Add user-level all_warehouses_access flag for explicit warehouse scoping (0004_users.sql)
+- [x] Seed permissions with hierarchical structure (0031_rbac_seed_data.sql)
+- [x] Extend SessionContext with permission loading and checking (warehouse-context.tsx)
+- [x] Create PermissionGate component for conditional rendering (PermissionGate.tsx)
+- [x] Update layout.tsx to load permissions from database
 
 ## Phase 3: Authentication & Core Layout
 - [x] Build auth system (Google OAuth with Supabase Auth)

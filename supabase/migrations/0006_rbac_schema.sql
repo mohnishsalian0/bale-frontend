@@ -23,15 +23,14 @@ CREATE TABLE roles (
 
 CREATE TABLE permissions (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    resource VARCHAR(50) NOT NULL, -- e.g., 'products', 'stock_units', 'warehouses'
-    action VARCHAR(50) NOT NULL, -- e.g., 'read', 'create', 'update', 'delete'
+    permission_path TEXT NOT NULL UNIQUE, -- e.g., 'inventory.products.read', 'inventory.stock_page.view'
+    display_name VARCHAR(100), -- e.g., 'View Products', 'Access Stock Age Graph'
     description TEXT,
+    category VARCHAR(50), -- e.g., 'inventory', 'sales', 'settings' (for UI grouping)
 
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    UNIQUE(resource, action)
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- =====================================================
@@ -54,9 +53,9 @@ CREATE TABLE role_permissions (
 -- INDEXES FOR PERFORMANCE
 -- =====================================================
 
--- Permission lookups
-CREATE INDEX idx_permissions_resource ON permissions(resource);
-CREATE INDEX idx_permissions_resource_action ON permissions(resource, action);
+-- Permission path lookups (text_pattern_ops for wildcard matching)
+CREATE INDEX idx_permissions_path ON permissions(permission_path text_pattern_ops);
+CREATE INDEX idx_permissions_category ON permissions(category);
 
 -- Role-Permission mappings
 CREATE INDEX idx_role_permissions_role_id ON role_permissions(role_id);

@@ -184,138 +184,129 @@ India's textile industry (₹20.1 lakh crore/$240.8B market) has 96.66% unorgani
 - **Customer updates:** Order status and delivery tracking
 - **Pricing flexibility:** Per kg/meter/roll options
 
-## Role-Based Permissions Matrix
+## Role-Based Permissions System
 
-### Feature/Module Access Control Matrix
+### Permission Architecture
 
-#### Company Management
+**Technology:** Database-driven flexible permission system with dot-path notation and wildcard support
 
-| Operation | Admin | Staff |
-|-----------|-------|-------|
-| **Create** | ❌ | ❌ |
-| **Read** | ✅ | ❌ |
-| **Update** | ✅ | ❌ |
-| **Delete** | ✅ | ❌ |
+**Key Features:**
+- Flexible hierarchical permissions using dot notation (e.g., `inventory.products.read`, `movement.inward.create`)
+- Wildcard support for broad grants (e.g., `inventory.*` grants all inventory permissions)
+- Greedy wildcard matching (e.g., `movement.*.create` matches `movement.inward.create` and `movement.outward.create`)
+- No hardcoded role checks - all permissions stored in database
+- Consistent authorization logic between backend (PostgreSQL) and frontend (React)
 
-#### Staff Management
+**Implementation:**
+- Backend: PostgreSQL `authorize()` function with backtracking wildcard matcher
+- Frontend: React `SessionContext` with `hasPermission()`, `hasAnyPermission()`, `hasAllPermissions()` methods
+- UI Component: `<PermissionGate>` for conditional rendering based on permissions
 
-| Operation | Admin | Staff |
-|-----------|-------|-------|
-| **Create** | ✅ | ❌ |
-| **Read** | ✅ | ❌ |
-| **Update** | ✅ | ❌ |
-| **Delete** | ✅ | ❌ |
+### Permission Hierarchy
 
-Sub-modules:
-- Staff Accounts
-- Warehouse Assignment
+Permissions are organized hierarchically with the following top-level categories:
 
-#### Warehouse Management
+**Top Level Resources:**
+- `companies.*` - Company management
+- `warehouses.*` - Warehouse management
+- `users.*` - User/staff management
+- `partners.*` - Customer, vendor, supplier, agent management
+- `sales_orders.*` - Sales order management
+- `job_works.*` - Job work management
+- `catalog.*` - Public sales catalog configuration
+- `storage.*` - File upload and management
 
-| Operation | Admin | Staff |
-|-----------|-------|-------|
-| **Create** | ✅ | ❌ |
-| **Read** | ✅ | ❌ |
-| **Update** | ✅ | ❌ |
-| **Delete** | ✅ | ❌ |
+**Grouped Resources:**
+- `inventory.*` - Products, stock units, QR batches
+  - `inventory.products.*` - Product master CRUD
+  - `inventory.stock_units.*` - Stock unit CRUD
+  - `inventory.qr_batches.*` - QR batch generation
+- `movement.*` - Goods inward and outward
+  - `movement.inward.*` - Goods inward operations
+  - `movement.outward.*` - Goods outward operations
 
-#### Product Master
+**Permission Format:**
+- Standard CRUD: `{resource}.{action}` (e.g., `products.read`, `partners.create`)
+- Nested resources: `{category}.{resource}.{action}` (e.g., `inventory.products.read`, `movement.inward.create`)
+- Wildcards: `*` for all, `inventory.*` for all inventory operations
 
-| Operation | Admin | Staff |
-|-----------|-------|-------|
-| **Create** | ✅ | ❌ |
-| **Read** | ✅ | ✅ |
-| **Update** | ✅ | ❌ |
-| **Delete** | ✅ | ❌ |
+### Role Permissions Matrix
 
-#### Stock Units
+#### Admin Role
+- **Permission:** `*` (wildcard - full access)
+- **Scope:** All warehouses
+- **Access:** Complete system access including company settings, warehouse creation, staff management, and all operational features
 
-| Operation | Admin | Staff |
-|-----------|-------|-------|
-| **Create** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
-| **Read** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
-| **Update** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
-| **Delete** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
+#### Staff Role
+- **Scope:** Assigned warehouse only (enforced by RLS)
+- **Permissions:**
+  - **Read-only access:**
+    - `inventory.products.read` - View products
+    - `partners.read` - View partners
+    - `warehouses.read` - View warehouses
+    - `users.read` - View users
+  - **Warehouse-scoped CRUD:**
+    - `inventory.stock_units.*` - Full CRUD on stock units in assigned warehouse
+    - `inventory.qr_batches.read`, `inventory.qr_batches.create` - QR code generation
+    - `movement.inward.*` - Full CRUD on goods inward
+    - `movement.outward.*` - Full CRUD on goods outward
+    - `job_works.*` - Full CRUD on job work
+    - `sales_orders.read` - View sales orders (read-only)
+  - **Utility permissions:**
+    - `storage.upload`, `storage.delete` - File management
 
-#### Sales Order Management
+### Access Control Implementation
 
-| Operation | Admin | Staff |
-|-----------|-------|-------|
-| **Create** | ✅ (All Warehouses) | ❌ |
-| **Read** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only & List view) |
-| **Update** | ✅ (All Warehouses) | ❌ |
-| **Delete** | ✅ (All Warehouses) | ❌ |
+**Warehouse Access Control:**
+- User-level `all_warehouses_access` flag determines warehouse scope
+- Admin users: `all_warehouses_access = true` (access all warehouses)
+- Staff users: `all_warehouses_access = false` (access only assigned warehouses via `user_warehouses` table)
+- RLS policies automatically filter data based on warehouse access
+- Frontend queries respect warehouse filtering via RLS
 
-#### Partner Management
+**Permission Checking:**
+- Backend: `authorize('permission.path')` function in RLS policies
+- Frontend: `hasPermission('permission.path')` in React components
+- UI: `<PermissionGate permission="permission.path">...</PermissionGate>`
 
-| Operation | Admin | Staff |
-|-----------|-------|-------|
-| **Create** | ✅ | ❌ |
-| **Read** | ✅ | ✅ (Assigned Warehouse Only & List view) |
-| **Update** | ✅ | ❌ |
-| **Delete** | ✅ | ❌ |
+**Example Usage:**
+```tsx
+// Single permission
+<PermissionGate permission="inventory.products.create">
+  <Button>Create Product</Button>
+</PermissionGate>
 
-#### Job Work Management
+// Multiple permissions (OR logic)
+<PermissionGate permission={['sales_orders.read', 'sales_orders.create']}>
+  <OrdersPage />
+</PermissionGate>
 
-| Operation | Admin | Staff |
-|-----------|-------|-------|
-| **Create** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
-| **Read** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
-| **Update** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
-| **Delete** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
+// Multiple permissions (AND logic)
+<PermissionGate
+  permission={['inventory.products.read', 'inventory.products.update']}
+  requireAll
+>
+  <EditProductForm />
+</PermissionGate>
+```
 
-#### Goods Outward
+### Permission Management
 
-| Operation | Admin | Staff |
-|-----------|-------|-------|
-| **Create** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
-| **Read** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
-| **Update** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
-| **Delete** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
+**Adding New Permissions:**
+1. Add permission to `supabase/migrations/0031_rbac_seed_data.sql`
+2. Assign to appropriate roles in same migration file
+3. Run database migration
+4. Use permission in RLS policies and frontend code
 
-Sub-modules:
-- Barcode Scanning
-
-#### Goods Inward
-
-| Operation | Admin | Staff |
-|-----------|-------|-------|
-| **Create** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
-| **Read** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
-| **Update** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
-| **Delete** | ❌ | ❌ |
-
-#### Barcode Management
-
-| Operation | Admin | Staff |
-|-----------|-------|-------|
-| **Create** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
-| **Read** | ✅ (All Warehouses) | ✅ (Assigned Warehouse Only) |
-| **Update** | ✅ | ✅ |
-| **Delete** | ❌ | ❌ |
-
-Sub-modules:
-- Barcode Generation (Create & Read & Update only)
-- Barcode Field Selection (Full CRUD for both roles)
-- Barcode Print/Export (Read-only for both roles)
-
-#### Catalog Configuration
-
-| Operation | Admin | Staff |
-|-----------|-------|-------|
-| **Create** | ❌ | ❌ |
-| **Read** | ✅ | ❌ |
-| **Update** | ✅ | ❌ |
-| **Delete** | ❌ | ❌ |
-
-Sub-modules:
-- Branding
-- Product Info Config
-- Group product into variants
+**Wildcard Benefits:**
+- Simplifies role management (admin gets `*` instead of hundreds of individual permissions)
+- Easy to grant access to entire modules (e.g., `inventory.*` for all inventory features)
+- Flexible permission patterns (e.g., `movement.*.create` for both inward and outward creation)
 
 **Legend:**
-- ✅ = Permitted
-- ❌ = Not Permitted
+- ✅ = Permitted (has required permission)
+- ❌ = Not Permitted (missing permission)
+- 🔒 = Warehouse-scoped (filtered by RLS based on user's warehouse access)
 
 ---
 

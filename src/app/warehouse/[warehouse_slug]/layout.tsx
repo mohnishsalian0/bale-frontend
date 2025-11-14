@@ -23,6 +23,7 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 
 	const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
 	const [user, setUser] = useState<User | null>(null);
+	const [permissions, setPermissions] = useState<string[]>([]);
 	const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 	const [loading, setLoading] = useState(true);
 
@@ -83,6 +84,26 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 
 			// Set warehouse
 			setWarehouse(warehouseData);
+
+			// Load user permissions from database
+			const { data: roleData } = await supabase
+				.from('roles')
+				.select('id')
+				.eq('name', currentUser.role)
+				.single();
+
+			if (roleData) {
+				const { data: permData } = await supabase
+					.from('role_permissions')
+					.select('permissions!inner(permission_path)')
+					.eq('role_id', roleData.id);
+
+				const userPermissions = (permData || [])
+					.map((rp: any) => rp.permissions?.permission_path)
+					.filter(Boolean);
+
+				setPermissions(userPermissions);
+			}
 		} catch (error) {
 			console.error('Error validating warehouse:', error);
 			router.push('/warehouse');
@@ -103,6 +124,7 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 		<SessionProvider
 			warehouse={warehouse}
 			user={user}
+			permissions={permissions}
 		>
 			<SidebarProvider>
 				<AppSidebar />

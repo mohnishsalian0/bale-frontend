@@ -1,124 +1,169 @@
 -- Bale Backend - RBAC Seed Data
--- Seed permissions, roles, and role-permission mappings
+-- Seed permissions, roles, and role-permission mappings with dot-path format
 
 -- =====================================================
 -- SEED ROLES
 -- =====================================================
 
 INSERT INTO roles (name, display_name, description) VALUES
-('admin', 'Administrator', 'Full access to all features except deleting companies'),
+('admin', 'Administrator', 'Full access to all features via wildcard permission'),
 ('staff', 'Staff Member', 'Limited access with warehouse-scoped permissions');
 
 -- =====================================================
 -- SEED PERMISSIONS
 -- =====================================================
 
-INSERT INTO permissions (resource, action, description) VALUES
--- Companies
-('companies', 'read', 'View company details'),
-('companies', 'create', 'Create new companies'),
-('companies', 'update', 'Update company information'),
-('companies', 'delete', 'Delete companies'),
+-- Admin wildcard permission (grants everything)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('*', 'Full Access', 'Wildcard permission that grants access to all features', 'system');
 
--- Users/Staff
-('users', 'read', 'View user profiles'),
-('users', 'create', 'Create new users/staff'),
-('users', 'update', 'Update user profiles'),
-('users', 'delete', 'Delete users/staff'),
+-- Companies (Top Level)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('companies.read', 'View Company', 'View company information', 'companies'),
+('companies.create', 'Create Company', 'Create new companies', 'companies'),
+('companies.update', 'Update Company', 'Edit company details', 'companies'),
+('companies.delete', 'Delete Company', 'Delete companies', 'companies');
 
--- Warehouses
-('warehouses', 'read', 'View warehouses'),
-('warehouses', 'create', 'Create new warehouses'),
-('warehouses', 'update', 'Update warehouse information'),
-('warehouses', 'delete', 'Delete warehouses'),
+-- Warehouses (Top Level)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('warehouses.read', 'View Warehouses', 'View warehouse list and details', 'warehouses'),
+('warehouses.create', 'Create Warehouses', 'Add new warehouses', 'warehouses'),
+('warehouses.update', 'Update Warehouses', 'Edit warehouse details', 'warehouses'),
+('warehouses.delete', 'Delete Warehouses', 'Remove warehouses', 'warehouses');
 
+-- Users (Top Level)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('users.read', 'View Users', 'View user list and details', 'users'),
+('users.create', 'Create Users', 'Invite and create new users', 'users'),
+('users.update', 'Update Users', 'Edit user details and permissions', 'users'),
+('users.delete', 'Delete Users', 'Remove user accounts', 'users');
+
+-- Inventory Module (Products, Stock Units, QR Batches)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
 -- Products
-('products', 'read', 'View products'),
-('products', 'create', 'Create new products'),
-('products', 'update', 'Update product information'),
-('products', 'delete', 'Delete products'),
+('inventory.products.read', 'View Products', 'View product catalog', 'inventory'),
+('inventory.products.create', 'Create Products', 'Add new products to catalog', 'inventory'),
+('inventory.products.update', 'Update Products', 'Edit existing products', 'inventory'),
+('inventory.products.delete', 'Delete Products', 'Remove products from catalog', 'inventory'),
 
 -- Stock Units
-('stock_units', 'read', 'View stock units'),
-('stock_units', 'create', 'Create new stock units'),
-('stock_units', 'update', 'Update stock unit information'),
-('stock_units', 'delete', 'Delete stock units'),
-
--- Partners (Customers, Vendors, Suppliers, Agents)
-('partners', 'read', 'View partners'),
-('partners', 'create', 'Create new partners'),
-('partners', 'update', 'Update partner information'),
-('partners', 'delete', 'Delete partners'),
-
--- Sales Orders
-('sales_orders', 'read', 'View sales orders'),
-('sales_orders', 'create', 'Create new sales orders'),
-('sales_orders', 'update', 'Update sales order information'),
-('sales_orders', 'delete', 'Delete sales orders'),
-
--- Job Works
-('job_works', 'read', 'View job works'),
-('job_works', 'create', 'Create new job works'),
-('job_works', 'update', 'Update job work information'),
-('job_works', 'delete', 'Delete job works'),
-
--- Goods Inwards
-('goods_inwards', 'read', 'View goods inward records'),
-('goods_inwards', 'create', 'Create goods inward records'),
-('goods_inwards', 'update', 'Update goods inward records'),
-('goods_inwards', 'delete', 'Delete goods inward records'),
-
--- Goods Outwards
-('goods_outwards', 'read', 'View goods outward records'),
-('goods_outwards', 'create', 'Create goods outward records'),
-('goods_outwards', 'update', 'Update goods outward records'),
-('goods_outwards', 'delete', 'Delete goods outward records'),
+('inventory.stock_units.read', 'View Stock Units', 'View stock unit details', 'inventory'),
+('inventory.stock_units.create', 'Create Stock Units', 'Add new stock units', 'inventory'),
+('inventory.stock_units.update', 'Update Stock Units', 'Edit stock unit details', 'inventory'),
+('inventory.stock_units.delete', 'Delete Stock Units', 'Remove stock units', 'inventory'),
 
 -- QR Batches
-('qr_batches', 'read', 'View QR code batches'),
-('qr_batches', 'create', 'Create QR code batches'),
-('qr_batches', 'update', 'Update QR batch information'),
-('qr_batches', 'delete', 'Delete QR batches'),
+('inventory.qr_batches.read', 'View QR Batches', 'View QR code batch history', 'inventory'),
+('inventory.qr_batches.create', 'Create QR Batches', 'Generate QR code batches', 'inventory'),
+('inventory.qr_batches.update', 'Update QR Batches', 'Edit QR batch information', 'inventory'),
+('inventory.qr_batches.delete', 'Delete QR Batches', 'Remove QR batches', 'inventory');
 
--- Catalog
-('catalog', 'read', 'View catalog configuration'),
-('catalog', 'create', 'Create catalog entries'),
-('catalog', 'update', 'Update catalog configuration'),
-('catalog', 'delete', 'Delete catalog entries'),
+-- Movement Module (Inward, Outward)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+-- Goods Inward
+('movement.inward.read', 'View Inward', 'View inward movement records', 'movement'),
+('movement.inward.create', 'Create Inward', 'Create inward movements', 'movement'),
+('movement.inward.update', 'Update Inward', 'Edit inward records', 'movement'),
+('movement.inward.delete', 'Delete Inward', 'Remove inward records', 'movement'),
 
--- Storage/Files
-('storage', 'upload', 'Upload files and images'),
-('storage', 'delete', 'Delete files and images');
+-- Goods Outward
+('movement.outward.read', 'View Outward', 'View outward movement records', 'movement'),
+('movement.outward.create', 'Create Outward', 'Create outward movements', 'movement'),
+('movement.outward.update', 'Update Outward', 'Edit outward records', 'movement'),
+('movement.outward.delete', 'Delete Outward', 'Remove outward records', 'movement');
+
+-- Partners (Top Level)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('partners.read', 'View Partners', 'View customer, vendor, supplier, and agent records', 'partners'),
+('partners.create', 'Create Partners', 'Add new partners', 'partners'),
+('partners.update', 'Update Partners', 'Edit partner information', 'partners'),
+('partners.delete', 'Delete Partners', 'Remove partner records', 'partners');
+
+-- Sales Orders (Top Level)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('sales_orders.read', 'View Sales Orders', 'View sales order list and details', 'sales_orders'),
+('sales_orders.create', 'Create Sales Orders', 'Create new sales orders', 'sales_orders'),
+('sales_orders.update', 'Update Sales Orders', 'Edit existing sales orders', 'sales_orders'),
+('sales_orders.delete', 'Delete Sales Orders', 'Cancel or delete sales orders', 'sales_orders');
+
+-- Job Work (Top Level)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('job_works.read', 'View Job Work', 'View job work records', 'job_works'),
+('job_works.create', 'Create Job Work', 'Create new job work entries', 'job_works'),
+('job_works.update', 'Update Job Work', 'Edit job work records', 'job_works'),
+('job_works.delete', 'Delete Job Work', 'Remove job work entries', 'job_works');
+
+-- Catalog (Top Level)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('catalog.read', 'View Catalog', 'Access public sales catalog', 'catalog'),
+('catalog.create', 'Create Catalog Entries', 'Add products to catalog', 'catalog'),
+('catalog.update', 'Update Catalog', 'Edit catalog settings and entries', 'catalog'),
+('catalog.delete', 'Delete Catalog Entries', 'Remove items from catalog', 'catalog');
+
+-- Storage (Top Level)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('storage.upload', 'Upload Files', 'Upload files and images to storage', 'storage'),
+('storage.delete', 'Delete Files', 'Remove files from storage', 'storage');
 
 -- =====================================================
 -- ASSIGN PERMISSIONS TO ADMIN ROLE
 -- =====================================================
 
--- Admin gets ALL permissions EXCEPT companies.delete
+-- Admin gets wildcard permission (full access to everything)
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT
-    (SELECT id FROM roles WHERE name = 'admin'),
-    id
-FROM permissions
-WHERE NOT (resource = 'companies' AND action = 'delete');
+SELECT r.id, p.id
+FROM roles r
+CROSS JOIN permissions p
+WHERE r.name = 'admin'
+AND p.permission_path = '*';
 
 -- =====================================================
 -- ASSIGN PERMISSIONS TO STAFF ROLE
 -- =====================================================
 
--- Staff gets READ permissions for most resources
+-- Staff gets limited permissions for warehouse-scoped operations
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT
-    (SELECT id FROM roles WHERE name = 'staff'),
-    id
-FROM permissions
-WHERE action = 'read'
-AND resource IN ('products', 'partners', 'sales_orders', 'warehouses', 'users');
+SELECT r.id, p.id
+FROM roles r
+CROSS JOIN permissions p
+WHERE r.name = 'staff'
+AND p.permission_path IN (
+    -- Read-only for core resources
+    'inventory.products.read',
+    'partners.read',
+    'warehouses.read',
+    'users.read',
 
--- Staff gets warehouse-scoped CRUD for stock operations
-INSERT INTO role_permissions (role_id, permission_id)
-SELECT
-    (SELECT id FROM roles WHERE name = 'staff'),
-    id
-FROM permissions
-WHERE resource IN ('stock_units', 'goods_inwards', 'goods_outwards', 'job_works', 'qr_batches');
+    -- Full CRUD for stock units in assigned warehouse (RLS handles warehouse filtering)
+    'inventory.stock_units.read',
+    'inventory.stock_units.create',
+    'inventory.stock_units.update',
+    'inventory.stock_units.delete',
+
+    -- QR code generation
+    'inventory.qr_batches.read',
+    'inventory.qr_batches.create',
+
+    -- Read-only for sales orders in assigned warehouse
+    'sales_orders.read',
+
+    -- Full CRUD for job work in assigned warehouse
+    'job_works.read',
+    'job_works.create',
+    'job_works.update',
+    'job_works.delete',
+
+    -- Full CRUD for movements in assigned warehouse
+    'movement.inward.read',
+    'movement.inward.create',
+    'movement.inward.update',
+    'movement.inward.delete',
+    'movement.outward.read',
+    'movement.outward.create',
+    'movement.outward.update',
+    'movement.outward.delete',
+
+    -- Storage access
+    'storage.upload',
+    'storage.delete'
+);
