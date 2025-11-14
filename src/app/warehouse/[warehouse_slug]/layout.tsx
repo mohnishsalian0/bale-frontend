@@ -60,7 +60,7 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 
 			// Validate user has access to this warehouse by checking if they can read it via RLS
 			// RLS will filter warehouses based on user's all_warehouses_access flag or user_warehouses
-			const { data: accessCheck, error: accessError} = await supabase
+			const { data: accessCheck, error: accessError } = await supabase
 				.from('warehouses')
 				.select('id')
 				.eq('id', warehouseData.id)
@@ -91,12 +91,6 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 		}
 	};
 
-	const handleWarehouseSelect = (warehouseId: string) => {
-		// This is handled by WarehouseSelector component now
-		// It will update user profile and redirect
-		setIsSelectorOpen(false);
-	};
-
 	if (loading) {
 		return <LoadingState />;
 	}
@@ -125,7 +119,6 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 						<WarehouseSelector
 							open={isSelectorOpen}
 							currentWarehouse={warehouse.id}
-							onSelect={handleWarehouseSelect}
 							onOpenChange={setIsSelectorOpen}
 						/>
 					)}

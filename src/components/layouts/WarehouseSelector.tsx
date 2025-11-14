@@ -17,14 +17,12 @@ type Warehouse = Tables<'warehouses'>;
 interface WarehouseSelectorProps {
 	open: boolean;
 	currentWarehouse: string;
-	onSelect: (warehouseId: string) => void;
 	onOpenChange: (open: boolean) => void;
 }
 
 export default function WarehouseSelector({
 	open,
 	currentWarehouse,
-	onSelect,
 	onOpenChange,
 }: WarehouseSelectorProps) {
 	const { user } = useSession();
