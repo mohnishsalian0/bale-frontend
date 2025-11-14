@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { IconSearch } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
@@ -10,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
 import { LoadingState } from '@/components/layouts/loading-state';
-import { AddSalesOrderSheet } from './AddSalesOrderSheet';
 import { useSession } from '@/contexts/warehouse-context';
 
 type SalesOrderRow = Tables<'sales_orders'>;
@@ -49,6 +49,7 @@ interface MonthGroup {
 }
 
 export default function OrdersPage() {
+	const router = useRouter();
 	const { warehouse } = useSession();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [selectedStatus, setSelectedStatus] = useState('all');
@@ -61,7 +62,6 @@ export default function OrdersPage() {
 	const [totalSales, setTotalSales] = useState(0);
 	const [availableProducts, setAvailableProducts] = useState<string[]>([]);
 	const [availableCustomers, setAvailableCustomers] = useState<Array<{ id: string; name: string }>>([]);
-	const [showAddOrderSheet, setShowAddOrderSheet] = useState(false);
 
 	const fetchSalesOrders = async () => {
 		try {
@@ -82,7 +82,7 @@ export default function OrdersPage() {
 						dispatched_quantity
 					)
 				`)
-				.eq('fulfillment_warehouse_id', warehouse.id)
+				.eq('warehouse_id', warehouse.id)
 				.order('order_date', { ascending: false });
 
 			if (ordersError) throw ordersError;
@@ -446,18 +446,7 @@ export default function OrdersPage() {
 			</div>
 
 			{/* Floating Action Button */}
-			<Fab onClick={() => setShowAddOrderSheet(true)} className="fixed bottom-20 right-4" />
-
-			{/* Add Sales Order Sheet */}
-			{
-				showAddOrderSheet && (
-					<AddSalesOrderSheet
-						open={showAddOrderSheet}
-						onOpenChange={setShowAddOrderSheet}
-						onOrderAdded={fetchSalesOrders}
-					/>
-				)
-			}
+			<Fab onClick={() => router.push(`/warehouse/${warehouse.slug}/sales-orders/create`)} className="fixed bottom-20 right-4" />
 		</div >
 	);
 }

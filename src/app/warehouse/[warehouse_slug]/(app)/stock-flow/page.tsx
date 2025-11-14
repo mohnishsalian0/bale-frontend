@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { IconSearch } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
@@ -12,8 +13,6 @@ import { DropdownMenu } from '@radix-ui/react-dropdown-menu';
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import IconGoodsInward from '@/components/icons/IconGoodsInward';
 import IconGoodsOutward from '@/components/icons/IconGoodsOutward';
-import { AddGoodsInwardSheet } from '../goods-inward/AddGoodsInwardSheet';
-import { AddGoodsOutwardSheet } from '../goods-outward/AddGoodsOutwardSheet';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { useSession } from '@/contexts/warehouse-context';
 
@@ -37,6 +36,7 @@ interface MonthGroup {
 }
 
 export default function StockFlowPage() {
+	const router = useRouter();
 	const { warehouse } = useSession();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [selectedFilter, setSelectedFilter] = useState<'all' | 'outward' | 'inward'>('all');
@@ -46,8 +46,6 @@ export default function StockFlowPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [totalReceived, setTotalReceived] = useState(0);
 	const [totalOutwarded, setTotalOutwarded] = useState(0);
-	const [showGoodsInward, setShowGoodsInward] = useState(false);
-	const [showGoodsOutward, setShowGoodsOutward] = useState(false);
 
 	const fetchStockFlow = async () => {
 		try {
@@ -411,34 +409,16 @@ export default function StockFlowPage() {
 					<Fab className="fixed bottom-20 right-4" />
 				</DropdownMenuTrigger>
 				<DropdownMenuContent className="w-56 mx-4" align="start" side='top' sideOffset={8}>
-					<DropdownMenuItem className='group' onSelect={() => setShowGoodsInward(true)}>
+					<DropdownMenuItem className='group' onSelect={() => router.push(`/warehouse/${warehouse.slug}/goods-inward/create`)}>
 						<IconGoodsInward className='size-8 mr-1 fill-gray-500 group-hover:fill-primary-foreground' />
 						Goods Inward
 					</DropdownMenuItem>
-					<DropdownMenuItem className='group' onSelect={() => setShowGoodsOutward(true)}>
+					<DropdownMenuItem className='group' onSelect={() => router.push(`/warehouse/${warehouse.slug}/goods-outward/create`)}>
 						<IconGoodsOutward className='size-8 mr-1 fill-gray-500 group-hover:fill-primary-foreground' />
 						Goods Outward
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
-
-			{/* Add Goods Inward Sheet */}
-			{showGoodsInward && (
-				<AddGoodsInwardSheet
-					open={showGoodsInward}
-					onOpenChange={setShowGoodsInward}
-					onInwardAdded={fetchStockFlow}
-				/>
-			)}
-
-			{/* Add Goods Outward Sheet */}
-			{showGoodsOutward && (
-				<AddGoodsOutwardSheet
-					open={showGoodsOutward}
-					onOpenChange={setShowGoodsOutward}
-					onOutwardAdded={fetchStockFlow}
-				/>
-			)}
 		</div>
 	);
 }

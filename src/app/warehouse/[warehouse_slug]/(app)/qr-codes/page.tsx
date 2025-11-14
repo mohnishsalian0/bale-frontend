@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { IconQrcode, IconShare, IconDownload } from '@tabler/icons-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,7 +12,6 @@ import { createClient } from '@/lib/supabase/client';
 import { formatCreatedAt, formatAbsoluteDate } from '@/lib/utils/date';
 import { toast } from 'sonner';
 import { LoadingState } from '@/components/layouts/loading-state';
-import { CreateQRBatchSheet } from './CreateQRBatchSheet';
 import { useSession } from '@/contexts/warehouse-context';
 
 interface QRBatch {
@@ -29,13 +29,13 @@ interface Product {
 }
 
 export default function QRCodesPage() {
+	const router = useRouter();
 	const { warehouse } = useSession();
 	const [batches, setBatches] = useState<QRBatch[]>([]);
 	const [products, setProducts] = useState<Product[]>([]);
 	const [selectedProduct, setSelectedProduct] = useState<string>('all');
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [showCreateBatch, setShowCreateBatch] = useState(false);
 
 	const supabase = createClient();
 
@@ -301,17 +301,8 @@ export default function QRCodesPage() {
 
 			{/* Floating Action Button */}
 			<Fab
-				onClick={() => setShowCreateBatch(true)}
+				onClick={() => router.push(`/warehouse/${warehouse.slug}/qr-codes/create`)}
 				className="fixed bottom-20 right-4"
-			/>
-
-			{/* Batch Creation Sheet */}
-			<CreateQRBatchSheet
-				open={showCreateBatch}
-				onOpenChange={setShowCreateBatch}
-				onBatchCreated={() => {
-					fetchBatches();
-				}}
 			/>
 		</div>
 	);

@@ -23,8 +23,8 @@ export default function BottomNav() {
 	const { warehouse } = useSession();
 
 	return (
-		<div className="fixed bottom-0 left-0 right-0 bg-background-100 border-t-1 border-gray-200 z-50">
-			<div className="flex items-center justify-between px-4 h-16">
+		<div className="sticky bottom-0 left-0 right-0 bg-background-100 border-t-1 border-gray-200 z-50">
+			<div className="flex items-center justify-between px-8 h-16">
 				{navItems.map((item) => {
 					const href = `/warehouse/${warehouse.slug}/${item.path}`;
 					const isActive = pathname === href;

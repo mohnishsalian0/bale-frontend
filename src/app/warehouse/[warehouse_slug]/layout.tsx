@@ -2,11 +2,6 @@
 
 import { ReactNode, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import TopBar from '@/components/layouts/TopBar';
-import BottomNav from '@/components/layouts/BottomNav';
-import WarehouseSelector from '@/components/layouts/WarehouseSelector';
-import { AppSidebar } from '@/components/layouts/AppSidebar';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { SessionProvider } from '@/contexts/warehouse-context';
 import { getCurrentUser } from '@/lib/supabase/client';
 import { createClient } from '@/lib/supabase/client';
@@ -24,7 +19,6 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 	const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
 	const [user, setUser] = useState<User | null>(null);
 	const [permissions, setPermissions] = useState<string[]>([]);
-	const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 	const [loading, setLoading] = useState(true);
 
 	const supabase = createClient();
@@ -126,32 +120,7 @@ export default function WarehouseLayout({ children }: { children: ReactNode }) {
 			user={user}
 			permissions={permissions}
 		>
-			<SidebarProvider>
-				<AppSidebar />
-
-				<SidebarInset>
-					<TopBar
-						warehouseName={warehouse.name}
-						onWarehouseClick={() => setIsSelectorOpen(!isSelectorOpen)}
-						onProfileClick={() => console.log('Profile clicked')}
-						isWarehouseSelectorOpen={isSelectorOpen}
-					/>
-
-					{isSelectorOpen && (
-						<WarehouseSelector
-							open={isSelectorOpen}
-							currentWarehouse={warehouse.id}
-							onOpenChange={setIsSelectorOpen}
-						/>
-					)}
-
-					<div className="flex-1 pb-16 overflow-y-auto">
-						{children}
-					</div>
-
-					<BottomNav />
-				</SidebarInset>
-			</SidebarProvider>
+			{children}
 		</SessionProvider>
 	);
 }

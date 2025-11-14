@@ -1,7 +1,7 @@
 import React from 'react';
 import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer';
 import QRCode from 'qrcode';
-import type { QRTemplateField } from '@/app/warehouse/[warehouse_slug]/qr-codes/QRTemplateCustomisationStep';
+import type { QRTemplateField } from '@/app/warehouse/[warehouse_slug]/(flow)/qr-codes/QRTemplateCustomisationStep';
 import type { Tables } from '@/types/database/supabase';
 
 // Type for label data combining stock unit and product information
