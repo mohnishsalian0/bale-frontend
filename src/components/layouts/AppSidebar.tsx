@@ -32,6 +32,7 @@ type NavItem = {
 	icon: ComponentType<{ className?: string }>;
 	trailingIcon?: ComponentType<{ className?: string }>;
 	external?: boolean;
+	permission: string;
 };
 
 const NAV_ITEMS: NavItem[] = [
@@ -39,43 +40,50 @@ const NAV_ITEMS: NavItem[] = [
 		label: 'Job work',
 		path: 'job-work',
 		icon: IconClipboardList,
+		permission: 'job_works.read',
 	},
 	{
 		label: 'QR codes',
 		path: 'qr-codes',
 		icon: IconQrcode,
+		permission: 'inventory.qr_batches.read',
 	},
 	{
 		label: 'Partners',
 		path: 'partners',
 		icon: IconUsers,
+		permission: 'partners.read',
 	},
 	{
 		label: 'Staff',
 		path: 'staff',
 		icon: IconIdBadge2,
+		permission: 'users.read',
 	},
 	{
 		label: 'Reports',
 		path: 'reports',
 		icon: IconChartBar,
+		permission: 'reports.read',
 	},
 	{
 		label: 'Settings',
 		path: 'settings',
 		icon: IconSettings,
+		permission: 'companies.read',
 	},
 	{
 		label: 'Online store',
 		path: '/catalog',
 		icon: IconBuildingStore,
 		external: true,
+		permission: 'catalog.read',
 	},
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const pathname = usePathname();
-	const { warehouse } = useSession();
+	const { warehouse, hasPermission } = useSession();
 	const { setOpenMobile, isMobile } = useSidebar();
 
 	const handleClick = () => {
@@ -83,6 +91,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			setOpenMobile(false);
 		}
 	}
+
+	// Filter navigation items based on user permissions
+	const visibleNavItems = NAV_ITEMS.filter((item) => hasPermission(item.permission));
 
 	return (
 		<Sidebar {...props}>
@@ -105,7 +116,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			</SidebarHeader>
 			<SidebarContent>
 				<SidebarMenu className="gap-0">
-					{NAV_ITEMS.map((item) => {
+					{visibleNavItems.map((item) => {
 						const href = item.external ? item.path : `/warehouse/${warehouse.slug}/${item.path}`;
 						const isActive = pathname === href;
 						const TrailingIcon = item.trailingIcon;

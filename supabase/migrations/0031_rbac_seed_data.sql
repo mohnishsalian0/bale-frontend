@@ -100,6 +100,10 @@ INSERT INTO permissions (permission_path, display_name, description, category) V
 ('catalog.update', 'Update Catalog', 'Edit catalog settings and entries', 'catalog'),
 ('catalog.delete', 'Delete Catalog Entries', 'Remove items from catalog', 'catalog');
 
+-- Reports (Top Level)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('reports.read', 'View Reports', 'Access reports and analytics', 'reports');
+
 -- Storage (Top Level)
 INSERT INTO permissions (permission_path, display_name, description, category) VALUES
 ('storage.upload', 'Upload Files', 'Upload files and images to storage', 'storage'),
@@ -133,6 +137,7 @@ AND p.permission_path IN (
     'partners.read',
     'warehouses.read',
     'users.read',
+    'reports.read',
 
     -- Full CRUD for stock units in assigned warehouse (RLS handles warehouse filtering)
     'inventory.stock_units.read',
