@@ -97,7 +97,7 @@ export function OutwardDetailsStep({ formData, onChange }: OutwardDetailsStepPro
 	};
 
 	return (
-		<div className="flex flex-col gap-5 py-4">
+		<div className="flex-1 overflow-y-auto flex flex-col gap-5 py-4">
 
 			{/* Outward To Section */}
 			<div className="flex flex-col gap-2 px-4">
