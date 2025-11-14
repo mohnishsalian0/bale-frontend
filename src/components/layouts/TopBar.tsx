@@ -2,7 +2,7 @@
 
 import { IconChevronDown } from '@tabler/icons-react';
 import Image from 'next/image';
-import { SidebarTrigger } from '../ui/sidebar';
+import { SidebarTrigger, useSidebar } from '../ui/sidebar';
 import { Button } from '../ui/button';
 
 interface TopBarProps {
@@ -21,6 +21,8 @@ export default function TopBar({
 	onProfileClick,
 	isWarehouseSelectorOpen = false,
 }: TopBarProps) {
+	const { setOpenMobile, isMobile, setOpen } = useSidebar();
+
 	return (
 		<div className={`z-30 sticky top-0 bg-background-100 ${isWarehouseSelectorOpen ? '' : 'border-b border-gray-200'
 			}`}>
@@ -28,7 +30,9 @@ export default function TopBar({
 				{/* Left side - Menu + Warehouse selector */}
 				<div className="flex items-center gap-2">
 					{/* Menu Button */}
-					<SidebarTrigger className='size-10 text-gray-700' />
+					{isMobile &&
+						<SidebarTrigger className='size-10 text-gray-700' />
+					}
 
 					{/* Warehouse Selector */}
 					<Button

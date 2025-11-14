@@ -84,7 +84,7 @@ const NAV_ITEMS: NavItem[] = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const pathname = usePathname();
 	const { warehouse, hasPermission } = useSession();
-	const { setOpenMobile, isMobile, setOpen, open } = useSidebar();
+	const { setOpenMobile, isMobile, setOpen } = useSidebar();
 
 	const handleClick = () => {
 		if (isMobile) {
