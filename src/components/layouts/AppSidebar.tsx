@@ -124,13 +124,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						>
 							<Link
 								href="#"
-								className='flex items-center rounded-none'
 							>
-								<div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-									<IconPhotoScan className="size-6" />
+								<div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg -ml-1">
+									<IconPhotoScan className="size-5" />
 								</div>
 								<div className="flex flex-col leading-none">
-									<span className="text-lg font-medium text-nowrap">Bale Inventory</span>
+									<span className="pl-1 text-lg font-medium text-nowrap">Bale Inventory</span>
 								</div>
 							</Link>
 						</SidebarMenuButton>
@@ -156,7 +155,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 										href={href}
 										target={item.external ? '_blank' : undefined}
 										rel={item.external ? 'noreferrer' : undefined}
-										className='flex items-center rounded-none'
 									>
 										<item.icon />
 										<span className='flex-1'>{item.label}</span>
