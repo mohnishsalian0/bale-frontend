@@ -9,7 +9,7 @@ import { AllSpecificationsSheet } from './AllSpecificationsSheet';
 import { InwardDetailsStep } from './InwardDetailsStep';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
 import type { Tables, TablesInsert } from '@/types/database/supabase';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
 
 interface AddGoodsInwardSheetProps {
 	open: boolean;

@@ -8,7 +8,7 @@ import { QRScannerStep, ScannedStockUnit } from '../QRScannerStep';
 import { OutwardDetailsStep } from '../OutwardDetailsStep';
 import { createClient } from '@/lib/supabase/client';
 import type { TablesInsert } from '@/types/database/supabase';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
 import { toast } from 'sonner';
 
 interface DetailsFormData {

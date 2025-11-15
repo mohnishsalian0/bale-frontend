@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
+import { toast } from 'sonner';
 
 interface PermissionGateProps {
 	/**
@@ -25,6 +26,22 @@ interface PermissionGateProps {
 	 * Default: null (renders nothing)
 	 */
 	fallback?: ReactNode;
+
+	/**
+	 * Mode for handling lack of permission:
+	 * - "hide": Don't render anything (default, backward compatible)
+	 * - "disable": Render children with grayscale + click overlay
+	 * - "fallback": Render fallback content
+	 * Default: "hide"
+	 */
+	mode?: 'hide' | 'disable' | 'fallback';
+
+	/**
+	 * Action name for toast message when disabled
+	 * Example: "create staff", "delete product"
+	 * Used in: "You don't have permission to {actionName}"
+	 */
+	actionName?: string;
 }
 
 /**
@@ -64,18 +81,58 @@ export function PermissionGate({
 	children,
 	requireAll = false,
 	fallback = null,
+	mode = 'hide',
+	actionName,
 }: PermissionGateProps) {
 	const { hasPermission, hasAllPermissions, hasAnyPermission } = useSession();
 
-	// Handle single permission
+	// Determine if user has access
+	let hasAccess: boolean;
 	if (typeof permission === 'string') {
-		return hasPermission(permission) ? <>{children}</> : <>{fallback}</>;
+		hasAccess = hasPermission(permission);
+	} else {
+		hasAccess = requireAll
+			? hasAllPermissions(...permission)
+			: hasAnyPermission(...permission);
 	}
 
-	// Handle multiple permissions
-	const hasAccess = requireAll
-		? hasAllPermissions(...permission)
-		: hasAnyPermission(...permission);
+	// If user has access, render children normally
+	if (hasAccess) {
+		return <>{children}</>;
+	}
 
-	return hasAccess ? <>{children}</> : <>{fallback}</>;
+	// No access - handle based on mode
+	if (mode === 'hide') {
+		// Hide mode: render nothing (default behavior)
+		return null;
+	}
+
+	if (mode === 'fallback') {
+		// Fallback mode: render fallback content
+		return <>{fallback}</>;
+	}
+
+	// Disable mode: render children with grayscale + click overlay
+	const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const message = actionName
+			? `You don't have permission to ${actionName}. Contact your administrator.`
+			: "You don't have permission to perform this action. Contact your administrator.";
+		toast.error(message);
+	};
+
+	return (
+		<div className="relative inline-block">
+			<div className="grayscale opacity-60">
+				{children}
+			</div>
+			<div
+				className="absolute inset-0 cursor-not-allowed"
+				onClick={handleClick}
+				onMouseDown={handleClick}
+				onTouchStart={handleClick}
+			/>
+		</div>
+	);
 }

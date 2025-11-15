@@ -7,7 +7,7 @@ import { QRScannerStep, ScannedStockUnit } from './QRScannerStep';
 import { OutwardDetailsStep } from './OutwardDetailsStep';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
 import type { TablesInsert } from '@/types/database/supabase';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
 
 interface AddGoodsOutwardSheetProps {
 	open: boolean;

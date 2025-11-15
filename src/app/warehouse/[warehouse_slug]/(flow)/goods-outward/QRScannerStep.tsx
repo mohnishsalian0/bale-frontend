@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
 import type { MeasuringUnit } from '@/types/database/enums';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
 
 const SCAN_DELAY: number = 1200;
 

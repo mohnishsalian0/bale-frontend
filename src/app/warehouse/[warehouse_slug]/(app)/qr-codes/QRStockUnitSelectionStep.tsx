@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 import { formatRelativeDate } from '@/lib/utils/date';
 import type { Tables } from '@/types/database/supabase';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
 
 interface StockUnit extends Tables<'stock_units'> {
 	product?: Tables<'products'>;

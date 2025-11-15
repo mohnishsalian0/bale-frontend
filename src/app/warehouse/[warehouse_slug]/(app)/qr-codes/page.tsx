@@ -12,7 +12,7 @@ import { createClient } from '@/lib/supabase/client';
 import { formatCreatedAt, formatAbsoluteDate } from '@/lib/utils/date';
 import { toast } from 'sonner';
 import { LoadingState } from '@/components/layouts/loading-state';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
 
 interface QRBatch {
 	id: string;

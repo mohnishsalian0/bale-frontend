@@ -14,7 +14,7 @@ import {
 } from '@tabler/icons-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
 import {
 	Sidebar,
 	SidebarContent,

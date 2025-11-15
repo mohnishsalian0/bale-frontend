@@ -11,7 +11,7 @@ import { createClient, getCurrentUser } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import type { Tables } from '@/types/database/supabase';
 import { generateAndDownloadPDF, type LabelData } from '@/lib/pdf/qr-label-generator';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
 
 interface CreateQRBatchSheetProps {
 	open: boolean;

@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
 import type { Tables } from '@/types/database/supabase';
 import { DatePicker } from '@/components/ui/date-picker';
 import { dateToISOString } from '@/lib/utils/date';

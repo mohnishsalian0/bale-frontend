@@ -8,7 +8,7 @@ import { ProductQuantitySheet } from './ProductQuantitySheet';
 import { ProductSelectionStep } from './ProductSelectionStep';
 import { OrderDetailsStep } from './OrderDetailsStep';
 import type { Tables, TablesInsert } from '@/types/database/supabase';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
 
 interface AddSalesOrderSheetProps {
 	open: boolean;

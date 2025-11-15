@@ -9,7 +9,7 @@ import { ProductQuantitySheet } from '../ProductQuantitySheet';
 import { ProductSelectionStep } from '../ProductSelectionStep';
 import { OrderDetailsStep } from '../OrderDetailsStep';
 import type { Tables, TablesInsert } from '@/types/database/supabase';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
 import { toast } from 'sonner';
 
 interface ProductWithSelection extends Tables<'products'> {

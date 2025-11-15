@@ -14,7 +14,7 @@ import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/co
 import IconGoodsInward from '@/components/icons/IconGoodsInward';
 import IconGoodsOutward from '@/components/icons/IconGoodsOutward';
 import { LoadingState } from '@/components/layouts/loading-state';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
 
 interface StockFlowItem {
 	id: string;

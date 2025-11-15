@@ -6,7 +6,7 @@ import BottomNav from '@/components/layouts/BottomNav';
 import WarehouseSelector from '@/components/layouts/WarehouseSelector';
 import { AppSidebar } from '@/components/layouts/AppSidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
 
 /**
  * App layout for regular warehouse pages

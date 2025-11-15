@@ -18,7 +18,7 @@ export function LoadingState({ message = 'Loading...' }: LoadingStateProps) {
 					WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 30%)',
 				}}
 			/>
-			<i className="text-xl font-light text-gray-400">{message}</i>
+			<i className="text-lg font-light text-gray-400">{message}</i>
 		</div>
 	);
 }

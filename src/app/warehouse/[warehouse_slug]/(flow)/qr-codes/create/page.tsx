@@ -10,7 +10,7 @@ import { QRStockUnitSelectionStep } from '../QRStockUnitSelectionStep';
 import { QRTemplateSelectionStep, getDefaultTemplateFields } from '../QRTemplateCustomisationStep';
 import type { QRTemplateField } from '../QRTemplateCustomisationStep';
 import type { Tables } from '@/types/database/supabase';
-import { useSession } from '@/contexts/warehouse-context';
+import { useSession } from '@/contexts/session-context';
 import { toast } from 'sonner';
 import { generateAndDownloadPDF, type LabelData } from '@/lib/pdf/qr-label-generator';
 
@@ -208,8 +208,8 @@ export default function CreateQRBatchPage() {
 							style={{
 								width:
 									currentStep === 'product' ? '33%' :
-									currentStep === 'stock-units' ? '66%' :
-									'100%'
+										currentStep === 'stock-units' ? '66%' :
+											'100%'
 							}}
 						/>
 					</div>

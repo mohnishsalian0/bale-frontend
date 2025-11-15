@@ -2,7 +2,7 @@
 
 import { ReactNode, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { SessionProvider } from '@/contexts/warehouse-context';
+import { SessionProvider } from '@/contexts/session-context';
 import { getCurrentUser } from '@/lib/supabase/client';
 import { createClient } from '@/lib/supabase/client';
 import { LoadingState } from '@/components/layouts/loading-state';
