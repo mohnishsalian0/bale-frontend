@@ -29,6 +29,10 @@
 - **Multi-tenant**: Company-based isolation with warehouse-level staff access
 - **Role-based Access**: Admin (full access) + Staff (warehouse-specific)
 - **Mobile-first**: Primary interface for all inventory operations
+- **Route Groups Architecture**: Separate layout hierarchies for different UI contexts
+  - `(app)/` - Regular pages with full navigation chrome (TopBar, Sidebar, BottomNav)
+  - `(flow)/` - Focused multi-step flows without app chrome (full-page creation experiences)
+- **Collapsible Sidebar**: Icon-only by default, expands on hover for desktop, full-width on mobile
 
 ---
 

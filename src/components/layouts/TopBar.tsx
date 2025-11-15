@@ -37,8 +37,8 @@ export default function TopBar({
 					{/* Warehouse Selector */}
 					<Button
 						variant="ghost"
+						size="lg"
 						onClick={onWarehouseClick}
-						className="h-10 px-2"
 					>
 						<span className="font-medium text-gray-700">
 							{warehouseName}

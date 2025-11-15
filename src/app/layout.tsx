@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
 import "./globals.css";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
 	title: "Bale - Fabric Inventory Management",

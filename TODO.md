@@ -62,6 +62,7 @@
 - [x] Configure sidebar styling (text-base, size-5 icons, 16px padding, 12px gap)
 - [x] Add sidebar header with app branding (Bale Inventory v1.0.0)
 - [x] Implement sidebar toggle functionality with offcanvas collapsible mode
+- [x] Configure sidebar to be collapsed by default (icon-only, expands on hover)
 - [x] Set up protected route middleware for all routes
 - [x] Handle redirectTo parameter in auth callback for post-login redirects
 - [x] Create warehouse-scoped routes (/warehouse/[warehouse_slug]/...)
@@ -81,6 +82,11 @@
 - [x] Batch update all data-fetching components to use useWarehouse hook (7 files)
 - [x] Update middleware to redirect /protected/* to /warehouse
 - [x] Regenerate TypeScript types with new tables
+- [x] Implement route groups architecture for separate layout hierarchies
+- [x] Create (app)/ route group with full navigation chrome (TopBar, Sidebar, BottomNav)
+- [x] Create (flow)/ route group for focused multi-step experiences (no app chrome)
+- [x] Move all existing pages to (app)/ route group
+- [x] Update parent layout to only provide SessionProvider
 
 ## Phase 4: Core UI Components
 - [x] Install and configure shadcn/ui components (button, input, label, form, select, textarea, card, dialog, table, sidebar)
@@ -150,6 +156,10 @@
 - [x] Add editable count input in AllSpecificationsSheet
 - [x] Show delete icon when count is 1 in AllSpecificationsSheet
 - [x] Display multiple products as "Product name, x more" in stock flow items
+- [x] Convert goods inward creation to full-page flow in (flow)/ route group
+- [x] Create /warehouse/[warehouse_slug]/(flow)/goods-inward/create full-page component
+- [x] Copy goods inward step components to (flow)/goods-inward/ directory
+- [x] Update stock flow FAB to navigate to full-page goods inward creation
 - [ ] View goods inward details page
 - [ ] View goods inward stock units page
 - [ ] Stock units list with warehouse filtering
@@ -168,6 +178,10 @@
 - [x] Create SelectInventorySheet for manual stock unit selection
 - [x] Create InventoryProductListStep with search and filters (material, color, tags)
 - [x] Add "Select from inventory" button in QR scanner
+- [x] Convert goods outward creation to full-page flow in (flow)/ route group
+- [x] Create /warehouse/[warehouse_slug]/(flow)/goods-outward/create full-page component
+- [x] Copy goods outward step components to (flow)/goods-outward/ directory
+- [x] Update stock flow FAB to navigate to full-page goods outward creation
 - [ ] Create StockUnitSelectionStep to show product's stock units
 - [ ] Allow selecting and adding stock units from inventory to outward
 - [ ] View goods outward details page
@@ -201,6 +215,10 @@
 - [x] Create DatePicker component with Calendar integration
 - [x] Add useMemo optimization for DatePicker displayValue
 - [x] Create date utility functions (dateToISOString, formatDateDisplay)
+- [x] Convert sales order creation to full-page flow in (flow)/ route group
+- [x] Create /warehouse/[warehouse_slug]/(flow)/sales-orders/create full-page component
+- [x] Copy sales order step components to (flow)/sales-orders/ directory
+- [x] Update sales orders page FAB to navigate to full-page creation
 - [ ] Fix partners page flickering on filter change (fetch all, filter client-side)
 - [ ] View sales order details page
 - [ ] Edit sales order functionality
@@ -226,6 +244,10 @@
 - [x] Implement QR status badges (QR pending / QR made on date)
 - [x] Add select all functionality for goods inward groups
 - [x] Update test setup script to remove barcode_generated field
+- [x] Convert QR batch creation to full-page flow in (flow)/ route group
+- [x] Create /warehouse/[warehouse_slug]/(flow)/qr-codes/create full-page component
+- [x] Copy QR batch step components to (flow)/qr-codes/ directory
+- [x] Update QR codes page FAB to navigate to full-page creation
 - [ ] Generate QR code images for batches (PDF with customizable fields)
 - [ ] Implement batch info page showing all QR codes in batch
 - [ ] Add PDF generation with selected template fields
