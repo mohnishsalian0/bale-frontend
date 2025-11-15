@@ -18,21 +18,21 @@ export function RestrictedAccess({
 	};
 
 	return (
-		<div className="min-h-dvh relative flex flex-col items-center justify-center gap-8">
+		<div className="min-h-dvh relative flex flex-col items-center justify-center gap-12">
 			<Image
 				src="/mascot/restricted-zone.png"
 				alt="Restricted Access"
-				width={300}
-				height={300}
+				width={250}
+				height={250}
 				priority
 			/>
-			<div className="flex flex-col items-center gap-4">
+			<div className="flex flex-col items-center gap-2 text-center">
 				<h1 className="text-2xl font-semibold text-gray-700">
 					Access Restricted
 				</h1>
-				<p className="text-base text-gray-500 text-center max-w-md px-4">
+				<i className="text-lg font-light text-gray-500">
 					{message}
-				</p>
+				</i>
 			</div>
 			<Button onClick={handleGoHome} size="lg" className="mt-4">
 				Go Back
