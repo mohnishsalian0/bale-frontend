@@ -63,15 +63,15 @@ export default function InviteAcceptance({
 	};
 
 	return (
-		<div className="min-h-dvh flex items-start justify-center px-4 pt-[66px]">
+		<div className="min-h-dvh flex items-start justify-center px-4 pt-8">
 			<div className="w-full max-w-[380px] flex flex-col gap-8 items-center">
 				{/* Mascot Image */}
-				<div className="relative size-80 shrink-0">
+				<div className="relative size-70 shrink-0">
 					<Image
 						src="/mascot/welcome.png"
 						alt="Welcome mascot"
 						fill
-						sizes="320px"
+						sizes="500px"
 						className="object-contain"
 						priority
 					/>

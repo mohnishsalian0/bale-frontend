@@ -42,9 +42,7 @@ CREATE TABLE partners (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by UUID NOT NULL DEFAULT get_jwt_user_id(),
     modified_by UUID,
-    deleted_at TIMESTAMPTZ,
-    
-    UNIQUE(company_id, phone_number)
+    deleted_at TIMESTAMPTZ
 );
 
 -- =====================================================
