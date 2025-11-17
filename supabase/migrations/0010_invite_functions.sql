@@ -67,7 +67,8 @@ CREATE OR REPLACE FUNCTION create_user_from_invite(
     p_auth_user_id UUID,
     p_invite_token TEXT,
     p_first_name TEXT,
-    p_last_name TEXT
+    p_last_name TEXT,
+    p_all_warehouses_access BOOLEAN
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -103,6 +104,7 @@ BEGIN
         last_name,
         role,
         warehouse_id,
+        all_warehouses_access,
         auth_user_id,
         created_by
     ) VALUES (
@@ -111,6 +113,7 @@ BEGIN
         p_last_name,
         v_invite_record.role,
         v_first_warehouse_id,
+        p_all_warehouses_access,
         p_auth_user_id,
         v_invite_record.created_by
     ) RETURNING id INTO v_new_user_id;

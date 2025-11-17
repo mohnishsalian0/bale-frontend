@@ -7,7 +7,7 @@ import { IconSearch } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Fab } from '@/components/ui/fab';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
 import { LoadingState } from '@/components/layouts/loading-state';
@@ -70,6 +70,8 @@ export default function OrdersPage() {
 
 			const supabase = createClient();
 
+			console.log('Fetching sales orders for warehouse:', warehouse.id);
+
 			// Fetch sales orders with customer and items
 			const { data: orders, error: ordersError } = await supabase
 				.from('sales_orders')
@@ -83,7 +85,10 @@ export default function OrdersPage() {
 					)
 				`)
 				.eq('warehouse_id', warehouse.id)
+				.is('deleted_at', null)
 				.order('order_date', { ascending: false });
+
+			console.log('Orders response:', { orders, ordersError });
 
 			if (ordersError) throw ordersError;
 
@@ -254,22 +259,6 @@ export default function OrdersPage() {
 		return `${products[0].name} x${products[0].quantity}, ${products[1].name} x${products[1].quantity}, ${remaining} more`;
 	};
 
-	const getStatusBadge = (status: string): { color: 'blue' | 'green' | 'orange' | 'red' | 'gray'; variant: 'default' | 'secondary' | 'outline'; label: string } => {
-		switch (status) {
-			case 'approval_pending':
-				return { color: 'blue', variant: 'default', label: 'Approval Pending' };
-			case 'in_progress':
-				return { color: 'blue', variant: 'secondary', label: 'In Progress' };
-			case 'overdue':
-				return { color: 'orange', variant: 'secondary', label: 'Overdue' };
-			case 'completed':
-				return { color: 'green', variant: 'secondary', label: 'Completed' };
-			case 'cancelled':
-				return { color: 'gray', variant: 'secondary', label: 'Cancelled' };
-			default:
-				return { color: 'blue', variant: 'secondary', label: status };
-		}
-	};
 
 	// Loading state
 	if (loading) {
@@ -399,13 +388,13 @@ export default function OrdersPage() {
 
 							{/* Order Items */}
 							{group.orders.map((order) => {
-								const badge = getStatusBadge(order.status);
 								const showProgressBar = order.status === 'in_progress' || order.status === 'overdue';
 								const progressColor = order.status === 'overdue' ? 'bg-yellow-300' : 'bg-primary-500';
 
 								return (
 									<button
 										key={order.id}
+										onClick={() => router.push(`/warehouse/${warehouse.slug}/sales-orders/${order.orderNumber}`)}
 										className="flex flex-col gap-2 px-4 py-3 border-t border-dashed border-gray-300 hover:bg-gray-50 transition-colors"
 									>
 										<div className="flex items-start gap-3">
@@ -418,9 +407,7 @@ export default function OrdersPage() {
 												</p>
 											</div>
 											<div className="flex flex-col items-end justify-between gap-1 self-stretch">
-												<Badge color={badge.color} variant={badge.variant} className="rounded-2xl">
-													{badge.label}
-												</Badge>
+												<StatusBadge status={order.status} />
 												{order.status !== 'approval_pending' &&
 													<p className="text-xs text-gray-500">{order.completionPercentage}% completed</p>}
 											</div>

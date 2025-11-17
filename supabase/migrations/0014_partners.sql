@@ -17,9 +17,14 @@ CREATE TABLE partners (
     email VARCHAR(100),
     
     -- Partner type
-    partner_type VARCHAR(20) NOT NULL 
+    partner_type VARCHAR(20) NOT NULL
         CHECK (partner_type IN ('customer', 'supplier', 'vendor', 'agent')),
-    
+
+    -- Source tracking
+    source VARCHAR(50) DEFAULT 'manual' NOT NULL,
+    is_guest BOOLEAN DEFAULT false,
+    registered_at TIMESTAMPTZ,
+
     -- Tax information
     gst_number VARCHAR(15),
     pan_number VARCHAR(10),

@@ -1,0 +1,41 @@
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import type { SalesOrderStatus } from '@/types/database/enums';
+
+interface StatusBadgeProps {
+	status: SalesOrderStatus | 'overdue';
+	className?: string;
+}
+
+interface StatusConfig {
+	color: 'blue' | 'green' | 'orange' | 'red' | 'gray';
+	variant: 'default' | 'secondary' | 'outline';
+	label: string;
+}
+
+function getStatusConfig(status: SalesOrderStatus | 'overdue'): StatusConfig {
+	switch (status) {
+		case 'approval_pending':
+			return { color: 'blue', variant: 'default', label: 'Approval Pending' };
+		case 'in_progress':
+			return { color: 'blue', variant: 'secondary', label: 'In Progress' };
+		case 'overdue':
+			return { color: 'orange', variant: 'secondary', label: 'Overdue' };
+		case 'completed':
+			return { color: 'green', variant: 'secondary', label: 'Completed' };
+		case 'cancelled':
+			return { color: 'gray', variant: 'secondary', label: 'Cancelled' };
+		default:
+			return { color: 'blue', variant: 'secondary', label: status };
+	}
+}
+
+export function StatusBadge({ status, className }: StatusBadgeProps) {
+	const config = getStatusConfig(status);
+
+	return (
+		<Badge color={config.color} variant={config.variant} className={cn('rounded-2xl text-nowrap', className)}>
+			{config.label}
+		</Badge>
+	);
+}

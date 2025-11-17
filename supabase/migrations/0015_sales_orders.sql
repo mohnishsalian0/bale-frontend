@@ -2,6 +2,12 @@
 -- Customer order management with real-time fulfillment tracking
 
 -- =====================================================
+-- DISCOUNT TYPE ENUM
+-- =====================================================
+
+CREATE TYPE discount_type_enum AS ENUM ('none', 'percentage', 'flat_amount');
+
+-- =====================================================
 -- SALES ORDERS TABLE
 -- =====================================================
 
@@ -15,16 +21,27 @@ CREATE TABLE sales_orders (
     -- Customer information
     customer_id UUID NOT NULL REFERENCES partners(id),
     agent_id UUID REFERENCES partners(id),
-    
+
     -- Order details
     order_date DATE NOT NULL DEFAULT CURRENT_DATE,
     expected_delivery_date DATE, -- Optional, can be set later during order processing
     warehouse_id UUID NOT NULL REFERENCES warehouses(id),
-    
+
+    -- Order source tracking
+    source VARCHAR(50) DEFAULT 'manual' NOT NULL,
+
     -- Financial
     advance_amount DECIMAL(10,2) DEFAULT 0,
-    discount_percentage DECIMAL(5,2) DEFAULT 0 CHECK (discount_percentage >= 0 AND discount_percentage <= 100), -- Percentage value (0-100)
+    discount_type discount_type_enum DEFAULT 'none' NOT NULL,
+    discount_value DECIMAL(10,2) DEFAULT 0,
+    payment_terms VARCHAR(100),
+    gst_rate DECIMAL(5,2) DEFAULT 10.00,
+    gst_amount DECIMAL(10,2),
     total_amount DECIMAL(10,2) DEFAULT 0,
+
+    -- Link tracking flags
+    has_outward BOOLEAN DEFAULT false,
+    invoice_number VARCHAR(50),
     
     -- Status
     status VARCHAR(20) NOT NULL DEFAULT 'approval_pending' 
@@ -88,28 +105,51 @@ CREATE TRIGGER trigger_auto_order_sequence
     BEFORE INSERT ON sales_orders
     FOR EACH ROW EXECUTE FUNCTION auto_generate_order_sequence();
 
--- Update sales order total when discount percentage changes
+-- Update sales order total when discount or GST rate changes
 CREATE OR REPLACE FUNCTION update_sales_order_total_on_discount()
 RETURNS TRIGGER AS $$
 DECLARE
     subtotal DECIMAL(10,2);
+    discount_amount DECIMAL(10,2);
+    discounted_total DECIMAL(10,2);
+    gst_amt DECIMAL(10,2);
     final_total DECIMAL(10,2);
 BEGIN
-    -- Only recalculate if discount_percentage changed
-    IF OLD.discount_percentage IS DISTINCT FROM NEW.discount_percentage THEN
+    -- Recalculate if discount_type, discount_value, or gst_rate changed
+    IF OLD.discount_type IS DISTINCT FROM NEW.discount_type OR
+       OLD.discount_value IS DISTINCT FROM NEW.discount_value OR
+       OLD.gst_rate IS DISTINCT FROM NEW.gst_rate THEN
         -- Calculate subtotal from all line items
-        SELECT COALESCE(SUM(line_total), 0) 
+        SELECT COALESCE(SUM(line_total), 0)
         INTO subtotal
-        FROM sales_order_items 
+        FROM sales_order_items
         WHERE sales_order_id = NEW.id;
-        
-        -- Calculate final total with new discount applied
-        final_total := subtotal * (1 - (COALESCE(NEW.discount_percentage, 0) / 100));
-        
-        -- Update the total amount
+
+        -- Calculate discount amount based on type
+        IF NEW.discount_type = 'none' THEN
+            discount_amount := 0;
+        ELSIF NEW.discount_type = 'percentage' THEN
+            discount_amount := subtotal * (COALESCE(NEW.discount_value, 0) / 100);
+        ELSIF NEW.discount_type = 'flat_amount' THEN
+            discount_amount := COALESCE(NEW.discount_value, 0);
+        ELSE
+            discount_amount := 0;
+        END IF;
+
+        -- Calculate discounted total
+        discounted_total := subtotal - discount_amount;
+
+        -- Calculate GST amount (applied after discount)
+        gst_amt := discounted_total * (COALESCE(NEW.gst_rate, 0) / 100);
+
+        -- Calculate final total
+        final_total := discounted_total + gst_amt;
+
+        -- Update the amounts
+        NEW.gst_amount := gst_amt;
         NEW.total_amount := final_total;
     END IF;
-    
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

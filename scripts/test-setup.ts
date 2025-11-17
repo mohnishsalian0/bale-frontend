@@ -109,6 +109,7 @@ async function createTestPartners() {
 					last_name: 'User',
 					email: 'admin@baletest.com',
 					role: 'admin',
+					all_warehouses_access: true,
 				})
 				.select()
 				.single();
@@ -792,7 +793,8 @@ async function createTestPartners() {
 					status: 'completed',
 					total_amount: 25000.00,
 					advance_amount: 10000.00,
-					discount_percentage: 5,
+					discount_type: 'percentage',
+					discount_value: 5,
 					notes: 'Bulk order for wedding season',
 				},
 				{
@@ -804,7 +806,8 @@ async function createTestPartners() {
 					status: 'completed',
 					total_amount: 18000.00,
 					advance_amount: 9000.00,
-					discount_percentage: 10,
+					discount_type: 'percentage',
+					discount_value: 10,
 					notes: 'Regular customer order',
 				},
 				{
@@ -816,7 +819,8 @@ async function createTestPartners() {
 					status: 'cancelled',
 					total_amount: 15000.00,
 					advance_amount: 5000.00,
-					discount_percentage: 0,
+					discount_type: 'percentage',
+					discount_value: 0,
 					notes: 'Cancelled due to design changes',
 				},
 
@@ -830,7 +834,8 @@ async function createTestPartners() {
 					status: 'completed',
 					total_amount: 32000.00,
 					advance_amount: 16000.00,
-					discount_percentage: 8,
+					discount_type: 'percentage',
+					discount_value: 8,
 					notes: 'Premium silk order',
 				},
 				{
@@ -842,7 +847,8 @@ async function createTestPartners() {
 					status: 'in_progress',
 					total_amount: 28000.00,
 					advance_amount: 14000.00,
-					discount_percentage: 5,
+					discount_type: 'percentage',
+					discount_value: 5,
 					notes: 'Delayed due to material shortage',
 				},
 				{
@@ -854,7 +860,8 @@ async function createTestPartners() {
 					status: 'completed',
 					total_amount: 22000.00,
 					advance_amount: 11000.00,
-					discount_percentage: 12,
+					discount_type: 'percentage',
+					discount_value: 12,
 					notes: 'Festive collection order',
 				},
 
@@ -868,7 +875,8 @@ async function createTestPartners() {
 					status: 'approval_pending',
 					total_amount: 35000.00,
 					advance_amount: 17500.00,
-					discount_percentage: 7,
+					discount_type: 'percentage',
+					discount_value: 7,
 					notes: 'Awaiting customer approval on design',
 				},
 				{
@@ -880,7 +888,8 @@ async function createTestPartners() {
 					status: 'in_progress',
 					total_amount: 42000.00,
 					advance_amount: 21000.00,
-					discount_percentage: 10,
+					discount_type: 'percentage',
+					discount_value: 10,
 					notes: 'Large order in production',
 				},
 				{
@@ -892,7 +901,8 @@ async function createTestPartners() {
 					status: 'in_progress',
 					total_amount: 19000.00,
 					advance_amount: 9500.00,
-					discount_percentage: 5,
+					discount_type: 'percentage',
+					discount_value: 5,
 					notes: 'Rush order - overdue',
 				},
 				{
@@ -904,7 +914,8 @@ async function createTestPartners() {
 					status: 'approval_pending',
 					total_amount: 38000.00,
 					advance_amount: 19000.00,
-					discount_percentage: 15,
+					discount_type: 'percentage',
+					discount_value: 15,
 					notes: 'New customer - premium discount',
 				},
 			];

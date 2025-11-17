@@ -860,6 +860,7 @@ export type Database = {
           gst_number: string | null
           id: string
           image_url: string | null
+          is_guest: boolean | null
           last_name: string
           modified_by: string | null
           notes: string | null
@@ -867,6 +868,8 @@ export type Database = {
           partner_type: string
           phone_number: string
           pin_code: string | null
+          registered_at: string | null
+          source: string
           state: string | null
           updated_at: string
         }
@@ -885,6 +888,7 @@ export type Database = {
           gst_number?: string | null
           id?: string
           image_url?: string | null
+          is_guest?: boolean | null
           last_name: string
           modified_by?: string | null
           notes?: string | null
@@ -892,6 +896,8 @@ export type Database = {
           partner_type: string
           phone_number: string
           pin_code?: string | null
+          registered_at?: string | null
+          source?: string
           state?: string | null
           updated_at?: string
         }
@@ -910,6 +916,7 @@ export type Database = {
           gst_number?: string | null
           id?: string
           image_url?: string | null
+          is_guest?: boolean | null
           last_name?: string
           modified_by?: string | null
           notes?: string | null
@@ -917,6 +924,8 @@ export type Database = {
           partner_type?: string
           phone_number?: string
           pin_code?: string | null
+          registered_at?: string | null
+          source?: string
           state?: string | null
           updated_at?: string
         }
@@ -932,27 +941,30 @@ export type Database = {
       }
       permissions: {
         Row: {
-          action: string
+          category: string | null
           created_at: string
           description: string | null
+          display_name: string | null
           id: string
-          resource: string
+          permission_path: string
           updated_at: string
         }
         Insert: {
-          action: string
+          category?: string | null
           created_at?: string
           description?: string | null
+          display_name?: string | null
           id?: string
-          resource: string
+          permission_path: string
           updated_at?: string
         }
         Update: {
-          action?: string
+          category?: string | null
           created_at?: string
           description?: string | null
+          display_name?: string | null
           id?: string
-          resource?: string
+          permission_path?: string
           updated_at?: string
         }
         Relationships: []
@@ -1399,13 +1411,20 @@ export type Database = {
           created_by: string
           customer_id: string
           deleted_at: string | null
-          discount_percentage: number | null
+          discount_type: Database["public"]["Enums"]["discount_type_enum"]
+          discount_value: number | null
           expected_delivery_date: string | null
+          gst_amount: number | null
+          gst_rate: number | null
+          has_outward: boolean | null
           id: string
+          invoice_number: string | null
           modified_by: string | null
           notes: string | null
           order_date: string
+          payment_terms: string | null
           sequence_number: number
+          source: string
           status: string
           status_changed_at: string | null
           status_changed_by: string | null
@@ -1423,13 +1442,20 @@ export type Database = {
           created_by?: string
           customer_id: string
           deleted_at?: string | null
-          discount_percentage?: number | null
+          discount_type?: Database["public"]["Enums"]["discount_type_enum"]
+          discount_value?: number | null
           expected_delivery_date?: string | null
+          gst_amount?: number | null
+          gst_rate?: number | null
+          has_outward?: boolean | null
           id?: string
+          invoice_number?: string | null
           modified_by?: string | null
           notes?: string | null
           order_date?: string
+          payment_terms?: string | null
           sequence_number: number
+          source?: string
           status?: string
           status_changed_at?: string | null
           status_changed_by?: string | null
@@ -1447,13 +1473,20 @@ export type Database = {
           created_by?: string
           customer_id?: string
           deleted_at?: string | null
-          discount_percentage?: number | null
+          discount_type?: Database["public"]["Enums"]["discount_type_enum"]
+          discount_value?: number | null
           expected_delivery_date?: string | null
+          gst_amount?: number | null
+          gst_rate?: number | null
+          has_outward?: boolean | null
           id?: string
+          invoice_number?: string | null
           modified_by?: string | null
           notes?: string | null
           order_date?: string
+          payment_terms?: string | null
           sequence_number?: number
+          source?: string
           status?: string
           status_changed_at?: string | null
           status_changed_by?: string | null
@@ -1678,6 +1711,7 @@ export type Database = {
       users: {
         Row: {
           additional_notes: string | null
+          all_warehouses_access: boolean | null
           auth_user_id: string | null
           company_id: string
           created_at: string
@@ -1697,6 +1731,7 @@ export type Database = {
         }
         Insert: {
           additional_notes?: string | null
+          all_warehouses_access?: boolean | null
           auth_user_id?: string | null
           company_id: string
           created_at?: string
@@ -1716,6 +1751,7 @@ export type Database = {
         }
         Update: {
           additional_notes?: string | null
+          all_warehouses_access?: boolean | null
           auth_user_id?: string | null
           company_id?: string
           created_at?: string
@@ -1895,10 +1931,10 @@ export type Database = {
           usage_count: number
         }[]
       }
+      get_jwt_all_warehouses_access: { Args: never; Returns: boolean }
       get_jwt_company_id: { Args: never; Returns: string }
       get_jwt_user_id: { Args: never; Returns: string }
       get_jwt_user_role: { Args: never; Returns: string }
-      get_jwt_warehouse_ids: { Args: never; Returns: string[] }
       get_next_sequence: {
         Args: { p_company_id?: string; p_table_name: string }
         Returns: number
@@ -1918,9 +1954,13 @@ export type Database = {
         }[]
       }
       get_user_company_id: { Args: never; Returns: string }
+      has_warehouse_access: {
+        Args: { warehouse_id_to_check: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      discount_type_enum: "none" | "percentage" | "flat_amount"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2050,7 +2090,9 @@ export const Constants = {
     Enums: {},
   },
   public: {
-    Enums: {},
+    Enums: {
+      discount_type_enum: ["none", "percentage", "flat_amount"],
+    },
   },
 } as const
 

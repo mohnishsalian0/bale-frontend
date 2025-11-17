@@ -77,32 +77,55 @@ RETURNS TRIGGER AS $$
 DECLARE
     order_id UUID;
     subtotal DECIMAL(10,2);
-    discount_pct DECIMAL(5,2);
+    disc_type discount_type_enum;
+    disc_value DECIMAL(10,2);
+    gst_rate_val DECIMAL(5,2);
+    discount_amount DECIMAL(10,2);
+    discounted_total DECIMAL(10,2);
+    gst_amt DECIMAL(10,2);
     final_total DECIMAL(10,2);
 BEGIN
     -- Get the sales order ID from the affected row
     order_id := COALESCE(NEW.sales_order_id, OLD.sales_order_id);
-    
+
     -- Calculate subtotal from all line items
-    SELECT COALESCE(SUM(line_total), 0) 
+    SELECT COALESCE(SUM(line_total), 0)
     INTO subtotal
-    FROM sales_order_items 
+    FROM sales_order_items
     WHERE sales_order_id = order_id;
-    
-    -- Get discount percentage from sales order
-    SELECT discount_percentage 
-    INTO discount_pct
-    FROM sales_orders 
+
+    -- Get discount info and GST rate from sales order
+    SELECT discount_type, discount_value, gst_rate
+    INTO disc_type, disc_value, gst_rate_val
+    FROM sales_orders
     WHERE id = order_id;
-    
-    -- Calculate final total with discount applied
-    final_total := subtotal * (1 - (COALESCE(discount_pct, 0) / 100));
-    
-    -- Update the sales order total
-    UPDATE sales_orders 
-    SET total_amount = final_total
+
+    -- Calculate discount amount based on type
+    IF disc_type = 'none' THEN
+        discount_amount := 0;
+    ELSIF disc_type = 'percentage' THEN
+        discount_amount := subtotal * (COALESCE(disc_value, 0) / 100);
+    ELSIF disc_type = 'flat_amount' THEN
+        discount_amount := COALESCE(disc_value, 0);
+    ELSE
+        discount_amount := 0;
+    END IF;
+
+    -- Calculate discounted total
+    discounted_total := subtotal - discount_amount;
+
+    -- Calculate GST amount (applied after discount)
+    gst_amt := discounted_total * (COALESCE(gst_rate_val, 0) / 100);
+
+    -- Calculate final total
+    final_total := discounted_total + gst_amt;
+
+    -- Update the sales order totals
+    UPDATE sales_orders
+    SET total_amount = final_total,
+        gst_amount = gst_amt
     WHERE id = order_id;
-    
+
     RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql;

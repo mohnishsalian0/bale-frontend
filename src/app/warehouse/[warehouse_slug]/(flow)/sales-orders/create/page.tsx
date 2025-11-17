@@ -144,7 +144,8 @@ export default function CreateSalesOrderPage() {
 				order_date: formData.orderDate,
 				expected_delivery_date: formData.expectedDate || null,
 				advance_amount: formData.advanceAmount ? parseFloat(formData.advanceAmount) : 0,
-				discount_percentage: formData.discount ? parseFloat(formData.discount) : 0,
+				discount_type: 'none',
+				discount_value: 0,
 				notes: formData.notes || null,
 				attachments: [], // TODO: Implement file upload
 				status: 'approval_pending',

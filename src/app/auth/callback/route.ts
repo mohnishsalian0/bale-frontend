@@ -98,6 +98,7 @@ export async function GET(request: Request) {
 				p_invite_token: inviteCode,
 				p_first_name: firstName,
 				p_last_name: lastName,
+				p_all_warehouses_access: invite?.role === 'admin',
 			});
 
 		console.log('New user ID:', newUserId);

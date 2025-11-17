@@ -29,6 +29,8 @@ export type StockUnitStatus = 'in_stock' | 'dispatched' | 'removed';
 
 export type SalesOrderStatus = 'approval_pending' | 'in_progress' | 'completed' | 'cancelled';
 
+export type DiscountType = 'none' | 'percentage' | 'flat_amount';
+
 export type JobWorkStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 
 export type DispatchType = 'sales' | 'job_work' | 'purchase_return' | 'warehouse_transfer' | 'other';
@@ -36,3 +38,22 @@ export type DispatchType = 'sales' | 'job_work' | 'purchase_return' | 'warehouse
 export type ReceiptType = 'purchase' | 'job_work' | 'sales_return' | 'warehouse_transfer' | 'other';
 
 export type JobWorkItemType = 'raw_material' | 'finished_goods';
+
+/**
+ * Source of order/customer record creation
+ */
+export type Source =
+	| 'manual'        // Created by staff in app
+	| 'online_store'  // Customer order from e-commerce catalog
+	| 'import'        // Bulk CSV/Excel import
+	| 'api'           // REST API integration
+	| 'whatsapp'      // WhatsApp Business chat
+	| 'phone'         // Phone order taken by staff
+	| 'email';        // Email order
+
+/**
+ * Validate if string is valid Source
+ */
+export function isValidSource(value: string): value is Source {
+	return ['manual', 'online_store', 'import', 'api', 'whatsapp', 'phone', 'email'].includes(value);
+}
