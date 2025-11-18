@@ -36,7 +36,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 					/>
 				)}
 
-				<div className="flex-1 pb-16 overflow-y-auto">
+				<div className="relative flex flex-col flex-1 overflow-hidden">
 					{children}
 				</div>
 
