@@ -7,6 +7,7 @@ import { IconPhoto } from '@tabler/icons-react';
 import IconGoodsOutward from '@/components/icons/IconGoodsOutward';
 import { createClient } from '@/lib/supabase/client';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
+import { formatAbsoluteDate } from '@/lib/utils/date';
 import type { Tables } from '@/types/database/supabase';
 
 type GoodsOutward = Tables<'goods_outwards'>;
@@ -78,14 +79,6 @@ export function OutwardsTab({ orderId, warehouseSlug }: OutwardsTabProps) {
 		fetchOutwards();
 	}, [orderId]);
 
-	const formatOrderDate = (dateStr: string) => {
-		const date = new Date(dateStr);
-		const day = date.getDate();
-		const month = date.toLocaleString('en-US', { month: 'short' });
-		const year = date.getFullYear();
-		return `${day} ${month}, ${year}`;
-	};
-
 	if (loading) {
 		return (
 			<div className="flex items-center justify-center py-12">
@@ -115,7 +108,7 @@ export function OutwardsTab({ orderId, warehouseSlug }: OutwardsTabProps) {
 					<div className="flex items-start justify-between mb-4">
 						<div>
 							<h3 className="text-lg font-semibold text-gray-900">GO-{outward.sequence_number}</h3>
-							<p className="text-sm text-gray-500">{formatOrderDate(outward.outward_date)}</p>
+							<p className="text-sm text-gray-500">{formatAbsoluteDate(outward.outward_date)}</p>
 						</div>
 						<div className="shrink-0">
 							<IconGoodsOutward className="size-10 fill-gray-500" />

@@ -7,6 +7,7 @@ import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { createClient } from '@/lib/supabase/client';
+import { getPartnerName } from '@/lib/utils/partner';
 import { toast } from 'sonner';
 import type { Tables } from '@/types/database/supabase';
 
@@ -92,10 +93,6 @@ export function CustomerEditSheet({
 		}
 	};
 
-	const getCustomerName = (customer: Partner) => {
-		return customer.company_name || `${customer.first_name} ${customer.last_name}`;
-	};
-
 	const formContent = (
 		<div className="flex flex-col gap-4 p-4 md:px-0">
 			{fetchingCustomers ? (
@@ -110,7 +107,7 @@ export function CustomerEditSheet({
 					<SelectContent>
 						{customers.map((customer) => (
 							<SelectItem key={customer.id} value={customer.id}>
-								{getCustomerName(customer)}
+								{getPartnerName(customer)}
 							</SelectItem>
 						))}
 					</SelectContent>

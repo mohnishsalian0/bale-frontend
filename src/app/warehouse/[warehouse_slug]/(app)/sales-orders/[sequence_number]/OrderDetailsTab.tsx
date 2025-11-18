@@ -16,7 +16,9 @@ import { Button } from '@/components/ui/button';
 import { getInitials } from '@/lib/utils/initials';
 import { formatCurrency } from '@/lib/utils/financial';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
+import { getPartnerName, getPartnerAddress } from '@/lib/utils/partner';
 import type { Tables } from '@/types/database/supabase';
+import type { SalesOrderStatus } from '@/types/database/enums';
 
 type Partner = Tables<'partners'>;
 type Warehouse = Tables<'warehouses'>;
@@ -26,6 +28,7 @@ type SalesOrderItem = Tables<'sales_order_items'>;
 interface OrderWithDetails {
 	id: string;
 	sequence_number: number;
+	status: SalesOrderStatus;
 	payment_terms: string | null;
 	advance_amount: number | null;
 	discount_type: string;
@@ -69,22 +72,6 @@ export function OrderDetailsTab({
 	onEditWarehouse,
 	onEditNotes,
 }: OrderDetailsTabProps) {
-	const getCustomerName = (customer: Partner | null) => {
-		if (!customer) return 'Unknown Customer';
-		return customer.company_name || `${customer.first_name} ${customer.last_name}`;
-	};
-
-	const getCustomerAddress = (customer: Partner | null) => {
-		if (!customer) return '';
-		const parts = [
-			customer.address_line1,
-			customer.city,
-			customer.state,
-			customer.pin_code,
-		].filter(Boolean);
-		return parts.join(', ');
-	};
-
 	return (
 		<div className="flex flex-col">
 			{/* Line Items Section */}
@@ -112,7 +99,7 @@ export function OrderDetailsTab({
 						<ul className="space-y-6">
 							{order.sales_order_items.map((item) => (
 								<li key={item.id} className="flex gap-3">
-									<div className="relative size-8 rounded-lg overflow-hidden bg-gray-200 shrink-0">
+									<div className="relative size-8 mt-0.5 rounded-lg overflow-hidden bg-gray-200 shrink-0">
 										{item.product?.product_images?.[0] ? (
 											<Image
 												src={item.product.product_images[0]}
@@ -133,18 +120,24 @@ export function OrderDetailsTab({
 										<p className="text-xs text-gray-500 mt-0.5">
 											{item.required_quantity}{' '}
 											{getMeasuringUnitAbbreviation(item.product?.measuring_unit as any)}
-											{' '}({item.dispatched_quantity || 0}{' '}
-											{getMeasuringUnitAbbreviation(item.product?.measuring_unit as any)} shipped)
+											{order.status !== 'approval_pending' && (
+												<>
+													{' '}({item.dispatched_quantity || 0}{' '}
+													{getMeasuringUnitAbbreviation(item.product?.measuring_unit as any)} shipped)
+												</>
+											)}
 										</p>
 										{/* Progress bar */}
-										<div className="max-w-sm mt-2 h-1.5 bg-gray-200 rounded-full">
-											<div
-												className="h-full bg-primary-500 rounded-full transition-all"
-												style={{
-													width: `${item.required_quantity > 0 ? ((item.dispatched_quantity || 0) / item.required_quantity) * 100 : 0}%`,
-												}}
-											/>
-										</div>
+										{order.status !== 'approval_pending' && (
+											<div className="max-w-sm mt-2 h-1.5 bg-gray-200 rounded-full">
+												<div
+													className="h-full bg-primary-500 rounded-full transition-all"
+													style={{
+														width: `${item.required_quantity > 0 ? ((item.dispatched_quantity || 0) / item.required_quantity) * 100 : 0}%`,
+													}}
+												/>
+											</div>
+										)}
 									</div>
 									<p className="text-sm font-semibold text-gray-700 shrink-0">₹{formatCurrency(item.line_total || 0)}</p>
 								</li>
@@ -188,8 +181,8 @@ export function OrderDetailsTab({
 					<div className="flex items-start justify-between">
 						<div className="flex-1 min-w-0">
 							<div className="flex items-center gap-2">
-								<h3 className="text-lg font-semibold text-gray-700 truncate" title={getCustomerName(order.customer)}>
-									{getCustomerName(order.customer)}
+								<h3 className="text-lg font-semibold text-gray-700 truncate" title={getPartnerName(order.customer)}>
+									{getPartnerName(order.customer)}
 								</h3>
 								<Button variant="ghost" size="icon" onClick={onEditCustomer}>
 									<IconEdit />
@@ -199,15 +192,15 @@ export function OrderDetailsTab({
 						</div>
 						<div className="size-12 rounded-xl bg-gray-200 flex items-center justify-center shrink-0">
 							<span className="text-lg font-semibold text-gray-700">
-								{getInitials(getCustomerName(order.customer))}
+								{getInitials(getPartnerName(order.customer))}
 							</span>
 						</div>
 					</div>
 
-					{getCustomerAddress(order.customer) && (
+					{getPartnerAddress(order.customer) && (
 						<div className="flex items-start gap-1.5 text-sm text-gray-700">
 							<IconMapPin className="size-4 text-gray-500 mt-0.5 shrink-0" />
-							<span>{getCustomerAddress(order.customer)}</span>
+							<span>{getPartnerAddress(order.customer)}</span>
 						</div>
 					)}
 				</div>
@@ -221,8 +214,8 @@ export function OrderDetailsTab({
 						<div className="flex items-start justify-between">
 							<div className="flex-1 min-w-0">
 								<div className="flex items-center gap-2">
-									<h3 className="text-lg font-semibold text-gray-700 truncate" title={getCustomerName(order.agent)}>
-										{getCustomerName(order.agent)}
+									<h3 className="text-lg font-semibold text-gray-700 truncate" title={getPartnerName(order.agent)}>
+										{getPartnerName(order.agent)}
 									</h3>
 									<Button variant="ghost" size="icon" onClick={onEditAgent}>
 										<IconEdit />
@@ -232,7 +225,7 @@ export function OrderDetailsTab({
 							</div>
 							<div className="size-12 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
 								<span className="text-lg font-semibold text-gray-700">
-									{getInitials(getCustomerName(order.agent))}
+									{getInitials(getPartnerName(order.agent))}
 								</span>
 							</div>
 						</div>
@@ -265,7 +258,7 @@ export function OrderDetailsTab({
 								<IconCurrencyRupee className="size-4 text-gray-500" />
 								<span>Advanced amount</span>
 							</div>
-							<span className="font-medium text-gray-700">₹{formatCurrency(order.advance_amount || 0)}</span>
+							<span className="font-semibold text-gray-700">₹{formatCurrency(order.advance_amount || 0)}</span>
 						</div>
 						{order.discount_type !== 'none' && (
 							<div className="flex justify-between text-sm">
@@ -277,7 +270,7 @@ export function OrderDetailsTab({
 									)}
 									<span>Discount</span>
 								</div>
-								<span className="font-medium text-gray-700">
+								<span className="font-semibold text-gray-700">
 									{order.discount_type === 'percentage' ? `${order.discount_value}%` : `₹${formatCurrency(order.discount_value || 0)}`}
 								</span>
 							</div>

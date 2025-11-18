@@ -8,8 +8,9 @@ import { LoadingState } from '@/components/layouts/loading-state';
 import { createClient } from '@/lib/supabase/client';
 import { useSession } from '@/contexts/session-context';
 import { calculateOrderFinancials } from '@/lib/utils/financial';
+import { formatAbsoluteDate } from '@/lib/utils/date';
 import type { Tables } from '@/types/database/supabase';
-import type { DiscountType } from '@/types/database/enums';
+import type { DiscountType, SalesOrderStatus } from '@/types/database/enums';
 import { NotesEditSheet } from './NotesEditSheet';
 import { CustomerEditSheet } from './CustomerEditSheet';
 import { AgentEditSheet } from './AgentEditSheet';
@@ -25,8 +26,10 @@ type Partner = Tables<'partners'>;
 type Warehouse = Tables<'warehouses'>;
 type Product = Tables<'products'>;
 type SalesOrderItem = Tables<'sales_order_items'>;
+type DisplayStatus = SalesOrderStatus | 'overdue';
 
 interface OrderWithDetails extends SalesOrder {
+	status: SalesOrderStatus;
 	customer: Partner | null;
 	agent: Partner | null;
 	warehouse: Warehouse | null;
@@ -136,7 +139,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 	}, [order]);
 
 	// Compute display status (includes 'overdue' logic)
-	const displayStatus: 'approval_pending' | 'in_progress' | 'overdue' | 'completed' | 'cancelled' = useMemo(() => {
+	const displayStatus: DisplayStatus = useMemo(() => {
 		if (!order) return 'in_progress';
 
 		if (order.status === 'in_progress' && order.expected_delivery_date) {
@@ -150,18 +153,8 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 			}
 		}
 
-		return order.status as 'approval_pending' | 'in_progress' | 'completed' | 'cancelled';
+		return order.status as SalesOrderStatus;
 	}, [order]);
-
-	// Format date helper
-	const formatOrderDate = (dateStr: string) => {
-		const date = new Date(dateStr);
-		const day = date.getDate();
-		const month = date.toLocaleString('en-US', { month: 'short' });
-		const year = date.getFullYear();
-		return `${day} ${month}, ${year}`;
-	};
-
 
 	// Primary CTA logic
 	const getPrimaryCTA = () => {
@@ -223,19 +216,21 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 						<h1 className="text-2xl font-bold text-gray-900">SO-{order.sequence_number}</h1>
 						<StatusBadge status={displayStatus} />
 					</div>
-					<p className="text-sm text-gray-500">Sales order on {formatOrderDate(order.order_date)}</p>
+					<p className="text-sm text-gray-500">Sales order on {formatAbsoluteDate(order.order_date)}</p>
 				</div>
 
 				{/* Progress Bar */}
-				<div className='mt-4 max-w-sm'>
-					<p className="text-xs text-gray-700 mb-1">{completionPercentage}% completed</p>
-					<div className="w-full h-2 bg-gray-200 rounded-full">
-						<div
-							className="h-full bg-primary-500 rounded-full transition-all"
-							style={{ width: `${completionPercentage}%` }}
-						/>
+				{displayStatus !== 'approval_pending' && (
+					<div className='mt-4 max-w-sm'>
+						<p className="text-xs text-gray-700 mb-1">{completionPercentage}% completed</p>
+						<div className="w-full h-2 bg-gray-200 rounded-full">
+							<div
+								className="h-full bg-primary-500 rounded-full transition-all"
+								style={{ width: `${completionPercentage}%` }}
+							/>
+						</div>
 					</div>
-				</div>
+				)}
 			</div>
 
 			{/* Tabs */}
