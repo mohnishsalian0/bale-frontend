@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { useSession } from '@/contexts/session-context';
+import { Progress } from '@/components/ui/progress';
 
 type SalesOrderRow = Tables<'sales_orders'>;
 
@@ -389,7 +390,7 @@ export default function OrdersPage() {
 							{/* Order Items */}
 							{group.orders.map((order) => {
 								const showProgressBar = order.status === 'in_progress' || order.status === 'overdue';
-								const progressColor = order.status === 'overdue' ? 'bg-yellow-300' : 'bg-primary-500';
+								const progressColor = order.status === 'overdue' ? 'yellow' : 'blue';
 
 								return (
 									<button
@@ -416,12 +417,7 @@ export default function OrdersPage() {
 										{/* Progress Bar */}
 										{
 											showProgressBar && (
-												<div className="relative w-full h-2.5 border border-gray-500 rounded-xs">
-													<div
-														className={`absolute top-0 left-0 bottom-0 rounded-xs ${progressColor}`}
-														style={{ width: `${order.completionPercentage}%` }}
-													/>
-												</div>
+												<Progress color={progressColor} value={order.completionPercentage} />
 											)
 										}
 									</button>

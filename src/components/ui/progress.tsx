@@ -2,27 +2,62 @@
 
 import * as React from "react"
 import * as ProgressPrimitive from "@radix-ui/react-progress"
+import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "@/lib/utils"
 
-import { cn } from "@/lib/utils/index"
+const progressRootVariants = cva(
+	"relative w-full overflow-hidden rounded-full bg-gray-200",
+	{
+		variants: {
+			size: {
+				lg: "h-4",
+				md: "h-2.5",
+				sm: "h-1",
+			},
+		},
+		defaultVariants: {
+			size: "md",
+		},
+	}
+)
+
+const progressIndicatorVariants = cva(
+	"h-full w-full flex-1 transition-all",
+	{
+		variants: {
+			color: {
+				blue: "bg-primary-500",
+				yellow: "bg-yellow-500",
+			},
+		},
+		defaultVariants: {
+			color: "blue",
+		},
+	}
+)
+
+export interface ProgressProps
+	extends Omit<React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>, "color">,
+	VariantProps<typeof progressRootVariants>,
+	VariantProps<typeof progressIndicatorVariants> { }
 
 const Progress = React.forwardRef<
-  React.ElementRef<typeof ProgressPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>
->(({ className, value, ...props }, ref) => (
-  <ProgressPrimitive.Root
-    ref={ref}
-    className={cn(
-      "relative h-2 w-full overflow-hidden rounded-full bg-gray-200",
-      className
-    )}
-    {...props}
-  >
-    <ProgressPrimitive.Indicator
-      className="h-full w-full flex-1 bg-primary-500 transition-all"
-      style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
-    />
-  </ProgressPrimitive.Root>
+	React.ElementRef<typeof ProgressPrimitive.Root>,
+	ProgressProps
+>(({ className, size, color, value, ...props }, ref) => (
+	<ProgressPrimitive.Root
+		ref={ref}
+		className={cn(progressRootVariants({ size }), className)}
+		{...props}
+	>
+		<ProgressPrimitive.Indicator
+			className={progressIndicatorVariants({ color })}
+			style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+		/>
+	</ProgressPrimitive.Root>
 ))
+
 Progress.displayName = ProgressPrimitive.Root.displayName
 
 export { Progress }
+

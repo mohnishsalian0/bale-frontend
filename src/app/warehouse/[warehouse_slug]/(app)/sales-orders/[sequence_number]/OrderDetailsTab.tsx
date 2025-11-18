@@ -131,8 +131,10 @@ export function OrderDetailsTab({
 										{/* Progress bar */}
 										{order.status !== 'approval_pending' && (
 											<Progress
+												size='sm'
+												color={order.status !== 'overdue' ? 'yellow' : 'blue'}
 												value={item.required_quantity > 0 ? ((item.dispatched_quantity || 0) / item.required_quantity) * 100 : 0}
-												className="max-w-sm mt-2 h-1.5"
+												className='max-w-sm mt-1'
 											/>
 										)}
 									</div>

@@ -224,7 +224,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 				{displayStatus !== 'approval_pending' && (
 					<div className='mt-4 max-w-sm'>
 						<p className="text-sm text-gray-700 mb-1">{completionPercentage}% completed</p>
-						<Progress value={completionPercentage} />
+						<Progress color={displayStatus === 'overdue' ? 'yellow' : 'blue'} value={completionPercentage} />
 					</div>
 				)}
 			</div>
