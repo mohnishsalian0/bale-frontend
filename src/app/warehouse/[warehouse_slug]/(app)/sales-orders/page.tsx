@@ -283,7 +283,7 @@ export default function OrdersPage() {
 	}
 
 	return (
-		<div className="relative flex flex-col min-h-dvh pb-16">
+		<div className="relative flex flex-col flex-1 overflow-y-auto">
 			{/* Header */}
 			<div className="flex items-end justify-between gap-4 p-4">
 				<div className="flex-1 flex flex-col gap-2">
@@ -322,7 +322,7 @@ export default function OrdersPage() {
 			</div>
 
 			{/* Filters */}
-			<div className="flex gap-3 px-4 py-3 overflow-x-auto">
+			<div className="flex gap-3 px-4 py-3 overflow-x-auto shrink-0">
 				{/* Status Filter */}
 				<Select value={selectedStatus} onValueChange={setSelectedStatus}>
 					<SelectTrigger className="flex-shrink-0 w-[160px]">
@@ -382,7 +382,7 @@ export default function OrdersPage() {
 					filteredGroups.map((group) => (
 						<div key={group.monthYear} className="flex flex-col">
 							{/* Month Header */}
-							<div className="flex items-center justify-between px-4 py-2 border-t border-dashed border-gray-300 bg-gray-200">
+							<div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 border-t border-dashed border-gray-300 bg-gray-200">
 								<p className="text-xs font-semibold text-gray-700">{group.month}</p>
 							</div>
 
@@ -400,9 +400,9 @@ export default function OrdersPage() {
 										<div className="flex items-start gap-3">
 											<div className="flex-1 flex flex-col items-start">
 												<p className="text-base font-medium text-gray-900">{order.customerName}</p>
-												<p className="text-xs text-gray-500">{getProductSummary(order.products)}</p>
+												<p className="text-xs text-gray-500 text-left">{getProductSummary(order.products)}</p>
 												<p className="text-xs text-gray-500">
-													{order.orderNumber}
+													{'SO-'}{order.orderNumber}
 													{order.dueDate && ` • Due on ${formatDate(order.dueDate)}`}
 												</p>
 											</div>

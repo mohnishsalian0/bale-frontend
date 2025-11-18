@@ -211,7 +211,7 @@ export default function QRCodesPage() {
 			</div>
 
 			{/* Filters */}
-			<div className="flex gap-3 px-4 py-2 overflow-x-auto">
+			<div className="flex gap-3 px-4 py-2 overflow-x-auto shrink-0">
 				<Select value={selectedProduct} onValueChange={setSelectedProduct}>
 					<SelectTrigger className="w-[140px] h-10 shrink-0">
 						<SelectValue placeholder="Product" />

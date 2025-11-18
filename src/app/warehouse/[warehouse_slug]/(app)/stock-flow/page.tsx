@@ -118,7 +118,7 @@ export default function StockFlowPage() {
 					date: r.inward_date,
 					quantity: totalQty,
 					unit,
-					billNumber: r.inward_number,
+					billNumber: `GI-${r.sequence_number}`,
 				};
 			});
 
@@ -152,7 +152,7 @@ export default function StockFlowPage() {
 					date: d.outward_date,
 					quantity: totalQty,
 					unit,
-					billNumber: d.outward_number,
+					billNumber: `GO-${d.sequence_number}`,
 				};
 			});
 
@@ -279,7 +279,7 @@ export default function StockFlowPage() {
 	}
 
 	return (
-		<div className="relative flex flex-col min-h-dvh pb-16">
+		<div className="relative flex flex-col flex-1 overflow-y-auto">
 			{/* Header */}
 			<div className="flex items-end justify-between gap-4 p-4">
 				<div className="flex-1 flex flex-col gap-2">
@@ -358,7 +358,7 @@ export default function StockFlowPage() {
 						<div key={group.monthYear} className="flex flex-col">
 							{/* Month Header */}
 							<div
-								className={`flex items-center justify-between px-4 py-2 border-t border-dashed border-gray-300 ${groupIndex % 2 === 0 ? 'bg-green-100' : 'bg-orange-100'
+								className={`sticky top-0 z-10 flex items-center justify-between px-4 py-2 border-t border-dashed border-gray-300 ${groupIndex % 2 === 0 ? 'bg-green-100' : 'bg-orange-100'
 									}`}
 							>
 								<p className="text-xs font-semibold text-gray-700">{group.month}</p>

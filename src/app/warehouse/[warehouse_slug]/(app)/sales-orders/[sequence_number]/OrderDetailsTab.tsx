@@ -13,6 +13,7 @@ import {
 	IconPhoto
 } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { getInitials } from '@/lib/utils/initials';
 import { formatCurrency } from '@/lib/utils/financial';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
@@ -129,14 +130,10 @@ export function OrderDetailsTab({
 										</p>
 										{/* Progress bar */}
 										{order.status !== 'approval_pending' && (
-											<div className="max-w-sm mt-2 h-1.5 bg-gray-200 rounded-full">
-												<div
-													className="h-full bg-primary-500 rounded-full transition-all"
-													style={{
-														width: `${item.required_quantity > 0 ? ((item.dispatched_quantity || 0) / item.required_quantity) * 100 : 0}%`,
-													}}
-												/>
-											</div>
+											<Progress
+												value={item.required_quantity > 0 ? ((item.dispatched_quantity || 0) / item.required_quantity) * 100 : 0}
+												className="max-w-sm mt-2 h-1.5"
+											/>
 										)}
 									</div>
 									<p className="text-sm font-semibold text-gray-700 shrink-0">₹{formatCurrency(item.line_total || 0)}</p>

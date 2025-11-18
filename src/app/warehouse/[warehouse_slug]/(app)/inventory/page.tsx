@@ -147,7 +147,7 @@ export default function InventoryPage() {
 			</div>
 
 			{/* Filters */}
-			<div className="flex gap-3 px-4 py-2 overflow-x-auto">
+			<div className="flex gap-3 px-4 py-2 overflow-x-auto shrink-0">
 				<Button variant="outline" size="icon" className="shrink-0 size-10">
 					<IconAlertTriangle className="size-5" />
 				</Button>

@@ -4,6 +4,7 @@ import { use, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { Progress } from '@/components/ui/progress';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { createClient } from '@/lib/supabase/client';
 import { useSession } from '@/contexts/session-context';
@@ -222,13 +223,8 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 				{/* Progress Bar */}
 				{displayStatus !== 'approval_pending' && (
 					<div className='mt-4 max-w-sm'>
-						<p className="text-xs text-gray-700 mb-1">{completionPercentage}% completed</p>
-						<div className="w-full h-2 bg-gray-200 rounded-full">
-							<div
-								className="h-full bg-primary-500 rounded-full transition-all"
-								style={{ width: `${completionPercentage}%` }}
-							/>
-						</div>
+						<p className="text-sm text-gray-700 mb-1">{completionPercentage}% completed</p>
+						<Progress value={completionPercentage} />
 					</div>
 				)}
 			</div>
@@ -256,7 +252,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 			</div>
 
 			{/* Tab Content */}
-			<div className="pb-20">
+			<div className="flex-1">
 				{activeTab === 'details' ? (
 					<OrderDetailsTab
 						order={order}
