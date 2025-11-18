@@ -11,7 +11,7 @@ const progressRootVariants = cva(
 		variants: {
 			size: {
 				lg: "h-4",
-				md: "h-2.5",
+				md: "h-2",
 				sm: "h-1",
 			},
 		},

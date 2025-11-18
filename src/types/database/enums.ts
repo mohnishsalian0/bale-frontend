@@ -27,7 +27,7 @@ export type MeasuringUnit = 'metre' | 'yard' | 'kilogram' | 'unit';
 
 export type StockUnitStatus = 'in_stock' | 'dispatched' | 'removed';
 
-export type SalesOrderStatus = 'approval_pending' | 'in_progress' | 'completed' | 'cancelled' | 'overdue';
+export type SalesOrderStatus = 'approval_pending' | 'in_progress' | 'completed' | 'cancelled';
 
 export type DiscountType = 'none' | 'percentage' | 'flat_amount';
 

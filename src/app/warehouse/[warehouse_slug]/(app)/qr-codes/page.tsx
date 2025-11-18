@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client';
 import { formatCreatedAt, formatAbsoluteDate } from '@/lib/utils/date';
 import { toast } from 'sonner';
 import { LoadingState } from '@/components/layouts/loading-state';
+import { ErrorState } from '@/components/layouts/error-state';
 import { useSession } from '@/contexts/session-context';
 
 interface QRBatch {
@@ -174,20 +175,11 @@ export default function QRCodesPage() {
 	// Error state
 	if (error) {
 		return (
-			<div className="relative flex flex-col min-h-dvh pb-16">
-				<div className="flex items-center justify-center h-screen p-4">
-					<div className="flex flex-col items-center gap-3 text-center max-w-md">
-						<div className="size-12 rounded-full bg-red-100 flex items-center justify-center">
-							<span className="text-2xl">⚠️</span>
-						</div>
-						<h2 className="text-lg font-semibold text-gray-900">Failed to load QR batches</h2>
-						<p className="text-sm text-gray-600">{error}</p>
-						<Button onClick={() => window.location.reload()} variant="outline" size="sm">
-							Try again
-						</Button>
-					</div>
-				</div>
-			</div>
+			<ErrorState
+				title="Failed to load QR batches"
+				message={error}
+				onRetry={() => window.location.reload()}
+			/>
 		);
 	}
 

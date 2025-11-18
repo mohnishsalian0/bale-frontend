@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Fab } from '@/components/ui/fab';
 import { TabPills } from '@/components/ui/tab-pills';
 import { LoadingState } from '@/components/layouts/loading-state';
+import { ErrorState } from '@/components/layouts/error-state';
 import { AddPartnerSheet } from './AddPartnerSheet';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
@@ -122,20 +123,11 @@ export default function PartnersPage() {
 	// Error state
 	if (error) {
 		return (
-			<div className="relative flex flex-col min-h-dvh pb-16">
-				<div className="flex items-center justify-center h-screen p-4">
-					<div className="flex flex-col items-center gap-3 text-center max-w-md">
-						<div className="size-12 rounded-full bg-red-100 flex items-center justify-center">
-							<span className="text-2xl">⚠️</span>
-						</div>
-						<h2 className="text-lg font-semibold text-gray-900">Failed to load partners</h2>
-						<p className="text-sm text-gray-600">{error}</p>
-						<Button onClick={() => window.location.reload()} variant="outline" size="sm">
-							Try again
-						</Button>
-					</div>
-				</div>
-			</div>
+			<ErrorState
+				title="Failed to load partners"
+				message={error}
+				onRetry={() => window.location.reload()}
+			/>
 		);
 	}
 

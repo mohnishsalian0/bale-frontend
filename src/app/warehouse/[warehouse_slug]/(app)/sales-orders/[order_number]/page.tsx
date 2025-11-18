@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Progress } from '@/components/ui/progress';
 import { LoadingState } from '@/components/layouts/loading-state';
+import { ErrorState } from '@/components/layouts/error-state';
 import { createClient } from '@/lib/supabase/client';
 import { useSession } from '@/contexts/session-context';
 import { calculateOrderFinancials } from '@/lib/utils/financial';
 import { formatAbsoluteDate } from '@/lib/utils/date';
+import { calculateCompletionPercentage, getOrderDisplayStatus, type DisplayStatus } from '@/lib/utils/sales-order';
 import type { Tables } from '@/types/database/supabase';
 import type { DiscountType, SalesOrderStatus } from '@/types/database/enums';
 import { NotesEditSheet } from './NotesEditSheet';
@@ -27,7 +29,6 @@ type Partner = Tables<'partners'>;
 type Warehouse = Tables<'warehouses'>;
 type Product = Tables<'products'>;
 type SalesOrderItem = Tables<'sales_order_items'>;
-type DisplayStatus = SalesOrderStatus | 'overdue';
 
 interface OrderWithDetails extends SalesOrder {
 	status: SalesOrderStatus;
@@ -44,13 +45,13 @@ interface OrderWithDetails extends SalesOrder {
 interface PageParams {
 	params: Promise<{
 		warehouse_slug: string;
-		sequence_number: string;
+		order_number: string;
 	}>;
 }
 
 export default function SalesOrderDetailPage({ params }: PageParams) {
 	const router = useRouter();
-	const { sequence_number } = use(params);
+	const { order_number } = use(params);
 	const { warehouse } = useSession();
 	const [order, setOrder] = useState<OrderWithDetails | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -95,7 +96,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 						)
 					)
 				`)
-				.eq('sequence_number', parseInt(sequence_number))
+				.eq('sequence_number', parseInt(order_number))
 				.is('deleted_at', null)
 				.single();
 
@@ -113,7 +114,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 
 	useEffect(() => {
 		fetchOrder();
-	}, [sequence_number]);
+	}, [order_number]);
 
 	// Calculate financials
 	const financials = useMemo(() => {
@@ -129,32 +130,16 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 		);
 	}, [order]);
 
-	// Calculate completion percentage
+	// Calculate completion percentage using utility
 	const completionPercentage = useMemo(() => {
 		if (!order) return 0;
-
-		const totalRequired = order.sales_order_items.reduce((sum, item) => sum + item.required_quantity, 0);
-		const totalDispatched = order.sales_order_items.reduce((sum, item) => sum + (item.dispatched_quantity || 0), 0);
-
-		return totalRequired > 0 ? Math.round((totalDispatched / totalRequired) * 100) : 0;
+		return calculateCompletionPercentage(order.sales_order_items);
 	}, [order]);
 
-	// Compute display status (includes 'overdue' logic)
+	// Compute display status (includes 'overdue' logic) using utility
 	const displayStatus: DisplayStatus = useMemo(() => {
 		if (!order) return 'in_progress';
-
-		if (order.status === 'in_progress' && order.expected_delivery_date) {
-			const today = new Date();
-			today.setHours(0, 0, 0, 0);
-			const dueDate = new Date(order.expected_delivery_date);
-			dueDate.setHours(0, 0, 0, 0);
-
-			if (dueDate < today) {
-				return 'overdue';
-			}
-		}
-
-		return order.status as SalesOrderStatus;
+		return getOrderDisplayStatus(order.status as SalesOrderStatus, order.expected_delivery_date);
 	}, [order]);
 
 	// Primary CTA logic
@@ -191,20 +176,12 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 	// Error state
 	if (error || !order) {
 		return (
-			<div className="relative flex flex-col min-h-dvh pb-16">
-				<div className="flex items-center justify-center h-screen p-4">
-					<div className="flex flex-col items-center gap-3 text-center max-w-md">
-						<div className="size-12 rounded-full bg-red-100 flex items-center justify-center">
-							<span className="text-2xl">⚠️</span>
-						</div>
-						<h2 className="text-lg font-semibold text-gray-900">Order not found</h2>
-						<p className="text-sm text-gray-700">{error || 'This order does not exist or has been deleted'}</p>
-						<Button onClick={() => router.back()} variant="outline" size="sm">
-							Go back
-						</Button>
-					</div>
-				</div>
-			</div>
+			<ErrorState
+				title="Order not found"
+				message={error || 'This order does not exist or has been deleted'}
+				onRetry={() => router.back()}
+				actionText="Go back"
+			/>
 		);
 	}
 
@@ -257,6 +234,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 					<OrderDetailsTab
 						order={order}
 						financials={financials}
+						displayStatus={displayStatus}
 						onEditLineItems={() => setShowLineItemsEdit(true)}
 						onEditCustomer={() => setShowCustomerEdit(true)}
 						onEditAgent={() => setShowAgentEdit(true)}

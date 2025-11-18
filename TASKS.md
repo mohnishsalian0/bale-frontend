@@ -25,7 +25,7 @@ Currently shows placeholder text. Need to:
 - Show "No outwards" state when has_outward is false
 
 **Files to modify:**
-- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[sequence_number]/page.tsx`
+- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/page.tsx`
 
 ---
 
@@ -43,11 +43,11 @@ The three-dot menu button currently just logs. Need to:
   - **Completed:** Mark as incomplete (reopen)
 
 **Files to create:**
-- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[sequence_number]/OrderActionsMenu.tsx`
-- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[sequence_number]/DeleteOrderDialog.tsx`
+- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/OrderActionsMenu.tsx`
+- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/DeleteOrderDialog.tsx`
 
 **Files to modify:**
-- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[sequence_number]/page.tsx`
+- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/page.tsx`
 
 ---
 
@@ -62,10 +62,10 @@ The "Approve order" button currently logs. Need to:
 - Handle errors appropriately
 
 **Files to create:**
-- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[sequence_number]/ApproveOrderDialog.tsx`
+- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/ApproveOrderDialog.tsx`
 
 **Files to modify:**
-- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[sequence_number]/page.tsx`
+- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/page.tsx`
 
 ---
 
@@ -82,7 +82,7 @@ The "Create outward" button navigates but needs full integration:
 
 **Files to modify:**
 - `src/app/warehouse/[warehouse_slug]/(flow)/goods-outward/create/page.tsx` (or app version)
-- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[sequence_number]/page.tsx`
+- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/page.tsx`
 
 ---
 
@@ -108,7 +108,7 @@ Need to add proper authorization and validation:
 - Show appropriate error messages when actions are blocked
 
 **Files to modify:**
-- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[sequence_number]/page.tsx`
+- `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/page.tsx`
 - All edit sheet components (add permission checks)
 
 ---

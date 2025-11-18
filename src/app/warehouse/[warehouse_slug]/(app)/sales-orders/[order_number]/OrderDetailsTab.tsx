@@ -18,6 +18,7 @@ import { getInitials } from '@/lib/utils/initials';
 import { formatCurrency } from '@/lib/utils/financial';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import { getPartnerName, getPartnerAddress } from '@/lib/utils/partner';
+import type { DisplayStatus } from '@/lib/utils/sales-order';
 import type { Tables } from '@/types/database/supabase';
 import type { SalesOrderStatus } from '@/types/database/enums';
 
@@ -55,6 +56,7 @@ interface OrderDetailsTabProps {
 		gstAmount: number;
 		totalAmount: number;
 	} | null;
+	displayStatus: DisplayStatus;
 	onEditLineItems: () => void;
 	onEditCustomer: () => void;
 	onEditAgent: () => void;
@@ -66,6 +68,7 @@ interface OrderDetailsTabProps {
 export function OrderDetailsTab({
 	order,
 	financials,
+	displayStatus,
 	onEditLineItems,
 	onEditCustomer,
 	onEditAgent,
@@ -129,10 +132,10 @@ export function OrderDetailsTab({
 											)}
 										</p>
 										{/* Progress bar */}
-										{order.status !== 'approval_pending' && (
+										{displayStatus !== 'approval_pending' && (
 											<Progress
 												size='sm'
-												color={order.status !== 'overdue' ? 'yellow' : 'blue'}
+												color={displayStatus === 'overdue' ? 'yellow' : 'blue'}
 												value={item.required_quantity > 0 ? ((item.dispatched_quantity || 0) / item.required_quantity) * 100 : 0}
 												className='max-w-sm mt-1'
 											/>

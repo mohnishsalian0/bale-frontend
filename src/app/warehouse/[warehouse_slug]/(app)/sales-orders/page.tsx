@@ -8,28 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Fab } from '@/components/ui/fab';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { createClient } from '@/lib/supabase/client';
-import type { Tables } from '@/types/database/supabase';
 import { LoadingState } from '@/components/layouts/loading-state';
+import { ErrorState } from '@/components/layouts/error-state';
 import { useSession } from '@/contexts/session-context';
 import { Progress } from '@/components/ui/progress';
-
-type SalesOrderRow = Tables<'sales_orders'>;
-
-interface SalesOrderWithDetails extends SalesOrderRow {
-	customer: {
-		first_name: string;
-		last_name: string;
-		company_name: string | null;
-	} | null;
-	sales_order_items: Array<{
-		product: {
-			name: string;
-		} | null;
-		required_quantity: number;
-		dispatched_quantity: number;
-	}>;
-}
+import { getSalesOrders } from '@/lib/queries/sales-orders';
+import { getPartnerName } from '@/lib/utils/partner';
+import { calculateCompletionPercentage, getOrderDisplayStatus, getProductSummary } from '@/lib/utils/sales-order';
+import type { SalesOrderStatus } from '@/types/database/enums';
+import { formatAbsoluteDate } from '@/lib/utils/date';
 
 interface OrderListItem {
 	id: string;
@@ -69,35 +56,12 @@ export default function OrdersPage() {
 			setLoading(true);
 			setError(null);
 
-			const supabase = createClient();
-
-			console.log('Fetching sales orders for warehouse:', warehouse.id);
-
-			// Fetch sales orders with customer and items
-			const { data: orders, error: ordersError } = await supabase
-				.from('sales_orders')
-				.select(`
-					*,
-					customer:partners!sales_orders_customer_id_fkey(first_name, last_name, company_name),
-					sales_order_items(
-						product:products(name),
-						required_quantity,
-						dispatched_quantity
-					)
-				`)
-				.eq('warehouse_id', warehouse.id)
-				.is('deleted_at', null)
-				.order('order_date', { ascending: false });
-
-			console.log('Orders response:', { orders, ordersError });
-
-			if (ordersError) throw ordersError;
+			// Use query function from queries folder
+			const orders = await getSalesOrders(warehouse.id);
 
 			// Transform orders
-			const orderItems: OrderListItem[] = (orders as SalesOrderWithDetails[] || []).map((order) => {
-				const customerName = order.customer
-					? order.customer.company_name || `${order.customer.first_name} ${order.customer.last_name}`
-					: 'Unknown Customer';
+			const orderItems: OrderListItem[] = orders.map((order) => {
+				const customerName = getPartnerName(order.customer);
 
 				// Calculate products with quantities
 				const products = (order.sales_order_items || []).map((item) => ({
@@ -105,32 +69,14 @@ export default function OrdersPage() {
 					quantity: item.required_quantity,
 				}));
 
-				// Calculate completion percentage
-				const totalRequired = (order.sales_order_items || []).reduce((sum, item) => sum + item.required_quantity, 0);
-				const totalDispatched = (order.sales_order_items || []).reduce((sum, item) => sum + item.dispatched_quantity, 0);
-				const completionPercentage = totalRequired > 0 ? Math.round((totalDispatched / totalRequired) * 100) : 0;
+				// Calculate completion percentage using utility
+				const completionPercentage = calculateCompletionPercentage(order.sales_order_items || []);
 
-				// Determine status (including overdue)
-				let status: 'approval_pending' | 'in_progress' | 'overdue' | 'completed' | 'cancelled' = 'in_progress';
-
-				if (order.status === 'completed') {
-					status = 'completed';
-				} else if (order.status === 'cancelled') {
-					status = 'cancelled';
-				} else if (order.status === 'approval_pending') {
-					status = 'approval_pending';
-				} else if (order.status === 'in_progress') {
-					if (order.expected_delivery_date) {
-						const today = new Date();
-						today.setHours(0, 0, 0, 0);
-						const dueDate = new Date(order.expected_delivery_date);
-						dueDate.setHours(0, 0, 0, 0);
-
-						status = dueDate < today ? 'overdue' : 'in_progress';
-					} else {
-						status = 'in_progress';
-					}
-				}
+				// Determine status (including overdue) using utility
+				const status = getOrderDisplayStatus(
+					order.status as SalesOrderStatus,
+					order.expected_delivery_date
+				);
 
 				return {
 					id: order.id,
@@ -149,13 +95,12 @@ export default function OrdersPage() {
 			const productSet = new Set<string>();
 			const customerMap = new Map<string, string>();
 
-			(orders as SalesOrderWithDetails[] || []).forEach((order) => {
+			orders.forEach((order) => {
 				order.sales_order_items.forEach((item) => {
 					if (item.product?.name) productSet.add(item.product.name);
 				});
 				if (order.customer) {
-					const name = order.customer.company_name || `${order.customer.first_name} ${order.customer.last_name}`;
-					customerMap.set(order.customer_id, name);
+					customerMap.set(order.customer_id, getPartnerName(order.customer));
 				}
 			});
 
@@ -216,7 +161,7 @@ export default function OrdersPage() {
 
 	useEffect(() => {
 		fetchSalesOrders();
-	}, []);
+	}, [warehouse.id]);
 
 	// Filter groups using useMemo
 	const filteredGroups = useMemo(() => {
@@ -241,25 +186,6 @@ export default function OrdersPage() {
 			.filter((group) => group.orders.length > 0);
 	}, [monthGroups, searchQuery, selectedStatus, selectedProduct, selectedCustomer]);
 
-	const formatDate = (dateStr: string) => {
-		const date = new Date(dateStr);
-		const day = date.getDate();
-		const suffix =
-			day === 1 || day === 21 || day === 31 ? 'st' : day === 2 || day === 22 ? 'nd' : day === 3 || day === 23 ? 'rd' : 'th';
-		const month = date.toLocaleString('en-US', { month: 'long' });
-		return `${day}${suffix} ${month}`;
-	};
-
-	const getProductSummary = (products: Array<{ name: string; quantity: number }>) => {
-		if (products.length === 0) return 'No products';
-		if (products.length === 1) return `${products[0].name} x${products[0].quantity}`;
-		if (products.length === 2) {
-			return `${products[0].name} x${products[0].quantity}, ${products[1].name} x${products[1].quantity}`;
-		}
-		const remaining = products.length - 2;
-		return `${products[0].name} x${products[0].quantity}, ${products[1].name} x${products[1].quantity}, ${remaining} more`;
-	};
-
 
 	// Loading state
 	if (loading) {
@@ -269,17 +195,11 @@ export default function OrdersPage() {
 	// Error state
 	if (error) {
 		return (
-			<div className="relative flex flex-col min-h-dvh pb-16">
-				<div className="flex items-center justify-center h-screen p-4">
-					<div className="flex flex-col items-center gap-3 text-center max-w-md">
-						<div className="size-12 rounded-full bg-red-100 flex items-center justify-center">
-							<span className="text-2xl">⚠️</span>
-						</div>
-						<h2 className="text-lg font-semibold text-gray-900">Failed to load sales orders</h2>
-						<p className="text-sm text-gray-600">{error}</p>
-					</div>
-				</div>
-			</div>
+			<ErrorState
+				title="Failed to load sales orders"
+				message={error}
+				onRetry={() => window.location.reload()}
+			/>
 		);
 	}
 
@@ -404,7 +324,7 @@ export default function OrdersPage() {
 												<p className="text-xs text-gray-500 text-left">{getProductSummary(order.products)}</p>
 												<p className="text-xs text-gray-500">
 													{'SO-'}{order.orderNumber}
-													{order.dueDate && ` • Due on ${formatDate(order.dueDate)}`}
+													{order.dueDate && ` • Due on ${formatAbsoluteDate(order.dueDate)}`}
 												</p>
 											</div>
 											<div className="flex flex-col items-end justify-between gap-1 self-stretch">

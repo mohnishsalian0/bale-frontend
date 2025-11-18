@@ -14,6 +14,7 @@ import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/co
 import IconGoodsInward from '@/components/icons/IconGoodsInward';
 import IconGoodsOutward from '@/components/icons/IconGoodsOutward';
 import { LoadingState } from '@/components/layouts/loading-state';
+import { ErrorState } from '@/components/layouts/error-state';
 import { useSession } from '@/contexts/session-context';
 
 interface StockFlowItem {
@@ -264,17 +265,11 @@ export default function StockFlowPage() {
 	// Error state
 	if (error) {
 		return (
-			<div className="relative flex flex-col min-h-dvh pb-16">
-				<div className="flex items-center justify-center h-screen p-4">
-					<div className="flex flex-col items-center gap-3 text-center max-w-md">
-						<div className="size-12 rounded-full bg-red-100 flex items-center justify-center">
-							<span className="text-2xl">⚠️</span>
-						</div>
-						<h2 className="text-lg font-semibold text-gray-900">Failed to load stock flow</h2>
-						<p className="text-sm text-gray-600">{error}</p>
-					</div>
-				</div>
-			</div>
+			<ErrorState
+				title="Failed to load stock flow"
+				message={error}
+				onRetry={() => window.location.reload()}
+			/>
 		);
 	}
 

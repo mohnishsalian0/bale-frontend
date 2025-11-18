@@ -14,6 +14,7 @@ import { createClient } from '@/lib/supabase/client';
 import { formatExpiryDate } from '@/lib/utils/date';
 import { toast } from 'sonner';
 import type { UserRole } from '@/types/database/enums';
+import { ErrorState } from '@/components/layouts/error-state';
 
 interface StaffMember {
 	id: string;
@@ -103,7 +104,7 @@ export default function StaffPage() {
 			setLoading(true);
 			setError(null);
 
-			const { data: invitesData, error: fetchError} = await supabase
+			const { data: invitesData, error: fetchError } = await supabase
 				.from('invites')
 				.select('*')
 				.is('used_at', null)
@@ -229,22 +230,11 @@ The Bale Team`;
 	// Error state
 	if (error) {
 		return (
-			<div className="relative flex flex-col min-h-dvh pb-16">
-				<div className="flex items-center justify-center h-screen p-4">
-					<div className="flex flex-col items-center gap-3 text-center max-w-md">
-						<div className="size-12 rounded-full bg-red-100 flex items-center justify-center">
-							<span className="text-2xl">⚠️</span>
-						</div>
-						<h2 className="text-lg font-semibold text-gray-900">
-							{activeTab === 'staff' ? 'Failed to load staff' : 'Failed to load invites'}
-						</h2>
-						<p className="text-sm text-gray-600">{error}</p>
-						<Button onClick={() => window.location.reload()} variant="outline" size="sm">
-							Try again
-						</Button>
-					</div>
-				</div>
-			</div>
+			<ErrorState
+				title={activeTab === 'staff' ? 'Failed to load staff' : 'Failed to load invites'}
+				message={error}
+				onRetry={() => window.location.reload()}
+			/>
 		);
 	}
 

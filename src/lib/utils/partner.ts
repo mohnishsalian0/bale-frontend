@@ -3,10 +3,15 @@ import type { Tables } from '@/types/database/supabase';
 type Partner = Tables<'partners'>;
 
 /**
+ * Partial partner with only the fields needed for name formatting
+ */
+type PartnerNameFields = Pick<Partner, 'first_name' | 'last_name' | 'company_name'>;
+
+/**
  * Get formatted name for a partner (customer/vendor/agent)
  * Returns company name if available, otherwise first name + last name
  */
-export function getPartnerName(partner: Partner | null): string {
+export function getPartnerName(partner: PartnerNameFields | null): string {
 	if (!partner) return 'Unknown Partner';
 	return partner.company_name || `${partner.first_name} ${partner.last_name}`;
 }
