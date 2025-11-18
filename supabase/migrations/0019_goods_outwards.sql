@@ -29,9 +29,10 @@ CREATE TABLE goods_outwards (
 
     -- Details
     outward_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    due_date DATE,
-    invoice_number VARCHAR(50),
+    expected_delivery_date DATE,
+    shipment_reference_number VARCHAR(50),
     invoice_amount DECIMAL(10,2),
+    shipment_type VARCHAR(20) CHECK (shipment_type IN ('road', 'rail', 'air', 'sea', 'courier')),
     transport_details TEXT,
 
     -- Cancellation/Reversal tracking

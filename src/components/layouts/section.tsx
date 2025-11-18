@@ -1,0 +1,45 @@
+import { IconEdit } from "@tabler/icons-react";
+import { Button } from "../ui/button";
+import { type ComponentType, ReactNode } from "react";
+
+interface SectionProps {
+	title: string;
+	subtitle: string;
+	onEdit: () => void;
+	icon: ComponentType<{ className?: string }>;
+	children?: ReactNode
+}
+
+export function Section({
+	title,
+	subtitle,
+	onEdit,
+	icon: Icon,
+	children,
+}: SectionProps) {
+	return (
+		<section className="p-4 space-y-4 border-b border-border">
+			{/* Header Row */}
+			<div className="flex items-start justify-between">
+				<div className="flex-1 min-w-0">
+					<div className="flex items-center gap-2">
+						<h3 className="font-semibold text-gray-700 truncate" title={title}>
+							{title}
+						</h3>
+						<Button variant="ghost" size="icon" onClick={onEdit}>
+							<IconEdit />
+						</Button>
+					</div>
+					<p className="text-xs text-gray-500 -mt-1">{subtitle}</p>
+				</div>
+				<div className="size-12 rounded-xl bg-gray-200 flex items-center justify-center shrink-0">
+					<span className="text-lg font-semibold text-gray-700">
+						<Icon />
+					</span>
+				</div>
+			</div>
+
+			{children}
+		</section>
+	);
+}

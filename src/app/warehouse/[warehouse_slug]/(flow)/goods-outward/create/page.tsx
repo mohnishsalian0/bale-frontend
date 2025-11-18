@@ -107,8 +107,8 @@ export default function CreateGoodsOutwardPage() {
 
 				// Dates and details
 				outward_date: detailsFormData.outwardDate,
-				due_date: detailsFormData.dueDate || null,
-				invoice_number: detailsFormData.invoiceNumber || null,
+				expected_delivery_date: detailsFormData.dueDate || null,
+				shipment_reference_number: detailsFormData.invoiceNumber || null,
 				invoice_amount: detailsFormData.invoiceAmount ? parseFloat(detailsFormData.invoiceAmount) : null,
 				transport_details: detailsFormData.transportDetails || null,
 				notes: detailsFormData.notes || null,

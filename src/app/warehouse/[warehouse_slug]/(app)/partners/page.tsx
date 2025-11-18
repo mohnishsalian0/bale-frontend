@@ -132,7 +132,7 @@ export default function PartnersPage() {
 	}
 
 	return (
-		<div className="relative flex flex-col min-h-dvh pb-16">
+		<div className="relative flex flex-col flex-1 overflow-y-auto">
 			{/* Header */}
 			<div className="flex items-end justify-between gap-4 p-4">
 				<div className="flex-1">

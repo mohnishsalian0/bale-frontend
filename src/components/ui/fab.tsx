@@ -17,7 +17,7 @@ const Fab = React.forwardRef<HTMLButtonElement, FabProps>(
 				ref={ref}
 				size="icon"
 				className={cn(
-					'size-14 rounded-full shadow-none border-shadow-primary active:border-none',
+					'z-30 size-14 rounded-full shadow-none border-shadow-primary active:border-none',
 					className
 				)}
 				{...props}

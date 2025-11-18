@@ -378,10 +378,9 @@ export type Database = {
           created_at: string
           created_by: string
           deleted_at: string | null
-          due_date: string | null
+          expected_delivery_date: string | null
           id: string
           invoice_amount: number | null
-          invoice_number: string | null
           is_cancelled: boolean | null
           job_work_id: string | null
           modified_by: string | null
@@ -392,6 +391,8 @@ export type Database = {
           partner_id: string | null
           sales_order_id: string | null
           sequence_number: number
+          shipment_reference_number: string | null
+          shipment_type: string | null
           to_warehouse_id: string | null
           transport_details: string | null
           updated_at: string
@@ -407,10 +408,9 @@ export type Database = {
           created_at?: string
           created_by: string
           deleted_at?: string | null
-          due_date?: string | null
+          expected_delivery_date?: string | null
           id?: string
           invoice_amount?: number | null
-          invoice_number?: string | null
           is_cancelled?: boolean | null
           job_work_id?: string | null
           modified_by?: string | null
@@ -421,6 +421,8 @@ export type Database = {
           partner_id?: string | null
           sales_order_id?: string | null
           sequence_number: number
+          shipment_reference_number?: string | null
+          shipment_type?: string | null
           to_warehouse_id?: string | null
           transport_details?: string | null
           updated_at?: string
@@ -436,10 +438,9 @@ export type Database = {
           created_at?: string
           created_by?: string
           deleted_at?: string | null
-          due_date?: string | null
+          expected_delivery_date?: string | null
           id?: string
           invoice_amount?: number | null
-          invoice_number?: string | null
           is_cancelled?: boolean | null
           job_work_id?: string | null
           modified_by?: string | null
@@ -450,6 +451,8 @@ export type Database = {
           partner_id?: string | null
           sales_order_id?: string | null
           sequence_number?: number
+          shipment_reference_number?: string | null
+          shipment_type?: string | null
           to_warehouse_id?: string | null
           transport_details?: string | null
           updated_at?: string
@@ -1895,6 +1898,7 @@ export type Database = {
       }
       create_user_from_invite: {
         Args: {
+          p_all_warehouses_access: boolean
           p_auth_user_id: string
           p_first_name: string
           p_invite_token: string

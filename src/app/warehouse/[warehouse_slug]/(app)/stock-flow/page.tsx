@@ -26,6 +26,7 @@ interface StockFlowItem {
 	quantity: number;
 	unit: string;
 	billNumber: string;
+	sequence_number: number;
 }
 
 interface MonthGroup {
@@ -120,6 +121,7 @@ export default function StockFlowPage() {
 					quantity: totalQty,
 					unit,
 					billNumber: `GI-${r.sequence_number}`,
+					sequence_number: r.sequence_number,
 				};
 			});
 
@@ -154,6 +156,7 @@ export default function StockFlowPage() {
 					quantity: totalQty,
 					unit,
 					billNumber: `GO-${d.sequence_number}`,
+					sequence_number: d.sequence_number,
 				};
 			});
 
@@ -370,6 +373,11 @@ export default function StockFlowPage() {
 							{group.items.map((item) => (
 								<button
 									key={item.id}
+									onClick={() => {
+										if (item.type === 'outward') {
+											router.push(`/warehouse/${warehouse.slug}/goods-outward/${item.sequence_number}`);
+										}
+									}}
 									className="flex items-center gap-4 px-4 py-3 border-t border-dashed border-gray-300 hover:bg-gray-50 transition-colors"
 								>
 									<div className="flex-1 flex flex-col items-start">

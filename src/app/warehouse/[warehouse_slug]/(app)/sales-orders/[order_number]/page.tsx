@@ -23,6 +23,7 @@ import { ShipmentEditSheet } from './ShipmentEditSheet';
 import { LineItemsEditSheet } from './LineItemsEditSheet';
 import { OrderDetailsTab } from './OrderDetailsTab';
 import { OutwardsTab } from './OutwardsTab';
+import { TabUnderline } from '@/components/ui/tab-underline';
 
 type SalesOrder = Tables<'sales_orders'>;
 type Partner = Tables<'partners'>;
@@ -186,7 +187,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 	}
 
 	return (
-		<div className="relative flex flex-col flex-1 overflow-y-auto">
+		<div className="relative flex flex-col flex-1 overflow-y-auto max-w-3xl border-r border-border">
 			{/* Header */}
 			<div className="p-4">
 				<div>
@@ -207,26 +208,14 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 			</div>
 
 			{/* Tabs */}
-			<div className="sticky top-0 z-10 flex border-b border-border bg-background">
-				<button
-					onClick={() => setActiveTab('details')}
-					className={`px-6 py-3 text-sm font-medium transition-colors ${activeTab === 'details'
-						? 'text-primary-700 border-b-2 border-primary-700'
-						: 'text-gray-500 hover:text-gray-700'
-						}`}
-				>
-					Order details
-				</button>
-				<button
-					onClick={() => setActiveTab('outwards')}
-					className={`px-6 py-3 text-sm font-medium transition-colors ${activeTab === 'outwards'
-						? 'text-primary-700 border-b-2 border-primary-700'
-						: 'text-gray-500 hover:text-gray-700'
-						}`}
-				>
-					Outwards
-				</button>
-			</div>
+			<TabUnderline
+				activeTab={activeTab}
+				onTabChange={(tab) => setActiveTab(tab as 'details' | 'outwards')}
+				tabs={[
+					{ value: 'details', label: 'Order details' },
+					{ value: 'outwards', label: 'Outwards' },
+				]}
+			/>
 
 			{/* Tab Content */}
 			<div className="flex-1">
