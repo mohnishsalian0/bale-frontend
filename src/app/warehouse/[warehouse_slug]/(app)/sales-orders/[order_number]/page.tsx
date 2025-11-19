@@ -20,7 +20,6 @@ import { AgentEditSheet } from './AgentEditSheet';
 import { WarehouseEditSheet } from './WarehouseEditSheet';
 import { PaymentTermsEditSheet } from './PaymentTermsEditSheet';
 import { ShipmentEditSheet } from './ShipmentEditSheet';
-import { LineItemsEditSheet } from './LineItemsEditSheet';
 import { OrderDetailsTab } from './OrderDetailsTab';
 import { OutwardsTab } from './OutwardsTab';
 import { TabUnderline } from '@/components/ui/tab-underline';
@@ -60,7 +59,6 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 	const [activeTab, setActiveTab] = useState<'details' | 'outwards'>('details');
 
 	// Edit sheet states
-	const [showLineItemsEdit, setShowLineItemsEdit] = useState(false);
 	const [showCustomerEdit, setShowCustomerEdit] = useState(false);
 	const [showAgentEdit, setShowAgentEdit] = useState(false);
 	const [showPaymentTermsEdit, setShowPaymentTermsEdit] = useState(false);
@@ -224,7 +222,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 						order={order}
 						financials={financials}
 						displayStatus={displayStatus}
-						onEditLineItems={() => setShowLineItemsEdit(true)}
+						onEditLineItems={() => { }} // TODO: Handle line item edit
 						onEditCustomer={() => setShowCustomerEdit(true)}
 						onEditAgent={() => setShowAgentEdit(true)}
 						onEditPaymentTerms={() => setShowPaymentTermsEdit(true)}
@@ -253,19 +251,6 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 			{/* Edit Sheets */}
 			{order && (
 				<>
-					<LineItemsEditSheet
-						open={showLineItemsEdit}
-						onOpenChange={setShowLineItemsEdit}
-						orderId={order.id}
-						companyId={order.company_id}
-						existingLineItems={order.sales_order_items.map(item => ({
-							id: item.id,
-							product_id: item.product_id,
-							required_quantity: item.required_quantity,
-						}))}
-						onSuccess={fetchOrder}
-					/>
-
 					<CustomerEditSheet
 						open={showCustomerEdit}
 						onOpenChange={setShowCustomerEdit}

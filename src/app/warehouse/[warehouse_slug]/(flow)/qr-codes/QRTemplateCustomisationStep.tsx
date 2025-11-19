@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import { IconQrcode } from '@tabler/icons-react';
-import { createClient, getCurrentUser } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
+import { useSession } from '@/contexts/session-context';
 
 export type QRTemplateField =
 	| 'product_name'
@@ -70,6 +71,7 @@ export function QRTemplateSelectionStep({
 	selectedFields,
 	onSelectionChange,
 }: QRTemplateSelectionStepProps) {
+	const { user } = useSession();
 	const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
 	const supabase = createClient();
 
@@ -79,13 +81,10 @@ export function QRTemplateSelectionStep({
 
 	const loadCompanyLogo = async () => {
 		try {
-			const currentUser = await getCurrentUser();
-			if (!currentUser?.company_id) return;
-
 			const { data, error } = await supabase
 				.from('companies')
 				.select('logo_url')
-				.eq('id', currentUser.company_id)
+				.eq('id', user.company_id)
 				.single();
 
 			if (error) throw error;

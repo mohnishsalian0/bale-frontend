@@ -6,7 +6,7 @@ import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { createClient, getCurrentUser } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { useSession } from '@/contexts/session-context';
 import type { Tables } from '@/types/database/supabase';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -33,7 +33,7 @@ export function OrderDetailsStep({
 	formData,
 	setFormData,
 }: OrderDetailsStepProps) {
-	const { warehouse } = useSession();
+	const { user } = useSession();
 	const [warehouses, setWarehouses] = useState<Tables<'warehouses'>[]>([]);
 	const [customers, setCustomers] = useState<Tables<'partners'>[]>([]);
 	const [agents, setAgents] = useState<Tables<'partners'>[]>([]);
@@ -48,39 +48,17 @@ export function OrderDetailsStep({
 	const loadWarehouses = async () => {
 		try {
 			const supabase = createClient();
-			const currentUser = await getCurrentUser();
-			if (!currentUser || !currentUser.company_id) {
-				throw new Error('User not found');
-			}
 
-			// Fetch warehouses based on user role
-			if (currentUser.role === 'admin') {
-				// Admin: fetch all company warehouses
-				const { data, error } = await supabase
-					.from('warehouses')
-					.select('*')
-					.order('name');
+			// Fetch warehouses - RLS automatically filters based on user's warehouse access
+			const { data, error } = await supabase
+				.from('warehouses')
+				.select('*')
+				.order('created_at');
 
-				if (error) throw error;
-				setWarehouses(data || []);
-			} else {
-				// Staff: fetch only assigned warehouses
-				const { data, error } = await supabase
-					.from('user_warehouses')
-					.select(`
-						warehouse_id,
-						warehouses (*)
-					`)
+			if (error) throw error;
 
-				if (error) throw error;
+			setWarehouses(data || []);
 
-				// Extract warehouses from the join result
-				const userWarehouses = (data || [])
-					.map((uw: any) => uw.warehouses)
-					.filter(Boolean) as Tables<'warehouses'>[];
-
-				setWarehouses(userWarehouses);
-			}
 		} catch (error) {
 			console.error('Error loading warehouses:', error);
 		}

@@ -19,7 +19,6 @@ interface DetailsFormData {
 	outwardDate: string;
 	dueDate: string;
 	invoiceNumber: string;
-	invoiceAmount: string;
 	transportDetails: string;
 	notes: string;
 	documentFile: File | null;
@@ -45,7 +44,6 @@ export default function CreateGoodsOutwardPage() {
 		outwardDate: '',
 		dueDate: '',
 		invoiceNumber: '',
-		invoiceAmount: '',
 		transportDetails: '',
 		notes: '',
 		documentFile: null,
@@ -108,8 +106,7 @@ export default function CreateGoodsOutwardPage() {
 				// Dates and details
 				outward_date: detailsFormData.outwardDate,
 				expected_delivery_date: detailsFormData.dueDate || null,
-				shipment_reference_number: detailsFormData.invoiceNumber || null,
-				invoice_amount: detailsFormData.invoiceAmount ? parseFloat(detailsFormData.invoiceAmount) : null,
+				transport_reference_number: detailsFormData.invoiceNumber || null,
 				transport_details: detailsFormData.transportDetails || null,
 				notes: detailsFormData.notes || null,
 			};

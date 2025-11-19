@@ -218,7 +218,7 @@ export default function CreateGoodsInwardPage() {
 				warehouse_id: warehouse.id,
 				inward_type: inwardTypeMap[detailsFormData.linkToType] as 'job_work' | 'sales_return' | 'other',
 				inward_date: detailsFormData.inwardDate || undefined,
-				invoice_number: detailsFormData.invoiceNumber || undefined,
+				transport_reference_number: detailsFormData.invoiceNumber || undefined,
 				partner_id: detailsFormData.receivedFromType === 'partner' ? detailsFormData.receivedFromId : undefined,
 				from_warehouse_id: detailsFormData.receivedFromType === 'warehouse' ? detailsFormData.receivedFromId : undefined,
 				job_work_id: detailsFormData.linkToType === 'job_work' && detailsFormData.linkToValue ? detailsFormData.linkToValue : undefined,

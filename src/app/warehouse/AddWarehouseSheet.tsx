@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { validateImageFile, uploadWarehouseImage } from '@/lib/storage';
-import { createClient, getCurrentUser } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import type { TablesInsert, Tables } from '@/types/database/supabase';
+import { useSession } from '@/contexts/session-context';
 
 interface AddWarehouseSheetProps {
 	open: boolean;
@@ -50,6 +51,7 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 	const [showAddress, setShowAddress] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
+	const { user } = useSession();
 
 	const isEditMode = !!warehouse;
 
@@ -101,12 +103,6 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 		try {
 			const supabase = createClient();
 
-			// Get current user
-			const currentUser = await getCurrentUser();
-			if (!currentUser || !currentUser.company_id) {
-				throw new Error('User not found');
-			}
-
 			let imageUrl: string | null = warehouse?.image_url || null;
 
 			// Upload image if new file is provided
@@ -115,7 +111,7 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 					// Generate warehouse ID for new warehouse or use existing ID
 					const warehouseId = warehouse?.id || crypto.randomUUID();
 					const { publicUrl } = await uploadWarehouseImage(
-						currentUser.company_id,
+						user.company_id,
 						warehouseId,
 						formData.image
 					);

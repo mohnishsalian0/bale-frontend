@@ -396,15 +396,15 @@ The Bale Team`;
 											{deletingInviteId === invite.id ? (
 												<>
 													<Button
-														variant="outline"
+														variant="ghost"
 														className="flex-1"
 														onClick={handleCancelDelete}
 													>
 														Cancel
 													</Button>
 													<Button
-														variant="outline"
-														className='flex-1 border-gray-300 shadow-gray-md text-red-700 hover:bg-gray-200 hover:text-red-700'
+														variant="ghost"
+														className='flex-1 hover:bg-red-200 hover:text-red-700'
 														onClick={() => handleConfirmDelete(invite.id)}
 													>
 														Confirm delete
@@ -413,14 +413,14 @@ The Bale Team`;
 											) : (
 												<>
 													<Button
-														variant="outline"
+														variant="ghost"
 														onClick={() => handleShareWhatsApp(invite)}
 													>
 														<IconBrandWhatsapp />
 														Share on WhatsApp
 													</Button>
 													<Button
-														variant="outline"
+														variant="ghost"
 														size="icon"
 														title='Copy invite link'
 														onClick={() => handleCopyLink(invite.token)}
@@ -428,9 +428,9 @@ The Bale Team`;
 														<IconCopy />
 													</Button>
 													<Button
-														variant="outline"
+														variant="ghost"
 														size="icon"
-														className='border-gray-300 shadow-gray-md text-red-700 hover:bg-gray-200 hover:text-red-700'
+														className='hover:bg-red-200 hover:text-red-700'
 														onClick={() => handleDeleteClick(invite.id)}
 													>
 														<IconTrash />

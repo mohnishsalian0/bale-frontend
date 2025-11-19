@@ -6,9 +6,10 @@ import { RadioGroup as RadioGroupPills, RadioGroupItem as RadioGroupItemPills } 
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { createClient, getCurrentUser } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
 import type { UserRole } from '@/types/database/enums';
+import { useSession } from '@/contexts/session-context';
 
 interface AddStaffSheetProps {
 	open: boolean;
@@ -24,6 +25,7 @@ interface InviteFormData {
 type WarehouseRow = Tables<'warehouses'>;
 
 export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffSheetProps) {
+	const { user } = useSession();
 	const [formData, setFormData] = useState<InviteFormData>({
 		role: 'staff',
 		warehouseIds: [],
@@ -77,12 +79,6 @@ export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffShee
 		try {
 			const supabase = createClient();
 
-			// Get current user
-			const currentUser = await getCurrentUser();
-			if (!currentUser || !currentUser.company_id) {
-				throw new Error('User not found');
-			}
-
 			// Validate warehouse assignment for staff role
 			if (formData.role === 'staff' && formData.warehouseIds.length === 0) {
 				throw new Error('Please select at least one warehouse');
@@ -105,7 +101,7 @@ export function AddStaffSheet({ open, onOpenChange, onStaffAdded }: AddStaffShee
 			// Create invite using RPC function
 			const { data: token, error: inviteError } = await supabase
 				.rpc('create_staff_invite', {
-					p_company_id: currentUser.company_id,
+					p_company_id: user.company_id,
 					p_company_name: company.name,
 					p_role: formData.role,
 					p_warehouse_ids: formData.role === 'staff' ? formData.warehouseIds : null,

@@ -188,10 +188,9 @@ export type Database = {
           created_at: string
           created_by: string
           deleted_at: string | null
+          expected_delivery_date: string | null
           from_warehouse_id: string | null
           id: string
-          invoice_amount: number | null
-          invoice_number: string | null
           inward_date: string
           inward_type: string
           job_work_id: string | null
@@ -202,6 +201,8 @@ export type Database = {
           sales_order_id: string | null
           sequence_number: number
           transport_details: string | null
+          transport_reference_number: string | null
+          transport_type: string | null
           updated_at: string
           warehouse_id: string
         }
@@ -212,10 +213,9 @@ export type Database = {
           created_at?: string
           created_by: string
           deleted_at?: string | null
+          expected_delivery_date?: string | null
           from_warehouse_id?: string | null
           id?: string
-          invoice_amount?: number | null
-          invoice_number?: string | null
           inward_date?: string
           inward_type: string
           job_work_id?: string | null
@@ -226,6 +226,8 @@ export type Database = {
           sales_order_id?: string | null
           sequence_number: number
           transport_details?: string | null
+          transport_reference_number?: string | null
+          transport_type?: string | null
           updated_at?: string
           warehouse_id: string
         }
@@ -236,10 +238,9 @@ export type Database = {
           created_at?: string
           created_by?: string
           deleted_at?: string | null
+          expected_delivery_date?: string | null
           from_warehouse_id?: string | null
           id?: string
-          invoice_amount?: number | null
-          invoice_number?: string | null
           inward_date?: string
           inward_type?: string
           job_work_id?: string | null
@@ -250,6 +251,8 @@ export type Database = {
           sales_order_id?: string | null
           sequence_number?: number
           transport_details?: string | null
+          transport_reference_number?: string | null
+          transport_type?: string | null
           updated_at?: string
           warehouse_id?: string
         }
@@ -380,7 +383,6 @@ export type Database = {
           deleted_at: string | null
           expected_delivery_date: string | null
           id: string
-          invoice_amount: number | null
           is_cancelled: boolean | null
           job_work_id: string | null
           modified_by: string | null
@@ -391,10 +393,10 @@ export type Database = {
           partner_id: string | null
           sales_order_id: string | null
           sequence_number: number
-          shipment_reference_number: string | null
-          shipment_type: string | null
           to_warehouse_id: string | null
           transport_details: string | null
+          transport_reference_number: string | null
+          transport_type: string | null
           updated_at: string
           warehouse_id: string
         }
@@ -410,7 +412,6 @@ export type Database = {
           deleted_at?: string | null
           expected_delivery_date?: string | null
           id?: string
-          invoice_amount?: number | null
           is_cancelled?: boolean | null
           job_work_id?: string | null
           modified_by?: string | null
@@ -421,10 +422,10 @@ export type Database = {
           partner_id?: string | null
           sales_order_id?: string | null
           sequence_number: number
-          shipment_reference_number?: string | null
-          shipment_type?: string | null
           to_warehouse_id?: string | null
           transport_details?: string | null
+          transport_reference_number?: string | null
+          transport_type?: string | null
           updated_at?: string
           warehouse_id: string
         }
@@ -440,7 +441,6 @@ export type Database = {
           deleted_at?: string | null
           expected_delivery_date?: string | null
           id?: string
-          invoice_amount?: number | null
           is_cancelled?: boolean | null
           job_work_id?: string | null
           modified_by?: string | null
@@ -451,10 +451,10 @@ export type Database = {
           partner_id?: string | null
           sales_order_id?: string | null
           sequence_number?: number
-          shipment_reference_number?: string | null
-          shipment_type?: string | null
           to_warehouse_id?: string | null
           transport_details?: string | null
+          transport_reference_number?: string | null
+          transport_type?: string | null
           updated_at?: string
           warehouse_id?: string
         }

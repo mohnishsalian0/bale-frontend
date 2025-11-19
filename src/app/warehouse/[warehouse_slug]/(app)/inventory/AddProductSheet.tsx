@@ -13,9 +13,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group-pills';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { validateImageFile, uploadProductImage, MAX_PRODUCT_IMAGES } from '@/lib/storage';
-import { createClient, getCurrentUser } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import type { TablesInsert } from '@/types/database/supabase';
 import type { StockType, MeasuringUnit } from '@/types/database/enums';
+import { useSession } from '@/contexts/session-context';
 
 interface AddProductSheetProps {
 	open: boolean;
@@ -44,6 +45,7 @@ interface ProductFormData {
 }
 
 export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProductSheetProps) {
+	const { user } = useSession();
 	const [formData, setFormData] = useState<ProductFormData>({
 		name: '',
 		productNumber: 'PROD-001',
@@ -124,12 +126,6 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 		try {
 			const supabase = createClient();
 
-			// Get current user
-			const currentUser = await getCurrentUser();
-			if (!currentUser || !currentUser.company_id) {
-				throw new Error('User not found');
-			}
-
 			// Parse tags (comma-separated string to array)
 			const tagsArray = formData.tags
 				? formData.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
@@ -170,7 +166,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 
 					for (let i = 0; i < formData.images.length; i++) {
 						const result = await uploadProductImage(
-							currentUser.company_id,
+							user.company_id,
 							product.id,
 							formData.images[i],
 							i

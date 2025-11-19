@@ -376,9 +376,11 @@ export default function StockFlowPage() {
 									onClick={() => {
 										if (item.type === 'outward') {
 											router.push(`/warehouse/${warehouse.slug}/goods-outward/${item.sequence_number}`);
+										} else if (item.type === 'inward') {
+											router.push(`/warehouse/${warehouse.slug}/goods-inward/${item.sequence_number}`);
 										}
 									}}
-									className="flex items-center gap-4 px-4 py-3 border-t border-dashed border-gray-300 hover:bg-gray-50 transition-colors"
+									className="flex items-center gap-4 px-4 py-3 border-t border-dashed border-gray-300 hover:bg-gray-100 hover:cursor-pointer transition-colors"
 								>
 									<div className="flex-1 flex flex-col items-start">
 										<p className="text-base font-medium text-gray-900">{item.productName}</p>

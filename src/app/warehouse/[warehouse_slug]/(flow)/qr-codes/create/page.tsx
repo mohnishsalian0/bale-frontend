@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
-import { createClient, getCurrentUser } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { QRProductSelectionStep } from '../QRProductSelectionStep';
 import { QRStockUnitSelectionStep } from '../QRStockUnitSelectionStep';
 import { QRTemplateSelectionStep, getDefaultTemplateFields } from '../QRTemplateCustomisationStep';
@@ -88,10 +88,6 @@ export default function CreateQRBatchPage() {
 
 		setSaving(true);
 		try {
-			const currentUser = await getCurrentUser();
-			if (!currentUser || !currentUser.company_id || !currentUser.warehouse_id) {
-				throw new Error('User information not found');
-			}
 
 			// Generate batch name
 			const batchName = `${selectedProduct.name} - ${new Date().toLocaleDateString()}`;

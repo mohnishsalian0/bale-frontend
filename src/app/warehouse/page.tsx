@@ -9,8 +9,10 @@ import type { Tables } from '@/types/database/supabase';
 import { LoadingState } from '@/components/layouts/loading-state';
 
 type Warehouse = Tables<'warehouses'>;
+type User = Tables<'users'>;
 
 export default function WarehouseSelectionPage() {
+	const [user, setUser] = useState<User | null>(null);
 	const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
 	const [loading, setLoading] = useState(true);
 	const router = useRouter();
@@ -31,6 +33,8 @@ export default function WarehouseSelectionPage() {
 				return;
 			}
 
+			setUser(currentUser);
+
 			// Fetch warehouses - RLS automatically filters based on user's warehouse access
 			const { data, error } = await supabase
 				.from('warehouses')
@@ -45,7 +49,7 @@ export default function WarehouseSelectionPage() {
 			// If user has exactly one warehouse, auto-select it
 			if (userWarehouses.length === 1) {
 				console.log('✅ Single warehouse detected, auto-selecting:', userWarehouses[0].slug);
-				await handleWarehouseSelect(userWarehouses[0], currentUser);
+				await handleWarehouseSelect(userWarehouses[0]);
 				return;
 			}
 		} catch (error) {
@@ -55,20 +59,13 @@ export default function WarehouseSelectionPage() {
 		}
 	};
 
-	const handleWarehouseSelect = async (warehouse: Warehouse, user?: Tables<'users'>) => {
+	const handleWarehouseSelect = async (warehouse: Warehouse) => {
 		try {
-			// Get current user if not provided (for manual selection)
-			const currentUser = user || await getCurrentUser();
-			if (!currentUser) {
-				console.error('No user found');
-				return;
-			}
-
 			// Update user's selected warehouse
 			const { error } = await supabase
 				.from('users')
 				.update({ warehouse_id: warehouse.id })
-				.eq('id', currentUser.id);
+				.eq('id', user?.id);
 
 			if (error) {
 				console.error('Error updating warehouse:', error);

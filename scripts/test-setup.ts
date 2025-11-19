@@ -518,8 +518,6 @@ async function createTestPartners() {
 					other_reason: 'Purchase',
 					partner_id: supplierId1,
 					inward_date: month3.toISOString().split('T')[0],
-					invoice_number: 'INV-2024-001',
-					invoice_amount: 15000.00,
 					notes: 'Received silk fabrics from supplier',
 				},
 				{
@@ -529,8 +527,6 @@ async function createTestPartners() {
 					other_reason: 'Purchase',
 					partner_id: supplierId2,
 					inward_date: month3.toISOString().split('T')[0],
-					invoice_number: 'INV-2024-002',
-					invoice_amount: 8500.00,
 					notes: 'Cotton fabric purchase',
 				},
 				{
@@ -540,8 +536,6 @@ async function createTestPartners() {
 					other_reason: 'Purchase',
 					partner_id: supplierId1,
 					inward_date: month2.toISOString().split('T')[0],
-					invoice_number: 'INV-2024-003',
-					invoice_amount: 22000.00,
 					notes: 'Premium woolen fabrics received',
 				},
 				{
@@ -551,8 +545,6 @@ async function createTestPartners() {
 					other_reason: 'Purchase',
 					partner_id: supplierId2,
 					inward_date: month2.toISOString().split('T')[0],
-					invoice_number: 'INV-2024-004',
-					invoice_amount: 12000.00,
 					notes: 'Polyester blend materials',
 				},
 				{
@@ -562,8 +554,6 @@ async function createTestPartners() {
 					other_reason: 'Purchase',
 					partner_id: supplierId1,
 					inward_date: month1.toISOString().split('T')[0],
-					invoice_number: 'INV-2024-005',
-					invoice_amount: 18500.00,
 					notes: 'Linen fabric stock replenishment',
 				},
 			];
@@ -657,8 +647,6 @@ async function createTestPartners() {
 						outward_type: 'other',
 						other_reason: 'Sample outward for exhibition',
 						outward_date: month3.toISOString().split('T')[0],
-						invoice_number: 'DISP-001',
-						invoice_amount: 5000.00,
 						notes: 'Sample fabrics sent for trade show',
 					},
 					{
@@ -668,7 +656,6 @@ async function createTestPartners() {
 						outward_type: 'other',
 						other_reason: 'Quality testing at external lab',
 						outward_date: month3.toISOString().split('T')[0],
-						invoice_number: 'DISP-002',
 						notes: 'Silk samples for quality verification',
 					},
 					{
@@ -678,8 +665,6 @@ async function createTestPartners() {
 						outward_type: 'other',
 						other_reason: 'Customer sample approval',
 						outward_date: month2.toISOString().split('T')[0],
-						invoice_number: 'DISP-003',
-						invoice_amount: 3500.00,
 						notes: 'Cotton fabric samples for customer review',
 					},
 					{
@@ -689,7 +674,6 @@ async function createTestPartners() {
 						outward_type: 'other',
 						other_reason: 'Marketing material outward',
 						outward_date: month2.toISOString().split('T')[0],
-						invoice_number: 'DISP-004',
 						notes: 'Product samples for marketing campaign',
 					},
 					{
@@ -699,8 +683,6 @@ async function createTestPartners() {
 						outward_type: 'other',
 						other_reason: 'Demo pieces for new collection',
 						outward_date: month1.toISOString().split('T')[0],
-						invoice_number: 'DISP-005',
-						invoice_amount: 7500.00,
 						notes: 'New season collection samples',
 					},
 				];

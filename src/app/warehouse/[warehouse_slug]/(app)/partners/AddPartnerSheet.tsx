@@ -11,9 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { validateImageFile, uploadPartnerImage } from '@/lib/storage';
-import { createClient, getCurrentUser } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import type { TablesInsert } from '@/types/database/supabase';
 import type { PartnerType } from '@/types/database/enums';
+import { useSession } from '@/contexts/session-context';
 
 interface AddPartnerSheetProps {
 	open: boolean;
@@ -41,6 +42,7 @@ interface PartnerFormData {
 }
 
 export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartnerSheetProps) {
+	const { user } = useSession();
 	const [formData, setFormData] = useState<PartnerFormData>({
 		partnerType: 'customer',
 		firstName: '',
@@ -98,12 +100,6 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 		try {
 			const supabase = createClient();
 
-			// Get current user
-			const currentUser = await getCurrentUser();
-			if (!currentUser || !currentUser.company_id) {
-				throw new Error('User not found');
-			}
-
 			// Upload image first (if provided)
 			let imageUrl: string | null = null;
 			if (formData.image) {
@@ -111,7 +107,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 					// Generate a temporary ID for the upload path
 					const tempPartnerId = crypto.randomUUID();
 					const { publicUrl } = await uploadPartnerImage(
-						currentUser.company_id,
+						user.company_id,
 						tempPartnerId,
 						formData.image
 					);

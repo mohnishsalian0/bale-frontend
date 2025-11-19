@@ -28,8 +28,9 @@ CREATE TABLE goods_inwards (
 
     -- Details
     inward_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    invoice_number VARCHAR(50),
-    invoice_amount DECIMAL(10,2),
+    expected_delivery_date DATE,
+    transport_reference_number VARCHAR(50),
+    transport_type VARCHAR(20) CHECK (transport_type IN ('road', 'rail', 'air', 'sea', 'courier')),
     transport_details TEXT,
 
     notes TEXT,

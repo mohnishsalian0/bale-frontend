@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { IconChevronDown, IconUpload, IconHash, IconCurrencyRupee, IconTruck } from '@tabler/icons-react';
+import { IconChevronDown, IconUpload, IconHash, IconTruck } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group-pills';
@@ -22,7 +22,6 @@ interface DetailsFormData {
 	outwardDate: string;
 	dueDate: string;
 	invoiceNumber: string;
-	invoiceAmount: string;
 	transportDetails: string;
 	notes: string;
 	documentFile: File | null;
@@ -285,20 +284,6 @@ export function OutwardDetailsStep({ formData, onChange }: OutwardDetailsStepPro
 							value={formData.invoiceNumber}
 							onChange={(e) => onChange({ invoiceNumber: e.target.value })}
 							className="pl-10"
-						/>
-					</div>
-
-					{/* Invoice Amount */}
-					<div className="relative">
-						<IconCurrencyRupee className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-						<Input
-							type="number"
-							placeholder="Invoice amount"
-							value={formData.invoiceAmount}
-							onChange={(e) => onChange({ invoiceAmount: e.target.value })}
-							className="pl-10"
-							step="0.01"
-							min="0"
 						/>
 					</div>
 
