@@ -135,34 +135,36 @@ export default function GoodsInwardDetailPage({ params }: PageParams) {
 	}
 
 	return (
-		<div className="relative flex flex-col flex-1 overflow-y-auto max-w-3xl border-r border-border">
-			{/* Header */}
-			<div className="p-4">
-				<div>
-					<h1 className="text-2xl font-bold text-gray-900">GI-{inward.sequence_number}</h1>
-					<p className="text-sm text-gray-500">
-						Goods inward on {formatAbsoluteDate(inward.inward_date)}
-					</p>
+		<div className="flex-1 overflow-y-auto">
+			<div className="relative flex flex-col flex-1 max-w-3xl border-r border-border">
+				{/* Header */}
+				<div className="p-4">
+					<div>
+						<h1 className="text-2xl font-bold text-gray-900">GI-{inward.sequence_number}</h1>
+						<p className="text-sm text-gray-500">
+							Goods inward on {formatAbsoluteDate(inward.inward_date)}
+						</p>
+					</div>
 				</div>
-			</div>
 
-			{/* Tabs */}
-			<TabUnderline
-				activeTab={activeTab}
-				onTabChange={(tab) => setActiveTab(tab as 'details' | 'stock_units')}
-				tabs={[
-					{ value: 'details', label: 'Inward details' },
-					{ value: 'stock_units', label: 'Stock units' },
-				]}
-			/>
+				{/* Tabs */}
+				<TabUnderline
+					activeTab={activeTab}
+					onTabChange={(tab) => setActiveTab(tab as 'details' | 'stock_units')}
+					tabs={[
+						{ value: 'details', label: 'Inward details' },
+						{ value: 'stock_units', label: 'Stock units' },
+					]}
+				/>
 
-			{/* Tab Content */}
-			<div className="flex-1">
-				{activeTab === 'details' ? (
-					<InwardDetailsTab inward={inward} />
-				) : (
-					<StockUnitsTab stockUnits={stockUnits} />
-				)}
+				{/* Tab Content */}
+				<div className="flex-1">
+					{activeTab === 'details' ? (
+						<InwardDetailsTab inward={inward} />
+					) : (
+						<StockUnitsTab stockUnits={stockUnits} />
+					)}
+				</div>
 			</div>
 		</div>
 	);

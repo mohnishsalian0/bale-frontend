@@ -588,7 +588,20 @@ Permissions are organized hierarchically with the following top-level categories
 **Detail View:**
 - Complete order information
 - Real-time fulfillment status (warehouse-specific)
-- Linked job works and outwardes (from assigned warehouse)
+- Linked job works and outwards (from assigned warehouse)
+
+**Sales Order Details Page:**
+- **Layout**: Tabbed interface with "Order details", "Products", and "Outwards" tabs
+- **Header**: SO-{sequence_number} title with order date subtitle, status badge, and progress bar (for in_progress/overdue orders)
+- **Details Tab Sections**:
+  - Products: List of line items with product images, name, required quantity, unit rate, line total, fulfillment tracking (outwarded quantity, pending quantity)
+  - Customer: Customer name with initials, address, phone number, email (using flex justify-between format)
+  - Agent: Agent name with initials (conditionally shown if agent_id exists)
+  - Order Date: Formatted absolute date
+  - Expected Date: Formatted absolute date (conditionally shown if expected_delivery_date exists)
+  - Financial Details: Advance amount, discount, payment terms (conditionally shown if any financial details exist)
+  - Notes: Order notes
+- **Outwards Tab**: List of linked goods outward records with GO-{number}, date, outward type, destination, and clickable navigation
 
 **Audit Information**
 - Unique ID (auto-generated in backend)
@@ -739,10 +752,11 @@ Permissions are organized hierarchically with the following top-level categories
 
 **Outward Details**
 - Date (required, date of outward)
-- Due Date (expected delivery date)
-- Invoice Number (optional, sales invoice reference)
-- Amount (optional, total invoice amount)
-- Transport (transport method details like LR number, vehicle details)
+- Expected Delivery Date (optional, expected delivery date)
+- Transport Type (optional, dropdown: road, rail, air, sea, courier)
+- Transport Reference Number (optional, LR number, tracking ID, invoice number)
+- Invoice Amount (optional, total invoice amount)
+- Transport Details (optional, free-form text for vehicle details, driver info, etc.)
 - Notes (additional information)
 - Add files (attachments for invoices and documents)
 
@@ -793,6 +807,17 @@ Permissions are organized hierarchically with the following top-level categories
 - Audit trail: cancelled_by, cancelled_at, cancellation_reason
 - Notification to relevant parties (owners/customer/vendor)
 
+**Outward Details Page:**
+- **Layout**: Tabbed interface with "Outward details" and "Stock units" tabs
+- **Header**: GO-{sequence_number} title with outward date subtitle
+- **Details Tab Sections**:
+  - Reason for Outward: Shows linked sales order (SO-{number}), job work (JW-{number}), or other reason with appropriate icon
+  - Receiver: Partner or warehouse details with address and initials/warehouse icon
+  - Source Warehouse: Outward source with full address
+  - Transport: Transport type icon, reference number, expected delivery, invoice amount, transport details (using flex justify-between format)
+  - Notes: Outward notes
+- **Stock Units Tab**: List of dispatched stock units with product images, SU-{number}, quantity dispatched
+
 #### 7.2 Goods Inward
 
 **Feature Description**: Comprehensive inward inventory management with automatic unit creation
@@ -800,16 +825,23 @@ Permissions are organized hierarchically with the following top-level categories
 **Specifications:**
 
 **Inward Header**
-- Issued By (required, sender of goods)
-- Agent (optional, broker for this deal)
-- Link to (radio options: sales order, job work, other)
-- Sales Order (optional link to system sales order)
+- Inward Type (radio buttons: "From Partner" or "From Warehouse")
+- **For Partner Inward:**
+  - Partner (required, sender of goods)
+  - Agent (optional, broker for this deal)
+- **For Warehouse Transfer:**
+  - Source Warehouse (required dropdown excluding current warehouse)
+  - Agent field not applicable
+- Link to (radio options: job work, sales return, other)
 - Job Work (optional link to system job work)
-- Other (custom reference with text field for description - e.g., "Inter-warehouse transfer", "Purchase return", "Damaged goods replacement")
+- Sales Order (optional link for sales return type)
+- Other (custom reference with text field for description - e.g., "Opening stock", "Purchase", "Damaged goods replacement")
 - Date (required, date of arrival)
-- Amount (optional, total invoice amount)
-- Invoice Number (optional, purchase bill reference)
-- Transport (transport method details)
+- Expected Delivery Date (optional, expected delivery date)
+- Transport Type (optional, dropdown: road, rail, air, sea, courier)
+- Transport Reference Number (optional, LR number, tracking ID, invoice number)
+- Invoice Amount (optional, total invoice amount)
+- Transport Details (optional, free-form text for vehicle details, driver info, etc.)
 - Notes (additional information)
 - Add files (attachments for invoices and documents)
 
@@ -844,6 +876,26 @@ Permissions are organized hierarchically with the following top-level categories
 - Stock units created ONLY for physically received items
 - Barcode generation limited to actual received units
 - Real-time inventory updates reflect only actual received stock
+- **Inward Type Validation:**
+  - Partner inward requires valid partner selection, from_warehouse field must be null
+  - Warehouse transfer requires valid source warehouse, partner field must be null
+  - Agent can only be assigned for partner inward type
+  - Cannot transfer from the same warehouse (system validation)
+- **Database Integrity:**
+  - Mutually exclusive source fields enforced by database constraints
+  - All inward records must specify inward_type ('job_work', 'sales_return', or 'other')
+
+**Inward Details Page:**
+- **Layout**: Tabbed interface with "Inward details" and "Stock units" tabs
+- **Header**: GI-{sequence_number} title with inward date subtitle
+- **Details Tab Sections**:
+  - Reason for Inward: Shows linked job work (JW-{number}), sales return (SO-{number}), or other reason with appropriate icon
+  - Sender: Partner or warehouse details with address and initials/warehouse icon
+  - Inward Destination: Warehouse receiving goods with full address
+  - Transport: Transport type icon, reference number, expected delivery, invoice amount, transport details (using flex justify-between format)
+  - Agent: Conditionally shown if agent_id exists
+  - Notes: Inward notes
+- **Stock Units Tab**: List of created stock units with product images, SU-{number}, initial quantity with unit
 
 ### 8. Barcode Generation System
 
@@ -963,3 +1015,22 @@ Based on the specifications provided, here's how I would divide this into 2 dist
 **Integration Features:**
 - Automatic sales order generation in backend
 - Public domain accessibility with shareable links
+
+---
+
+## UI/UX Design Patterns & Components
+
+### Detail Page Architecture
+
+**Common Pattern for Detail Pages:**
+All entity detail pages (Sales Orders, Goods Inward, Goods Outward and others) follow a consistent architecture:
+
+**Layout Structure:**
+- **Container**: `max-w-3xl` width with `border-r border-border` for clean separation
+- **Header Section**: Entity number (SO-/GI-/GO-{sequence_number}) with subtitle, status badges, and progress bars where applicable
+- **Tab Navigation**: TabUnderline component with smooth animation and active state indication
+- **Tab Content**: Scrollable content area with sections
+
+### Utility Functions Library
+
+Utility function in `@/lib/utils/`

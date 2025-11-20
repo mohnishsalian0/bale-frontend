@@ -32,7 +32,7 @@ const badgeVariants = cva(
 			{
 				color: "blue",
 				variant: "secondary",
-				class: "border-transparent bg-primary-100 text-primary-700",
+				class: "bg-primary-100 text-primary-700 border-blue-200",
 			},
 			{
 				color: "blue",
@@ -48,7 +48,7 @@ const badgeVariants = cva(
 			{
 				color: "green",
 				variant: "secondary",
-				class: "border-transparent bg-green-100 text-green-700",
+				class: "border-transparent bg-green-100 text-green-700 border-green-200",
 			},
 			{
 				color: "green",
@@ -64,7 +64,7 @@ const badgeVariants = cva(
 			{
 				color: "orange",
 				variant: "secondary",
-				class: "border-transparent bg-orange-100 text-orange-700",
+				class: "border-transparent bg-orange-100 text-orange-700 border-orange-200",
 			},
 			{
 				color: "orange",
@@ -80,7 +80,7 @@ const badgeVariants = cva(
 			{
 				color: "red",
 				variant: "secondary",
-				class: "border-transparent bg-red-100 text-red-700",
+				class: "border-transparent bg-red-100 text-red-700 border-red-200",
 			},
 			{
 				color: "red",
@@ -96,7 +96,7 @@ const badgeVariants = cva(
 			{
 				color: "gray",
 				variant: "secondary",
-				class: "border-transparent bg-gray-100 text-gray-500",
+				class: "border-transparent bg-gray-100 text-gray-500 border-gray-200",
 			},
 			{
 				color: "gray",

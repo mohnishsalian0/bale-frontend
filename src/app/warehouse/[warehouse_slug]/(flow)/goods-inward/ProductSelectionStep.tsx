@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Tables } from '@/types/database/supabase';
 import { pluralize } from '@/lib/utils/pluralize';
+import { StockType } from '@/types/database/enums';
+import IconProductPlaceholder from '@/components/icons/IconProductPlaceholder';
 
 export interface StockUnitSpec {
 	id: string; // temp ID for UI
@@ -174,9 +176,14 @@ export function ProductSelectionStep({
 					<div className="flex flex-col">
 						{filteredProducts.map(product => {
 							const imageUrl = product.product_images?.[0];
+
 							const hasUnits = product.units.length > 0;
+
 							const totalUnits = product.units.reduce((sum, unit) => sum + unit.count, 0);
+
 							const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
+
+							const stockType = product.stock_type as StockType;
 
 							return (
 								<div
@@ -194,7 +201,7 @@ export function ProductSelectionStep({
 											/>
 										) : (
 											<div className="flex items-center justify-center size-full text-gray-400">
-												<IconPlus className="size-6" />
+												<IconProductPlaceholder stock_type={stockType} className="size-6" />
 											</div>
 										)}
 									</div>

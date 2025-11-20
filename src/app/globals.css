@@ -52,8 +52,10 @@
 	--shadow-gray-sm: 0 2px 0 0 var(--color-gray-300);
 	--shadow-dark-gray-md: 0 4px 0 0 var(--color-gray-500);
 	--shadow-dark-gray-sm: 0 2px 0 0 var(--color-gray-500);
-	--shadow-primary-md: 0 4px 0 0 var(--color-primary-500);
-	--shadow-primary-sm: 0 2px 0 0 var(--color-primary-500);
+	--shadow-light-primary-md: 0 4px 0 0 var(--color-primary-500);
+	--shadow-light-primary-sm: 0 2px 0 0 var(--color-primary-500);
+	--shadow-primary-md: 0 4px 0 0 var(--color-primary-600);
+	--shadow-primary-sm: 0 2px 0 0 var(--color-primary-600);
 	--shadow-dark-primary-md: 0 4px 0 0 var(--color-primary-900);
 	--shadow-dark-primary-sm: 0 2px 0 0 var(--color-primary-900);
 	--shadow-xs-reverse: 0 -1px -1px rgb(0 0 0 / 0.05);
@@ -80,6 +82,10 @@
   --border: var(--color-gray-300);
   --muted-border: var(--color-gray-200);
   --ring: var(--color-primary-500);
+
+  /* Destructive colors */
+  --destructive: var(--color-red-100);
+  --destructive-foreground: var(--color-red-700);
 
   /* Input colors */
   --input: var(--color-gray-300);
@@ -130,6 +136,10 @@
   /* Border colors */
   --color-border: var(--muted-border);
   --color-ring: var(--ring);
+
+  /* Destructive colors */
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
 
 	/* Sidebar colors */
   --color-sidebar: var(--sidebar);

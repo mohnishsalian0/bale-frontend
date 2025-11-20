@@ -13,14 +13,12 @@ import {
 	IconShoppingCart,
 	IconCalendar,
 	IconHash,
-	IconCurrencyRupee,
 } from '@tabler/icons-react';
+import IconJobWork from '@/components/icons/IconJobWork';
 import { Section } from '@/components/layouts/section';
 import { getInitials } from '@/lib/utils/initials';
 import { getPartnerName, getPartnerAddress } from '@/lib/utils/partner';
 import { formatAbsoluteDate } from '@/lib/utils/date';
-import { formatCurrency } from '@/lib/utils/financial';
-import JobWorkIcon from '@/components/icons/JobWorkIcon';
 import type { Tables } from '@/types/database/supabase';
 import type { ComponentType } from 'react';
 
@@ -74,7 +72,7 @@ export function InwardDetailsTab({ inward }: InwardDetailsTabProps) {
 
 	if (inward.inward_type === 'job_work' && inward.job_work) {
 		reasonTitle = `JW-${inward.job_work.sequence_number}`;
-		ReasonIcon = JobWorkIcon;
+		ReasonIcon = IconJobWork;
 	} else if (inward.inward_type === 'sales_return' && inward.sales_order) {
 		reasonTitle = `SO-${inward.sales_order.sequence_number}`;
 		ReasonIcon = IconShoppingCart;

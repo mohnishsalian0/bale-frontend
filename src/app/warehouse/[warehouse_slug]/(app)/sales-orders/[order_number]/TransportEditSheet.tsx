@@ -10,7 +10,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
-interface ShipmentEditSheetProps {
+interface TransportEditSheetProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	orderId: string;
@@ -18,13 +18,13 @@ interface ShipmentEditSheetProps {
 	onSuccess: () => void;
 }
 
-export function ShipmentEditSheet({
+export function TransportEditSheet({
 	open,
 	onOpenChange,
 	orderId,
 	currentExpectedDeliveryDate,
 	onSuccess,
-}: ShipmentEditSheetProps) {
+}: TransportEditSheetProps) {
 	const [expectedDeliveryDate, setExpectedDeliveryDate] = useState<Date | undefined>(undefined);
 	const [loading, setLoading] = useState(false);
 	const isMobile = useIsMobile();

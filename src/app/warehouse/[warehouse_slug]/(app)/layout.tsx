@@ -1,10 +1,10 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
-import TopBar from '@/components/layouts/TopBar';
-import BottomNav from '@/components/layouts/BottomNav';
-import WarehouseSelector from '@/components/layouts/WarehouseSelector';
-import { AppSidebar } from '@/components/layouts/AppSidebar';
+import TopBar from '@/components/layouts/topbar';
+import BottomNav from '@/components/layouts/bottom-nav';
+import WarehouseSelector from '@/components/layouts/warehouse-selector';
+import { AppSidebar } from '@/components/layouts/app-sidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { useSession } from '@/contexts/session-context';
 

@@ -1,5 +1,5 @@
 
-export default function JobWorkIcon({ className }: { className?: string }) {
+export default function IconJobWork({ className }: { className?: string }) {
 	return (
 		<svg
 			width="20"

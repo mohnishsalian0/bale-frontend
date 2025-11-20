@@ -2,10 +2,12 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { IconSearch, IconPlus, IconChevronRight } from '@tabler/icons-react';
+import { IconSearch, IconChevronRight } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Tables } from '@/types/database/supabase';
+import { StockType } from '@/types/database/enums';
+import IconProductPlaceholder from '@/components/icons/IconProductPlaceholder';
 
 interface InventoryProductListStepProps {
 	products: Tables<'products'>[];
@@ -144,6 +146,8 @@ export function InventoryProductListStep({
 
 							const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
 
+							const stockType = product.stock_type as StockType;
+
 							return (
 								<button
 									key={product.id}
@@ -162,7 +166,7 @@ export function InventoryProductListStep({
 											/>
 										) : (
 											<div className="flex items-center justify-center size-full text-gray-400">
-												<IconPlus className="size-6" />
+												<IconProductPlaceholder stock_type={stockType} className="size-6" />
 											</div>
 										)}
 									</div>

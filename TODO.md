@@ -97,6 +97,11 @@
 - [x] Create custom icon components (WarehouseIcon wrapper)
 - [x] Create LoadingState component with trolley truck illustration (500x500)
 - [x] Replace all page loading states with LoadingState component
+- [x] Create Section component for detail page sections with title, subtitle, icon, and optional edit button
+- [x] Create TabUnderline component for tab navigation with underline animation
+- [x] Create ErrorState component for error handling with retry functionality
+- [x] Create ProgressBar component for unified progress indication
+- [x] Create reusable utility functions in lib/utils/ (partner, financial, date, initials)
 - [ ] Build custom components (DataTable, FileUpload, SearchInput, StatusBadge)
 - [ ] Create form components with validation (Zod + React Hook Form)
 
@@ -160,8 +165,12 @@
 - [x] Create /warehouse/[warehouse_slug]/(flow)/goods-inward/create full-page component
 - [x] Copy goods inward step components to (flow)/goods-inward/ directory
 - [x] Update stock flow FAB to navigate to full-page goods inward creation
-- [ ] View goods inward details page
-- [ ] View goods inward stock units page
+- [x] View goods inward details page with tabbed layout (Details, Stock Units)
+- [x] Create InwardDetailsTab component with sections (Reason, Sender, Destination, Transport, Agent, Notes)
+- [x] Create StockUnitsTab component for goods inward with product details
+- [x] Update stock-flow page to navigate to goods inward details
+- [x] Rename all "shipment" references to "transport" across schema and components
+- [x] Add transport fields to goods_inwards table (transport_type, transport_reference_number, transport_details, invoice_amount)
 - [ ] Stock units list with warehouse filtering
 - [ ] Inventory dashboard with summary cards
 - [ ] Stock unit detail and edit
@@ -182,10 +191,12 @@
 - [x] Create /warehouse/[warehouse_slug]/(flow)/goods-outward/create full-page component
 - [x] Copy goods outward step components to (flow)/goods-outward/ directory
 - [x] Update stock flow FAB to navigate to full-page goods outward creation
+- [x] View goods outward details page with tabbed layout (Details, Stock Units)
+- [x] Create OutwardDetailsTab component with sections (Reason, Receiver, Source, Transport, Notes)
+- [x] Create StockUnitsTab component for goods outward with quantity dispatched
+- [x] Update stock-flow page to navigate to goods outward details
 - [ ] Create StockUnitSelectionStep to show product's stock units
 - [ ] Allow selecting and adding stock units from inventory to outward
-- [ ] View goods outward details page
-- [ ] View goods outward stock units page
 - [ ] Stock unit selection with real-time validation
 - [ ] Outward cancellation functionality
 
@@ -219,8 +230,14 @@
 - [x] Create /warehouse/[warehouse_slug]/(flow)/sales-orders/create full-page component
 - [x] Copy sales order step components to (flow)/sales-orders/ directory
 - [x] Update sales orders page FAB to navigate to full-page creation
+- [x] View sales order details page with tabbed layout (Details, Products, Outwards)
+- [x] Create OrderDetailsTab component with sections (Customer, Agent, Dates, Financial Details, Notes)
+- [x] Create ProductsTab component showing line items with fulfillment tracking
+- [x] Create OutwardsTab component showing linked goods outward records
+- [x] Create Section component for consistent detail display across app
+- [x] Create TabUnderline component for tab navigation
+- [x] Create reusable utility functions (getPartnerName, getPartnerAddress, formatCurrency, formatAbsoluteDate)
 - [ ] Fix partners page flickering on filter change (fetch all, filter client-side)
-- [ ] View sales order details page
 - [ ] Edit sales order functionality
 - [ ] Order status workflow transitions (approval_pending → in_progress → completed/cancelled)
 - [ ] Real-time fulfillment tracking per warehouse

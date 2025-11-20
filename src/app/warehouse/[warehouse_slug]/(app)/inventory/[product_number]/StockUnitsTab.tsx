@@ -1,0 +1,194 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import { IconBox } from '@tabler/icons-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { formatAbsoluteDate, formatRelativeDate } from '@/lib/utils/date';
+import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
+import type { Tables } from '@/types/database/supabase';
+import type { MeasuringUnit } from '@/types/database/enums';
+
+type StockUnit = Tables<'stock_units'>;
+type GoodsInward = Tables<'goods_inwards'>;
+
+interface StockUnitWithInward extends StockUnit {
+	goods_inward: GoodsInward | null;
+}
+
+interface StockUnitsTabProps {
+	stockUnits: StockUnitWithInward[];
+	measuringUnit: MeasuringUnit | null;
+}
+
+type SortOption = 'latest' | 'oldest' | 'quantity_high' | 'quantity_low';
+
+export function StockUnitsTab({ stockUnits, measuringUnit }: StockUnitsTabProps) {
+	const [sortBy, setSortBy] = useState<SortOption>('latest');
+	const [qrPendingOnly, setQrPendingOnly] = useState(false);
+
+	const unitAbbr = getMeasuringUnitAbbreviation(measuringUnit);
+
+	// Filter and sort stock units
+	const filteredAndSortedUnits = useMemo(() => {
+		let units = [...stockUnits];
+
+		// Filter by QR pending
+		if (qrPendingOnly) {
+			units = units.filter((unit) => !unit.qr_generated_at);
+		}
+
+		// Sort
+		units.sort((a, b) => {
+			switch (sortBy) {
+				case 'latest':
+					return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+				case 'oldest':
+					return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+				case 'quantity_high':
+					return (b.remaining_quantity || 0) - (a.remaining_quantity || 0);
+				case 'quantity_low':
+					return (a.remaining_quantity || 0) - (b.remaining_quantity || 0);
+				default:
+					return 0;
+			}
+		});
+
+		return units;
+	}, [stockUnits, sortBy, qrPendingOnly]);
+
+	// Group by goods inward
+	const groupedUnits = useMemo(() => {
+		const groups: Map<string, { inward: GoodsInward; units: StockUnitWithInward[] }> = new Map();
+
+		filteredAndSortedUnits.forEach((unit) => {
+			if (!unit.goods_inward) return;
+
+			const key = unit.created_from_inward_id || 'unknown';
+			if (!groups.has(key)) {
+				groups.set(key, {
+					inward: unit.goods_inward,
+					units: [],
+				});
+			}
+			groups.get(key)!.units.push(unit);
+		});
+
+		return Array.from(groups.values());
+	}, [filteredAndSortedUnits]);
+
+	if (stockUnits.length === 0) {
+		return (
+			<div className="flex flex-col items-center justify-center py-12 px-4">
+				<IconBox className="size-12 text-gray-400 mb-3" />
+				<h3 className="text-lg font-medium text-gray-900 mb-1">No stock units</h3>
+				<p className="text-sm text-gray-500 text-center">
+					No stock units found for this product in the warehouse
+				</p>
+			</div>
+		);
+	}
+
+	return (
+		<div className="flex flex-col">
+			{/* Toolbar */}
+			<div className="flex items-center justify-between gap-4 px-4 py-3">
+				<Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+					<SelectTrigger className="w-48">
+						<SelectValue placeholder="Sort by" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="latest">Latest first</SelectItem>
+						<SelectItem value="oldest">Oldest first</SelectItem>
+						<SelectItem value="quantity_high">Quantity (high to low)</SelectItem>
+						<SelectItem value="quantity_low">Quantity (low to high)</SelectItem>
+					</SelectContent>
+				</Select>
+
+				<div className="flex items-center gap-2">
+					<Switch
+						id="qr-pending"
+						checked={qrPendingOnly}
+						onCheckedChange={setQrPendingOnly}
+					/>
+					<Label htmlFor="qr-pending" className="text-sm text-gray-700 cursor-pointer">
+						QR pending
+					</Label>
+				</div>
+			</div>
+
+			{/* Grouped List */}
+			<div className="flex flex-col">
+				{filteredAndSortedUnits.length === 0 ? (
+					<div className="flex flex-col items-center justify-center py-12 px-4">
+						<IconBox className="size-12 text-gray-400 mb-3" />
+						<h3 className="text-lg font-medium text-gray-900 mb-1">No stock units found</h3>
+						<p className="text-sm text-gray-500 text-center">
+							{qrPendingOnly
+								? 'All stock units have QR codes generated'
+								: 'Try changing your filters'}
+						</p>
+					</div>
+				) : (
+					groupedUnits.map((group) => (
+						<div key={group.inward.id} className="border-t border-gray-200">
+							{/* Inward Header */}
+							<div className="flex items-center justify-between px-4 py-2 bg-gray-100">
+								<span className="text-sm font-medium text-gray-900">
+									GI-{group.inward.sequence_number}
+								</span>
+								<span className="text-xs text-gray-500">
+									{formatAbsoluteDate(group.inward.inward_date)}
+								</span>
+							</div>
+
+							{/* Stock Units */}
+							{group.units.map((unit) => {
+								const subtitleParts: string[] = [];
+								if (unit.warehouse_location) subtitleParts.push(unit.warehouse_location);
+								if (unit.quality_grade) subtitleParts.push(unit.quality_grade);
+								if (unit.supplier_number) subtitleParts.push(unit.supplier_number);
+
+								return (
+									<div
+										key={unit.id}
+										className="flex items-start justify-between gap-4 px-4 py-3 border-t border-dashed border-gray-200 hover:bg-gray-50 transition-colors"
+									>
+										<div className="flex-1 min-w-0">
+											<h3 className="text-base font-medium text-gray-900">
+												SU-{unit.sequence_number}
+											</h3>
+
+											{/* QR Status */}
+											<p
+												className={`text-xs mt-0.5 ${unit.qr_generated_at ? 'text-green-700' : 'text-gray-500'
+													}`}
+												title={unit.qr_generated_at ? formatAbsoluteDate(unit.qr_generated_at) : ''}
+											>
+												{unit.qr_generated_at
+													? `QR generated ${formatRelativeDate(unit.qr_generated_at)}`
+													: 'QR pending'}
+											</p>
+
+											{/* Additional Info */}
+											{subtitleParts.length > 0 && (
+												<p className="text-xs text-gray-500 mt-0.5">{subtitleParts.join(' • ')}</p>
+											)}
+										</div>
+
+										<div className="shrink-0 text-right">
+											<span className="text-base font-semibold text-gray-900">
+												{unit.remaining_quantity} {unitAbbr}
+											</span>
+										</div>
+									</div>
+								);
+							})}
+						</div>
+					))
+				)}
+			</div>
+		</div>
+	);
+}

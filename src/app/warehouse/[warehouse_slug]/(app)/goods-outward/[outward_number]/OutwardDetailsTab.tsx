@@ -15,11 +15,11 @@ import {
 	IconCalendar,
 	IconHash,
 } from '@tabler/icons-react';
+import IconJobWork from '@/components/icons/IconJobWork';
 import { Section } from '@/components/layouts/section';
 import { getInitials } from '@/lib/utils/initials';
 import { getPartnerName, getPartnerAddress } from '@/lib/utils/partner';
 import { formatAbsoluteDate } from '@/lib/utils/date';
-import JobWorkIcon from '@/components/icons/JobWorkIcon';
 import type { Tables } from '@/types/database/supabase';
 import type { ComponentType } from 'react';
 
@@ -79,7 +79,7 @@ export function OutwardDetailsTab({ outward }: OutwardDetailsTabProps) {
 		// reasonLink = `/warehouse/${warehouseSlug}/sales-orders/${outward.sales_order.sequence_number}`;
 	} else if (outward.outward_type === 'job_work' && outward.job_work) {
 		reasonTitle = `JW-${outward.job_work.sequence_number}`;
-		ReasonIcon = JobWorkIcon;
+		ReasonIcon = IconJobWork;
 		// TODO: Add link to job work details when implemented
 	} else if (outward.outward_type === 'other' && outward.other_reason) {
 		reasonTitle = outward.other_reason;
@@ -94,14 +94,14 @@ export function OutwardDetailsTab({ outward }: OutwardDetailsTabProps) {
 	const receiverAddress = isWarehouseTransfer
 		? outward.to_warehouse
 			? [
-					outward.to_warehouse.address_line1,
-					outward.to_warehouse.address_line2,
-					outward.to_warehouse.city,
-					outward.to_warehouse.state,
-					outward.to_warehouse.pin_code,
-			  ]
-					.filter(Boolean)
-					.join(', ')
+				outward.to_warehouse.address_line1,
+				outward.to_warehouse.address_line2,
+				outward.to_warehouse.city,
+				outward.to_warehouse.state,
+				outward.to_warehouse.pin_code,
+			]
+				.filter(Boolean)
+				.join(', ')
 			: null
 		: getPartnerAddress(outward.partner);
 
@@ -113,7 +113,7 @@ export function OutwardDetailsTab({ outward }: OutwardDetailsTabProps) {
 			<Section
 				title={reasonTitle}
 				subtitle="Reason for outward"
-				onEdit={() => {}}
+				onEdit={() => { }}
 				icon={ReasonIcon}
 			>
 				{reasonLink && (
@@ -130,7 +130,7 @@ export function OutwardDetailsTab({ outward }: OutwardDetailsTabProps) {
 			<Section
 				title={receiverName}
 				subtitle="Receiver"
-				onEdit={() => {}}
+				onEdit={() => { }}
 				icon={
 					isWarehouseTransfer
 						? () => <IconBuildingWarehouse className="size-5" />
@@ -149,7 +149,7 @@ export function OutwardDetailsTab({ outward }: OutwardDetailsTabProps) {
 			<Section
 				title={outward.warehouse?.name || 'Unknown Warehouse'}
 				subtitle="Outward source"
-				onEdit={() => {}}
+				onEdit={() => { }}
 				icon={() => <IconBuildingWarehouse className="size-5" />}
 			>
 				{outward.warehouse && (
@@ -174,7 +174,7 @@ export function OutwardDetailsTab({ outward }: OutwardDetailsTabProps) {
 			<Section
 				title={getTransportTypeDisplay(outward.transport_type)}
 				subtitle="Transport"
-				onEdit={() => {}}
+				onEdit={() => { }}
 				icon={() => <TransportIcon className="size-5" />}
 			>
 				<div className="space-y-3">
@@ -209,7 +209,7 @@ export function OutwardDetailsTab({ outward }: OutwardDetailsTabProps) {
 			<Section
 				title="Outward notes"
 				subtitle={outward.notes || 'No note added'}
-				onEdit={() => {}}
+				onEdit={() => { }}
 				icon={() => <IconNote className="size-5" />}
 			/>
 		</div>

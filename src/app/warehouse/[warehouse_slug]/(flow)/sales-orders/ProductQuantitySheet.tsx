@@ -10,7 +10,8 @@ import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from '
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import type { Tables } from '@/types/database/supabase';
-import { MeasuringUnit } from '@/types/database/enums';
+import { MeasuringUnit, StockType } from '@/types/database/enums';
+import IconProductPlaceholder from '@/components/icons/IconProductPlaceholder';
 
 interface ProductQuantitySheetProps {
 	open: boolean;
@@ -71,6 +72,8 @@ export function ProductQuantitySheet({
 
 	const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
 
+	const stockType = product.stock_type as StockType;
+
 	const formContent = (
 		<div className="flex flex-col gap-4 p-4 md:px-0 overflow-x-hidden">
 			<div className="flex gap-4">
@@ -86,7 +89,7 @@ export function ProductQuantitySheet({
 							/>
 						) : (
 							<div className="size-full flex items-center justify-center text-gray-400">
-								<IconPlus className="size-8" />
+								<IconProductPlaceholder stock_type={stockType} className="size-8" />
 							</div>
 						)}
 					</div>

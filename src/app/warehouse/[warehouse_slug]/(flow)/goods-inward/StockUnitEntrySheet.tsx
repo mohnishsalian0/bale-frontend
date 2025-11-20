@@ -12,10 +12,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { DatePicker } from '@/components/ui/date-picker';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { Tables } from '@/types/database/supabase';
-import type { MeasuringUnit } from '@/types/database/enums';
+import type { MeasuringUnit, StockType } from '@/types/database/enums';
 import type { StockUnitSpec } from './ProductSelectionStep';
 import { Input } from '@/components/ui/input';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
+import IconProductPlaceholder from '@/components/icons/IconProductPlaceholder';
 
 interface StockUnitEntrySheetProps {
 	open: boolean;
@@ -91,6 +92,8 @@ export function StockUnitEntrySheet({
 
 	const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
 
+	const stockType = product.stock_type as StockType;
+
 	const formContent = (
 		<div className="flex flex-col gap-8 p-4 md:px-0 overflow-x-hidden">
 			<div className="flex flex-col gap-4">
@@ -107,7 +110,7 @@ export function StockUnitEntrySheet({
 								/>
 							) : (
 								<div className="size-full flex items-center justify-center text-gray-400">
-									<IconPlus className="size-8" />
+									<IconProductPlaceholder stock_type={stockType} className="size-8" />
 								</div>
 							)}
 						</div>

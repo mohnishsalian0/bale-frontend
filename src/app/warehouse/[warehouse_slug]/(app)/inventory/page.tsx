@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { IconSearch, IconAlertTriangle, IconClothesRack } from '@tabler/icons-react';
+import { IconSearch, IconAlertTriangle } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Fab } from '@/components/ui/fab';
@@ -11,10 +12,12 @@ import { LoadingState } from '@/components/layouts/loading-state';
 import { ErrorState } from '@/components/layouts/error-state';
 import { AddProductSheet } from './AddProductSheet';
 import { createClient } from '@/lib/supabase/client';
+import { useSession } from '@/contexts/session-context';
 import type { Tables } from '@/types/database/supabase';
-import type { MeasuringUnit } from '@/types/database/enums';
+import type { MeasuringUnit, StockType } from '@/types/database/enums';
 import { Button } from '@/components/ui/button';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
+import IconProductPlaceholder from '@/components/icons/IconProductPlaceholder';
 
 type ProductRow = Tables<'products'>;
 
@@ -25,11 +28,14 @@ interface Product {
 	material: string | null;
 	color: string | null;
 	totalQuantity: number;
+	stock_type: StockType;
 	unit: string | null;
 	imageUrl?: string;
 }
 
 export default function InventoryPage() {
+	const router = useRouter();
+	const { warehouse } = useSession();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [products, setProducts] = useState<Product[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -58,6 +64,7 @@ export default function InventoryPage() {
 				material: p.material,
 				color: p.color_name,
 				totalQuantity: 0, // TODO: Calculate from stock_units
+				stock_type: p.stock_type as StockType,
 				unit: p.measuring_unit,
 				imageUrl: p.product_images?.[0] || undefined,
 			}));
@@ -186,7 +193,11 @@ export default function InventoryPage() {
 					</div>
 				) : (
 					filteredProducts.map((product) => (
-						<Card key={product.id} className="rounded-none border-0 border-b border-gray-200 shadow-none bg-transparent">
+						<Card
+							key={product.id}
+							className="rounded-none border-0 border-b border-gray-200 shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
+							onClick={() => router.push(`/warehouse/${warehouse.slug}/inventory/${product.productNumber}`)}
+						>
 							<CardContent className="p-4 flex gap-4 items-center">
 								{/* Product Image */}
 								<div className="relative size-16 rounded-lg shrink-0 bg-gray-200 overflow-hidden">
@@ -199,7 +210,7 @@ export default function InventoryPage() {
 										/>
 									) : (
 										<div className="flex items-center justify-center size-full">
-											<IconClothesRack className="size-8 text-gray-400" />
+											<IconProductPlaceholder stock_type={product.stock_type} className="size-8 text-gray-400" />
 										</div>
 									)}
 								</div>

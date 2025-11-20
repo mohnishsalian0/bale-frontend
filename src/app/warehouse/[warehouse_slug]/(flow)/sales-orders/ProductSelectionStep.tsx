@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import type { Tables } from '@/types/database/supabase';
-import { MeasuringUnit } from '@/types/database/enums';
+import { MeasuringUnit, StockType } from '@/types/database/enums';
+import IconProductPlaceholder from '@/components/icons/IconProductPlaceholder';
 
 interface ProductWithSelection extends Tables<'products'> {
 	selected: boolean;
@@ -169,6 +170,8 @@ export function ProductSelectionStep({
 
 							const unitAbbreviation = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null);
 
+							const stock_type = product.stock_type as StockType;
+
 							return (
 								<div
 									key={product.id}
@@ -185,7 +188,7 @@ export function ProductSelectionStep({
 											/>
 										) : (
 											<div className="flex items-center justify-center size-full text-gray-400">
-												<IconPlus className="size-6" />
+												<IconProductPlaceholder stock_type={stock_type} className="size-6" />
 											</div>
 										)}
 									</div>
