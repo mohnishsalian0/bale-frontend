@@ -47,19 +47,18 @@ export default function WarehouseSelectionPage() {
 
 			const userWarehouses = data || [];
 			setWarehouses(userWarehouses);
-
-			// If user has exactly one warehouse, auto-select it
-			if (userWarehouses.length === 1) {
-				console.log('✅ Single warehouse detected, auto-selecting:', userWarehouses[0].slug);
-				await handleWarehouseSelect(userWarehouses[0]);
-				return;
-			}
 		} catch (error) {
 			console.error('Error fetching warehouses:', error);
 		} finally {
 			setLoading(false);
 		}
 	};
+
+	useEffect(() => {
+		if (user && warehouses.length === 1) {
+			handleWarehouseSelect(warehouses[0]);
+		}
+	}, [user, warehouses]);
 
 	const handleWarehouseSelect = async (warehouse: Warehouse) => {
 		try {
@@ -127,13 +126,9 @@ export default function WarehouseSelectionPage() {
 									className="flex gap-3 p-4 rounded-lg cursor-pointer transition-all bg-background border border-border shadow-gray-md hover:border-primary-500 hover:shadow-primary-md select-none"
 								>
 									{/* Icon */}
-									<ImageWrapper
-										size="lg"
-										shape="square"
-										imageUrl={warehouse.image_url || undefined}
-										alt={warehouse.name}
-										placeholderInitials={getInitials(warehouse.name)}
-									/>
+									<div className="flex-shrink-0 w-14 h-14 rounded-lg flex items-center justify-center bg-gray-100" >
+										<IconBuildingWarehouse className="size-6 text-gray-500" />
+									</div>
 
 									{/* Content */}
 									<div className="flex-1 min-w-0 flex flex-col gap-1">

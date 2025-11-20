@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { IconPlus, IconShoppingCart, IconPackage, IconClockHour8 } from '@tabler/icons-react';
+import { IconPlus, IconShoppingCart, IconPackage, IconClockHour8, IconTrash } from '@tabler/icons-react';
 import ImageWrapper from '@/components/ui/image-wrapper';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { ErrorState } from '@/components/layouts/error-state';
@@ -404,6 +404,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
 								variant="destructive"
 								onClick={() => console.log('Delete partner')}
 							>
+								<IconTrash />
 								Delete
 							</DropdownMenuItem>
 						</DropdownMenuContent>

@@ -11,6 +11,8 @@ import { createClient } from '@/lib/supabase/client';
 import { AddWarehouseSheet } from '@/app/warehouse/AddWarehouseSheet';
 import { useSession } from '@/contexts/session-context';
 import type { Tables } from '@/types/database/supabase';
+import ImageWrapper from '../ui/image-wrapper';
+import { getInitials } from '@/lib/utils/initials';
 
 type Warehouse = Tables<'warehouses'>;
 
@@ -195,20 +197,10 @@ export default function WarehouseSelector({
 													className={`flex-shrink-0 w-14 h-14 rounded-lg flex items-center justify-center ${isSelected ? 'bg-primary-100' : 'bg-gray-100'
 														}`}
 												>
-													{warehouse.image_url ? (
-														<Image
-															src={warehouse.image_url}
-															alt={warehouse.name}
-															width={56}
-															height={56}
-															className="rounded-lg object-cover"
-														/>
-													) : (
-														<IconBuildingWarehouse
-															className={`size-6 ${isSelected ? 'text-primary-700' : 'text-gray-500'
-																}`}
-														/>
-													)}
+													<IconBuildingWarehouse
+														className={`size-6 ${isSelected ? 'text-primary-700' : 'text-gray-500'
+															}`}
+													/>
 												</div>
 
 												{/* Content */}

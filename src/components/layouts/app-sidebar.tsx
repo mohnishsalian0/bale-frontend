@@ -37,22 +37,16 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
 	{
-		label: 'Job work',
-		path: 'job-work',
-		icon: IconClipboardList,
-		permission: 'job_works.read',
+		label: 'Partners',
+		path: 'partners',
+		icon: IconUsers,
+		permission: 'partners.read',
 	},
 	{
 		label: 'QR codes',
 		path: 'qr-codes',
 		icon: IconQrcode,
 		permission: 'inventory.qr_batches.read',
-	},
-	{
-		label: 'Partners',
-		path: 'partners',
-		icon: IconUsers,
-		permission: 'partners.read',
 	},
 	{
 		label: 'Staff',
@@ -65,12 +59,6 @@ const NAV_ITEMS: NavItem[] = [
 		path: 'reports',
 		icon: IconChartBar,
 		permission: 'reports.read',
-	},
-	{
-		label: 'Settings',
-		path: 'settings',
-		icon: IconSettings,
-		permission: 'companies.read',
 	},
 	{
 		label: 'Online store',

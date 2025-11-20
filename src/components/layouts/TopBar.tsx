@@ -1,9 +1,16 @@
 'use client';
 
-import { IconChevronDown } from '@tabler/icons-react';
+import { IconChevronDown, IconSettings, IconLogout } from '@tabler/icons-react';
 import Image from 'next/image';
 import { SidebarTrigger, useSidebar } from '../ui/sidebar';
 import { Button } from '../ui/button';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 
 interface TopBarProps {
 	warehouseName: string;
@@ -11,6 +18,8 @@ interface TopBarProps {
 	onMenuClick?: () => void;
 	onWarehouseClick?: () => void;
 	onProfileClick?: () => void;
+	onSettingsClick?: () => void;
+	onLogoutClick?: () => void;
 	isWarehouseSelectorOpen?: boolean;
 }
 
@@ -18,7 +27,8 @@ export default function TopBar({
 	warehouseName,
 	profileImage,
 	onWarehouseClick,
-	onProfileClick,
+	onSettingsClick,
+	onLogoutClick,
 	isWarehouseSelectorOpen = false,
 }: TopBarProps) {
 	const { setOpenMobile, isMobile, setOpen } = useSidebar();
@@ -48,27 +58,41 @@ export default function TopBar({
 				</div>
 
 				{/* Right side - Profile */}
-				<Button
-					variant="ghost"
-					size="icon"
-					onClick={onProfileClick}
-					className="relative w-10 h-10 rounded-full overflow-hidden hover:ring-2 hover:ring-primary-700 transition-all p-0"
-				>
-					{profileImage ? (
-						<Image
-							src={profileImage}
-							alt="Profile"
-							fill
-							className="object-cover"
-						/>
-					) : (
-						<div className="w-full h-full bg-primary-200 flex items-center justify-center">
-							<span className="text-primary-700 font-semibold text-sm">
-								{warehouseName.charAt(0)}
-							</span>
-						</div>
-					)}
-				</Button>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="relative w-10 h-10 rounded-full overflow-hidden hover:ring-2 hover:ring-primary-700 transition-all p-0"
+						>
+							{profileImage ? (
+								<Image
+									src={profileImage}
+									alt="Profile"
+									fill
+									className="object-cover"
+								/>
+							) : (
+								<div className="w-full h-full bg-primary-200 flex items-center justify-center">
+									<span className="text-primary-700 font-semibold text-sm">
+										{warehouseName.charAt(0)}
+									</span>
+								</div>
+							)}
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-48">
+						<DropdownMenuItem onClick={onSettingsClick}>
+							<IconSettings className="text-gray-700" />
+							<span>Settings</span>
+						</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem onClick={onLogoutClick} variant="destructive">
+							<IconLogout />
+							<span>Logout</span>
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
 		</div >
 	);
