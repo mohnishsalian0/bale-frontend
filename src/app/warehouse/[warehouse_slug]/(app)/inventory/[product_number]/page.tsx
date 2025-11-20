@@ -2,7 +2,6 @@
 
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { IconBox, IconBuildingWarehouse, IconShare } from '@tabler/icons-react';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { ErrorState } from '@/components/layouts/error-state';
@@ -16,6 +15,8 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import ImageWrapper from '@/components/ui/image-wrapper';
+import { getProductIcon } from '@/lib/utils/product-icon';
 import { createClient } from '@/lib/supabase/client';
 import { useSession } from '@/contexts/session-context';
 import { formatCurrency } from '@/lib/utils/financial';
@@ -28,7 +29,6 @@ import { AddProductSheet } from '../AddProductSheet';
 import type { Tables } from '@/types/database/supabase';
 import type { MeasuringUnit, StockType } from '@/types/database/enums';
 import IconStore from '@/components/icons/IconStore';
-import IconProductPlaceholder from '@/components/icons/IconProductPlaceholder';
 
 type Product = Tables<'products'>;
 type StockUnit = Tables<'stock_units'>;
@@ -189,36 +189,24 @@ export default function ProductDetailPage({ params }: PageParams) {
 		});
 	}
 
-	// Get product images
-	const productImage = product.product_images?.[0];
-	const stockType = product.stock_type as StockType;
-
 	// Calculate values for info cards
 	const unitAbbr = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit);
 	const stockValue = calculateStockValue(totalQuantity, product.selling_price_per_unit);
 
 	return (
 		<div className="flex-1 overflow-y-auto">
-			<div className="relative flex flex-col h-full max-w-3xl border-r border-border">
+			<div className="relative flex flex-col h-max-content max-w-3xl border-r border-border">
 				{/* Header */}
 				<div className="p-4">
 					<div className="flex items-start gap-4 mb-4">
 						{/* Product Image */}
-						<div className="relative shrink-0">
-							{productImage ? (
-								<Image
-									src={productImage}
-									alt={product.name}
-									width={80}
-									height={80}
-									className="size-20 rounded object-cover"
-								/>
-							) : (
-								<div className="size-20 rounded-lg bg-gray-100 flex items-center justify-center">
-									<IconProductPlaceholder stock_type={stockType} className="size-10 text-gray-400" />
-								</div>
-							)}
-						</div>
+						<ImageWrapper
+							size="xl"
+							shape="square"
+							imageUrl={product.product_images?.[0]}
+							alt={product.name}
+							placeholderIcon={getProductIcon(product.stock_type as StockType)}
+						/>
 
 						<div className="flex-1 flex flex-col gap-2">
 							<div className="flex items-start gap-4">
@@ -256,8 +244,8 @@ export default function ProductDetailPage({ params }: PageParams) {
 					{/* Total Stock Card */}
 					<div className="flex-1 border border-gray-200 rounded-lg p-4">
 						<div className="flex gap-2 mb-2">
-							<IconBuildingWarehouse className="size-5 text-gray-500" />
-							<span className="text-sm text-gray-600">Total stock</span>
+							<IconBuildingWarehouse className="size-4 text-gray-500" />
+							<span className="text-xs text-gray-500">Total stock</span>
 						</div>
 						<p className="text-lg font-bold text-gray-700 whitespace-pre">
 							{`${totalQuantity} ${unitAbbr}  •  ₹ ${formatCurrency(stockValue)}`}
@@ -267,8 +255,8 @@ export default function ProductDetailPage({ params }: PageParams) {
 					{/* Order Request Card */}
 					<div className="flex-1 border border-gray-200 rounded-lg p-4">
 						<div className="flex gap-2 mb-2">
-							<IconStore className="size-5 fill-gray-500" />
-							<span className="text-sm text-gray-600">Order request</span>
+							<IconStore className="size-4 fill-gray-500" />
+							<span className="text-xs text-gray-500">Order request</span>
 						</div>
 						<p className="text-lg font-bold text-gray-700 whitespace-pre">
 							{`0 ${unitAbbr}  •  ₹ 0`}

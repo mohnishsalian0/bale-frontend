@@ -10,6 +10,7 @@ import { Fab } from '@/components/ui/fab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { ErrorState } from '@/components/layouts/error-state';
+import ImageWrapper from '@/components/ui/image-wrapper';
 import { AddProductSheet } from './AddProductSheet';
 import { createClient } from '@/lib/supabase/client';
 import { useSession } from '@/contexts/session-context';
@@ -17,7 +18,7 @@ import type { Tables } from '@/types/database/supabase';
 import type { MeasuringUnit, StockType } from '@/types/database/enums';
 import { Button } from '@/components/ui/button';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
-import IconProductPlaceholder from '@/components/icons/IconProductPlaceholder';
+import { getProductIcon } from '@/lib/utils/product-icon';
 
 type ProductRow = Tables<'products'>;
 
@@ -200,20 +201,13 @@ export default function InventoryPage() {
 						>
 							<CardContent className="p-4 flex gap-4 items-center">
 								{/* Product Image */}
-								<div className="relative size-16 rounded-lg shrink-0 bg-gray-200 overflow-hidden">
-									{product.imageUrl ? (
-										<Image
-											src={product.imageUrl}
-											alt={product.name}
-											fill
-											className="object-cover"
-										/>
-									) : (
-										<div className="flex items-center justify-center size-full">
-											<IconProductPlaceholder stock_type={product.stock_type} className="size-8 text-gray-400" />
-										</div>
-									)}
-								</div>
+								<ImageWrapper
+									size="lg"
+									shape="square"
+									imageUrl={product.imageUrl}
+									alt={product.name}
+									placeholderIcon={getProductIcon(product.stock_type)}
+								/>
 
 								{/* Product Info */}
 								<div className="flex-1 flex flex-col items-start">

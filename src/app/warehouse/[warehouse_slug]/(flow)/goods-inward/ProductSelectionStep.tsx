@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import Image from 'next/image';
 import { IconSearch, IconPlus, IconMinus } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ImageWrapper from '@/components/ui/image-wrapper';
+import { getProductIcon } from '@/lib/utils/product-icon';
 import type { Tables } from '@/types/database/supabase';
 import { pluralize } from '@/lib/utils/pluralize';
-import { StockType } from '@/types/database/enums';
-import IconProductPlaceholder from '@/components/icons/IconProductPlaceholder';
+import type { StockType } from '@/types/database/enums';
 
 export interface StockUnitSpec {
 	id: string; // temp ID for UI
@@ -183,28 +183,19 @@ export function ProductSelectionStep({
 
 							const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
 
-							const stockType = product.stock_type as StockType;
-
 							return (
 								<div
 									key={product.id}
 									className="flex items-center gap-3 p-4 border-b border-gray-200"
 								>
 									{/* Product Image */}
-									<div className="relative size-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-										{imageUrl ? (
-											<Image
-												src={imageUrl}
-												alt={product.name}
-												fill
-												className="object-cover"
-											/>
-										) : (
-											<div className="flex items-center justify-center size-full text-gray-400">
-												<IconProductPlaceholder stock_type={stockType} className="size-6" />
-											</div>
-										)}
-									</div>
+									<ImageWrapper
+										size="md"
+										shape="square"
+										imageUrl={imageUrl}
+										alt={product.name}
+										placeholderIcon={getProductIcon(product.stock_type as StockType)}
+									/>
 
 									{/* Product Info */}
 									<div className="flex-1 min-w-0">
@@ -212,7 +203,7 @@ export function ProductSelectionStep({
 											{product.name}
 										</p>
 										<p title={productInfo} className="text-xs text-gray-500 truncate">
-											{[product.material, product.color_name].filter(Boolean).join(', ')}
+											{productInfo}
 										</p>
 									</div>
 

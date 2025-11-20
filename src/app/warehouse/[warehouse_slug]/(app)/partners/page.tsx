@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { IconMapPin, IconPhone, IconPlus, IconSearch } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
@@ -10,8 +11,11 @@ import { Fab } from '@/components/ui/fab';
 import { TabPills } from '@/components/ui/tab-pills';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { ErrorState } from '@/components/layouts/error-state';
+import ImageWrapper from '@/components/ui/image-wrapper';
 import { AddPartnerSheet } from './AddPartnerSheet';
 import { createClient } from '@/lib/supabase/client';
+import { useSession } from '@/contexts/session-context';
+import { getInitials } from '@/lib/utils/initials';
 import type { Tables } from '@/types/database/supabase';
 import type { PartnerType } from '@/types/database/enums';
 
@@ -35,15 +39,6 @@ const PARTNER_TYPES: { value: PartnerType | 'all'; label: string }[] = [
 	{ value: 'agent', label: 'Agent' },
 ];
 
-function getInitials(name: string): string {
-	return name
-		.split(' ')
-		.map((word) => word[0])
-		.join('')
-		.toUpperCase()
-		.slice(0, 2);
-}
-
 function getActionLabel(type: PartnerType): string {
 	switch (type) {
 		case 'customer':
@@ -57,6 +52,8 @@ function getActionLabel(type: PartnerType): string {
 }
 
 export default function PartnersPage() {
+	const router = useRouter();
+	const { warehouse } = useSession();
 	const [selectedType, setSelectedType] = useState<PartnerType | 'all'>('all');
 	const [searchQuery, setSearchQuery] = useState('');
 	const [partners, setPartners] = useState<Partner[]>([]);
@@ -196,16 +193,20 @@ export default function PartnersPage() {
 						<ul
 							key={partner.id}
 						>
-							<Card>
+							<Card
+								className="cursor-pointer hover:bg-gray-50 transition-colors"
+								onClick={() => router.push(`/warehouse/${warehouse.slug}/partners/${partner.id}`)}
+							>
 								<CardContent className="p-4 pb-3 flex flex-col gap-4">
 									{/* Partner Info */}
 									<div className="flex gap-4">
 										{/* Avatar */}
-										<div className="flex items-center justify-center size-18 rounded-full bg-gray-200 shrink-0">
-											<span className="text-xl font-semibold text-gray-700">
-												{getInitials(partner.name)}
-											</span>
-										</div>
+										<ImageWrapper
+											size="lg"
+											shape="circle"
+											alt={partner.name}
+											placeholderInitials={getInitials(partner.name)}
+										/>
 
 										{/* Details */}
 										<div className="flex-1 flex justify-between py-2">

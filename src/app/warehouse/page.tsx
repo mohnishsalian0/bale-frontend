@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { IconBuildingWarehouse } from '@tabler/icons-react';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
+import ImageWrapper from '@/components/ui/image-wrapper';
+import { getInitials } from '@/lib/utils/initials';
 import type { Tables } from '@/types/database/supabase';
 import { LoadingState } from '@/components/layouts/loading-state';
 
@@ -125,19 +127,13 @@ export default function WarehouseSelectionPage() {
 									className="flex gap-3 p-4 rounded-lg cursor-pointer transition-all bg-background border border-border shadow-gray-md hover:border-primary-500 hover:shadow-primary-md select-none"
 								>
 									{/* Icon */}
-									<div className="flex-shrink-0 w-14 h-14 rounded-lg flex items-center justify-center bg-gray-100">
-										{warehouse.image_url ? (
-											<Image
-												src={warehouse.image_url}
-												alt={warehouse.name}
-												width={56}
-												height={56}
-												className="rounded-lg object-cover"
-											/>
-										) : (
-											<IconBuildingWarehouse className="size-6 text-gray-500" />
-										)}
-									</div>
+									<ImageWrapper
+										size="lg"
+										shape="square"
+										imageUrl={warehouse.image_url || undefined}
+										alt={warehouse.name}
+										placeholderInitials={getInitials(warehouse.name)}
+									/>
 
 									{/* Content */}
 									<div className="flex-1 min-w-0 flex flex-col gap-1">

@@ -18,7 +18,7 @@ import {
 import IconJobWork from '@/components/icons/IconJobWork';
 import { Section } from '@/components/layouts/section';
 import { getInitials } from '@/lib/utils/initials';
-import { getPartnerName, getPartnerAddress } from '@/lib/utils/partner';
+import { getPartnerName, getFormattedAddress } from '@/lib/utils/partner';
 import { formatAbsoluteDate } from '@/lib/utils/date';
 import type { Tables } from '@/types/database/supabase';
 import type { ComponentType } from 'react';
@@ -91,19 +91,9 @@ export function OutwardDetailsTab({ outward }: OutwardDetailsTabProps) {
 	const receiverName = isWarehouseTransfer
 		? outward.to_warehouse?.name || 'Unknown Warehouse'
 		: getPartnerName(outward.partner);
-	const receiverAddress = isWarehouseTransfer
-		? outward.to_warehouse
-			? [
-				outward.to_warehouse.address_line1,
-				outward.to_warehouse.address_line2,
-				outward.to_warehouse.city,
-				outward.to_warehouse.state,
-				outward.to_warehouse.pin_code,
-			]
-				.filter(Boolean)
-				.join(', ')
-			: null
-		: getPartnerAddress(outward.partner);
+	const receiverAddressLines = isWarehouseTransfer
+		? getFormattedAddress(outward.to_warehouse)
+		: getFormattedAddress(outward.partner);
 
 	const TransportIcon = getTransportIcon(outward.transport_type);
 
@@ -137,10 +127,17 @@ export function OutwardDetailsTab({ outward }: OutwardDetailsTabProps) {
 						: () => <>{getInitials(receiverName)}</>
 				}
 			>
-				{receiverAddress && (
-					<div className="flex items-start gap-1.5 text-sm text-gray-700">
-						<IconMapPin className="size-4 text-gray-500 mt-0.5 shrink-0" />
-						<span>{receiverAddress}</span>
+				{receiverAddressLines.length > 0 && (
+					<div className="flex justify-between text-sm">
+						<span className="text-gray-700 flex items-center gap-2">
+							<IconMapPin className="size-4" />
+							Address
+						</span>
+						<div className="font-semibold text-gray-700 text-right max-w-[200px]">
+							{receiverAddressLines.map((line, index) => (
+								<p key={index}>{line}</p>
+							))}
+						</div>
 					</div>
 				)}
 			</Section>
@@ -152,20 +149,17 @@ export function OutwardDetailsTab({ outward }: OutwardDetailsTabProps) {
 				onEdit={() => { }}
 				icon={() => <IconBuildingWarehouse className="size-5" />}
 			>
-				{outward.warehouse && (
-					<div className="flex items-start gap-1.5 text-sm text-gray-700">
-						<IconMapPin className="size-4 text-gray-500 mt-0.5 shrink-0" />
-						<span>
-							{[
-								outward.warehouse.address_line1,
-								outward.warehouse.address_line2,
-								outward.warehouse.city,
-								outward.warehouse.state,
-								outward.warehouse.pin_code,
-							]
-								.filter(Boolean)
-								.join(', ')}
+				{outward.warehouse && getFormattedAddress(outward.warehouse).length > 0 && (
+					<div className="flex justify-between text-sm">
+						<span className="text-gray-700 flex items-center gap-2">
+							<IconMapPin className="size-4" />
+							Address
 						</span>
+						<div className="font-semibold text-gray-700 text-right max-w-[200px]">
+							{getFormattedAddress(outward.warehouse).map((line, index) => (
+								<p key={index}>{line}</p>
+							))}
+						</div>
 					</div>
 				)}
 			</Section>

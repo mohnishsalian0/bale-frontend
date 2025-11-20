@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import Image from 'next/image';
 import { IconSearch, IconPlus } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ImageWrapper from '@/components/ui/image-wrapper';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
+import { getProductIcon } from '@/lib/utils/product-icon';
 import type { Tables } from '@/types/database/supabase';
 import { MeasuringUnit, StockType } from '@/types/database/enums';
-import IconProductPlaceholder from '@/components/icons/IconProductPlaceholder';
 
 interface ProductWithSelection extends Tables<'products'> {
 	selected: boolean;
@@ -170,28 +170,19 @@ export function ProductSelectionStep({
 
 							const unitAbbreviation = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null);
 
-							const stock_type = product.stock_type as StockType;
-
 							return (
 								<div
 									key={product.id}
 									className="flex items-center gap-3 p-4 border-b border-gray-200"
 								>
 									{/* Product Image */}
-									<div className="relative size-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-										{imageUrl ? (
-											<Image
-												src={imageUrl}
-												alt={product.name}
-												fill
-												className="object-cover"
-											/>
-										) : (
-											<div className="flex items-center justify-center size-full text-gray-400">
-												<IconProductPlaceholder stock_type={stock_type} className="size-6" />
-											</div>
-										)}
-									</div>
+									<ImageWrapper
+										size="md"
+										shape="square"
+										imageUrl={imageUrl}
+										alt={product.name}
+										placeholderIcon={getProductIcon(product.stock_type as StockType)}
+									/>
 
 									{/* Product Info */}
 									<div className="flex-1 min-w-0">

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { IconMinus, IconPlus, IconChevronDown, IconRubberStamp, IconTruckLoading, IconHash } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
@@ -11,12 +10,13 @@ import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from '
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useIsMobile } from '@/hooks/use-mobile';
+import ImageWrapper from '@/components/ui/image-wrapper';
+import { getProductIcon } from '@/lib/utils/product-icon';
 import type { Tables } from '@/types/database/supabase';
 import type { MeasuringUnit, StockType } from '@/types/database/enums';
 import type { StockUnitSpec } from './ProductSelectionStep';
 import { Input } from '@/components/ui/input';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
-import IconProductPlaceholder from '@/components/icons/IconProductPlaceholder';
 
 interface StockUnitEntrySheetProps {
 	open: boolean;
@@ -92,28 +92,19 @@ export function StockUnitEntrySheet({
 
 	const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
 
-	const stockType = product.stock_type as StockType;
-
 	const formContent = (
 		<div className="flex flex-col gap-8 p-4 md:px-0 overflow-x-hidden">
 			<div className="flex flex-col gap-4">
 				<div className="flex gap-4">
 					{/* Product Info */}
 					<div className="flex items-center gap-3 flex-1 min-w-0">
-						<div className="relative size-12 rounded-lg overflow-hidden bg-gray-100">
-							{product.product_images?.[0] ? (
-								<Image
-									src={product.product_images[0]}
-									alt={product.name}
-									fill
-									className="object-cover"
-								/>
-							) : (
-								<div className="size-full flex items-center justify-center text-gray-400">
-									<IconProductPlaceholder stock_type={stockType} className="size-8" />
-								</div>
-							)}
-						</div>
+						<ImageWrapper
+							size="md"
+							shape="square"
+							imageUrl={product.product_images?.[0]}
+							alt={product.name}
+							placeholderIcon={getProductIcon(product.stock_type as StockType)}
+						/>
 						<div className="flex-1 min-w-0">
 							<p title={product.name} className="text-base font-medium text-gray-700 truncate">{product.name}</p>
 							<p title={productInfo} className="text-xs text-gray-500 truncate">

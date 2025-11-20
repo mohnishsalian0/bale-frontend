@@ -316,7 +316,7 @@ export default function OrdersPage() {
 									<button
 										key={order.id}
 										onClick={() => router.push(`/warehouse/${warehouse.slug}/sales-orders/${order.orderNumber}`)}
-										className="flex flex-col gap-2 px-4 py-3 border-t border-dashed border-gray-300 hover:bg-gray-50 transition-colors"
+										className="flex flex-col gap-2 p-4 border-t border-dashed border-gray-300 hover:bg-gray-50 transition-colors"
 									>
 										<div className="flex items-start gap-3">
 											<div className="flex-1 flex flex-col items-start">

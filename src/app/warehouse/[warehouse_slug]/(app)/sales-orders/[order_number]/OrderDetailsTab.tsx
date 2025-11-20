@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import {
 	IconPackage,
 	IconCash,
@@ -12,10 +11,11 @@ import {
 	IconPhoto
 } from '@tabler/icons-react';
 import { Progress } from '@/components/ui/progress';
+import ImageWrapper from '@/components/ui/image-wrapper';
 import { getInitials } from '@/lib/utils/initials';
 import { formatCurrency } from '@/lib/utils/financial';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
-import { getPartnerName, getPartnerAddress } from '@/lib/utils/partner';
+import { getPartnerName, getFormattedAddress } from '@/lib/utils/partner';
 import type { DisplayStatus } from '@/lib/utils/sales-order';
 import type { Tables } from '@/types/database/supabase';
 import type { SalesOrderStatus } from '@/types/database/enums';
@@ -88,19 +88,14 @@ export function OrderDetailsTab({
 					<ul className="space-y-6">
 						{order.sales_order_items.map((item) => (
 							<li key={item.id} className="flex gap-3">
-								<div className="relative size-8 mt-0.5 rounded-lg overflow-hidden bg-gray-200 shrink-0">
-									{item.product?.product_images?.[0] ? (
-										<Image
-											src={item.product.product_images[0]}
-											alt={item.product.name || ''}
-											fill
-											className="object-cover"
-										/>
-									) : (
-										<div className="size-full flex items-center justify-center text-gray-400">
-											<IconPhoto className="size-4" />
-										</div>
-									)}
+								<div className="mt-0.5">
+									<ImageWrapper
+										size="sm"
+										shape="square"
+										imageUrl={item.product?.product_images?.[0]}
+										alt={item.product?.name || ''}
+										placeholderIcon={IconPhoto}
+									/>
 								</div>
 								<div className="flex-1 min-w-0">
 									<p className="text-sm font-medium text-gray-700 truncate" title={item.product?.name}>
@@ -167,10 +162,17 @@ export function OrderDetailsTab({
 				onEdit={onEditCustomer}
 				icon={() => <>{getInitials(getPartnerName(order.customer))}</>}
 			>
-				{getPartnerAddress(order.customer) && (
-					<div className="flex items-start gap-1.5 text-sm text-gray-700">
-						<IconMapPin className="size-4 text-gray-500 mt-0.5 shrink-0" />
-						<span>{getPartnerAddress(order.customer)}</span>
+				{getFormattedAddress(order.customer).length > 0 && (
+					<div className="flex justify-between text-sm">
+						<span className="text-gray-700 flex items-center gap-2">
+							<IconMapPin className="size-4" />
+							Address
+						</span>
+						<div className="font-semibold text-gray-700 text-right max-w-[200px]">
+							{getFormattedAddress(order.customer).map((line, index) => (
+								<p key={index}>{line}</p>
+							))}
+						</div>
 					</div>
 				)}
 			</Section>
@@ -225,20 +227,17 @@ export function OrderDetailsTab({
 				onEdit={onEditWarehouse}
 				icon={() => <IconBuildingWarehouse className="size-5" />}
 			>
-				{order.warehouse && (
-					<div className="flex items-start gap-1.5 text-sm text-gray-700">
-						<IconMapPin className="size-4 text-gray-500 mt-0.5 shrink-0" />
-						<span>
-							{[
-								order.warehouse.address_line1,
-								order.warehouse.address_line2,
-								order.warehouse.city,
-								order.warehouse.state,
-								order.warehouse.pin_code,
-							]
-								.filter(Boolean)
-								.join(', ')}
+				{order.warehouse && getFormattedAddress(order.warehouse).length > 0 && (
+					<div className="flex justify-between text-sm">
+						<span className="text-gray-700 flex items-center gap-2">
+							<IconMapPin className="size-4" />
+							Address
 						</span>
+						<div className="font-semibold text-gray-700 text-right max-w-[200px]">
+							{getFormattedAddress(order.warehouse).map((line, index) => (
+								<p key={index}>{line}</p>
+							))}
+						</div>
 					</div>
 				)}
 			</Section>

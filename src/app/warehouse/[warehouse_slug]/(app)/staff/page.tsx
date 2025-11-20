@@ -9,12 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TabPills } from '@/components/ui/tab-pills';
 import { LoadingState } from '@/components/layouts/loading-state';
+import { ErrorState } from '@/components/layouts/error-state';
+import ImageWrapper from '@/components/ui/image-wrapper';
 import { AddStaffSheet } from './AddStaffSheet';
 import { createClient } from '@/lib/supabase/client';
 import { formatExpiryDate } from '@/lib/utils/date';
+import { getInitials } from '@/lib/utils/initials';
 import { toast } from 'sonner';
 import type { UserRole } from '@/types/database/enums';
-import { ErrorState } from '@/components/layouts/error-state';
 
 interface StaffMember {
 	id: string;
@@ -32,15 +34,6 @@ interface ActiveInvite {
 	token: string;
 	expiresAt: string;
 	createdAt: string;
-}
-
-function getInitials(name: string): string {
-	return name
-		.split(' ')
-		.map((word) => word[0])
-		.join('')
-		.toUpperCase()
-		.slice(0, 2);
 }
 
 export default function StaffPage() {
@@ -283,21 +276,13 @@ The Bale Team`;
 								>
 									<CardContent className="p-4 flex flex-col gap-3 items-center h-full">
 										{/* Avatar */}
-										<div className="flex items-center justify-center size-16 rounded-full bg-gray-200 shrink-0">
-											{member.profileImageUrl ? (
-												<Image
-													src={member.profileImageUrl}
-													alt={member.name}
-													width={64}
-													height={64}
-													className="rounded-full object-cover"
-												/>
-											) : (
-												<span className="text-lg font-medium text-gray-700">
-													{getInitials(member.name)}
-												</span>
-											)}
-										</div>
+										<ImageWrapper
+											size="lg"
+											shape="circle"
+											imageUrl={member.profileImageUrl || undefined}
+											alt={member.name}
+											placeholderInitials={getInitials(member.name)}
+										/>
 
 										{/* Details */}
 										<div className="flex flex-col gap-1 items-center w-full">

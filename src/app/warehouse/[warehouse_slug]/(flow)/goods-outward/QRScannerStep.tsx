@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
-import { IconBolt, IconTrash } from '@tabler/icons-react';
+import { IconBolt, IconTrash, IconPhoto } from '@tabler/icons-react';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import ImageWrapper from '@/components/ui/image-wrapper';
 import { SelectInventorySheet } from './SelectInventorySheet';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
@@ -248,20 +248,13 @@ export function QRScannerStep({
 									className="flex items-center gap-3 px-4 py-3 border-b border-gray-200"
 								>
 									{/* Product Image */}
-									<div className="relative size-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-										{imageUrl ? (
-											<Image
-												src={imageUrl}
-												alt={item.product.name}
-												fill
-												className="object-cover"
-											/>
-										) : (
-											<div className="flex items-center justify-center size-full text-gray-400">
-												<span className="text-xs">No img</span>
-											</div>
-										)}
-									</div>
+									<ImageWrapper
+										size="md"
+										shape="square"
+										imageUrl={imageUrl}
+										alt={item.product.name}
+										placeholderIcon={IconPhoto}
+									/>
 
 									{/* Product Info */}
 									<div className="flex-1 min-w-0">

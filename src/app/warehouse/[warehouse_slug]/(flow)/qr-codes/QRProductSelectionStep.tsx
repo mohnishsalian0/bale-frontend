@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import Image from 'next/image';
 import { IconSearch, IconChevronRight } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ImageWrapper from '@/components/ui/image-wrapper';
+import { getProductIcon } from '@/lib/utils/product-icon';
 import type { Tables } from '@/types/database/supabase';
-import { StockType } from '@/types/database/enums';
-import IconProductPlaceholder from '@/components/icons/IconProductPlaceholder';
+import type { StockType } from '@/types/database/enums';
 
 interface QRProductSelectionStepProps {
 	products: Tables<'products'>[];
@@ -146,8 +146,6 @@ export function QRProductSelectionStep({
 
 							const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
 
-							const stockType = product.stock_type as StockType;
-
 							return (
 								<button
 									key={product.id}
@@ -156,20 +154,13 @@ export function QRProductSelectionStep({
 									className="flex items-center gap-3 p-4 border-b border-gray-200 hover:bg-gray-100 transition-colors text-left"
 								>
 									{/* Product Image */}
-									<div className="relative size-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-										{imageUrl ? (
-											<Image
-												src={imageUrl}
-												alt={product.name}
-												fill
-												className="object-cover"
-											/>
-										) : (
-											<div className="flex items-center justify-center size-full text-gray-400">
-												<IconProductPlaceholder stock_type={stockType} className="size-6" />
-											</div>
-										)}
-									</div>
+									<ImageWrapper
+										size="md"
+										shape="square"
+										imageUrl={imageUrl}
+										alt={product.name}
+										placeholderIcon={getProductIcon(product.stock_type as StockType)}
+									/>
 
 									{/* Product Info */}
 									<div className="flex-1 min-w-0">
@@ -177,7 +168,7 @@ export function QRProductSelectionStep({
 											{product.name}
 										</p>
 										<p title={productInfo} className="text-xs text-gray-500 truncate">
-											{[product.material, product.color_name].filter(Boolean).join(', ')}
+											{productInfo}
 										</p>
 									</div>
 

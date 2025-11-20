@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Fab } from '@/components/ui/fab';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ImageWrapper from '@/components/ui/image-wrapper';
 import { createClient } from '@/lib/supabase/client';
 import { formatCreatedAt, formatAbsoluteDate } from '@/lib/utils/date';
 import { toast } from 'sonner';
@@ -238,18 +239,13 @@ export default function QRCodesPage() {
 						>
 							<CardContent className="p-4 flex gap-4 items-center">
 								{/* Batch Image / QR Icon */}
-								<div className="relative size-16 rounded-lg shrink-0 bg-gray-200 overflow-hidden flex items-center justify-center">
-									{batch.imageUrl ? (
-										<Image
-											src={batch.imageUrl}
-											alt={batch.batchName}
-											fill
-											className="object-cover"
-										/>
-									) : (
-										<IconQrcode className="size-8 text-gray-400" />
-									)}
-								</div>
+								<ImageWrapper
+									size="lg"
+									shape="square"
+									imageUrl={batch.imageUrl || undefined}
+									alt={batch.batchName}
+									placeholderIcon={IconQrcode}
+								/>
 
 								{/* Batch Info */}
 								<div className="flex-1 flex flex-col items-start">

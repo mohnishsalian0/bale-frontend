@@ -127,18 +127,30 @@
 - [x] Connect inventory page to Supabase database (fetch, loading, error states)
 - [x] Add product form with typed insert (features & images, stock details, additional details)
 - [x] Product images upload (max 5, 2MB each) with preview and remove functionality
-- [ ] View product summary with stock units
-- [ ] Product detail view showing all attributes
-- [ ] Edit product functionality
+- [x] Product details page with header, tags, info cards, and tabbed layout
+- [x] Create SummaryTab with Sales section, Stock Information section, and Product Information section
+- [x] Create StockUnitsTab with sort options, QR pending filter, grouped by goods inward
+- [x] Create StockFlowTab with combined inward/outward transactions (grouped by GI/GO)
+- [x] Add GlowIndicator component for catalog visibility status
+- [x] Add bottom action bar with 3-dot menu (show/hide catalog, delete), edit, and share buttons
+- [x] Display minimum stock value in Product Information section
+- [x] Product images carousel in Product Information section
+- [ ] Edit product functionality (prefill AddProductSheet with product data)
 - [ ] Delete product functionality
+- [ ] Toggle show_on_catalog functionality
 - [ ] Stock units list for each product with status and location
 - [ ] Bulk actions on stock units (dispatch, mark damaged, etc.)
 - [x] Partners page UI with filter tabs, search, and partner cards
 - [x] Connect partners page to Supabase database (fetch, loading, error states)
 - [x] Add partner form with typed insert (image upload, business details, address, tax details)
-- [ ] Edit partner form
+- [x] Partner details page with header, summary cards, and tabbed layout
+- [x] Create SummaryTab with Contact Information and Financial Information sections
+- [x] Create OrdersTab with month-grouped orders list matching sales orders page format
+- [x] Add bottom action bar with 3-dot menu (delete), edit, and sales/purchase order CTA
+- [x] Display top purchased/supplied item and total orders in summary cards
+- [x] Show pending orders count and first pending order below cards
+- [ ] Edit partner functionality (prefill AddPartnerSheet with partner data)
 - [ ] Delete partner functionality
-- [ ] Partner detail view
 
 ## Phase 7: Iteration 3 - Inward/Stock/Inventory
 - [x] Stock flow page UI with month grouping, search, filters, and transaction list

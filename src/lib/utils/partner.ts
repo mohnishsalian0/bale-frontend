@@ -17,8 +17,8 @@ export function getPartnerName(partner: PartnerNameFields | null): string {
 }
 
 /**
- * Get formatted address for a partner
- * Joins non-empty address parts with commas
+ * Get formatted address for a partner (single line, comma-separated)
+ * @deprecated Use getFormattedAddress for multi-line formatting
  */
 export function getPartnerAddress(partner: Partner | null): string {
 	if (!partner) return '';
@@ -30,4 +30,54 @@ export function getPartnerAddress(partner: Partner | null): string {
 		partner.pin_code,
 	].filter(Boolean);
 	return parts.join(', ');
+}
+
+/**
+ * Address fields interface for flexible address formatting
+ */
+interface AddressFields {
+	address_line1?: string | null;
+	address_line2?: string | null;
+	city?: string | null;
+	state?: string | null;
+	country?: string | null;
+	pin_code?: string | null;
+}
+
+/**
+ * Get formatted address with multi-line display
+ * Format:
+ * - Line 1: address_line1
+ * - Line 2: address_line2
+ * - Line 3: city, state
+ * - Line 4: country - pincode
+ */
+export function getFormattedAddress(entity: AddressFields | null): string[] {
+	if (!entity) return [];
+
+	const lines: string[] = [];
+
+	// Line 1: address_line1
+	if (entity.address_line1) {
+		lines.push(entity.address_line1);
+	}
+
+	// Line 2: address_line2
+	if (entity.address_line2) {
+		lines.push(entity.address_line2);
+	}
+
+	// Line 3: city, state (comma-separated)
+	const cityState = [entity.city, entity.state].filter(Boolean).join(', ');
+	if (cityState) {
+		lines.push(cityState);
+	}
+
+	// Line 4: country - pincode (hyphen-separated)
+	const countryPincode = [entity.country, entity.pin_code].filter(Boolean).join(' - ');
+	if (countryPincode) {
+		lines.push(countryPincode);
+	}
+
+	return lines;
 }

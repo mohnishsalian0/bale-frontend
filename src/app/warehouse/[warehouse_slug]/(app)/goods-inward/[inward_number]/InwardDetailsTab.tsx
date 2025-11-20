@@ -17,7 +17,7 @@ import {
 import IconJobWork from '@/components/icons/IconJobWork';
 import { Section } from '@/components/layouts/section';
 import { getInitials } from '@/lib/utils/initials';
-import { getPartnerName, getPartnerAddress } from '@/lib/utils/partner';
+import { getPartnerName, getFormattedAddress } from '@/lib/utils/partner';
 import { formatAbsoluteDate } from '@/lib/utils/date';
 import type { Tables } from '@/types/database/supabase';
 import type { ComponentType } from 'react';
@@ -86,19 +86,9 @@ export function InwardDetailsTab({ inward }: InwardDetailsTabProps) {
 	const sourceName = isWarehouseTransfer
 		? inward.from_warehouse?.name || 'Unknown Warehouse'
 		: getPartnerName(inward.partner);
-	const sourceAddress = isWarehouseTransfer
-		? inward.from_warehouse
-			? [
-				inward.from_warehouse.address_line1,
-				inward.from_warehouse.address_line2,
-				inward.from_warehouse.city,
-				inward.from_warehouse.state,
-				inward.from_warehouse.pin_code,
-			]
-				.filter(Boolean)
-				.join(', ')
-			: null
-		: getPartnerAddress(inward.partner);
+	const sourceAddressLines = isWarehouseTransfer
+		? getFormattedAddress(inward.from_warehouse)
+		: getFormattedAddress(inward.partner);
 
 	const TransportIcon = getTransportIcon(inward.transport_type);
 
@@ -123,10 +113,17 @@ export function InwardDetailsTab({ inward }: InwardDetailsTabProps) {
 						: () => <>{getInitials(sourceName)}</>
 				}
 			>
-				{sourceAddress && (
-					<div className="flex items-start gap-1.5 text-sm text-gray-700">
-						<IconMapPin className="size-4 text-gray-500 mt-0.5 shrink-0" />
-						<span>{sourceAddress}</span>
+				{sourceAddressLines.length > 0 && (
+					<div className="flex justify-between text-sm">
+						<span className="text-gray-700 flex items-center gap-2">
+							<IconMapPin className="size-4" />
+							Address
+						</span>
+						<div className="font-semibold text-gray-700 text-right max-w-[200px]">
+							{sourceAddressLines.map((line, index) => (
+								<p key={index}>{line}</p>
+							))}
+						</div>
 					</div>
 				)}
 			</Section>
@@ -138,20 +135,17 @@ export function InwardDetailsTab({ inward }: InwardDetailsTabProps) {
 				onEdit={() => { }}
 				icon={() => <IconBuildingWarehouse className="size-5" />}
 			>
-				{inward.warehouse && (
-					<div className="flex items-start gap-1.5 text-sm text-gray-700">
-						<IconMapPin className="size-4 text-gray-500 mt-0.5 shrink-0" />
-						<span>
-							{[
-								inward.warehouse.address_line1,
-								inward.warehouse.address_line2,
-								inward.warehouse.city,
-								inward.warehouse.state,
-								inward.warehouse.pin_code,
-							]
-								.filter(Boolean)
-								.join(', ')}
+				{inward.warehouse && getFormattedAddress(inward.warehouse).length > 0 && (
+					<div className="flex justify-between text-sm">
+						<span className="text-gray-700 flex items-center gap-2">
+							<IconMapPin className="size-4" />
+							Address
 						</span>
+						<div className="font-semibold text-gray-700 text-right max-w-[200px]">
+							{getFormattedAddress(inward.warehouse).map((line, index) => (
+								<p key={index}>{line}</p>
+							))}
+						</div>
 					</div>
 				)}
 			</Section>
