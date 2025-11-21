@@ -52,19 +52,26 @@ export default function InventoryPage() {
 
 			const { data, error: fetchError } = await supabase
 				.from('products')
-				.select('*')
+				.select(`
+					*,
+					inventory_agg:product_inventory_aggregates!product_id(
+						in_stock_quantity
+					)
+				`)
+				.eq('product_inventory_aggregates.warehouse_id', warehouse.id)
+				.is('deleted_at', null)
 				.order('name', { ascending: true });
 
 			if (fetchError) throw fetchError;
 
 			// Transform data to match Product interface
-			const transformedProducts: Product[] = (data || []).map((p: ProductRow) => ({
+			const transformedProducts: Product[] = (data || []).map((p: any) => ({
 				id: p.id,
 				name: p.name,
 				productNumber: p.sequence_number?.toString() || '',
 				material: p.material,
 				color: p.color_name,
-				totalQuantity: 0, // TODO: Calculate from stock_units
+				totalQuantity: p.inventory_agg?.[0]?.in_stock_quantity || 0,
 				stock_type: p.stock_type as StockType,
 				unit: p.measuring_unit,
 				imageUrl: p.product_images?.[0] || undefined,

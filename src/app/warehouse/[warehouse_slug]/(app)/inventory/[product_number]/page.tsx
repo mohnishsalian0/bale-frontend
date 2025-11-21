@@ -21,7 +21,6 @@ import { createClient } from '@/lib/supabase/client';
 import { useSession } from '@/contexts/session-context';
 import { formatCurrency } from '@/lib/utils/financial';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
-import { calculateStockValue } from '@/lib/utils/product';
 import { SummaryTab } from './SummaryTab';
 import { StockUnitsTab } from './StockUnitsTab';
 import { StockFlowTab } from './StockFlowTab';
@@ -67,6 +66,7 @@ export default function ProductDetailPage({ params }: PageParams) {
 	const [stockUnits, setStockUnits] = useState<StockUnitWithInward[]>([]);
 	const [outwardItems, setOutwardItems] = useState<OutwardItemWithDetails[]>([]);
 	const [totalQuantity, setTotalQuantity] = useState(0);
+	const [totalStockValue, setTotalStockValue] = useState(0);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState<'summary' | 'stock_units' | 'stock_flow'>('summary');
@@ -79,11 +79,18 @@ export default function ProductDetailPage({ params }: PageParams) {
 
 			const supabase = createClient();
 
-			// Fetch product
+			// Fetch product with aggregates
 			const { data: productData, error: productError } = await supabase
 				.from('products')
-				.select('*')
+				.select(`
+					*,
+					inventory_agg:product_inventory_aggregates!product_id(
+						in_stock_quantity,
+						in_stock_value
+					)
+				`)
 				.eq('sequence_number', parseInt(product_number))
+				.eq('product_inventory_aggregates.warehouse_id', warehouse.id)
 				.is('deleted_at', null)
 				.single();
 
@@ -91,6 +98,13 @@ export default function ProductDetailPage({ params }: PageParams) {
 			if (!productData) throw new Error('Product not found');
 
 			setProduct(productData as Product);
+
+			// Get aggregated values
+			const inventoryAgg = (productData as any).inventory_agg?.[0];
+			if (inventoryAgg) {
+				setTotalQuantity(Number(inventoryAgg.in_stock_quantity || 0));
+				setTotalStockValue(Number(inventoryAgg.in_stock_value || 0));
+			}
 
 			// Fetch stock units with inward details
 			const { data: stockUnitsData, error: stockUnitsError } = await supabase
@@ -116,13 +130,6 @@ export default function ProductDetailPage({ params }: PageParams) {
 			if (stockUnitsError) throw stockUnitsError;
 
 			setStockUnits(stockUnitsData as StockUnitWithInward[] || []);
-
-			// Calculate total quantity
-			const total = (stockUnitsData || []).reduce(
-				(sum, unit) => sum + (unit.remaining_quantity || 0),
-				0
-			);
-			setTotalQuantity(Number(total.toFixed(2)));
 
 			// Fetch outward items
 			const { data: outwardItemsData, error: outwardError } = await supabase
@@ -184,13 +191,12 @@ export default function ProductDetailPage({ params }: PageParams) {
 		});
 	}
 
-	// Calculate values for info cards
+	// Get values for info cards
 	const unitAbbr = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit);
-	const stockValue = calculateStockValue(totalQuantity, product.selling_price_per_unit);
 
 	return (
-		<div className="flex-1 overflow-y-auto">
-			<div className="relative flex flex-col h-max-content max-w-3xl border-r border-border">
+		<div className="flex flex-col flex-1 overflow-y-auto">
+			<div className="relative flex flex-col flex-1 max-w-3xl border-r border-border">
 				{/* Header */}
 				<div className="p-4 pb-6">
 					<div className="flex items-start gap-4">
@@ -243,7 +249,7 @@ export default function ProductDetailPage({ params }: PageParams) {
 							<span className="text-xs text-gray-500">Total stock</span>
 						</div>
 						<p className="text-lg font-bold text-gray-700 whitespace-pre">
-							{`${totalQuantity} ${unitAbbr}  •  ₹ ${formatCurrency(stockValue)}`}
+							{`${totalQuantity} ${unitAbbr}  •  ₹ ${formatCurrency(totalStockValue)}`}
 						</p>
 					</div>
 

@@ -138,7 +138,7 @@ export default function DashboardPage() {
 							return (
 								<Card
 									key={order.id}
-									className="rounded-none border-0 border border-border rounded-lg shadow-none bg-transparent"
+									className="rounded-none border-2 border-border rounded-lg shadow-none bg-transparent"
 								>
 									<CardContent className="p-4 flex flex-col gap-3">
 										<button
@@ -184,7 +184,6 @@ export default function DashboardPage() {
 														e.stopPropagation();
 														console.log('Approve order');
 													}}
-													className="flex-1 max-w-50"
 												>
 													Approve order
 												</Button>
@@ -199,7 +198,6 @@ export default function DashboardPage() {
 																`/warehouse/${warehouse.slug}/goods-outward/create?order=${order.sequence_number}`
 															);
 														}}
-														className="flex-1 max-w-50"
 													>
 														Create outward
 													</Button>
@@ -210,7 +208,6 @@ export default function DashboardPage() {
 															e.stopPropagation();
 															console.log('Make invoice');
 														}}
-														className="flex-1 max-w-50"
 													>
 														Make invoice
 													</Button>
@@ -294,8 +291,8 @@ export default function DashboardPage() {
 					<div className="flex flex-col gap-3 px-4">
 						{lowStockProducts.map((product) => (
 							<Card
-								key={product.id}
-								className="rounded-none border-0 border border-border rounded-lg shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
+								key={`low-stock-${product.id}`}
+								className="rounded-none border-2 border-border rounded-lg shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
 								onClick={() =>
 									router.push(`/warehouse/${warehouse.slug}/inventory/${product.sequence_number}`)
 								}
@@ -353,7 +350,7 @@ export default function DashboardPage() {
 					<div className="flex flex-col gap-3 px-4">
 						{pendingQRProducts.map((product) => (
 							<Card
-								key={product.id}
+								key={`pending-qr-${product.id}`}
 								className="rounded-none border-0 border border-border rounded-lg shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
 								onClick={() =>
 									router.push(`/warehouse/${warehouse.slug}/inventory/${product.sequence_number}`)
@@ -369,7 +366,7 @@ export default function DashboardPage() {
 									/>
 
 									<div className="flex-1 flex flex-col items-start">
-										<p className="font-medium text-gray-900">{product.name}</p>
+										<p className="font-medium text-gray-900">{product.name || 'Unknown product'}</p>
 										<p className="text-xs text-gray-500">
 											{[product.material, product.color_name].filter(Boolean).join(', ') || 'No details'}
 										</p>

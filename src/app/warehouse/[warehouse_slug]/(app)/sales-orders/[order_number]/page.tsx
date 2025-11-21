@@ -187,8 +187,8 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 	}
 
 	return (
-		<div className="flex-1 overflow-y-auto">
-			<div className="relative flex flex-col h-max-content max-w-3xl border-r border-border">
+		<div className="flex flex-col flex-1 overflow-y-auto">
+			<div className="relative flex flex-col flex-1 max-w-3xl border-r border-border">
 				{/* Header */}
 				<div className="p-4">
 					<div>

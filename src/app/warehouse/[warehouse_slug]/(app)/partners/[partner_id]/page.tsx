@@ -97,10 +97,22 @@ export default function PartnerDetailPage({ params }: PageParams) {
 
 			const supabase = createClient();
 
-			// Fetch partner
+			// Fetch partner with order aggregates
 			const { data: partnerData, error: partnerError } = await supabase
 				.from('partners')
-				.select('*')
+				.select(`
+					*,
+					order_agg:partner_order_aggregates!partner_id(
+						approval_pending_count,
+						approval_pending_value,
+						in_progress_count,
+						in_progress_value,
+						completed_count,
+						completed_value,
+						total_orders,
+						lifetime_order_value
+					)
+				`)
 				.eq('id', partner_id)
 				.is('deleted_at', null)
 				.single();
@@ -109,6 +121,16 @@ export default function PartnerDetailPage({ params }: PageParams) {
 			if (!partnerData) throw new Error('Partner not found');
 
 			setPartner(partnerData as Partner);
+
+			// Get aggregated values
+			const orderAgg = (partnerData as any).order_agg?.[0];
+			if (orderAgg) {
+				setTotalOrders(orderAgg.total_orders || 0);
+				setTotalOrderValue(orderAgg.lifetime_order_value || 0);
+				setPendingOrdersCount(
+					(orderAgg.approval_pending_count || 0) + (orderAgg.in_progress_count || 0)
+				);
+			}
 
 			// Fetch orders based on partner type
 			const isCustomer = partnerData.partner_type === 'customer';
@@ -137,24 +159,6 @@ export default function PartnerDetailPage({ params }: PageParams) {
 
 				const typedOrders = ordersData as OrderWithDetails[] || [];
 				setOrders(typedOrders);
-
-				// Calculate totals
-				setTotalOrders(typedOrders.length);
-
-				const totalValue = typedOrders.reduce((sum, order) => {
-					const orderTotal = order.sales_order_items.reduce(
-						(itemSum, item) => itemSum + (item.line_total || 0),
-						0
-					);
-					return sum + orderTotal;
-				}, 0);
-				setTotalOrderValue(totalValue);
-
-				// Count pending orders (in_progress status)
-				const pendingCount = typedOrders.filter(
-					order => order.status === 'in_progress' || order.status === 'approval_pending'
-				).length;
-				setPendingOrdersCount(pendingCount);
 
 				// Calculate top product
 				const productQuantities = new Map<string, { product: Product; quantity: number }>();
@@ -197,9 +201,6 @@ export default function PartnerDetailPage({ params }: PageParams) {
 			} else {
 				// For suppliers/vendors, we'd fetch purchase orders (not implemented yet)
 				setOrders([]);
-				setTotalOrders(0);
-				setTotalOrderValue(0);
-				setPendingOrdersCount(0);
 				setTopProduct(null);
 			}
 		} catch (err) {
@@ -240,8 +241,8 @@ export default function PartnerDetailPage({ params }: PageParams) {
 	);
 
 	return (
-		<div className="flex-1 overflow-y-auto">
-			<div className="relative flex flex-col h-max-content max-w-3xl border-r border-border">
+		<div className="flex flex-col flex-1 overflow-y-auto">
+			<div className="relative flex flex-col flex-1 max-w-3xl border-r border-border">
 				{/* Header */}
 				<div className="p-4 pb-6">
 					<div className="flex items-center gap-4">
