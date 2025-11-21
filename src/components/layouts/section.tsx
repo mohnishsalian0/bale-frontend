@@ -32,7 +32,7 @@ export function Section({
 							</Button>
 						}
 					</div>
-					<p className={`text-xs text-gray-500 ${onEdit && '-mt-1'}`}>{subtitle}</p>
+					<p className={`text-sm text-gray-500 ${onEdit && '-mt-1'}`}>{subtitle}</p>
 				</div>
 				<div className="size-12 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
 					<span className="text-lg font-semibold text-gray-700">

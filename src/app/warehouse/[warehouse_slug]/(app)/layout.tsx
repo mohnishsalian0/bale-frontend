@@ -44,7 +44,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 				<TopBar
 					warehouseName={warehouse.name}
 					onWarehouseClick={() => setIsSelectorOpen(!isSelectorOpen)}
-					onProfileClick={() => console.log('Profile clicked')}
 					onLogoutClick={handleLogout}
 					isWarehouseSelectorOpen={isSelectorOpen}
 				/>

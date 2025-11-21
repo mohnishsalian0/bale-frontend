@@ -1,7 +1,6 @@
 'use client';
 
 import { IconChevronDown, IconSettings, IconLogout } from '@tabler/icons-react';
-import Image from 'next/image';
 import { SidebarTrigger, useSidebar } from '../ui/sidebar';
 import { Button } from '../ui/button';
 import {
@@ -11,27 +10,25 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import { useSession } from '@/contexts/session-context';
+import { getInitials } from '@/lib/utils/initials';
+import ImageWrapper from '../ui/image-wrapper';
 
 interface TopBarProps {
-	warehouseName: string;
-	profileImage?: string;
-	onMenuClick?: () => void;
 	onWarehouseClick?: () => void;
-	onProfileClick?: () => void;
 	onSettingsClick?: () => void;
 	onLogoutClick?: () => void;
 	isWarehouseSelectorOpen?: boolean;
 }
 
 export default function TopBar({
-	warehouseName,
-	profileImage,
 	onWarehouseClick,
 	onSettingsClick,
 	onLogoutClick,
 	isWarehouseSelectorOpen = false,
 }: TopBarProps) {
-	const { setOpenMobile, isMobile, setOpen } = useSidebar();
+	const { isMobile } = useSidebar();
+	const { user, warehouse } = useSession();
 
 	return (
 		<div className={`z-30 sticky top-0 bg-background-100 ${isWarehouseSelectorOpen ? '' : 'border-b border-gray-200'
@@ -51,7 +48,7 @@ export default function TopBar({
 						onClick={onWarehouseClick}
 					>
 						<span className="font-medium text-gray-700">
-							{warehouseName}
+							{warehouse.name}
 						</span>
 						<IconChevronDown className="w-5 h-5 text-gray-700" />
 					</Button>
@@ -65,20 +62,13 @@ export default function TopBar({
 							size="icon"
 							className="relative w-10 h-10 rounded-full overflow-hidden hover:ring-2 hover:ring-primary-700 transition-all p-0"
 						>
-							{profileImage ? (
-								<Image
-									src={profileImage}
-									alt="Profile"
-									fill
-									className="object-cover"
-								/>
-							) : (
-								<div className="w-full h-full bg-primary-200 flex items-center justify-center">
-									<span className="text-primary-700 font-semibold text-sm">
-										{warehouseName.charAt(0)}
-									</span>
-								</div>
-							)}
+							<ImageWrapper
+								size="sm"
+								shape="circle"
+								imageUrl={user.profile_image_url || undefined}
+								alt={user.first_name + user.last_name}
+								placeholderInitials={getInitials(user.first_name + user.last_name)}
+							/>
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-48">

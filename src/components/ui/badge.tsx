@@ -27,7 +27,7 @@ const badgeVariants = cva(
 			{
 				color: "blue",
 				variant: "default",
-				class: "border-transparent bg-primary-700 text-primary-100",
+				class: "border-transparent bg-primary-600 text-primary-100",
 			},
 			{
 				color: "blue",

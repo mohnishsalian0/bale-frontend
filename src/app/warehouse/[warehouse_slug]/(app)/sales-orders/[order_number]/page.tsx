@@ -23,6 +23,8 @@ import { TransportEditSheet } from './TransportEditSheet';
 import { OrderDetailsTab } from './OrderDetailsTab';
 import { OutwardsTab } from './OutwardsTab';
 import { TabUnderline } from '@/components/ui/tab-underline';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { IconDotsVertical } from '@tabler/icons-react';
 
 type SalesOrder = Tables<'sales_orders'>;
 type Partner = Tables<'partners'>;
@@ -240,9 +242,33 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 
 				{/* Bottom Action Bar */}
 				<div className="sticky bottom-0 p-4 bg-background border-t border-border flex gap-3 z-10">
-					<Button variant="outline" size="icon" onClick={() => console.log('More actions')}>
-						•••
-					</Button>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="outline" size="icon">
+								<IconDotsVertical className="size-5" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="start">
+							{(order.status === 'in_progress' || displayStatus === 'overdue') && (
+								<>
+									<DropdownMenuItem onClick={() => console.log('Mark as complete')}>
+										Mark as complete
+									</DropdownMenuItem>
+									<DropdownMenuSeparator />
+								</>
+							)}
+							<DropdownMenuItem onClick={() => console.log('Share')}>
+								Share
+							</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => console.log('Download')}>
+								Download
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem variant="destructive" onClick={() => console.log('Cancel order')}>
+								Cancel order
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
 					<Button variant="outline" disabled className="flex-1">
 						Make invoice
 					</Button>

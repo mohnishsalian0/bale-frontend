@@ -318,19 +318,25 @@ export default function OrdersPage() {
 										onClick={() => router.push(`/warehouse/${warehouse.slug}/sales-orders/${order.orderNumber}`)}
 										className="flex flex-col gap-2 p-4 border-t border-dashed border-gray-300 hover:bg-gray-50 transition-colors"
 									>
-										<div className="flex items-start gap-3">
-											<div className="flex-1 flex flex-col items-start">
+										{/* Title and Status Badge */}
+										<div>
+											<div className="flex items-center justify-between gap-2">
 												<p className="text-base font-medium text-gray-900">{order.customerName}</p>
-												<p className="text-xs text-gray-500 text-left">{getProductSummary(order.products)}</p>
+												<StatusBadge status={order.status} />
+											</div>
+
+											{/* Subtexts spanning full width */}
+											<p className="text-xs text-gray-500 text-left mt-1">
+												{getProductSummary(order.products)}
+											</p>
+											<div className="flex items-center justify-between mt-1">
 												<p className="text-xs text-gray-500">
 													{'SO-'}{order.orderNumber}
 													{order.dueDate && ` • Due on ${formatAbsoluteDate(order.dueDate)}`}
 												</p>
-											</div>
-											<div className="flex flex-col items-end justify-between gap-1 self-stretch">
-												<StatusBadge status={order.status} />
-												{order.status !== 'approval_pending' &&
-													<p className="text-xs text-gray-500">{order.completionPercentage}% completed</p>}
+												{order.status !== 'approval_pending' && (
+													<p className="text-xs text-gray-500">{order.completionPercentage}% completed</p>
+												)}
 											</div>
 										</div>
 

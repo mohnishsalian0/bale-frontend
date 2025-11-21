@@ -243,8 +243,8 @@ export default function PartnerDetailPage({ params }: PageParams) {
 		<div className="flex-1 overflow-y-auto">
 			<div className="relative flex flex-col h-max-content max-w-3xl border-r border-border">
 				{/* Header */}
-				<div className="p-4">
-					<div className="flex items-center gap-4 mb-4">
+				<div className="p-4 pb-6">
+					<div className="flex items-center gap-4">
 						{/* Partner Image */}
 						<ImageWrapper
 							size="xl"
@@ -266,9 +266,20 @@ export default function PartnerDetailPage({ params }: PageParams) {
 				</div>
 
 				{/* Summary Cards */}
-				<div className="flex flex-wrap gap-3 px-4 pb-3">
+				<div className="grid grid-cols-2 gap-3 px-4 pb-6">
+					{/* Total Orders Card */}
+					<div className="col-span-2 sm:col-span-1 border border-border rounded-lg p-4">
+						<div className="flex gap-2 mb-2">
+							<IconShoppingCart className="size-4 text-gray-500" />
+							<span className="text-xs text-gray-500">Total orders</span>
+						</div>
+						<p className="text-lg font-bold text-gray-700">
+							{totalOrders} orders • ₹{formatCurrency(totalOrderValue)}
+						</p>
+					</div>
+
 					{/* Top Product Card */}
-					<div className="flex-1 border border-gray-200 rounded-lg p-4">
+					<div className="col-span-2 sm:col-span-1 border border-border rounded-lg p-4">
 						<div className="flex gap-2 mb-2">
 							<IconPackage className="size-4 text-gray-500" />
 							<span className="text-xs text-gray-500">
@@ -303,33 +314,20 @@ export default function PartnerDetailPage({ params }: PageParams) {
 						)}
 					</div>
 
-					{/* Total Orders Card */}
-					<div className="flex-1 border border-gray-200 rounded-lg p-4">
-						<div className="flex gap-2 mb-2">
-							<IconShoppingCart className="size-4 text-gray-500" />
-							<span className="text-xs text-gray-500">Total orders</span>
-						</div>
-						<p className="text-lg font-bold text-gray-700">
-							{totalOrders} orders • ₹{formatCurrency(totalOrderValue)}
-						</p>
-					</div>
-				</div>
+					{/* Pending Orders Section */}
+					{pendingOrdersCount > 0 && pendingOrder && (() => {
+						const displayStatus = getOrderDisplayStatus(
+							pendingOrder.status,
+							pendingOrder.expected_delivery_date
+						);
+						const completionPercentage = calculateCompletionPercentage(pendingOrder.sales_order_items);
+						const showProgressBar = displayStatus === 'in_progress' || displayStatus === 'overdue';
+						const progressColor = displayStatus === 'overdue' ? 'yellow' : 'blue';
 
-				{/* Pending Orders Section */}
-				{pendingOrdersCount > 0 && pendingOrder && (() => {
-					const displayStatus = getOrderDisplayStatus(
-						pendingOrder.status,
-						pendingOrder.expected_delivery_date
-					);
-					const completionPercentage = calculateCompletionPercentage(pendingOrder.sales_order_items);
-					const showProgressBar = displayStatus === 'in_progress' || displayStatus === 'overdue';
-					const progressColor = displayStatus === 'overdue' ? 'yellow' : 'blue';
-
-					return (
-						<div className="px-4 pb-4">
+						return (
 							<button
 								onClick={() => router.push(`/warehouse/${warehouse.slug}/sales-orders/${pendingOrder.sequence_number}`)}
-								className="w-full border border-gray-200 rounded-lg p-4 hover:bg-gray-50 hover:cursor-pointer transition-colors text-left"
+								className="col-span-2 border border-border rounded-lg p-4 hover:bg-gray-50 hover:cursor-pointer transition-colors text-left"
 							>
 								<div className="flex items-center justify-between mb-2">
 									<div className="flex gap-2">
@@ -349,7 +347,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
 									{pendingOrder.sales_order_items.length > 2 &&
 										` +${pendingOrder.sales_order_items.length - 2} more`}
 								</p>
-								<div className="flex items-center justify-between">
+								<div className="flex items-center justify-between mt-1">
 									<p className="text-xs text-gray-500">
 										SO-{pendingOrder.sequence_number}
 									</p>
@@ -361,9 +359,9 @@ export default function PartnerDetailPage({ params }: PageParams) {
 									<Progress color={progressColor} value={completionPercentage} className="mt-2" />
 								)}
 							</button>
-						</div>
-					);
-				})()}
+						);
+					})()}
+				</div>
 
 				{/* Tabs */}
 				<TabUnderline

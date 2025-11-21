@@ -50,7 +50,7 @@ function RadioGroupItem({ value, children, className }: RadioGroupItemProps) {
 				'px-4 py-2 text-sm font-medium rounded-2xl border-2 transition-colors cursor-pointer',
 				isSelected
 					? 'bg-primary-200 border-primary-700 text-gray-700'
-					: 'bg-gray-100 border-transparent text-gray-700',
+					: 'bg-gray-100 border-border text-gray-700',
 				className
 			)}
 		>

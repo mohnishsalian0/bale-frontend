@@ -197,8 +197,8 @@ export default function ProductDetailPage({ params }: PageParams) {
 		<div className="flex-1 overflow-y-auto">
 			<div className="relative flex flex-col h-max-content max-w-3xl border-r border-border">
 				{/* Header */}
-				<div className="p-4">
-					<div className="flex items-start gap-4 mb-4">
+				<div className="p-4 pb-6">
+					<div className="flex items-start gap-4">
 						{/* Product Image */}
 						<ImageWrapper
 							size="xl"
@@ -240,9 +240,9 @@ export default function ProductDetailPage({ params }: PageParams) {
 				</div>
 
 				{/* Stock & Sales Info Cards */}
-				<div className="flex flex-wrap gap-3 px-4 pb-4">
+				<div className="grid grid-cols-2 gap-3 px-4 pb-6">
 					{/* Total Stock Card */}
-					<div className="flex-1 border border-gray-200 rounded-lg p-4">
+					<div className="col-span-2 sm:col-span-1 border border-gray-200 rounded-lg p-4">
 						<div className="flex gap-2 mb-2">
 							<IconBuildingWarehouse className="size-4 text-gray-500" />
 							<span className="text-xs text-gray-500">Total stock</span>
@@ -253,7 +253,7 @@ export default function ProductDetailPage({ params }: PageParams) {
 					</div>
 
 					{/* Order Request Card */}
-					<div className="flex-1 border border-gray-200 rounded-lg p-4">
+					<div className="col-span-2 sm:col-span-1 border border-gray-200 rounded-lg p-4">
 						<div className="flex gap-2 mb-2">
 							<IconStore className="size-4 fill-gray-500" />
 							<span className="text-xs text-gray-500">Order request</span>
