@@ -7,13 +7,19 @@ type Product = Tables<'products'>;
 type SalesOrderItem = Tables<'sales_order_items'>;
 type Warehouse = Tables<'warehouses'>;
 
+type StockUnitWithProduct = {
+	id: string;
+	product_id: string;
+	product: Product[] | null;
+};
+
 export interface DashboardSalesOrder extends SalesOrder {
 	customer: Partner | null;
 	agent: Partner | null;
 	warehouse: Warehouse | null;
 	sales_order_items: Array<
 		SalesOrderItem & {
-			product: Product | null;
+			product: Product[] | null;
 		}
 	>;
 }
@@ -145,6 +151,7 @@ export async function getPendingQRProducts(
 	const supabase = createClient();
 
 	// Get stock units without QR code generated
+	// Using !inner tells Supabase this is a many-to-one relationship (returns single object, not array)
 	const { data: stockUnits, error: stockError } = await supabase
 		.from('stock_units')
 		.select(
@@ -171,15 +178,15 @@ export async function getPendingQRProducts(
 	// Group by product and count pending QR codes
 	const productMap = new Map<string, { product: Product; count: number }>();
 
-	for (const unit of stockUnits) {
-		if (!unit.product) continue;
+	for (const unit of stockUnits as StockUnitWithProduct[]) {
+		if (!unit.product || unit.product.length === 0) continue;
 
 		const existing = productMap.get(unit.product_id);
 		if (existing) {
 			existing.count += 1;
 		} else {
 			productMap.set(unit.product_id, {
-				product: unit.product as Product,
+				product: unit.product[0],
 				count: 1,
 			});
 		}

@@ -42,7 +42,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
 			<SidebarInset>
 				<TopBar
-					warehouseName={warehouse.name}
 					onWarehouseClick={() => setIsSelectorOpen(!isSelectorOpen)}
 					onLogoutClick={handleLogout}
 					isWarehouseSelectorOpen={isSelectorOpen}

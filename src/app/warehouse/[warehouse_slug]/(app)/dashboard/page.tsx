@@ -131,7 +131,7 @@ export default function DashboardPage() {
 							const progressColor = displayStatus === 'overdue' ? 'yellow' : 'blue';
 							const customerName = order.customer ? getPartnerName(order.customer) : 'Unknown Customer';
 							const products = order.sales_order_items.map((item) => ({
-								name: item.product?.name || 'Unknown Product',
+								name: item.product?.[0]?.name || 'Unknown Product',
 								quantity: item.required_quantity,
 							}));
 
