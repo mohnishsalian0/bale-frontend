@@ -60,7 +60,7 @@ export default function TopBar({
 						<Button
 							variant="ghost"
 							size="icon"
-							className="relative w-10 h-10 rounded-full overflow-hidden hover:ring-2 hover:ring-primary-700 transition-all p-0"
+							className="relative w-10 h-10 rounded-full border-2 border-border overflow-hidden"
 						>
 							<ImageWrapper
 								size="sm"

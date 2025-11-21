@@ -249,6 +249,16 @@
 - [x] Create Section component for consistent detail display across app
 - [x] Create TabUnderline component for tab navigation
 - [x] Create reusable utility functions (getPartnerName, getPartnerAddress, formatCurrency, formatAbsoluteDate)
+- [x] Create dashboard page with quote card and three sections (Active sales orders, Low stock products, Pending QR codes)
+- [x] Implement getDashboardSalesOrders query function (approval_pending and in_progress orders, limit 5)
+- [x] Implement getLowStockProducts query function (products below min_stock_threshold, limit 5)
+- [x] Implement getPendingQRProducts query function (stock units without QR codes, limit 5)
+- [x] Add action buttons to dashboard sales order cards (Approve order, Create outward, Make invoice)
+- [x] Add 3-dot dropdown menu to dashboard sales order cards (Mark as complete, Share, Download, Cancel order)
+- [x] Display low stock products with warning icon and current stock
+- [x] Display pending QR products with pending count
+- [x] Update root warehouse page to redirect to dashboard
+- [x] Add logout functionality to topbar dropdown menu
 - [ ] Fix partners page flickering on filter change (fetch all, filter client-side)
 - [ ] Edit sales order functionality
 - [ ] Order status workflow transitions (approval_pending → in_progress → completed/cancelled)

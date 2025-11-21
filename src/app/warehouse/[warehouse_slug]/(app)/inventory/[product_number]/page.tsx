@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { IconBox, IconBuildingWarehouse, IconShare } from '@tabler/icons-react';
+import { IconBuildingWarehouse, IconShare } from '@tabler/icons-react';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { ErrorState } from '@/components/layouts/error-state';
 import { TabUnderline } from '@/components/ui/tab-underline';
@@ -174,11 +174,6 @@ export default function ProductDetailPage({ params }: PageParams) {
 		);
 	}
 
-	// Build product display name
-	let productDisplayName = product.name;
-	if (product.material) productDisplayName += ` - ${product.material}`;
-	if (product.color_name) productDisplayName += ` (${product.color_name})`;
-
 	// Get all tags
 	const allTags: Array<{ text: string; isPrimary: boolean }> = [];
 	if (product.material) allTags.push({ text: product.material, isPrimary: true });
@@ -212,7 +207,7 @@ export default function ProductDetailPage({ params }: PageParams) {
 							<div className="flex items-start gap-4">
 								{/* Product Info */}
 								<div className="flex-1 min-w-0">
-									<h1 className="text-2xl font-bold text-gray-900" title={productDisplayName}>
+									<h1 className="text-2xl font-bold text-gray-900" title={product.name}>
 										{product.name}
 									</h1>
 									<p className="text-sm text-gray-500">PROD-{product.sequence_number}</p>
