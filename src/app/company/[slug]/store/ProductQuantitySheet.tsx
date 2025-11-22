@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ImageWrapper from '@/components/ui/image-wrapper';
-import { getProductIcon } from '@/lib/utils/product';
+import { getProductIcon, getProductInfo } from '@/lib/utils/product';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import type { Tables } from '@/types/database/supabase';
 import type { MeasuringUnit, StockType } from '@/types/database/enums';
@@ -69,8 +69,7 @@ export function ProductQuantitySheet({
 	if (!product) return null;
 
 	const unitAbbreviation = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null);
-
-	const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
+	const productInfo = getProductInfo(product);
 
 	const formContent = (
 		<div className="flex flex-col gap-4 p-4 md:px-0 overflow-x-hidden">

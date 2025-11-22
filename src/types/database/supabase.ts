@@ -137,6 +137,7 @@ export type Database = {
           name: string
           pan_number: string | null
           pin_code: string | null
+          slug: string
           state: string | null
           updated_at: string
         }
@@ -156,6 +157,7 @@ export type Database = {
           name: string
           pan_number?: string | null
           pin_code?: string | null
+          slug: string
           state?: string | null
           updated_at?: string
         }
@@ -175,6 +177,7 @@ export type Database = {
           name?: string
           pan_number?: string | null
           pin_code?: string | null
+          slug?: string
           state?: string | null
           updated_at?: string
         }
@@ -847,6 +850,81 @@ export type Database = {
           },
         ]
       }
+      partner_order_aggregates: {
+        Row: {
+          approval_pending_count: number | null
+          approval_pending_value: number | null
+          cancelled_count: number | null
+          cancelled_value: number | null
+          company_id: string
+          completed_count: number | null
+          completed_value: number | null
+          created_at: string | null
+          first_order_date: string | null
+          id: string
+          in_progress_count: number | null
+          in_progress_value: number | null
+          last_order_date: string | null
+          last_updated_at: string | null
+          lifetime_order_value: number | null
+          partner_id: string
+          total_orders: number | null
+        }
+        Insert: {
+          approval_pending_count?: number | null
+          approval_pending_value?: number | null
+          cancelled_count?: number | null
+          cancelled_value?: number | null
+          company_id: string
+          completed_count?: number | null
+          completed_value?: number | null
+          created_at?: string | null
+          first_order_date?: string | null
+          id?: string
+          in_progress_count?: number | null
+          in_progress_value?: number | null
+          last_order_date?: string | null
+          last_updated_at?: string | null
+          lifetime_order_value?: number | null
+          partner_id: string
+          total_orders?: number | null
+        }
+        Update: {
+          approval_pending_count?: number | null
+          approval_pending_value?: number | null
+          cancelled_count?: number | null
+          cancelled_value?: number | null
+          company_id?: string
+          completed_count?: number | null
+          completed_value?: number | null
+          created_at?: string | null
+          first_order_date?: string | null
+          id?: string
+          in_progress_count?: number | null
+          in_progress_value?: number | null
+          last_order_date?: string | null
+          last_updated_at?: string | null
+          lifetime_order_value?: number | null
+          partner_id?: string
+          total_orders?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_order_aggregates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_order_aggregates_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: true
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partners: {
         Row: {
           address_line1: string | null
@@ -971,6 +1049,88 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      product_inventory_aggregates: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          dispatched_quantity: number | null
+          dispatched_units: number | null
+          dispatched_value: number | null
+          id: string
+          in_stock_quantity: number | null
+          in_stock_units: number | null
+          in_stock_value: number | null
+          last_updated_at: string | null
+          product_id: string
+          removed_quantity: number | null
+          removed_units: number | null
+          removed_value: number | null
+          total_quantity_received: number | null
+          total_units_received: number | null
+          warehouse_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          dispatched_quantity?: number | null
+          dispatched_units?: number | null
+          dispatched_value?: number | null
+          id?: string
+          in_stock_quantity?: number | null
+          in_stock_units?: number | null
+          in_stock_value?: number | null
+          last_updated_at?: string | null
+          product_id: string
+          removed_quantity?: number | null
+          removed_units?: number | null
+          removed_value?: number | null
+          total_quantity_received?: number | null
+          total_units_received?: number | null
+          warehouse_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          dispatched_quantity?: number | null
+          dispatched_units?: number | null
+          dispatched_value?: number | null
+          id?: string
+          in_stock_quantity?: number | null
+          in_stock_units?: number | null
+          in_stock_value?: number | null
+          last_updated_at?: string | null
+          product_id?: string
+          removed_quantity?: number | null
+          removed_units?: number | null
+          removed_value?: number | null
+          total_quantity_received?: number | null
+          total_units_received?: number | null
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_inventory_aggregates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_inventory_aggregates_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_inventory_aggregates_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_variant_items: {
         Row: {
@@ -1434,7 +1594,7 @@ export type Database = {
           status_notes: string | null
           total_amount: number | null
           updated_at: string
-          warehouse_id: string
+          warehouse_id: string | null
         }
         Insert: {
           advance_amount?: number | null
@@ -1465,7 +1625,7 @@ export type Database = {
           status_notes?: string | null
           total_amount?: number | null
           updated_at?: string
-          warehouse_id: string
+          warehouse_id?: string | null
         }
         Update: {
           advance_amount?: number | null
@@ -1496,7 +1656,7 @@ export type Database = {
           status_notes?: string | null
           total_amount?: number | null
           updated_at?: string
-          warehouse_id?: string
+          warehouse_id?: string | null
         }
         Relationships: [
           {
@@ -1919,6 +2079,7 @@ export type Database = {
           stock_unit_id: string
         }[]
       }
+      generate_company_slug: { Args: { company_name: string }; Returns: string }
       generate_warehouse_slug: {
         Args: { warehouse_name: string }
         Returns: string
@@ -1961,6 +2122,14 @@ export type Database = {
       has_warehouse_access: {
         Args: { warehouse_id_to_check: string }
         Returns: boolean
+      }
+      recalculate_partner_order_aggregates: {
+        Args: { p_partner_id: string }
+        Returns: undefined
+      }
+      recalculate_product_inventory_aggregates: {
+        Args: { p_product_id: string; p_warehouse_id: string }
+        Returns: undefined
       }
     }
     Enums: {

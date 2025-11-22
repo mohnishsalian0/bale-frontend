@@ -7,6 +7,8 @@ export type UserRole = 'admin' | 'staff';
 
 export type PartnerType = 'customer' | 'vendor' | 'supplier' | 'agent';
 
+export type ProductStockStatus = 'in_stock' | 'low_stock' | 'out_of_stock';
+
 export type MaterialType =
 	// Natural Fibers
 	| 'Cotton' | 'Silk' | 'Wool' | 'Linen' | 'Jute' | 'Hemp' | 'Cashmere' | 'Mohair' | 'Alpaca'

@@ -15,7 +15,7 @@ import { getDashboardSalesOrders, getLowStockProducts, getPendingQRProducts } fr
 import type { DashboardSalesOrder, LowStockProduct, PendingQRProduct } from '@/lib/queries/dashboard';
 import { calculateCompletionPercentage, getOrderDisplayStatus, getProductSummary, type DisplayStatus } from '@/lib/utils/sales-order';
 import { getPartnerName } from '@/lib/utils/partner';
-import { getProductIcon } from '@/lib/utils/product-icon';
+import { getProductIcon } from '@/lib/utils/product';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import { formatAbsoluteDate } from '@/lib/utils/date';
 import type { SalesOrderStatus, StockType, MeasuringUnit } from '@/types/database/enums';
@@ -138,7 +138,7 @@ export default function DashboardPage() {
 							return (
 								<Card
 									key={order.id}
-									className="rounded-none border-2 border-border rounded-lg shadow-none bg-transparent"
+									className="rounded-none border-2 rounded-lg shadow-none bg-transparent"
 								>
 									<CardContent className="p-4 flex flex-col gap-3">
 										<button
@@ -292,7 +292,7 @@ export default function DashboardPage() {
 						{lowStockProducts.map((product) => (
 							<Card
 								key={`low-stock-${product.id}`}
-								className="rounded-none border-2 border-border rounded-lg shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
+								className="rounded-none border-2 rounded-lg shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
 								onClick={() =>
 									router.push(`/warehouse/${warehouse.slug}/inventory/${product.sequence_number}`)
 								}
@@ -351,7 +351,7 @@ export default function DashboardPage() {
 						{pendingQRProducts.map((product) => (
 							<Card
 								key={`pending-qr-${product.id}`}
-								className="rounded-none border-0 border border-border rounded-lg shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
+								className="rounded-none border-2 rounded-lg shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
 								onClick={() =>
 									router.push(`/warehouse/${warehouse.slug}/inventory/${product.sequence_number}`)
 								}

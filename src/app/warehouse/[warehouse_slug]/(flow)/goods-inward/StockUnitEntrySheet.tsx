@@ -11,7 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { DatePicker } from '@/components/ui/date-picker';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ImageWrapper from '@/components/ui/image-wrapper';
-import { getProductIcon } from '@/lib/utils/product-icon';
+import { getProductIcon } from '@/lib/utils/product';
 import type { Tables } from '@/types/database/supabase';
 import type { MeasuringUnit, StockType } from '@/types/database/enums';
 import type { StockUnitSpec } from './ProductSelectionStep';

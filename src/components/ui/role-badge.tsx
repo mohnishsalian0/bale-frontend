@@ -2,18 +2,18 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/types/database/enums';
 
-interface StatusBadgeProps {
+interface RoleBadgeProps {
 	role: UserRole;
 	className?: string;
 }
 
-interface StatusConfig {
+interface RoleConfig {
 	color: 'blue' | 'green' | 'orange' | 'red' | 'gray';
 	variant: 'default' | 'secondary' | 'outline';
 	label: string;
 }
 
-function getRoleConfig(role: UserRole): StatusConfig {
+function getRoleConfig(role: UserRole): RoleConfig {
 	switch (role) {
 		case 'admin':
 			return { color: 'blue', variant: 'secondary', label: 'Admin' };
@@ -24,7 +24,7 @@ function getRoleConfig(role: UserRole): StatusConfig {
 	}
 }
 
-export function RoleBadge({ role, className }: StatusBadgeProps) {
+export function RoleBadge({ role, className }: RoleBadgeProps) {
 	const config = getRoleConfig(role);
 
 	return (

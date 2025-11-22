@@ -217,4 +217,4 @@ USING (
 GRANT SELECT, INSERT, UPDATE, DELETE ON sales_order_items TO authenticated;
 
 -- Grant limited permissions to anonymous users (for public catalog)
-GRANT INSERT ON sales_order_items TO anon;
+GRANT SELECT, INSERT ON sales_order_items TO anon;

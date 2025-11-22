@@ -311,7 +311,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 							open={showWarehouseEdit}
 							onOpenChange={setShowWarehouseEdit}
 							orderId={order.id}
-							currentWarehouseId={order.warehouse_id}
+							currentWarehouseId={order.warehouse_id || ''}
 							companyId={order.company_id}
 							hasOutward={order.has_outward || false}
 							onSuccess={fetchOrder}

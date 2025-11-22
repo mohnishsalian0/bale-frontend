@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ImageWrapper from '@/components/ui/image-wrapper';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
-import { getProductIcon } from '@/lib/utils/product-icon';
+import { getProductIcon } from '@/lib/utils/product';
 import type { Tables } from '@/types/database/supabase';
 import { MeasuringUnit, StockType } from '@/types/database/enums';
 

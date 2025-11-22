@@ -18,12 +18,13 @@ import type { Tables } from '@/types/database/supabase';
 import type { MeasuringUnit, StockType } from '@/types/database/enums';
 import { Button } from '@/components/ui/button';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
-import { getProductIcon } from '@/lib/utils/product-icon';
+import { getProductIcon } from '@/lib/utils/product';
 
 type ProductRow = Tables<'products'>;
 
 interface Product {
 	id: string;
+	sequence_number: number;
 	name: string;
 	productNumber: string;
 	material: string | null;
@@ -32,7 +33,7 @@ interface Product {
 	stock_type: StockType;
 	unit: string | null;
 	imageUrl?: string;
-}
+};
 
 export default function InventoryPage() {
 	const router = useRouter();
@@ -67,6 +68,7 @@ export default function InventoryPage() {
 			// Transform data to match Product interface
 			const transformedProducts: Product[] = (data || []).map((p: any) => ({
 				id: p.id,
+				sequence_number: p.sequence_number,
 				name: p.name,
 				productNumber: p.sequence_number?.toString() || '',
 				material: p.material,
@@ -219,6 +221,7 @@ export default function InventoryPage() {
 								{/* Product Info */}
 								<div className="flex-1 flex flex-col items-start">
 									<p className="text-base font-medium text-gray-900">{product.name}</p>
+									<p className="text-xs text-gray-500">PROD-{product.sequence_number}</p>
 									<p className="text-xs text-gray-500">
 										{[product.material, product.color].filter(Boolean).join(', ') || 'No details'}
 									</p>

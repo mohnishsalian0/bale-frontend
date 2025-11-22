@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ImageWrapper from '@/components/ui/image-wrapper';
-import { getProductIcon } from '@/lib/utils/product-icon';
+import { getProductIcon } from '@/lib/utils/product';
 import type { Tables } from '@/types/database/supabase';
 import { pluralize } from '@/lib/utils/pluralize';
 import type { StockType } from '@/types/database/enums';

@@ -5,11 +5,9 @@ import type { ComponentType } from 'react';
 import {
 	IconBuildingStore,
 	IconChartBar,
-	IconClipboardList,
 	IconIdBadge2,
 	IconPhotoScan,
 	IconQrcode,
-	IconSettings,
 	IconUsers,
 } from '@tabler/icons-react';
 import { usePathname } from 'next/navigation';

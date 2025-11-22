@@ -25,7 +25,7 @@ CREATE TABLE sales_orders (
     -- Order details
     order_date DATE NOT NULL DEFAULT CURRENT_DATE,
     expected_delivery_date DATE, -- Optional, can be set later during order processing
-    warehouse_id UUID NOT NULL REFERENCES warehouses(id),
+    warehouse_id UUID REFERENCES warehouses(id), -- Nullable for catalog orders, must be set before fulfillment
 
     -- Order source tracking
     source VARCHAR(50) DEFAULT 'manual' NOT NULL,
@@ -171,7 +171,7 @@ FOR SELECT
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
+    (warehouse_id IS NULL OR has_warehouse_access(warehouse_id)) AND
     authorize('sales_orders.read')
 );
 
@@ -182,7 +182,7 @@ FOR INSERT
 TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
+    (warehouse_id IS NULL OR has_warehouse_access(warehouse_id)) AND
 		authorize('sales_orders.create')
 );
 
@@ -193,12 +193,12 @@ FOR UPDATE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
+    (warehouse_id IS NULL OR has_warehouse_access(warehouse_id)) AND
 		authorize('sales_orders.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
+    (warehouse_id IS NULL OR has_warehouse_access(warehouse_id)) AND
 		authorize('sales_orders.update')
 );
 
@@ -209,7 +209,7 @@ FOR DELETE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
+    (warehouse_id IS NULL OR has_warehouse_access(warehouse_id)) AND
 		authorize('sales_orders.delete')
 );
 
@@ -220,4 +220,4 @@ USING (
 GRANT SELECT, INSERT, UPDATE, DELETE ON sales_orders TO authenticated;
 
 -- Grant limited permissions to anonymous users (for public catalog)
-GRANT INSERT ON sales_orders TO anon;
+GRANT SELECT, INSERT ON sales_orders TO anon;

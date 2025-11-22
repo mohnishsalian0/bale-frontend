@@ -16,7 +16,7 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import ImageWrapper from '@/components/ui/image-wrapper';
-import { getProductIcon } from '@/lib/utils/product-icon';
+import { getProductIcon } from '@/lib/utils/product';
 import { createClient } from '@/lib/supabase/client';
 import { useSession } from '@/contexts/session-context';
 import { formatCurrency } from '@/lib/utils/financial';

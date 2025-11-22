@@ -3,14 +3,13 @@ import type { Tables } from '@/types/database/supabase';
 
 type SalesOrder = Tables<'sales_orders'>;
 type Partner = Tables<'partners'>;
+type StockUnit = Tables<'stock_units'>;
 type Product = Tables<'products'>;
 type SalesOrderItem = Tables<'sales_order_items'>;
 type Warehouse = Tables<'warehouses'>;
 
-type StockUnitWithProduct = {
-	id: string;
-	product_id: string;
-	product: Product[] | null;
+export interface StockUnitWithProduct extends StockUnit {
+	product: Product | null;
 };
 
 export interface DashboardSalesOrder extends SalesOrder {
@@ -154,13 +153,13 @@ export async function getPendingQRProducts(
 	// Using !inner tells Supabase this is a many-to-one relationship (returns single object, not array)
 	const { data: stockUnits, error: stockError } = await supabase
 		.from('stock_units')
-		.select(
-			`
-			id,
-			product_id,
-			product:products(*)
-		`
-		)
+		.select(`
+				*,
+				product:products(
+					id, name, material, color_name, measuring_unit,
+					product_images, sequence_number
+				)
+		`)
 		.eq('warehouse_id', warehouseId)
 		.eq('status', 'in_stock')
 		.is('qr_generated_at', null)
@@ -179,14 +178,14 @@ export async function getPendingQRProducts(
 	const productMap = new Map<string, { product: Product; count: number }>();
 
 	for (const unit of stockUnits as StockUnitWithProduct[]) {
-		if (!unit.product || unit.product.length === 0) continue;
+		if (!unit.product) continue;
 
 		const existing = productMap.get(unit.product_id);
 		if (existing) {
 			existing.count += 1;
 		} else {
 			productMap.set(unit.product_id, {
-				product: unit.product[0],
+				product: unit.product,
 				count: 1,
 			});
 		}
