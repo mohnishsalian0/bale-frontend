@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { IconChevronDown, IconX, IconPhoto } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
@@ -8,12 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group-pills';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import MultipleSelector, { type Option } from '@/components/ui/multiple-selector';
 import { validateImageFile, uploadProductImage, MAX_PRODUCT_IMAGES } from '@/lib/storage';
 import { createClient } from '@/lib/supabase/client';
+import { getProductAttributeLists } from '@/lib/queries/products';
 import type { TablesInsert } from '@/types/database/supabase';
 import type { StockType, MeasuringUnit } from '@/types/database/enums';
 import { useSession } from '@/contexts/session-context';
@@ -28,11 +29,11 @@ interface ProductFormData {
 	name: string;
 	productNumber: string;
 	showOnCatalog: boolean;
-	material: string;
-	color: string;
+	materials: Option[];
+	colors: Option[];
 	gsm: string;
 	threadCount: string;
-	tags: string;
+	tags: Option[];
 	stockType: StockType | '';
 	measuringUnit: MeasuringUnit | '';
 	costPrice: string;
@@ -50,11 +51,11 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 		name: '',
 		productNumber: 'PROD-001',
 		showOnCatalog: true,
-		material: '',
-		color: '',
+		materials: [],
+		colors: [],
 		gsm: '',
 		threadCount: '',
-		tags: '',
+		tags: [],
 		stockType: '',
 		measuringUnit: '',
 		costPrice: '',
@@ -72,6 +73,36 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 	const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
+
+	// Attribute options for MultipleSelector
+	const [materialOptions, setMaterialOptions] = useState<Option[]>([]);
+	const [colorOptions, setColorOptions] = useState<Option[]>([]);
+	const [tagOptions, setTagOptions] = useState<Option[]>([]);
+
+	// Fetch attribute lists on mount
+	useEffect(() => {
+		const fetchAttributes = async () => {
+			const attributes = await getProductAttributeLists();
+			setMaterialOptions(attributes.materials.map(m => ({ value: m.id, label: m.name })));
+			setColorOptions(attributes.colors.map(c => ({ value: c.id, label: c.name })));
+			setTagOptions(attributes.tags.map(t => ({ value: t.id, label: t.name })));
+		};
+		fetchAttributes();
+	}, []);
+
+	// Simple handlers - new items are identified by value === label
+	// They will be inserted to DB on form submit
+	const handleMaterialsChange = (options: Option[]) => {
+		setFormData({ ...formData, materials: options });
+	};
+
+	const handleColorsChange = (options: Option[]) => {
+		setFormData({ ...formData, colors: options });
+	};
+
+	const handleTagsChange = (options: Option[]) => {
+		setFormData({ ...formData, tags: options });
+	};
 
 	const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const files = Array.from(e.target.files || []);
@@ -126,16 +157,40 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 		try {
 			const supabase = createClient();
 
-			// Parse tags (comma-separated string to array)
-			const tagsArray = formData.tags
-				? formData.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
-				: null;
+			// Helper to create new attributes and get their IDs
+			const resolveOptions = async (
+				options: Option[],
+				table: 'product_materials' | 'product_colors' | 'product_tags'
+			): Promise<string[]> => {
+				const ids: string[] = [];
+				for (const opt of options) {
+					// New items have value === label
+					if (opt.value === opt.label) {
+						const { data, error } = await supabase
+							.from(table)
+							.insert({ name: opt.label })
+							.select('id')
+							.single();
+						if (error) throw error;
+						ids.push(data.id);
+					} else {
+						ids.push(opt.value);
+					}
+				}
+				return ids;
+			};
+
+			// Resolve all new attributes first
+			const [materialIds, colorIds, tagIds] = await Promise.all([
+				resolveOptions(formData.materials, 'product_materials'),
+				resolveOptions(formData.colors, 'product_colors'),
+				resolveOptions(formData.tags, 'product_tags'),
+			]);
 
 			// Prepare typed insert data
 			const productInsert: Omit<TablesInsert<'products'>, 'created_by' | 'modified_by' | 'sequence_number'> = {
 				name: formData.name,
 				show_on_catalog: formData.showOnCatalog,
-				// TODO: Insert materials, colors, and tags into junction tables after product creation
 				gsm: formData.gsm ? parseFloat(formData.gsm) : null,
 				thread_count_cm: formData.threadCount ? parseFloat(formData.threadCount) : null,
 				stock_type: formData.stockType as StockType,
@@ -156,6 +211,42 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 				.single();
 
 			if (insertError) throw insertError;
+
+			// Insert material assignments
+			if (materialIds.length > 0 && product) {
+				const materialAssignments = materialIds.map(id => ({
+					product_id: product.id,
+					material_id: id,
+				}));
+				const { error: materialError } = await supabase
+					.from('product_material_assignments')
+					.insert(materialAssignments);
+				if (materialError) console.error('Error inserting materials:', materialError);
+			}
+
+			// Insert color assignments
+			if (colorIds.length > 0 && product) {
+				const colorAssignments = colorIds.map(id => ({
+					product_id: product.id,
+					color_id: id,
+				}));
+				const { error: colorError } = await supabase
+					.from('product_color_assignments')
+					.insert(colorAssignments);
+				if (colorError) console.error('Error inserting colors:', colorError);
+			}
+
+			// Insert tag assignments
+			if (tagIds.length > 0 && product) {
+				const tagAssignments = tagIds.map(id => ({
+					product_id: product.id,
+					tag_id: id,
+				}));
+				const { error: tagError } = await supabase
+					.from('product_tag_assignments')
+					.insert(tagAssignments);
+				if (tagError) console.error('Error inserting tags:', tagError);
+			}
 
 			// Upload images if provided
 			if (formData.images.length > 0 && product) {
@@ -202,11 +293,11 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 			name: '',
 			productNumber: 'PROD-001',
 			showOnCatalog: true,
-			material: '',
-			color: '',
+			materials: [],
+			colors: [],
 			gsm: '',
 			threadCount: '',
-			tags: '',
+			tags: [],
 			stockType: '',
 			measuringUnit: '',
 			costPrice: '',
@@ -351,44 +442,33 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 
 							<CollapsibleContent>
 								<div className="flex flex-col gap-6">
-									{/* Material */}
-									<Select
-										value={formData.material}
-										onValueChange={(value) =>
-											setFormData({ ...formData, material: value })
+									{/* Materials */}
+									<MultipleSelector
+										value={formData.materials}
+										defaultOptions={materialOptions}
+										onChange={handleMaterialsChange}
+										placeholder="Materials"
+										creatable
+										triggerSearchOnFocus
+										hidePlaceholderWhenSelected
+										emptyIndicator={
+											<p className="text-center text-sm text-gray-500">No materials found</p>
 										}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Material" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="silk">Silk</SelectItem>
-											<SelectItem value="cotton">Cotton</SelectItem>
-											<SelectItem value="wool">Wool</SelectItem>
-											<SelectItem value="polyester">Polyester</SelectItem>
-											<SelectItem value="linen">Linen</SelectItem>
-										</SelectContent>
-									</Select>
+									/>
 
-									{/* Color */}
-									<Select
-										value={formData.color}
-										onValueChange={(value) =>
-											setFormData({ ...formData, color: value })
+									{/* Colors */}
+									<MultipleSelector
+										value={formData.colors}
+										defaultOptions={colorOptions}
+										onChange={handleColorsChange}
+										placeholder="Colors"
+										creatable
+										triggerSearchOnFocus
+										hidePlaceholderWhenSelected
+										emptyIndicator={
+											<p className="text-center text-sm text-gray-500">No colors found</p>
 										}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Color" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="red">Red</SelectItem>
-											<SelectItem value="blue">Blue</SelectItem>
-											<SelectItem value="green">Green</SelectItem>
-											<SelectItem value="yellow">Yellow</SelectItem>
-											<SelectItem value="black">Black</SelectItem>
-											<SelectItem value="white">White</SelectItem>
-										</SelectContent>
-									</Select>
+									/>
 
 									{/* GSM & Thread Count */}
 									<div className="flex gap-4">
@@ -413,11 +493,16 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 									</div>
 
 									{/* Tags */}
-									<Input
-										placeholder="Tags (comma-separated)"
+									<MultipleSelector
 										value={formData.tags}
-										onChange={(e) =>
-											setFormData({ ...formData, tags: e.target.value })
+										defaultOptions={tagOptions}
+										onChange={handleTagsChange}
+										placeholder="Tags"
+										creatable
+										triggerSearchOnFocus
+										hidePlaceholderWhenSelected
+										emptyIndicator={
+											<p className="text-center text-sm text-gray-500">No tags found</p>
 										}
 									/>
 
