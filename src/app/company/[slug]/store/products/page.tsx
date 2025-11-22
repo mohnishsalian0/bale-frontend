@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter, notFound } from 'next/navigation';
-import { IconShoppingCart, IconArrowRight } from '@tabler/icons-react';
+import { IconShoppingCart, IconArrowRight, IconSearch } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCart } from '@/contexts/cart-context';
 import { getCompanyBySlug, getPublicProducts } from '@/lib/queries/catalog';
 import { ProductCard } from './ProductCard';
@@ -24,6 +26,11 @@ export default function StorePage() {
 	const [company, setCompany] = useState<Company | null>(null);
 	const [products, setProducts] = useState<PublicProduct[]>([]);
 	const [loading, setLoading] = useState(true);
+
+	// Search and filter state
+	const [searchQuery, setSearchQuery] = useState('');
+	const [materialFilter, setMaterialFilter] = useState<string>('all');
+	const [colorFilter, setColorFilter] = useState<string>('all');
 
 	// Quantity sheet state
 	const [showQuantitySheet, setShowQuantitySheet] = useState(false);
@@ -51,6 +58,45 @@ export default function StorePage() {
 
 		fetchData();
 	}, [slug]);
+
+	// Extract filter options from products
+	const { materials, colors } = useMemo(() => {
+		const m = new Set<string>();
+		const c = new Set<string>();
+
+		for (const p of products) {
+			if (p.material) m.add(p.material);
+			if (p.color_name) c.add(p.color_name);
+		}
+
+		return {
+			materials: Array.from(m).sort(),
+			colors: Array.from(c).sort(),
+		};
+	}, [products]);
+
+	// Filter products based on search and filters
+	const filteredProducts = useMemo(() => {
+		const query = searchQuery.trim().toLowerCase();
+
+		return products.filter(product => {
+			// Search filter
+			if (query && !(
+				product.name.toLowerCase().includes(query) ||
+				product.material?.toLowerCase().includes(query) ||
+				product.color_name?.toLowerCase().includes(query) ||
+				`PROD-${product.sequence_number}`.toLowerCase().includes(query)
+			)) return false;
+
+			// Material filter
+			if (materialFilter !== 'all' && product.material !== materialFilter) return false;
+
+			// Color filter
+			if (colorFilter !== 'all' && product.color_name !== colorFilter) return false;
+
+			return true;
+		});
+	}, [products, searchQuery, materialFilter, colorFilter]);
 
 	const handleAddToCart = (product: PublicProduct) => {
 		setSelectedProduct(product);
@@ -84,10 +130,21 @@ export default function StorePage() {
 	return (
 		<div className="container max-w-7xl mx-auto px-4 py-6">
 			{/* Header Section */}
-			<div className="flex items-end justify-between gap-4 mb-6">
-				<div className="flex-1">
-					<h1 className="text-3xl font-bold text-gray-900 mb-2">Fabric store</h1>
-					{/* Search bar will be added in future iteration */}
+			<div className="flex items-end justify-between gap-4">
+				<div className="flex-1 flex flex-col gap-2">
+					<h1 className="text-3xl font-bold text-gray-900">Fabric store</h1>
+
+					{/* Search */}
+					<div className="relative max-w-md">
+						<Input
+							type="text"
+							placeholder="Search for product"
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							className="pr-10"
+						/>
+						<IconSearch className="absolute right-3 top-1/2 -translate-y-1/2 size-5 text-gray-700" />
+					</div>
 				</div>
 
 				{/* Illustration */}
@@ -102,15 +159,50 @@ export default function StorePage() {
 				</div>
 			</div>
 
+			{/* Filters */}
+			<div className="flex gap-3 py-4 overflow-x-auto shrink-0">
+				<Select value={materialFilter} onValueChange={setMaterialFilter}>
+					<SelectTrigger className="w-[140px] h-10 shrink-0">
+						<SelectValue placeholder="Material" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">All materials</SelectItem>
+						{materials.map(material => (
+							<SelectItem key={material} value={material}>
+								{material}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+
+				<Select value={colorFilter} onValueChange={setColorFilter}>
+					<SelectTrigger className="w-[140px] h-10 shrink-0">
+						<SelectValue placeholder="Color" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">All colors</SelectItem>
+						{colors.map(color => (
+							<SelectItem key={color} value={color}>
+								{color}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
+
 			{/* Product Grid */}
-			{products.length === 0 ? (
+			{filteredProducts.length === 0 ? (
 				<div className="flex flex-col items-center justify-center py-12 text-center">
-					<p className="text-gray-600 mb-2">No products available</p>
-					<p className="text-sm text-gray-500">Check back soon for new items</p>
+					<p className="text-gray-600 mb-2">No products found</p>
+					<p className="text-sm text-gray-500">
+						{searchQuery || materialFilter !== 'all' || colorFilter !== 'all'
+							? 'Try adjusting your search or filters'
+							: 'Check back soon for new items'}
+					</p>
 				</div>
 			) : (
 				<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
-					{products.map((product) => (
+					{filteredProducts.map((product) => (
 						<ProductCard
 							key={product.id}
 							product={product}
