@@ -161,7 +161,7 @@ export default function StaffPage() {
 	}
 
 	return (
-		<div className="relative flex flex-col min-h-dvh pb-16">
+		<div className="relative flex flex-col flex-1 overflow-y-auto">
 			{/* Header */}
 			<div className="flex items-end justify-between gap-4 p-4">
 				<h1 className="text-3xl font-bold text-gray-900">Staff</h1>
