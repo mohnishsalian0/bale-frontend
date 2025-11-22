@@ -20,7 +20,12 @@ export function Section({
 	return (
 		<section className="p-5 space-y-4 border-b border-border">
 			{/* Header Row */}
-			<div className="flex items-start justify-between">
+			<div className="flex items-center justify-between gap-3">
+				<div className="size-12 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+					<span className="text-lg font-semibold text-gray-700">
+						<Icon />
+					</span>
+				</div>
 				<div className="flex-1 min-w-0">
 					<div className="flex items-center gap-2">
 						<h3 className="font-semibold text-gray-700 truncate" title={title}>
@@ -33,11 +38,6 @@ export function Section({
 						}
 					</div>
 					<p className={`text-sm text-gray-500 ${onEdit && '-mt-1'}`}>{subtitle}</p>
-				</div>
-				<div className="size-12 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
-					<span className="text-lg font-semibold text-gray-700">
-						<Icon />
-					</span>
 				</div>
 			</div>
 
