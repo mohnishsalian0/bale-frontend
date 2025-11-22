@@ -206,7 +206,7 @@ export default function OrdersPage() {
 	return (
 		<div className="relative flex flex-col flex-1 overflow-y-auto">
 			{/* Header */}
-			<div className="flex items-end justify-between gap-4 p-4">
+			<div className="flex items-end justify-between gap-4 p-4 pb-0">
 				<div className="flex-1 flex flex-col gap-2">
 					<div className="flex flex-col gap-1">
 						<h1 className="text-3xl font-bold text-gray-900">Sales orders</h1>
@@ -243,7 +243,7 @@ export default function OrdersPage() {
 			</div>
 
 			{/* Filters */}
-			<div className="flex gap-3 px-4 py-3 overflow-x-auto shrink-0">
+			<div className="flex gap-3 p-4 overflow-x-auto shrink-0">
 				{/* Status Filter */}
 				<Select value={selectedStatus} onValueChange={setSelectedStatus}>
 					<SelectTrigger className="flex-shrink-0 w-[160px]">

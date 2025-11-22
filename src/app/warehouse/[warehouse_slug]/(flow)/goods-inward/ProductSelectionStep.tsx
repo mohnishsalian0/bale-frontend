@@ -32,6 +32,7 @@ interface ProductSelectionStepProps {
 	tags: ProductTag[];
 	loading: boolean;
 	onOpenUnitSheet: (product: ProductWithAttributes, hasExistingUnits: boolean) => void;
+	onAddNewProduct: () => void;
 }
 
 export function ProductSelectionStep({
@@ -41,6 +42,7 @@ export function ProductSelectionStep({
 	tags,
 	loading,
 	onOpenUnitSheet,
+	onAddNewProduct,
 }: ProductSelectionStepProps) {
 	const [searchQuery, setSearchQuery] = useState('');
 	const [materialFilter, setMaterialFilter] = useState<string>('all');
@@ -90,7 +92,7 @@ export function ProductSelectionStep({
 			<div className="flex flex-col gap-3 px-4 py-4 shrink-0">
 				<div className="flex items-center justify-between">
 					<h3 className="text-lg font-semibold text-gray-900">Select products</h3>
-					<Button variant="ghost">
+					<Button variant="ghost" onClick={onAddNewProduct}>
 						<IconPlus className="size-4" />
 						New product
 					</Button>

@@ -41,7 +41,7 @@ export function ProductCard({ product, quantity = 0, onAddToCart }: ProductCardP
 	};
 
 	// Get material and color info
-	const productInfo = getProductInfo(product);
+	const productInfoText = getProductInfo(product);
 	const unitAbbreviation = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null);
 
 	return (
@@ -74,11 +74,10 @@ export function ProductCard({ product, quantity = 0, onAddToCart }: ProductCardP
 									<button
 										key={index}
 										onClick={() => api?.scrollTo(index)}
-										className={`size-2 rounded-full transition-all ${
-											index === current
-												? 'bg-white w-6'
-												: 'bg-white/60 hover:bg-white/80'
-										}`}
+										className={`size-2 rounded-full transition-all ${index === current
+											? 'bg-white w-6'
+											: 'bg-white/60 hover:bg-white/80'
+											}`}
 										aria-label={`Go to image ${index + 1}`}
 									/>
 								))}
@@ -101,9 +100,9 @@ export function ProductCard({ product, quantity = 0, onAddToCart }: ProductCardP
 							<h3 className="font-medium text-gray-900 truncate" title={product.name}>
 								{product.name}
 							</h3>
-							{productInfo && (
-								<p className="text-xs text-gray-500 truncate" title={productInfo}>
-									{productInfo}
+							{productInfoText && (
+								<p className="text-xs text-gray-500 truncate" title={productInfoText}>
+									{productInfoText}
 								</p>
 							)}
 						</div>

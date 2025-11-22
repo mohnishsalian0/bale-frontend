@@ -8,6 +8,7 @@ import { ProductSelectionStep, ProductWithUnits, StockUnitSpec } from '../Produc
 import { StockUnitEntrySheet } from '../StockUnitEntrySheet';
 import { AllSpecificationsSheet } from '../AllSpecificationsSheet';
 import { InwardDetailsStep } from '../InwardDetailsStep';
+import { AddProductSheet } from '../../../(app)/inventory/AddProductSheet';
 import { createClient } from '@/lib/supabase/client';
 import {
 	getProductsWithAttributes,
@@ -50,6 +51,7 @@ export default function CreateGoodsInwardPage() {
 	// Unit entry sheet state
 	const [showUnitEntrySheet, setShowUnitEntrySheet] = useState(false);
 	const [showAllSpecsSheet, setShowAllSpecsSheet] = useState(false);
+	const [showAddProductSheet, setShowAddProductSheet] = useState(false);
 	const [selectedProduct, setSelectedProduct] = useState<ProductWithAttributes | null>(null);
 
 	// Details form state
@@ -323,6 +325,7 @@ export default function CreateGoodsInwardPage() {
 							tags={tags}
 							loading={loading}
 							onOpenUnitSheet={handleOpenUnitSheet}
+							onAddNewProduct={() => setShowAddProductSheet(true)}
 						/>
 					) : (
 						<InwardDetailsStep
@@ -381,6 +384,13 @@ export default function CreateGoodsInwardPage() {
 						onAddNewUnit={handleAddNewUnitFromAllSpecs}
 					/>
 				)}
+
+				{/* Add Product Sheet */}
+				<AddProductSheet
+					open={showAddProductSheet}
+					onOpenChange={setShowAddProductSheet}
+					onProductAdded={loadData}
+				/>
 			</div>
 		</div>
 	);

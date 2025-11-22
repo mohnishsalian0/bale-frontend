@@ -194,7 +194,7 @@ export default function CheckoutPage() {
 					<div className="space-y-6">
 						{cartItems.map((item) => {
 							const imageUrl = item.product.product_images?.[0];
-							const productInfo = getProductInfo(item.product);
+							const productInfoText = getProductInfo(item.product);
 							const unitAbbreviation = getMeasuringUnitAbbreviation(item.product.measuring_unit as MeasuringUnit | null);
 
 							return (
@@ -216,8 +216,8 @@ export default function CheckoutPage() {
 										<p title={item.product.name} className="text-base font-medium text-gray-700 truncate">
 											{item.product.name}
 										</p>
-										<p title={productInfo} className="text-xs text-gray-500 truncate">
-											{productInfo}
+										<p title={productInfoText} className="text-xs text-gray-500 truncate">
+											{productInfoText}
 										</p>
 									</div>
 

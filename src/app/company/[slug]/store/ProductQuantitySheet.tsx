@@ -69,7 +69,7 @@ export function ProductQuantitySheet({
 	if (!product) return null;
 
 	const unitAbbreviation = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null);
-	const productInfo = getProductInfo(product);
+	const productInfoText = getProductInfo(product);
 
 	const formContent = (
 		<div className="flex flex-col gap-4 p-4 md:px-0 overflow-x-hidden">
@@ -85,8 +85,8 @@ export function ProductQuantitySheet({
 					/>
 					<div className="flex-1 min-w-0">
 						<p title={product.name} className="text-base font-medium text-gray-700 truncate">{product.name}</p>
-						<p title={productInfo} className="text-xs text-gray-500 truncate">
-							{productInfo}
+						<p title={productInfoText} className="text-xs text-gray-500 truncate">
+							{productInfoText}
 						</p>
 					</div>
 				</div>

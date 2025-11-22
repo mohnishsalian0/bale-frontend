@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 import { ProductQuantitySheet } from '../ProductQuantitySheet';
 import { ProductSelectionStep } from '../ProductSelectionStep';
 import { OrderDetailsStep } from '../OrderDetailsStep';
+import { AddProductSheet } from '../../../(app)/inventory/AddProductSheet';
 import type { TablesInsert } from '@/types/database/supabase';
 import { useSession } from '@/contexts/session-context';
 import { toast } from 'sonner';
@@ -50,6 +51,7 @@ export default function CreateSalesOrderPage() {
 	const [loading, setLoading] = useState(true);
 	const [selectedProduct, setSelectedProduct] = useState<ProductWithAttributes | null>(null);
 	const [showQuantitySheet, setShowQuantitySheet] = useState(false);
+	const [showAddProductSheet, setShowAddProductSheet] = useState(false);
 	const [saving, setSaving] = useState(false);
 
 	const supabase = createClient();
@@ -235,6 +237,7 @@ export default function CreateSalesOrderPage() {
 							tags={tags}
 							loading={loading}
 							onOpenQuantitySheet={handleOpenQuantitySheet}
+							onAddNewProduct={() => setShowAddProductSheet(true)}
 						/>
 					) : (
 						<OrderDetailsStep
@@ -279,6 +282,13 @@ export default function CreateSalesOrderPage() {
 						onConfirm={handleQuantityConfirm}
 					/>
 				)}
+
+				{/* Add Product Sheet */}
+				<AddProductSheet
+					open={showAddProductSheet}
+					onOpenChange={setShowAddProductSheet}
+					onProductAdded={loadData}
+				/>
 			</div>
 		</div>
 	);
