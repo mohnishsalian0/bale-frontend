@@ -11,8 +11,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { DatePicker } from '@/components/ui/date-picker';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ImageWrapper from '@/components/ui/image-wrapper';
-import { getProductIcon } from '@/lib/utils/product';
-import type { Tables } from '@/types/database/supabase';
+import { getProductIcon, getProductInfo } from '@/lib/utils/product';
+import type { ProductWithAttributes } from '@/lib/queries/products';
 import type { MeasuringUnit, StockType } from '@/types/database/enums';
 import type { StockUnitSpec } from './ProductSelectionStep';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,7 @@ import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 interface StockUnitEntrySheetProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	product: Tables<'products'> | null;
+	product: ProductWithAttributes | null;
 	initialUnit?: Partial<StockUnitSpec>;
 	onConfirm: (unit: Omit<StockUnitSpec, 'id'>) => void;
 }
@@ -90,7 +90,7 @@ export function StockUnitEntrySheet({
 
 	const unitAbbreviation = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null);
 
-	const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
+	const productInfoText = getProductInfo(product);
 
 	const formContent = (
 		<div className="flex flex-col gap-8 p-4 md:px-0 overflow-x-hidden">
@@ -107,8 +107,8 @@ export function StockUnitEntrySheet({
 						/>
 						<div className="flex-1 min-w-0">
 							<p title={product.name} className="text-base font-medium text-gray-700 truncate">{product.name}</p>
-							<p title={productInfo} className="text-xs text-gray-500 truncate">
-								{productInfo}
+							<p title={productInfoText} className="text-xs text-gray-500 truncate">
+								{productInfoText}
 							</p>
 						</div>
 					</div>

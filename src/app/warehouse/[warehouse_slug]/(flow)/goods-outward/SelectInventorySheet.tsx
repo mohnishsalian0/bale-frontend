@@ -4,13 +4,19 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { InventoryProductListStep } from './InventoryProductListStep';
-import { createClient } from '@/lib/supabase/client';
-import type { Tables } from '@/types/database/supabase';
+import {
+	getProductsWithAttributes,
+	getProductAttributeLists,
+	type ProductWithAttributes,
+	type ProductMaterial,
+	type ProductColor,
+	type ProductTag
+} from '@/lib/queries/products';
 
 interface SelectInventorySheetProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	onProductSelect?: (product: Tables<'products'>) => void;
+	onProductSelect?: (product: ProductWithAttributes) => void;
 }
 
 export function SelectInventorySheet({
@@ -18,29 +24,32 @@ export function SelectInventorySheet({
 	onOpenChange,
 	onProductSelect,
 }: SelectInventorySheetProps) {
-	const [products, setProducts] = useState<Tables<'products'>[]>([]);
+	const [products, setProducts] = useState<ProductWithAttributes[]>([]);
+	const [materials, setMaterials] = useState<ProductMaterial[]>([]);
+	const [colors, setColors] = useState<ProductColor[]>([]);
+	const [tags, setTags] = useState<ProductTag[]>([]);
 	const [loading, setLoading] = useState(false);
-
-	const supabase = createClient();
 
 	// Load products on mount
 	useEffect(() => {
 		if (open) {
-			loadProducts();
+			loadData();
 		}
 	}, [open]);
 
-	const loadProducts = async () => {
+	const loadData = async () => {
 		setLoading(true);
 		try {
-			const { data, error } = await supabase
-				.from('products')
-				.select('*')
-				.order('created_at', { ascending: false });
+			// Fetch products and attributes in parallel
+			const [productsData, attributeLists] = await Promise.all([
+				getProductsWithAttributes(),
+				getProductAttributeLists(),
+			]);
 
-			if (error) throw error;
-
-			setProducts(data || []);
+			setProducts(productsData);
+			setMaterials(attributeLists.materials);
+			setColors(attributeLists.colors);
+			setTags(attributeLists.tags);
 		} catch (error) {
 			console.error('Error loading products:', error);
 		} finally {
@@ -48,7 +57,7 @@ export function SelectInventorySheet({
 		}
 	};
 
-	const handleProductSelect = (product: Tables<'products'>) => {
+	const handleProductSelect = (product: ProductWithAttributes) => {
 		// TODO: Open stock units selection for this product
 		console.log('Selected product:', product);
 		if (onProductSelect) {
@@ -72,6 +81,9 @@ export function SelectInventorySheet({
 				<div className="flex flex-col h-full overflow-hidden">
 					<InventoryProductListStep
 						products={products}
+						materials={materials}
+						colors={colors}
+						tags={tags}
 						loading={loading}
 						onProductSelect={handleProductSelect}
 					/>

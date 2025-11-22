@@ -4,6 +4,12 @@ import QRCode from 'qrcode';
 import type { QRTemplateField } from '@/app/warehouse/[warehouse_slug]/(flow)/qr-codes/QRTemplateCustomisationStep';
 import type { Tables } from '@/types/database/supabase';
 
+// Type for product attributes in label data
+interface LabelProductAttribute {
+	id: string;
+	name: string;
+}
+
 // Type for label data combining stock unit and product information
 export type LabelData = Pick<
 	Tables<'stock_units'>,
@@ -11,8 +17,11 @@ export type LabelData = Pick<
 > & {
 	product: Pick<
 		Tables<'products'>,
-		'name' | 'sequence_number' | 'hsn_code' | 'material' | 'color_name' | 'gsm' | 'selling_price_per_unit'
-	>;
+		'name' | 'sequence_number' | 'hsn_code' | 'gsm' | 'selling_price_per_unit'
+	> & {
+		materials?: LabelProductAttribute[];
+		colors?: LabelProductAttribute[];
+	};
 };
 
 // Define styles for PDF
@@ -119,10 +128,10 @@ function getFieldValue(unit: LabelData, field: QRTemplateField): string {
 			value = unit.product.hsn_code;
 			break;
 		case 'material':
-			value = unit.product.material;
+			value = unit.product.materials?.map(m => m.name).join(', ') || '';
 			break;
 		case 'color':
-			value = unit.product.color_name;
+			value = unit.product.colors?.map(c => c.name).join(', ') || '';
 			break;
 		case 'gsm':
 			value = unit.product.gsm;

@@ -1,18 +1,16 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { Tables } from '@/types/database/supabase';
-
-type Product = Tables<'products'>;
+import type { PublicProduct } from '@/lib/queries/catalog';
 
 export interface CartItem {
-	product: Product;
+	product: PublicProduct;
 	quantity: number;
 }
 
 interface CartContextType {
 	items: CartItem[];
-	addItem: (product: Product, quantity: number) => void;
+	addItem: (product: PublicProduct, quantity: number) => void;
 	removeItem: (productId: string) => void;
 	updateQuantity: (productId: string, quantity: number) => void;
 	clearCart: () => void;
@@ -51,7 +49,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 		}
 	}, [items, isHydrated]);
 
-	const addItem = (product: Product, quantity: number) => {
+	const addItem = (product: PublicProduct, quantity: number) => {
 		setItems((prev) => {
 			const existing = prev.find((item) => item.product.id === product.id);
 			if (existing) {

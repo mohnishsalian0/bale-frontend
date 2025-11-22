@@ -8,15 +8,15 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ImageWrapper from '@/components/ui/image-wrapper';
-import { getProductIcon } from '@/lib/utils/product';
+import { getProductIcon, getProductInfo } from '@/lib/utils/product';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
-import type { Tables } from '@/types/database/supabase';
+import type { ProductWithAttributes } from '@/lib/queries/products';
 import type { MeasuringUnit, StockType } from '@/types/database/enums';
 
 interface ProductQuantitySheetProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	product: Tables<'products'> | null;
+	product: ProductWithAttributes | null;
 	initialQuantity?: number;
 	onConfirm: (quantity: number) => void;
 }
@@ -70,7 +70,7 @@ export function ProductQuantitySheet({
 
 	const unitAbbreviation = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null);
 
-	const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
+	const productInfoText = getProductInfo(product);
 
 	const formContent = (
 		<div className="flex flex-col gap-4 p-4 md:px-0 overflow-x-hidden">
@@ -86,8 +86,8 @@ export function ProductQuantitySheet({
 					/>
 					<div className="flex-1 min-w-0">
 						<p title={product.name} className="text-base font-medium text-gray-700 truncate">{product.name}</p>
-						<p title={productInfo} className="text-xs text-gray-500 truncate">
-							{productInfo}
+						<p title={productInfoText} className="text-xs text-gray-500 truncate">
+							{productInfoText}
 						</p>
 					</div>
 				</div>

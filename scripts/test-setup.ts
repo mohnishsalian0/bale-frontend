@@ -298,170 +298,295 @@ async function createTestPartners() {
 
 	console.log('\n✨ Test partners created successfully!');
 
-	// Create test products
-	console.log('\n📦 Creating test products...\n');
+	// Create test products with attributes
+	console.log('\n📦 Creating test products with attributes...\n');
 
+	// First, create materials
+	const materialNames = ['Silk', 'Cotton', 'Wool', 'Polyester', 'Linen', 'Denim'];
+	const materialIds: Record<string, string> = {};
+
+	console.log('Creating materials...');
+	for (const name of materialNames) {
+		const { data, error } = await supabase
+			.from('product_materials')
+			.upsert({ company_id: companyId, name }, { onConflict: 'company_id,name' })
+			.select()
+			.single();
+
+		if (error) {
+			console.error(`   ❌ Failed to create material: ${name} - ${error.message}`);
+		} else {
+			materialIds[name] = data.id;
+			console.log(`   ✅ Material: ${name}`);
+		}
+	}
+
+	// Create colors
+	const colorNames = ['Red', 'White', 'Black', 'Blue', 'Green', 'Yellow'];
+	const colorIds: Record<string, string> = {};
+
+	console.log('Creating colors...');
+	for (const name of colorNames) {
+		const { data, error } = await supabase
+			.from('product_colors')
+			.upsert({ company_id: companyId, name }, { onConflict: 'company_id,name' })
+			.select()
+			.single();
+
+		if (error) {
+			console.error(`   ❌ Failed to create color: ${name} - ${error.message}`);
+		} else {
+			colorIds[name] = data.id;
+			console.log(`   ✅ Color: ${name}`);
+		}
+	}
+
+	// Create tags
+	const tagNames = ['premium', 'wedding', 'traditional', 'summer', 'breathable', 'casual', 'winter', 'warm', 'modern', 'formal', 'wrinkle-free', 'eco-friendly', 'designer', 'luxury', 'festive', 'denim', 'durable', 'printed', 'colorful'];
+	const tagIds: Record<string, string> = {};
+
+	console.log('Creating tags...');
+	for (const name of tagNames) {
+		const { data, error } = await supabase
+			.from('product_tags')
+			.upsert({ company_id: companyId, name }, { onConflict: 'company_id,name' })
+			.select()
+			.single();
+
+		if (error) {
+			console.error(`   ❌ Failed to create tag: ${name} - ${error.message}`);
+		} else {
+			tagIds[name] = data.id;
+			console.log(`   ✅ Tag: ${name}`);
+		}
+	}
+
+	// Define products with their attribute references
 	const testProducts = [
 		{
-			company_id: companyId,
-			name: 'Premium Silk Saree',
-			material: 'Silk',
-			color_name: 'Red',
-			gsm: 120,
-			thread_count_cm: 80,
+			product: {
+				company_id: companyId,
+				name: 'Premium Silk Saree',
+				gsm: 120,
+				thread_count_cm: 80,
+				stock_type: 'roll',
+				measuring_unit: 'metre',
+				cost_price_per_unit: 2500.00,
+				selling_price_per_unit: 3500.00,
+				show_on_catalog: true,
+				min_stock_alert: true,
+				min_stock_threshold: 10,
+				hsn_code: '5007',
+				notes: 'Premium quality silk saree with golden border',
+			},
+			materials: ['Silk'],
+			colors: ['Red'],
 			tags: ['premium', 'wedding', 'traditional'],
-			stock_type: 'roll',
-			measuring_unit: 'metre',
-			cost_price_per_unit: 2500.00,
-			selling_price_per_unit: 3500.00,
-			show_on_catalog: true,
-			min_stock_alert: true,
-			min_stock_threshold: 10,
-			hsn_code: '5007',
-			notes: 'Premium quality silk saree with golden border',
 		},
 		{
-			company_id: companyId,
-			name: 'Cotton Kurta Fabric',
-			material: 'Cotton',
-			color_name: 'White',
-			gsm: 150,
-			thread_count_cm: 60,
+			product: {
+				company_id: companyId,
+				name: 'Cotton Kurta Fabric',
+				gsm: 150,
+				thread_count_cm: 60,
+				stock_type: 'roll',
+				measuring_unit: 'metre',
+				cost_price_per_unit: 450.00,
+				selling_price_per_unit: 650.00,
+				show_on_catalog: true,
+				min_stock_alert: true,
+				min_stock_threshold: 50,
+				hsn_code: '5208',
+				notes: 'Pure cotton fabric ideal for summer kurtas',
+			},
+			materials: ['Cotton'],
+			colors: ['White'],
 			tags: ['summer', 'breathable', 'casual'],
-			stock_type: 'roll',
-			measuring_unit: 'metre',
-			cost_price_per_unit: 450.00,
-			selling_price_per_unit: 650.00,
-			show_on_catalog: true,
-			min_stock_alert: true,
-			min_stock_threshold: 50,
-			hsn_code: '5208',
-			notes: 'Pure cotton fabric ideal for summer kurtas',
 		},
 		{
-			company_id: companyId,
-			name: 'Woolen Shawl Material',
-			material: 'Wool',
-			color_name: 'Black',
-			gsm: 200,
-			thread_count_cm: 50,
+			product: {
+				company_id: companyId,
+				name: 'Woolen Shawl Material',
+				gsm: 200,
+				thread_count_cm: 50,
+				stock_type: 'roll',
+				measuring_unit: 'yard',
+				cost_price_per_unit: 1800.00,
+				selling_price_per_unit: 2500.00,
+				show_on_catalog: true,
+				min_stock_alert: false,
+				hsn_code: '5111',
+				notes: 'High-quality woolen fabric for shawls',
+			},
+			materials: ['Wool'],
+			colors: ['Black'],
 			tags: ['winter', 'warm', 'premium'],
-			stock_type: 'roll',
-			measuring_unit: 'yard',
-			cost_price_per_unit: 1800.00,
-			selling_price_per_unit: 2500.00,
-			show_on_catalog: true,
-			min_stock_alert: false,
-			hsn_code: '5111',
-			notes: 'High-quality woolen fabric for shawls',
 		},
 		{
-			company_id: companyId,
-			name: 'Polyester Blend Dress Material',
-			material: 'Polyester',
-			color_name: 'Blue',
-			gsm: 180,
-			thread_count_cm: 70,
+			product: {
+				company_id: companyId,
+				name: 'Polyester Blend Dress Material',
+				gsm: 180,
+				thread_count_cm: 70,
+				stock_type: 'roll',
+				measuring_unit: 'metre',
+				cost_price_per_unit: 350.00,
+				selling_price_per_unit: 550.00,
+				show_on_catalog: true,
+				min_stock_alert: true,
+				min_stock_threshold: 30,
+				hsn_code: '5407',
+			},
+			materials: ['Polyester'],
+			colors: ['Blue'],
 			tags: ['modern', 'formal', 'wrinkle-free'],
-			stock_type: 'roll',
-			measuring_unit: 'metre',
-			cost_price_per_unit: 350.00,
-			selling_price_per_unit: 550.00,
-			show_on_catalog: true,
-			min_stock_alert: true,
-			min_stock_threshold: 30,
-			hsn_code: '5407',
 		},
 		{
-			company_id: companyId,
-			name: 'Linen Summer Fabric',
-			material: 'Linen',
-			color_name: 'White',
-			gsm: 140,
-			thread_count_cm: 55,
+			product: {
+				company_id: companyId,
+				name: 'Linen Summer Fabric',
+				gsm: 140,
+				thread_count_cm: 55,
+				stock_type: 'roll',
+				measuring_unit: 'kilogram',
+				cost_price_per_unit: 800.00,
+				selling_price_per_unit: 1200.00,
+				show_on_catalog: true,
+				min_stock_alert: true,
+				min_stock_threshold: 20,
+				hsn_code: '5309',
+				notes: 'Eco-friendly linen fabric for summer wear',
+			},
+			materials: ['Linen'],
+			colors: ['White'],
 			tags: ['summer', 'eco-friendly', 'breathable'],
-			stock_type: 'roll',
-			measuring_unit: 'kilogram',
-			cost_price_per_unit: 800.00,
-			selling_price_per_unit: 1200.00,
-			show_on_catalog: true,
-			min_stock_alert: true,
-			min_stock_threshold: 20,
-			hsn_code: '5309',
-			notes: 'Eco-friendly linen fabric for summer wear',
 		},
 		{
-			company_id: companyId,
-			name: 'Designer Silk Fabric',
-			material: 'Silk',
-			color_name: 'Green',
-			gsm: 110,
-			thread_count_cm: 75,
+			product: {
+				company_id: companyId,
+				name: 'Designer Silk Fabric',
+				gsm: 110,
+				thread_count_cm: 75,
+				stock_type: 'batch',
+				measuring_unit: 'unit',
+				cost_price_per_unit: 3000.00,
+				selling_price_per_unit: 4200.00,
+				show_on_catalog: false,
+				min_stock_alert: false,
+				hsn_code: '5007',
+			},
+			materials: ['Silk'],
+			colors: ['Green'],
 			tags: ['designer', 'luxury', 'festive'],
-			stock_type: 'batch',
-			measuring_unit: 'unit',
-			cost_price_per_unit: 3000.00,
-			selling_price_per_unit: 4200.00,
-			show_on_catalog: false,
-			min_stock_alert: false,
-			hsn_code: '5007',
 		},
 		{
-			company_id: companyId,
-			name: 'Cotton Denim',
-			material: 'Denim',
-			color_name: 'Blue',
-			gsm: 300,
-			thread_count_cm: 40,
+			product: {
+				company_id: companyId,
+				name: 'Cotton Denim',
+				gsm: 300,
+				thread_count_cm: 40,
+				stock_type: 'batch',
+				measuring_unit: 'unit',
+				cost_price_per_unit: 600.00,
+				selling_price_per_unit: 900.00,
+				show_on_catalog: true,
+				min_stock_alert: true,
+				min_stock_threshold: 40,
+				hsn_code: '5209',
+				notes: 'Heavy-duty cotton denim fabric',
+			},
+			materials: ['Denim'],
+			colors: ['Blue'],
 			tags: ['denim', 'casual', 'durable'],
-			stock_type: 'batch',
-			measuring_unit: 'unit',
-			cost_price_per_unit: 600.00,
-			selling_price_per_unit: 900.00,
-			show_on_catalog: true,
-			min_stock_alert: true,
-			min_stock_threshold: 40,
-			hsn_code: '5209',
-			notes: 'Heavy-duty cotton denim fabric',
 		},
 		{
-			company_id: companyId,
-			name: 'Yellow Cotton Print',
-			material: 'Cotton',
-			color_name: 'Yellow',
-			gsm: 130,
-			thread_count_cm: 65,
+			product: {
+				company_id: companyId,
+				name: 'Yellow Cotton Print',
+				gsm: 130,
+				thread_count_cm: 65,
+				stock_type: 'piece',
+				measuring_unit: null,
+				cost_price_per_unit: 400.00,
+				selling_price_per_unit: 600.00,
+				show_on_catalog: true,
+				min_stock_alert: true,
+				min_stock_threshold: 25,
+				hsn_code: '5208',
+			},
+			materials: ['Cotton'],
+			colors: ['Yellow'],
 			tags: ['printed', 'colorful', 'casual'],
-			stock_type: 'piece',
-			measuring_unit: null,
-			cost_price_per_unit: 400.00,
-			selling_price_per_unit: 600.00,
-			show_on_catalog: true,
-			min_stock_alert: true,
-			min_stock_threshold: 25,
-			hsn_code: '5208',
 		},
 	];
 
-	for (const product of testProducts) {
+	console.log('\nCreating products and linking attributes...');
+	for (const item of testProducts) {
 		const { data, error } = await supabase
 			.from('products')
 			.insert({
-				...product,
+				...item.product,
 				created_by: userId,
 			})
 			.select()
 			.single();
 
 		if (error) {
-			console.error(`❌ Failed to create product: ${product.name}`);
+			console.error(`❌ Failed to create product: ${item.product.name}`);
 			console.error(`   Error: ${error.message}`);
-		} else {
-			console.log(`✅ Created product: ${product.name} (SEQ-${data.sequence_number})`);
+			continue;
+		}
+
+		const productId = data.id;
+		console.log(`✅ Created product: ${item.product.name} (SEQ-${data.sequence_number})`);
+
+		// Link materials
+		for (const materialName of item.materials) {
+			if (materialIds[materialName]) {
+				const { error: linkError } = await supabase
+					.from('product_material_assignments')
+					.insert({
+						product_id: productId,
+						material_id: materialIds[materialName],
+					});
+				if (linkError) {
+					console.error(`   ❌ Failed to link material ${materialName}: ${linkError.message}`);
+				}
+			}
+		}
+
+		// Link colors
+		for (const colorName of item.colors) {
+			if (colorIds[colorName]) {
+				const { error: linkError } = await supabase
+					.from('product_color_assignments')
+					.insert({
+						product_id: productId,
+						color_id: colorIds[colorName],
+					});
+				if (linkError) {
+					console.error(`   ❌ Failed to link color ${colorName}: ${linkError.message}`);
+				}
+			}
+		}
+
+		// Link tags
+		for (const tagName of item.tags) {
+			if (tagIds[tagName]) {
+				const { error: linkError } = await supabase
+					.from('product_tag_assignments')
+					.insert({
+						product_id: productId,
+						tag_id: tagIds[tagName],
+					});
+				if (linkError) {
+					console.error(`   ❌ Failed to link tag ${tagName}: ${linkError.message}`);
+				}
+			}
 		}
 	}
 
-	console.log('\n✨ Test products created successfully!');
+	console.log('\n✨ Test products with attributes created successfully!');
 
 	// Note: Goods inwards and outwards creation removed
 	// In the new design, users create stock units directly during goods inward

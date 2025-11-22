@@ -34,14 +34,7 @@ export function StockUnitsTab({ stockUnits }: StockUnitsTabProps) {
 				const product = item.product;
 				const productImage = product?.product_images?.[0];
 				const productName = product?.name || 'Unknown Product';
-				const material = product?.material;
-				const colorName = product?.color_name;
 				const measuringUnit = product?.measuring_unit;
-
-				// Build display name
-				let displayName = productName;
-				if (material) displayName += ` - ${material}`;
-				if (colorName) displayName += ` (${colorName})`;
 
 				return (
 					<div
@@ -68,8 +61,8 @@ export function StockUnitsTab({ stockUnits }: StockUnitsTabProps) {
 						{/* Stock Unit Details */}
 						<div className="flex-1 min-w-0">
 							<div className="flex items-start justify-between gap-2 mb-1">
-								<h3 className="font-medium text-gray-900 truncate" title={displayName}>
-									{displayName}
+								<h3 className="font-medium text-gray-900 truncate" title={productName}>
+									{productName}
 								</h3>
 								<span className="shrink-0 text-sm font-semibold text-gray-700">
 									{item.initial_quantity} {measuringUnit}

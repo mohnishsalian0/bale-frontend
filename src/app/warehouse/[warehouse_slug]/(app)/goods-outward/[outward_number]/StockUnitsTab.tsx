@@ -67,12 +67,6 @@ export function StockUnitsTab({ items }: StockUnitsTabProps) {
 							<p className="text-xs text-gray-500 mt-0.5">
 								SU-{stockUnit?.sequence_number || 'N/A'}
 							</p>
-							{product?.material && (
-								<p className="text-xs text-gray-500 mt-0.5">
-									{product.material}
-									{product.color_name && ` • ${product.color_name}`}
-								</p>
-							)}
 						</div>
 
 						{/* Quantity */}

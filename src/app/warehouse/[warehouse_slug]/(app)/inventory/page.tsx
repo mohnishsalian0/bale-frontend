@@ -14,32 +14,37 @@ import ImageWrapper from '@/components/ui/image-wrapper';
 import { AddProductSheet } from './AddProductSheet';
 import { createClient } from '@/lib/supabase/client';
 import { useSession } from '@/contexts/session-context';
-import type { Tables } from '@/types/database/supabase';
 import type { MeasuringUnit, StockType } from '@/types/database/enums';
 import { Button } from '@/components/ui/button';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
-import { getProductIcon } from '@/lib/utils/product';
+import { getProductIcon, getProductInfo } from '@/lib/utils/product';
+import {
+	PRODUCT_WITH_ATTRIBUTES_SELECT,
+	transformProductWithAttributes,
+	getProductAttributeLists,
+	type ProductWithAttributes,
+	type ProductMaterial,
+	type ProductColor,
+	type ProductTag
+} from '@/lib/queries/products';
 
-type ProductRow = Tables<'products'>;
-
-interface Product {
-	id: string;
-	sequence_number: number;
-	name: string;
+interface Product extends ProductWithAttributes {
 	productNumber: string;
-	material: string | null;
-	color: string | null;
 	totalQuantity: number;
-	stock_type: StockType;
-	unit: string | null;
 	imageUrl?: string;
-};
+}
 
 export default function InventoryPage() {
 	const router = useRouter();
 	const { warehouse } = useSession();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [products, setProducts] = useState<Product[]>([]);
+	const [materials, setMaterials] = useState<ProductMaterial[]>([]);
+	const [colors, setColors] = useState<ProductColor[]>([]);
+	const [tags, setTags] = useState<ProductTag[]>([]);
+	const [materialFilter, setMaterialFilter] = useState<string>('all');
+	const [colorFilter, setColorFilter] = useState<string>('all');
+	const [tagFilter, setTagFilter] = useState<string>('all');
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [showAddProduct, setShowAddProduct] = useState(false);
@@ -51,35 +56,39 @@ export default function InventoryPage() {
 			setLoading(true);
 			setError(null);
 
-			const { data, error: fetchError } = await supabase
-				.from('products')
-				.select(`
-					*,
-					inventory_agg:product_inventory_aggregates!product_id(
-						in_stock_quantity
-					)
-				`)
-				.eq('product_inventory_aggregates.warehouse_id', warehouse.id)
-				.is('deleted_at', null)
-				.order('name', { ascending: true });
+			// Fetch products with attributes and attribute lists in parallel
+			const [productsResult, attributeLists] = await Promise.all([
+				supabase
+					.from('products')
+					.select(`
+						${PRODUCT_WITH_ATTRIBUTES_SELECT},
+						inventory_agg:product_inventory_aggregates!product_id(
+							in_stock_quantity
+						)
+					`)
+					.eq('product_inventory_aggregates.warehouse_id', warehouse.id)
+					.is('deleted_at', null)
+					.order('name', { ascending: true }),
+				getProductAttributeLists()
+			]);
 
-			if (fetchError) throw fetchError;
+			if (productsResult.error) throw productsResult.error;
 
 			// Transform data to match Product interface
-			const transformedProducts: Product[] = (data || []).map((p: any) => ({
-				id: p.id,
-				sequence_number: p.sequence_number,
-				name: p.name,
-				productNumber: p.sequence_number?.toString() || '',
-				material: p.material,
-				color: p.color_name,
-				totalQuantity: p.inventory_agg?.[0]?.in_stock_quantity || 0,
-				stock_type: p.stock_type as StockType,
-				unit: p.measuring_unit,
-				imageUrl: p.product_images?.[0] || undefined,
-			}));
+			const transformedProducts: Product[] = (productsResult.data || []).map((p: any) => {
+				const productWithAttrs = transformProductWithAttributes(p);
+				return {
+					...productWithAttrs,
+					productNumber: p.sequence_number?.toString() || '',
+					totalQuantity: p.inventory_agg?.[0]?.in_stock_quantity || 0,
+					imageUrl: p.product_images?.[0] || undefined,
+				};
+			});
 
 			setProducts(transformedProducts);
+			setMaterials(attributeLists.materials);
+			setColors(attributeLists.colors);
+			setTags(attributeLists.tags);
 		} catch (err) {
 			console.error('Error fetching products:', err);
 			setError(err instanceof Error ? err.message : 'Failed to load products');
@@ -93,10 +102,28 @@ export default function InventoryPage() {
 	}, []);
 
 	const filteredProducts = products.filter((product) => {
+		// Search filter
 		const matchesSearch =
 			product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			product.productNumber.toLowerCase().includes(searchQuery.toLowerCase());
-		return matchesSearch;
+		if (!matchesSearch) return false;
+
+		// Material filter
+		if (materialFilter !== 'all' && !product.materials?.some(m => m.id === materialFilter)) {
+			return false;
+		}
+
+		// Color filter
+		if (colorFilter !== 'all' && !product.colors?.some(c => c.id === colorFilter)) {
+			return false;
+		}
+
+		// Tag filter
+		if (tagFilter !== 'all' && !product.tags?.some(t => t.id === tagFilter)) {
+			return false;
+		}
+
+		return true;
 	});
 
 	// Loading state
@@ -160,34 +187,43 @@ export default function InventoryPage() {
 				<Button variant="outline" size="icon" className="shrink-0 size-10">
 					<IconAlertTriangle className="size-5" />
 				</Button>
-				<Select>
+				<Select value={materialFilter} onValueChange={setMaterialFilter}>
 					<SelectTrigger className="w-[140px] h-10 shrink-0">
 						<SelectValue placeholder="Material" />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="silk">Silk</SelectItem>
-						<SelectItem value="cotton">Cotton</SelectItem>
-						<SelectItem value="wool">Wool</SelectItem>
+						<SelectItem value="all">All Materials</SelectItem>
+						{materials.map(material => (
+							<SelectItem key={material.id} value={material.id}>
+								{material.name}
+							</SelectItem>
+						))}
 					</SelectContent>
 				</Select>
-				<Select>
+				<Select value={colorFilter} onValueChange={setColorFilter}>
 					<SelectTrigger className="w-[140px] h-10 shrink-0">
 						<SelectValue placeholder="Color" />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="red">Red</SelectItem>
-						<SelectItem value="blue">Blue</SelectItem>
-						<SelectItem value="green">Green</SelectItem>
+						<SelectItem value="all">All Colors</SelectItem>
+						{colors.map(color => (
+							<SelectItem key={color.id} value={color.id}>
+								{color.name}
+							</SelectItem>
+						))}
 					</SelectContent>
 				</Select>
-				<Select>
+				<Select value={tagFilter} onValueChange={setTagFilter}>
 					<SelectTrigger className="w-[140px] h-10 shrink-0">
 						<SelectValue placeholder="Tags" />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="floral">Floral</SelectItem>
-						<SelectItem value="geometric">Geometric</SelectItem>
-						<SelectItem value="plain">Plain</SelectItem>
+						<SelectItem value="all">All Tags</SelectItem>
+						{tags.map(tag => (
+							<SelectItem key={tag.id} value={tag.id}>
+								{tag.name}
+							</SelectItem>
+						))}
 					</SelectContent>
 				</Select>
 			</div>
@@ -202,40 +238,48 @@ export default function InventoryPage() {
 						</p>
 					</div>
 				) : (
-					filteredProducts.map((product) => (
-						<Card
-							key={product.id}
-							className="rounded-none border-0 border-b border-gray-200 shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
-							onClick={() => router.push(`/warehouse/${warehouse.slug}/inventory/${product.productNumber}`)}
-						>
-							<CardContent className="p-4 flex gap-4 items-center">
-								{/* Product Image */}
-								<ImageWrapper
-									size="lg"
-									shape="square"
-									imageUrl={product.imageUrl}
-									alt={product.name}
-									placeholderIcon={getProductIcon(product.stock_type)}
-								/>
+					filteredProducts.map((product) => {
+						const imageUrl = product.imageUrl;
+						const productInfoText = getProductInfo(product);
+						const unitAbbreviation = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null);
 
-								{/* Product Info */}
-								<div className="flex-1 flex flex-col items-start">
-									<p className="text-base font-medium text-gray-900">{product.name}</p>
-									<p className="text-xs text-gray-500">PROD-{product.sequence_number}</p>
-									<p className="text-xs text-gray-500">
-										{[product.material, product.color].filter(Boolean).join(', ') || 'No details'}
-									</p>
-								</div>
+						return (
 
-								{/* Quantity */}
-								<div className="flex flex-col items-end">
-									<p className="text-base font-bold text-gray-900">
-										{product.totalQuantity} {getMeasuringUnitAbbreviation(product.unit as MeasuringUnit | null)}
-									</p>
-								</div>
-							</CardContent>
-						</Card>
-					))
+							<Card
+								key={product.id}
+								className="rounded-none border-0 border-b border-gray-200 shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
+								onClick={() => router.push(`/warehouse/${warehouse.slug}/inventory/${product.productNumber}`)}
+							>
+								<CardContent className="p-4 flex gap-4 items-center">
+									{/* Product Image */}
+									<ImageWrapper
+										size="lg"
+										shape="square"
+										imageUrl={imageUrl}
+										alt={product.name}
+										placeholderIcon={getProductIcon(product.stock_type as StockType)}
+									/>
+
+									{/* Product Info */}
+									<div className="flex-1 flex flex-col items-start">
+										<p className="text-base font-medium text-gray-900">{product.name}</p>
+										<p className="text-xs text-gray-500">PROD-{product.sequence_number}</p>
+										<p className="text-xs text-gray-500">
+											{productInfoText}
+										</p>
+									</div>
+
+									{/* Quantity */}
+									<div className="flex flex-col items-end">
+										<p className="text-base font-bold text-gray-900">
+											{product.totalQuantity} {unitAbbreviation}
+										</p>
+									</div>
+								</CardContent>
+							</Card>
+						)
+
+					})
 				)}
 			</div>
 

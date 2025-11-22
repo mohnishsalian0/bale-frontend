@@ -65,8 +65,18 @@ export default function StorePage() {
 		const c = new Set<string>();
 
 		for (const p of products) {
-			if (p.material) m.add(p.material);
-			if (p.color_name) c.add(p.color_name);
+			// Extract materials from array
+			if (p.materials) {
+				for (const material of p.materials) {
+					m.add(material.name);
+				}
+			}
+			// Extract colors from array
+			if (p.colors) {
+				for (const color of p.colors) {
+					c.add(color.name);
+				}
+			}
 		}
 
 		return {
@@ -80,19 +90,23 @@ export default function StorePage() {
 		const query = searchQuery.trim().toLowerCase();
 
 		return products.filter(product => {
+			// Get material and color names for searching
+			const materialNames = product.materials?.map(m => m.name.toLowerCase()) || [];
+			const colorNames = product.colors?.map(c => c.name.toLowerCase()) || [];
+
 			// Search filter
 			if (query && !(
 				product.name.toLowerCase().includes(query) ||
-				product.material?.toLowerCase().includes(query) ||
-				product.color_name?.toLowerCase().includes(query) ||
+				materialNames.some(m => m.includes(query)) ||
+				colorNames.some(c => c.includes(query)) ||
 				`PROD-${product.sequence_number}`.toLowerCase().includes(query)
 			)) return false;
 
 			// Material filter
-			if (materialFilter !== 'all' && product.material !== materialFilter) return false;
+			if (materialFilter !== 'all' && !materialNames.includes(materialFilter.toLowerCase())) return false;
 
 			// Color filter
-			if (colorFilter !== 'all' && product.color_name !== colorFilter) return false;
+			if (colorFilter !== 'all' && !colorNames.includes(colorFilter.toLowerCase())) return false;
 
 			return true;
 		});

@@ -5,10 +5,16 @@ import type { Tables } from '@/types/database/supabase';
 type Company = Tables<'companies'>;
 type Product = Tables<'products'>;
 type CatalogConfiguration = Tables<'catalog_configurations'>;
+type ProductMaterial = Tables<'product_materials'>;
+type ProductColor = Tables<'product_colors'>;
+type ProductTag = Tables<'product_tags'>;
 
 export interface PublicProduct extends Product {
 	in_stock_quantity: number;
 	stock_status: ProductStockStatus;
+	materials: ProductMaterial[];
+	colors: ProductColor[];
+	tags: ProductTag[];
 }
 
 /**
@@ -70,7 +76,7 @@ export async function getPublicProducts(
 
 	console.log('Fetching products for company:', companyId);
 
-	// Fetch products that are visible on catalog
+	// Fetch products that are visible on catalog with materials, colors, and tags
 	const { data: products, error: productsError } = await supabase
 		.from('products')
 		.select(
@@ -79,6 +85,15 @@ export async function getPublicProducts(
 			inventory_agg:product_inventory_aggregates!product_id(
 				in_stock_quantity,
 				warehouse_id
+			),
+			product_material_assignments(
+				material:product_materials(*)
+			),
+			product_color_assignments(
+				color:product_colors(*)
+			),
+			product_tag_assignments(
+				tag:product_tags(*)
 			)
 		`
 		)
@@ -94,7 +109,7 @@ export async function getPublicProducts(
 		return [];
 	}
 
-	// Transform products with stock status
+	// Transform products with stock status and flatten attributes
 	const publicProducts: PublicProduct[] = (products || []).map((product: any) => {
 		// Find inventory for the specified warehouse, or sum across all warehouses
 		let totalStock = 0;
@@ -126,10 +141,33 @@ export async function getPublicProducts(
 			stockStatus = 'in_stock';
 		}
 
+		// Extract materials, colors, and tags from nested structure
+		const materials = (product.product_material_assignments || [])
+			.map((a: any) => a.material)
+			.filter(Boolean);
+		const colors = (product.product_color_assignments || [])
+			.map((a: any) => a.color)
+			.filter(Boolean);
+		const tags = (product.product_tag_assignments || [])
+			.map((a: any) => a.tag)
+			.filter(Boolean);
+
+		// Remove the nested assignment fields from the product
+		const {
+			product_material_assignments,
+			product_color_assignments,
+			product_tag_assignments,
+			inventory_agg,
+			...rest
+		} = product;
+
 		return {
-			...product,
+			...rest,
 			in_stock_quantity: totalStock,
 			stock_status: stockStatus,
+			materials,
+			colors,
+			tags,
 		};
 	});
 

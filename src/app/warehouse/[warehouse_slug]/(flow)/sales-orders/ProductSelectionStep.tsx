@@ -7,23 +7,29 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ImageWrapper from '@/components/ui/image-wrapper';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
-import { getProductIcon } from '@/lib/utils/product';
-import type { Tables } from '@/types/database/supabase';
+import { getProductIcon, getProductInfo } from '@/lib/utils/product';
+import type { ProductWithAttributes, ProductMaterial, ProductColor, ProductTag } from '@/lib/queries/products';
 import { MeasuringUnit, StockType } from '@/types/database/enums';
 
-interface ProductWithSelection extends Tables<'products'> {
+interface ProductWithSelection extends ProductWithAttributes {
 	selected: boolean;
 	quantity: number;
 }
 
 interface ProductSelectionStepProps {
 	products: ProductWithSelection[];
+	materials: ProductMaterial[];
+	colors: ProductColor[];
+	tags: ProductTag[];
 	loading: boolean;
-	onOpenQuantitySheet: (product: Tables<'products'>) => void;
+	onOpenQuantitySheet: (product: ProductWithAttributes) => void;
 }
 
 export function ProductSelectionStep({
 	products,
+	materials,
+	colors,
+	tags,
 	loading,
 	onOpenQuantitySheet,
 }: ProductSelectionStepProps) {
@@ -32,42 +38,27 @@ export function ProductSelectionStep({
 	const [colorFilter, setColorFilter] = useState<string>('all');
 	const [tagsFilter, setTagsFilter] = useState<string>('all');
 
-	// Extract filter options using useMemo
-	const { materials, colors, tags } = useMemo(() => {
-		const m = new Set<string>(), c = new Set<string>(), t = new Set<string>();
-		for (const p of products) {
-			if (p.material) m.add(p.material);
-			if (p.color_name) c.add(p.color_name);
-			p.tags?.forEach(tag => t.add(tag));
-		}
-		return {
-			materials: Array.from(m).sort(),
-			colors: Array.from(c).sort(),
-			tags: Array.from(t).sort(),
-		};
-	}, [products]);
-
 	// Filter and sort products using useMemo
 	const filteredProducts = useMemo(() => {
 		const query = searchQuery.trim().toLowerCase();
 
 		// Filter products
 		let filtered = products.filter(product => {
-			// Search filter
+			// Search filter (case-insensitive)
 			if (query && !(
 				product.name.toLowerCase().includes(query) ||
-				product.material?.toLowerCase().includes(query) ||
-				product.color_name?.toLowerCase().includes(query)
+				product.materials?.some(m => m.name.toLowerCase().includes(query)) ||
+				product.colors?.some(c => c.name.toLowerCase().includes(query))
 			)) return false;
 
-			// Material filter
-			if (materialFilter !== 'all' && product.material !== materialFilter) return false;
+			// Material filter (exact match by ID)
+			if (materialFilter !== 'all' && !product.materials?.some(m => m.id === materialFilter)) return false;
 
-			// Color filter
-			if (colorFilter !== 'all' && product.color_name !== colorFilter) return false;
+			// Color filter (exact match by ID)
+			if (colorFilter !== 'all' && !product.colors?.some(c => c.id === colorFilter)) return false;
 
-			// Tags filter
-			if (tagsFilter !== 'all' && !product.tags?.includes(tagsFilter)) return false;
+			// Tags filter (exact match by ID)
+			if (tagsFilter !== 'all' && !product.tags?.some(t => t.id === tagsFilter)) return false;
 
 			return true;
 		});
@@ -114,8 +105,8 @@ export function ProductSelectionStep({
 						<SelectContent>
 							<SelectItem value="all">All materials</SelectItem>
 							{materials.map(material => (
-								<SelectItem key={material} value={material}>
-									{material}
+								<SelectItem key={material.id} value={material.id}>
+									{material.name}
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -128,8 +119,8 @@ export function ProductSelectionStep({
 						<SelectContent>
 							<SelectItem value="all">All colors</SelectItem>
 							{colors.map(color => (
-								<SelectItem key={color} value={color}>
-									{color}
+								<SelectItem key={color.id} value={color.id}>
+									{color.name}
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -142,8 +133,8 @@ export function ProductSelectionStep({
 						<SelectContent>
 							<SelectItem value="all">All tags</SelectItem>
 							{tags.map(tag => (
-								<SelectItem key={tag} value={tag}>
-									{tag}
+								<SelectItem key={tag.id} value={tag.id}>
+									{tag.name}
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -166,7 +157,7 @@ export function ProductSelectionStep({
 						{filteredProducts.map(product => {
 							const imageUrl = product.product_images?.[0];
 
-							const productInfo = [product.material, product.color_name].filter(Boolean).join(', ');
+							const productInfoText = getProductInfo(product);
 
 							const unitAbbreviation = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null);
 
@@ -189,8 +180,8 @@ export function ProductSelectionStep({
 										<p title={product.name} className="text-base font-medium text-gray-700 truncate">
 											{product.name}
 										</p>
-										<p title={productInfo} className="text-xs text-gray-500 truncate">
-											{[product.material, product.color_name].filter(Boolean).join(', ')}
+										<p title={productInfoText} className="text-xs text-gray-500 truncate">
+											{productInfoText}
 										</p>
 									</div>
 

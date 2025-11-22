@@ -8,11 +8,19 @@ import { createClient } from '@/lib/supabase/client';
 import { ProductQuantitySheet } from '../ProductQuantitySheet';
 import { ProductSelectionStep } from '../ProductSelectionStep';
 import { OrderDetailsStep } from '../OrderDetailsStep';
-import type { Tables, TablesInsert } from '@/types/database/supabase';
+import type { TablesInsert } from '@/types/database/supabase';
 import { useSession } from '@/contexts/session-context';
 import { toast } from 'sonner';
+import {
+	getProductsWithAttributes,
+	getProductAttributeLists,
+	type ProductWithAttributes,
+	type ProductMaterial,
+	type ProductColor,
+	type ProductTag
+} from '@/lib/queries/products';
 
-interface ProductWithSelection extends Tables<'products'> {
+interface ProductWithSelection extends ProductWithAttributes {
 	selected: boolean;
 	quantity: number;
 }
@@ -36,8 +44,11 @@ export default function CreateSalesOrderPage() {
 	const { warehouse } = useSession();
 	const [currentStep, setCurrentStep] = useState<FormStep>('products');
 	const [products, setProducts] = useState<ProductWithSelection[]>([]);
+	const [materials, setMaterials] = useState<ProductMaterial[]>([]);
+	const [colors, setColors] = useState<ProductColor[]>([]);
+	const [tags, setTags] = useState<ProductTag[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [selectedProduct, setSelectedProduct] = useState<Tables<'products'> | null>(null);
+	const [selectedProduct, setSelectedProduct] = useState<ProductWithAttributes | null>(null);
 	const [showQuantitySheet, setShowQuantitySheet] = useState(false);
 	const [saving, setSaving] = useState(false);
 
@@ -57,36 +68,38 @@ export default function CreateSalesOrderPage() {
 
 	// Load products on mount
 	useEffect(() => {
-		loadProducts();
+		loadData();
 	}, []);
 
-	const loadProducts = async () => {
+	const loadData = async () => {
 		setLoading(true);
 		try {
-			const { data, error } = await supabase
-				.from('products')
-				.select('*')
-				.order('created_at', { ascending: false });
-
-			if (error) throw error;
+			// Fetch products and attributes in parallel
+			const [productsData, attributeLists] = await Promise.all([
+				getProductsWithAttributes(),
+				getProductAttributeLists(),
+			]);
 
 			// Add selection state to products
-			const productsWithSelection: ProductWithSelection[] = (data || []).map(product => ({
+			const productsWithSelection: ProductWithSelection[] = productsData.map(product => ({
 				...product,
 				selected: false,
 				quantity: 0,
 			}));
 
 			setProducts(productsWithSelection);
+			setMaterials(attributeLists.materials);
+			setColors(attributeLists.colors);
+			setTags(attributeLists.tags);
 		} catch (error) {
-			console.error('Error loading products:', error);
+			console.error('Error loading data:', error);
 			toast.error('Failed to load products');
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	const handleOpenQuantitySheet = (product: Tables<'products'>) => {
+	const handleOpenQuantitySheet = (product: ProductWithAttributes) => {
 		setSelectedProduct(product);
 		setShowQuantitySheet(true);
 	};
@@ -217,6 +230,9 @@ export default function CreateSalesOrderPage() {
 					{currentStep === 'products' ? (
 						<ProductSelectionStep
 							products={products}
+							materials={materials}
+							colors={colors}
+							tags={tags}
 							loading={loading}
 							onOpenQuantitySheet={handleOpenQuantitySheet}
 						/>

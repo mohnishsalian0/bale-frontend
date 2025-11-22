@@ -6,6 +6,7 @@
 -- =====================================================
 
 -- Function to get tag suggestions for products
+-- Note: This function will be replaced in migration 0038 to use the new product_tags table
 CREATE OR REPLACE FUNCTION get_tag_suggestions(
     search_term TEXT DEFAULT '',
     company_id_param UUID DEFAULT NULL
@@ -16,16 +17,9 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
     SELECT
-        t as tag,
-        COUNT(*) as usage_count
-    FROM products, unnest(tags) as t
-    WHERE company_id = COALESCE(company_id_param, (SELECT company_id FROM users WHERE auth_user_id = auth.uid() LIMIT 1))
-        AND tags IS NOT NULL
-        AND array_length(tags, 1) > 0
-        AND (search_term = '' OR t ILIKE search_term || '%')
-    GROUP BY t
-    ORDER BY usage_count DESC, tag ASC
-    LIMIT 10;
+        '' as tag,
+        0::BIGINT as usage_count
+    WHERE FALSE;
 $$;
 
 -- Function to get quality grade suggestions from stock units

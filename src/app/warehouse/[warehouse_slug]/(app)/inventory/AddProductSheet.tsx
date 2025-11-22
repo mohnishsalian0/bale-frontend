@@ -135,11 +135,9 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 			const productInsert: Omit<TablesInsert<'products'>, 'created_by' | 'modified_by' | 'sequence_number'> = {
 				name: formData.name,
 				show_on_catalog: formData.showOnCatalog,
-				material: formData.material || null,
-				color_name: formData.color || null,
+				// TODO: Insert materials, colors, and tags into junction tables after product creation
 				gsm: formData.gsm ? parseFloat(formData.gsm) : null,
 				thread_count_cm: formData.threadCount ? parseFloat(formData.threadCount) : null,
-				tags: tagsArray,
 				stock_type: formData.stockType as StockType,
 				measuring_unit: formData.measuringUnit || null,
 				cost_price_per_unit: formData.costPrice ? parseFloat(formData.costPrice) : null,

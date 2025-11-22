@@ -9,10 +9,17 @@ import { QRProductSelectionStep } from '../QRProductSelectionStep';
 import { QRStockUnitSelectionStep } from '../QRStockUnitSelectionStep';
 import { QRTemplateSelectionStep, getDefaultTemplateFields } from '../QRTemplateCustomisationStep';
 import type { QRTemplateField } from '../QRTemplateCustomisationStep';
-import type { Tables } from '@/types/database/supabase';
 import { useSession } from '@/contexts/session-context';
 import { toast } from 'sonner';
 import { generateAndDownloadPDF, type LabelData } from '@/lib/pdf/qr-label-generator';
+import {
+	getProductsWithAttributes,
+	getProductAttributeLists,
+	type ProductWithAttributes,
+	type ProductMaterial,
+	type ProductColor,
+	type ProductTag
+} from '@/lib/queries/products';
 
 type FormStep = 'product' | 'stock-units' | 'template';
 
@@ -20,9 +27,12 @@ export default function CreateQRBatchPage() {
 	const router = useRouter();
 	const { warehouse } = useSession();
 	const [currentStep, setCurrentStep] = useState<FormStep>('product');
-	const [products, setProducts] = useState<Tables<'products'>[]>([]);
+	const [products, setProducts] = useState<ProductWithAttributes[]>([]);
+	const [materials, setMaterials] = useState<ProductMaterial[]>([]);
+	const [colors, setColors] = useState<ProductColor[]>([]);
+	const [tags, setTags] = useState<ProductTag[]>([]);
 	const [productsLoading, setProductsLoading] = useState(false);
-	const [selectedProduct, setSelectedProduct] = useState<Tables<'products'> | null>(null);
+	const [selectedProduct, setSelectedProduct] = useState<ProductWithAttributes | null>(null);
 	const [selectedStockUnitIds, setSelectedStockUnitIds] = useState<string[]>([]);
 	const [selectedFields, setSelectedFields] = useState<QRTemplateField[]>(getDefaultTemplateFields());
 	const [saving, setSaving] = useState(false);
@@ -31,29 +41,31 @@ export default function CreateQRBatchPage() {
 
 	// Load products on mount
 	useEffect(() => {
-		loadProducts();
+		loadData();
 	}, []);
 
-	const loadProducts = async () => {
+	const loadData = async () => {
 		setProductsLoading(true);
 		try {
-			const { data, error } = await supabase
-				.from('products')
-				.select('*')
-				.order('created_at', { ascending: false });
+			// Fetch products and attributes in parallel
+			const [productsData, attributeLists] = await Promise.all([
+				getProductsWithAttributes(),
+				getProductAttributeLists(),
+			]);
 
-			if (error) throw error;
-
-			setProducts(data || []);
+			setProducts(productsData);
+			setMaterials(attributeLists.materials);
+			setColors(attributeLists.colors);
+			setTags(attributeLists.tags);
 		} catch (error) {
-			console.error('Error loading products:', error);
+			console.error('Error loading data:', error);
 			toast.error('Failed to load products');
 		} finally {
 			setProductsLoading(false);
 		}
 	};
 
-	const handleProductSelect = (product: Tables<'products'>) => {
+	const handleProductSelect = (product: ProductWithAttributes) => {
 		setSelectedProduct(product);
 		setCurrentStep('stock-units');
 	};
@@ -216,6 +228,9 @@ export default function CreateQRBatchPage() {
 					{currentStep === 'product' && (
 						<QRProductSelectionStep
 							products={products}
+							materials={materials}
+							colors={colors}
+							tags={tags}
 							loading={productsLoading}
 							onProductSelect={handleProductSelect}
 						/>

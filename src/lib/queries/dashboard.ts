@@ -1,5 +1,10 @@
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/types/database/supabase';
+import {
+	type ProductWithAttributes,
+	PRODUCT_WITH_ATTRIBUTES_SELECT,
+	transformProductWithAttributes
+} from './products';
 
 type SalesOrder = Tables<'sales_orders'>;
 type Partner = Tables<'partners'>;
@@ -9,8 +14,10 @@ type SalesOrderItem = Tables<'sales_order_items'>;
 type Warehouse = Tables<'warehouses'>;
 
 export interface StockUnitWithProduct extends StockUnit {
-	product: Product | null;
+	product: ProductWithAttributes | null;
 };
+
+export interface DashboardSalesOrderProduct extends ProductWithAttributes {}
 
 export interface DashboardSalesOrder extends SalesOrder {
 	customer: Partner | null;
@@ -18,16 +25,16 @@ export interface DashboardSalesOrder extends SalesOrder {
 	warehouse: Warehouse | null;
 	sales_order_items: Array<
 		SalesOrderItem & {
-			product: Product[] | null;
+			product: DashboardSalesOrderProduct[] | null;
 		}
 	>;
 }
 
-export interface LowStockProduct extends Product {
+export interface LowStockProduct extends ProductWithAttributes {
 	current_stock: number;
 }
 
-export interface PendingQRProduct extends Product {
+export interface PendingQRProduct extends ProductWithAttributes {
 	pending_qr_count: number;
 }
 
@@ -56,8 +63,16 @@ export async function getDashboardSalesOrders(
 				id, product_id, required_quantity, dispatched_quantity,
 				pending_quantity, unit_rate, line_total,
 				product:products(
-					id, name, material, color_name, measuring_unit,
-					product_images, sequence_number
+					id, name, measuring_unit, product_images, sequence_number,
+					product_material_assignments(
+						material:product_materials(*)
+					),
+					product_color_assignments(
+						color:product_colors(*)
+					),
+					product_tag_assignments(
+						tag:product_tags(*)
+					)
 				)
 			)
 		`
@@ -88,7 +103,7 @@ export async function getLowStockProducts(
 	// First, get products with min_stock_alert enabled
 	const { data: products, error: productsError } = await supabase
 		.from('products')
-		.select('*')
+		.select(PRODUCT_WITH_ATTRIBUTES_SELECT)
 		.eq('min_stock_alert', true)
 		.is('deleted_at', null)
 		.not('min_stock_threshold', 'is', null);
@@ -125,8 +140,9 @@ export async function getLowStockProducts(
 
 		// Check if stock is below threshold
 		if (currentStock < (product.min_stock_threshold || 0)) {
+			const transformedProduct = transformProductWithAttributes(product);
 			lowStockProducts.push({
-				...product,
+				...transformedProduct,
 				current_stock: Number(currentStock.toFixed(2)),
 			});
 		}
@@ -156,8 +172,16 @@ export async function getPendingQRProducts(
 		.select(`
 				*,
 				product:products(
-					id, name, material, color_name, measuring_unit,
-					product_images, sequence_number
+					id, name, measuring_unit, product_images, sequence_number,
+					product_material_assignments(
+						material:product_materials(*)
+					),
+					product_color_assignments(
+						color:product_colors(*)
+					),
+					product_tag_assignments(
+						tag:product_tags(*)
+					)
 				)
 		`)
 		.eq('warehouse_id', warehouseId)
@@ -175,9 +199,9 @@ export async function getPendingQRProducts(
 	}
 
 	// Group by product and count pending QR codes
-	const productMap = new Map<string, { product: Product; count: number }>();
+	const productMap = new Map<string, { product: ProductWithAttributes; count: number }>();
 
-	for (const unit of stockUnits as StockUnitWithProduct[]) {
+	for (const unit of stockUnits as any[]) {
 		if (!unit.product) continue;
 
 		const existing = productMap.get(unit.product_id);
@@ -185,7 +209,7 @@ export async function getPendingQRProducts(
 			existing.count += 1;
 		} else {
 			productMap.set(unit.product_id, {
-				product: unit.product,
+				product: transformProductWithAttributes(unit.product),
 				count: 1,
 			});
 		}

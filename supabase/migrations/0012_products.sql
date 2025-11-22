@@ -15,13 +15,9 @@ CREATE TABLE products (
     show_on_catalog BOOLEAN DEFAULT TRUE,
     
     -- Fabric specifications
-    material VARCHAR(50),
-    color_name VARCHAR(50),
-    color_hex VARCHAR(7), -- RGB hex code
     gsm INTEGER CHECK (gsm BETWEEN 50 AND 500),
     thread_count_cm INTEGER,
-    tags TEXT[], -- Array for categorization
-    
+
     -- Stock information
     stock_type VARCHAR(10) NOT NULL CHECK (stock_type IN ('roll', 'batch', 'piece')),
     measuring_unit VARCHAR(20) CHECK (measuring_unit IN ('metre', 'yard', 'kilogram', 'unit')),
@@ -65,15 +61,8 @@ CREATE INDEX idx_products_sequence_number ON products(company_id, sequence_numbe
 -- Product name search
 CREATE INDEX idx_products_name ON products(company_id, name);
 
--- Material and color filtering
-CREATE INDEX idx_products_material ON products(company_id, material);
-CREATE INDEX idx_products_color ON products(company_id, color_name);
-
 -- Catalog visibility
 CREATE INDEX idx_products_catalog_visibility ON products(company_id, show_on_catalog);
-
--- Tag-based search (GIN index for arrays)
-CREATE INDEX idx_products_tags ON products USING GIN(tags);
 
 -- Price range queries
 CREATE INDEX idx_products_selling_price ON products(company_id, selling_price_per_unit);

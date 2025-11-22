@@ -2,6 +2,13 @@ import { ComponentType } from "react";
 import { StockType } from "@/types/database/enums";
 import { IconCylinder, IconPackage, IconShirt } from "@tabler/icons-react";
 
+// Type for attribute objects (materials, colors, tags)
+interface ProductAttribute {
+	id: string;
+	name: string;
+	color_hex?: string | null;
+}
+
 /**
  * Get icon component for a product based on stock type
  */
@@ -14,13 +21,13 @@ export function getProductIcon(stock_type: StockType | null | undefined): Compon
 
 /**
  * Get formatted product info string
- * Format: PROD-{sequence_number} · Material · Color
+ * Format: PROD-{sequence_number} · Material(s) · Color(s)
  */
 export function getProductInfo(
 	product: {
 		sequence_number?: number | null;
-		material?: string | null;
-		color_name?: string | null;
+		materials?: ProductAttribute[] | null;
+		colors?: ProductAttribute[] | null;
 	} | null | undefined
 ): string {
 	if (!product) return '';
@@ -31,15 +38,43 @@ export function getProductInfo(
 		parts.push(`PROD-${product.sequence_number}`);
 	}
 
-	if (product.material) {
-		parts.push(product.material);
+	// Get material names (join multiple with comma)
+	if (product.materials && product.materials.length > 0) {
+		const materialNames = product.materials.map(m => m.name).join(', ');
+		parts.push(materialNames);
 	}
 
-	if (product.color_name) {
-		parts.push(product.color_name);
+	// Get color names (join multiple with comma)
+	if (product.colors && product.colors.length > 0) {
+		const colorNames = product.colors.map(c => c.name).join(', ');
+		parts.push(colorNames);
 	}
 
 	return parts.join(' · ');
+}
+
+/**
+ * Get first material name from product
+ */
+export function getFirstMaterial(materials?: ProductAttribute[] | null): string | null {
+	if (!materials || materials.length === 0) return null;
+	return materials[0].name;
+}
+
+/**
+ * Get first color name from product
+ */
+export function getFirstColor(colors?: ProductAttribute[] | null): string | null {
+	if (!colors || colors.length === 0) return null;
+	return colors[0].name;
+}
+
+/**
+ * Get first color hex from product
+ */
+export function getFirstColorHex(colors?: ProductAttribute[] | null): string | null {
+	if (!colors || colors.length === 0) return null;
+	return colors[0].color_hex || null;
 }
 
 /**

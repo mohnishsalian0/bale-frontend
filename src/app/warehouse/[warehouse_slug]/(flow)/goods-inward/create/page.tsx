@@ -9,6 +9,14 @@ import { StockUnitEntrySheet } from '../StockUnitEntrySheet';
 import { AllSpecificationsSheet } from '../AllSpecificationsSheet';
 import { InwardDetailsStep } from '../InwardDetailsStep';
 import { createClient } from '@/lib/supabase/client';
+import {
+	getProductsWithAttributes,
+	getProductAttributeLists,
+	type ProductWithAttributes,
+	type ProductMaterial,
+	type ProductColor,
+	type ProductTag
+} from '@/lib/queries/products';
 import type { Tables, TablesInsert } from '@/types/database/supabase';
 import { useSession } from '@/contexts/session-context';
 import { toast } from 'sonner';
@@ -26,18 +34,23 @@ interface DetailsFormData {
 
 type FormStep = 'products' | 'details';
 
+const supabase = createClient();
+
 export default function CreateGoodsInwardPage() {
 	const router = useRouter();
 	const { warehouse } = useSession();
 	const [currentStep, setCurrentStep] = useState<FormStep>('products');
 	const [products, setProducts] = useState<ProductWithUnits[]>([]);
+	const [materials, setMaterials] = useState<ProductMaterial[]>([]);
+	const [colors, setColors] = useState<ProductColor[]>([]);
+	const [tags, setTags] = useState<ProductTag[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [saving, setSaving] = useState(false);
 
 	// Unit entry sheet state
 	const [showUnitEntrySheet, setShowUnitEntrySheet] = useState(false);
 	const [showAllSpecsSheet, setShowAllSpecsSheet] = useState(false);
-	const [selectedProduct, setSelectedProduct] = useState<Tables<'products'> | null>(null);
+	const [selectedProduct, setSelectedProduct] = useState<ProductWithAttributes | null>(null);
 
 	// Details form state
 	const [detailsFormData, setDetailsFormData] = useState<DetailsFormData>({
@@ -51,31 +64,31 @@ export default function CreateGoodsInwardPage() {
 		documentFile: null,
 	});
 
-	const supabase = createClient();
-
-	// Load products on mount
+	// Load products and attributes on mount
 	useEffect(() => {
-		loadProducts();
+		loadData();
 	}, []);
 
-	const loadProducts = async () => {
+	const loadData = async () => {
 		setLoading(true);
 		try {
-			const { data, error } = await supabase
-				.from('products')
-				.select('*')
-				.order('created_at', { ascending: false });
+			// Fetch products and attributes in parallel
+			const [productsData, attributeLists] = await Promise.all([
+				getProductsWithAttributes(),
+				getProductAttributeLists(),
+			]);
 
-			if (error) throw error;
-
-			const productsWithUnits: ProductWithUnits[] = (data || []).map(product => ({
+			const productsWithUnits: ProductWithUnits[] = productsData.map(product => ({
 				...product,
 				units: [],
 			}));
 
 			setProducts(productsWithUnits);
+			setMaterials(attributeLists.materials);
+			setColors(attributeLists.colors);
+			setTags(attributeLists.tags);
 		} catch (error) {
-			console.error('Error loading products:', error);
+			console.error('Error loading data:', error);
 			toast.error('Failed to load products');
 		} finally {
 			setLoading(false);
@@ -83,7 +96,7 @@ export default function CreateGoodsInwardPage() {
 	};
 
 	// Handle opening unit sheet
-	const handleOpenUnitSheet = (product: Tables<'products'>, hasExistingUnits: boolean) => {
+	const handleOpenUnitSheet = (product: ProductWithAttributes, hasExistingUnits: boolean) => {
 		setSelectedProduct(product);
 		if (hasExistingUnits) {
 			setShowAllSpecsSheet(true);
@@ -305,6 +318,9 @@ export default function CreateGoodsInwardPage() {
 					{currentStep === 'products' ? (
 						<ProductSelectionStep
 							products={products}
+							materials={materials}
+							colors={colors}
+							tags={tags}
 							loading={loading}
 							onOpenUnitSheet={handleOpenUnitSheet}
 						/>

@@ -1050,6 +1050,68 @@ export type Database = {
         }
         Relationships: []
       }
+      product_color_assignments: {
+        Row: {
+          color_id: string
+          product_id: string
+        }
+        Insert: {
+          color_id: string
+          product_id: string
+        }
+        Update: {
+          color_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_color_assignments_color_id_fkey"
+            columns: ["color_id"]
+            isOneToOne: false
+            referencedRelation: "product_colors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_color_assignments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_colors: {
+        Row: {
+          color_hex: string | null
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color_hex?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color_hex?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_colors_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_inventory_aggregates: {
         Row: {
           company_id: string
@@ -1128,6 +1190,130 @@ export type Database = {
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_material_assignments: {
+        Row: {
+          material_id: string
+          product_id: string
+        }
+        Insert: {
+          material_id: string
+          product_id: string
+        }
+        Update: {
+          material_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_material_assignments_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "product_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_material_assignments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_materials: {
+        Row: {
+          color_hex: string | null
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color_hex?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color_hex?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_materials_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_tag_assignments: {
+        Row: {
+          product_id: string
+          tag_id: string
+        }
+        Insert: {
+          product_id: string
+          tag_id: string
+        }
+        Update: {
+          product_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_tag_assignments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_tag_assignments_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "product_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_tags: {
+        Row: {
+          color_hex: string | null
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color_hex?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color_hex?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_tags_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -1221,8 +1407,6 @@ export type Database = {
       }
       products: {
         Row: {
-          color_hex: string | null
-          color_name: string | null
           company_id: string
           cost_price_per_unit: number | null
           created_at: string
@@ -1231,7 +1415,6 @@ export type Database = {
           gsm: number | null
           hsn_code: string | null
           id: string
-          material: string | null
           measuring_unit: string | null
           min_stock_alert: boolean | null
           min_stock_threshold: number | null
@@ -1243,13 +1426,10 @@ export type Database = {
           sequence_number: number
           show_on_catalog: boolean | null
           stock_type: string
-          tags: string[] | null
           thread_count_cm: number | null
           updated_at: string
         }
         Insert: {
-          color_hex?: string | null
-          color_name?: string | null
           company_id?: string
           cost_price_per_unit?: number | null
           created_at?: string
@@ -1258,7 +1438,6 @@ export type Database = {
           gsm?: number | null
           hsn_code?: string | null
           id?: string
-          material?: string | null
           measuring_unit?: string | null
           min_stock_alert?: boolean | null
           min_stock_threshold?: number | null
@@ -1270,13 +1449,10 @@ export type Database = {
           sequence_number: number
           show_on_catalog?: boolean | null
           stock_type: string
-          tags?: string[] | null
           thread_count_cm?: number | null
           updated_at?: string
         }
         Update: {
-          color_hex?: string | null
-          color_name?: string | null
           company_id?: string
           cost_price_per_unit?: number | null
           created_at?: string
@@ -1285,7 +1461,6 @@ export type Database = {
           gsm?: number | null
           hsn_code?: string | null
           id?: string
-          material?: string | null
           measuring_unit?: string | null
           min_stock_alert?: boolean | null
           min_stock_threshold?: number | null
@@ -1297,7 +1472,6 @@ export type Database = {
           sequence_number?: number
           show_on_catalog?: boolean | null
           stock_type?: string
-          tags?: string[] | null
           thread_count_cm?: number | null
           updated_at?: string
         }

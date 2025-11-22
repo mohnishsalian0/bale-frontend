@@ -28,8 +28,13 @@ import { AddProductSheet } from '../AddProductSheet';
 import type { Tables } from '@/types/database/supabase';
 import type { MeasuringUnit, StockType } from '@/types/database/enums';
 import IconStore from '@/components/icons/IconStore';
+import {
+	PRODUCT_WITH_ATTRIBUTES_SELECT,
+	transformProductWithAttributes,
+	type ProductWithAttributes
+} from '@/lib/queries/products';
 
-type Product = Tables<'products'>;
+type Product = ProductWithAttributes;
 type StockUnit = Tables<'stock_units'>;
 type GoodsInward = Tables<'goods_inwards'>;
 type GoodsOutward = Tables<'goods_outwards'>;
@@ -79,11 +84,11 @@ export default function ProductDetailPage({ params }: PageParams) {
 
 			const supabase = createClient();
 
-			// Fetch product with aggregates
+			// Fetch product with aggregates and attributes
 			const { data: productData, error: productError } = await supabase
 				.from('products')
 				.select(`
-					*,
+					${PRODUCT_WITH_ATTRIBUTES_SELECT},
 					inventory_agg:product_inventory_aggregates!product_id(
 						in_stock_quantity,
 						in_stock_value
@@ -97,7 +102,7 @@ export default function ProductDetailPage({ params }: PageParams) {
 			if (productError) throw productError;
 			if (!productData) throw new Error('Product not found');
 
-			setProduct(productData as Product);
+			setProduct(transformProductWithAttributes(productData));
 
 			// Get aggregated values
 			const inventoryAgg = (productData as any).inventory_agg?.[0];
@@ -183,11 +188,19 @@ export default function ProductDetailPage({ params }: PageParams) {
 
 	// Get all tags
 	const allTags: Array<{ text: string; isPrimary: boolean }> = [];
-	if (product.material) allTags.push({ text: product.material, isPrimary: true });
-	if (product.color_name) allTags.push({ text: product.color_name, isPrimary: true });
+	if (product.materials) {
+		product.materials.forEach((m) => {
+			allTags.push({ text: m.name, isPrimary: true });
+		});
+	}
+	if (product.colors) {
+		product.colors.forEach((c) => {
+			allTags.push({ text: c.name, isPrimary: true });
+		});
+	}
 	if (product.tags) {
 		product.tags.forEach((tag) => {
-			allTags.push({ text: tag, isPrimary: false });
+			allTags.push({ text: tag.name, isPrimary: false });
 		});
 	}
 

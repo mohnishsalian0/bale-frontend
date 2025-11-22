@@ -15,7 +15,7 @@ import { getDashboardSalesOrders, getLowStockProducts, getPendingQRProducts } fr
 import type { DashboardSalesOrder, LowStockProduct, PendingQRProduct } from '@/lib/queries/dashboard';
 import { calculateCompletionPercentage, getOrderDisplayStatus, getProductSummary, type DisplayStatus } from '@/lib/utils/sales-order';
 import { getPartnerName } from '@/lib/utils/partner';
-import { getProductIcon } from '@/lib/utils/product';
+import { getProductIcon, getProductInfo } from '@/lib/utils/product';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import { formatAbsoluteDate } from '@/lib/utils/date';
 import type { SalesOrderStatus, StockType, MeasuringUnit } from '@/types/database/enums';
@@ -309,7 +309,7 @@ export default function DashboardPage() {
 									<div className="flex-1 flex flex-col items-start">
 										<p className="font-medium text-gray-900">{product.name}</p>
 										<p className="text-xs text-gray-500">
-											{[product.material, product.color_name].filter(Boolean).join(', ') || 'No details'}
+											{getProductInfo(product) || 'No details'}
 										</p>
 									</div>
 
@@ -368,7 +368,7 @@ export default function DashboardPage() {
 									<div className="flex-1 flex flex-col items-start">
 										<p className="font-medium text-gray-900">{product.name || 'Unknown product'}</p>
 										<p className="text-xs text-gray-500">
-											{[product.material, product.color_name].filter(Boolean).join(', ') || 'No details'}
+											{getProductInfo(product) || 'No details'}
 										</p>
 									</div>
 

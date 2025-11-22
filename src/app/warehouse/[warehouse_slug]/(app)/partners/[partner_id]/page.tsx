@@ -47,8 +47,6 @@ interface OrderWithDetails extends SalesOrder {
 interface TopProduct {
 	id: string;
 	name: string;
-	material: string | null;
-	color_name: string | null;
 	product_images: string[] | null;
 	totalQuantity: number;
 }
@@ -146,7 +144,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
 							id, product_id, required_quantity, dispatched_quantity,
 							pending_quantity, unit_rate, line_total,
 							product:products(
-								id, name, material, color_name, measuring_unit,
+								id, name, measuring_unit,
 								product_images, sequence_number
 							)
 						)
@@ -189,8 +187,6 @@ export default function PartnerDetailPage({ params }: PageParams) {
 						topProd = {
 							id: product.id,
 							name: product.name,
-							material: product.material,
-							color_name: product.color_name,
 							product_images: product.product_images,
 							totalQuantity: quantity,
 						};
@@ -301,9 +297,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
 										{topProduct.name}
 									</p>
 									<p className="text-xs text-gray-500 truncate">
-										{[topProduct.material, topProduct.color_name]
-											.filter(Boolean)
-											.join(', ') || 'No details'}
+										{topProduct.totalQuantity} units ordered
 									</p>
 								</div>
 								<p className="font-semibold text-gray-700">
