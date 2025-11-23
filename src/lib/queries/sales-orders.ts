@@ -73,8 +73,16 @@ export async function getSalesOrder(sequenceNumber: string) {
 				id, product_id, required_quantity, dispatched_quantity,
 				pending_quantity, unit_rate, line_total, notes,
 				product:products(
-					name, material, color_name, measuring_unit,
-					product_images, sequence_number
+					id, name, measuring_unit, product_images, sequence_number,
+					product_material_assignments(
+						material:product_materials(*)
+					),
+					product_color_assignments(
+						color:product_colors(*)
+					),
+					product_tag_assignments(
+						tag:product_tags(*)
+					)
 				)
 			)
 		`)

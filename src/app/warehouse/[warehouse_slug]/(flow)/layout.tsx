@@ -6,5 +6,9 @@ import { ReactNode } from 'react';
  * Used for: creation flows, selection flows, wizards, etc.
  */
 export default function FlowLayout({ children }: { children: ReactNode }) {
-	return <>{children}</>;
+	return (
+		<div className="container max-w-4xl h-dvh mx-auto border-x border-border">
+			{children}
+		</div>
+	);
 }

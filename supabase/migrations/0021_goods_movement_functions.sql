@@ -16,7 +16,14 @@ SECURITY DEFINER
 AS $$
 DECLARE
     v_inward_id UUID;
+    v_company_id UUID;
 BEGIN
+    -- Derive company_id from JWT if not provided (short-circuit evaluation)
+    v_company_id := COALESCE(
+        (p_inward_data->>'company_id')::UUID,
+        get_jwt_company_id()
+    );
+
     -- Insert goods inward
     INSERT INTO goods_inwards (
         company_id,
@@ -36,7 +43,7 @@ BEGIN
         created_by
     )
     VALUES (
-        (p_inward_data->>'company_id')::UUID,
+        v_company_id,
         (p_inward_data->>'warehouse_id')::UUID,
         p_inward_data->>'inward_type',
         (p_inward_data->>'inward_date')::DATE,
@@ -50,7 +57,7 @@ BEGIN
         (p_inward_data->>'sales_order_id')::UUID,
         p_inward_data->>'other_reason',
         p_inward_data->>'notes',
-        (p_inward_data->>'created_by')::UUID
+        COALESCE((p_inward_data->>'created_by')::UUID, auth.uid())
     )
     RETURNING id INTO v_inward_id;
 
@@ -62,7 +69,6 @@ BEGIN
         created_from_inward_id,
         remaining_quantity,
         initial_quantity,
-        unit_number,
         status,
         quality_grade,
         supplier_number,
@@ -71,19 +77,18 @@ BEGIN
         created_by
     )
     SELECT
-        (p_inward_data->>'company_id')::UUID,
+        v_company_id,
         (unit->>'warehouse_id')::UUID,
         (unit->>'product_id')::UUID,
         v_inward_id,
         (unit->>'initial_quantity')::DECIMAL,
         (unit->>'initial_quantity')::DECIMAL,
-        unit->>'unit_number',
         unit->>'status',
         unit->>'quality_grade',
         unit->>'supplier_number',
         unit->>'warehouse_location',
         unit->>'notes',
-        (unit->>'created_by')::UUID
+        COALESCE((unit->>'created_by')::UUID, auth.uid())
     FROM unnest(p_stock_units) AS unit;
 
     -- Return the inward ID
@@ -106,12 +111,19 @@ SECURITY DEFINER
 AS $$
 DECLARE
     v_outward_id UUID;
+    v_company_id UUID;
     v_stock_unit_item JSONB;
     v_stock_unit_id UUID;
     v_dispatch_quantity DECIMAL;
     v_current_quantity DECIMAL;
     v_new_quantity DECIMAL;
 BEGIN
+    -- Derive company_id from JWT if not provided (short-circuit evaluation)
+    v_company_id := COALESCE(
+        (p_outward_data->>'company_id')::UUID,
+        get_jwt_company_id()
+    );
+
     -- Insert goods outward
     INSERT INTO goods_outwards (
         company_id,
@@ -131,7 +143,7 @@ BEGIN
         created_by
     )
     VALUES (
-        (p_outward_data->>'company_id')::UUID,
+        v_company_id,
         (p_outward_data->>'warehouse_id')::UUID,
         p_outward_data->>'outward_type',
         (p_outward_data->>'partner_id')::UUID,
@@ -145,7 +157,7 @@ BEGIN
         p_outward_data->>'transport_type',
         p_outward_data->>'transport_details',
         p_outward_data->>'notes',
-        (p_outward_data->>'created_by')::UUID
+        COALESCE((p_outward_data->>'created_by')::UUID, auth.uid())
     )
     RETURNING id INTO v_outward_id;
 
@@ -172,7 +184,7 @@ BEGIN
             quantity_dispatched
         )
         VALUES (
-            (p_outward_data->>'company_id')::UUID,
+            v_company_id,
             (p_outward_data->>'warehouse_id')::UUID,
             v_outward_id,
             v_stock_unit_id,

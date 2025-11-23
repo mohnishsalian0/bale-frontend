@@ -178,7 +178,7 @@ export default function PartnersPage() {
 			</div>
 
 			{/* Partner Cards */}
-			<li className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 items-stretch p-4">
+			<li className="grid grid-cols-1 lg:grid-cols-2 3xl:grid-cols-3 gap-4 items-stretch p-4">
 				{filteredPartners.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-12 text-center">
 						<p className="text-gray-600 mb-2">No partners found</p>

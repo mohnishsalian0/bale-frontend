@@ -163,7 +163,7 @@ export default function CheckoutPage() {
 				<Button
 					variant="ghost"
 					size="sm"
-					onClick={() => router.push(`/company/${slug}/store`)}
+					onClick={() => router.push(`/company/${slug}/store/products`)}
 					className="mb-4"
 				>
 					<IconArrowLeft className="size-4" />

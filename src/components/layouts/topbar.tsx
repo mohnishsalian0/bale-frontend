@@ -31,7 +31,7 @@ export default function TopBar({
 	const { user, warehouse } = useSession();
 
 	return (
-		<div className={`z-30 sticky top-0 bg-background-100 ${isWarehouseSelectorOpen ? '' : 'border-b border-gray-200'
+		<div className={`z-30 sticky top-0 bg-background-100 ${isWarehouseSelectorOpen ? '' : 'border-b border-border'
 			}`}>
 			<div className="flex items-center justify-between pl-2 pr-4 py-3">
 				{/* Left side - Menu + Warehouse selector */}

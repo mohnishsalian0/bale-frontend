@@ -24,7 +24,7 @@ import { IconDotsVertical, IconAlertTriangle } from '@tabler/icons-react';
 
 export default function DashboardPage() {
 	const router = useRouter();
-	const { warehouse } = useSession();
+	const { user, warehouse } = useSession();
 	const [salesOrders, setSalesOrders] = useState<DashboardSalesOrder[]>([]);
 	const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
 	const [pendingQRProducts, setPendingQRProducts] = useState<PendingQRProduct[]>([]);
@@ -87,7 +87,7 @@ export default function DashboardPage() {
 			{/* Header */}
 			<div className="flex items-end justify-between gap-4 px-4 pt-4">
 				<div className="flex-1">
-					<h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+					<h1 className="text-3xl font-bold text-gray-900">Welcome, {user.first_name}!</h1>
 				</div>
 
 				{/* Mascot */}

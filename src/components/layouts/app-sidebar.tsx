@@ -58,13 +58,6 @@ const NAV_ITEMS: NavItem[] = [
 		icon: IconChartBar,
 		permission: 'reports.read',
 	},
-	{
-		label: 'Online store',
-		path: '/catalog',
-		icon: IconBuildingStore,
-		external: true,
-		permission: 'catalog.read',
-	},
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

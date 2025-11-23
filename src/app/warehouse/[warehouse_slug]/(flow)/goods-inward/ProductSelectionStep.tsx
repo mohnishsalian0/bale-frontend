@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ImageWrapper from '@/components/ui/image-wrapper';
 import { getProductIcon, getProductInfo } from '@/lib/utils/product';
 import type { ProductWithAttributes, ProductMaterial, ProductColor, ProductTag } from '@/lib/queries/products';
-import { pluralize } from '@/lib/utils/pluralize';
+import { pluralizeStockType } from '@/lib/utils/pluralize';
 import type { StockType } from '@/types/database/enums';
 
 export interface StockUnitSpec {
@@ -208,7 +208,7 @@ export function ProductSelectionStep({
 											onClick={() => onOpenUnitSheet(product, hasUnits)}
 										>
 											<IconMinus />
-											{pluralize(totalUnits, product.stock_type)}
+											{pluralizeStockType(totalUnits, product.stock_type as StockType)}
 											<IconPlus />
 										</Button>
 									) : (

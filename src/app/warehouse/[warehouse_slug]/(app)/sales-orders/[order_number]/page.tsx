@@ -92,8 +92,16 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 						id, product_id, required_quantity, dispatched_quantity,
 						pending_quantity, unit_rate, line_total, notes,
 						product:products(
-							name, material, color_name, measuring_unit,
-							product_images, sequence_number
+							id, name, measuring_unit, product_images, sequence_number,
+							product_material_assignments(
+								material:product_materials(*)
+							),
+							product_color_assignments(
+								color:product_colors(*)
+							),
+							product_tag_assignments(
+								tag:product_tags(*)
+							)
 						)
 					)
 				`)
@@ -188,7 +196,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 
 	return (
 		<div className="flex flex-col flex-1 overflow-y-auto">
-			<div className="relative flex flex-col flex-1 max-w-3xl border-r border-border">
+			<div className="relative flex flex-col flex-1">
 				{/* Header */}
 				<div className="p-4">
 					<div>

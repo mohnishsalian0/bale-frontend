@@ -5,8 +5,48 @@ import * as path from 'path';
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Parse command line argument for environment
+const args = process.argv.slice(2);
+const env = args[0] || 'local';
+
+if (!['local', 'staging'].includes(env)) {
+	console.error('❌ Invalid environment. Use: npx tsx scripts/test-setup.ts [local|staging]');
+	process.exit(1);
+}
+
+// Select credentials based on environment
+let supabaseUrl: string;
+let supabaseServiceKey: string;
+let appUrl: string;
+
+if (env === 'staging') {
+	supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL_PROD!;
+	supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY_PROD!;
+	appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+	if (!supabaseUrl || !supabaseServiceKey) {
+		console.error('❌ Missing staging environment variables!');
+		console.error('Make sure these are set in .env.local:');
+		console.error('  - NEXT_PUBLIC_SUPABASE_URL_PROD');
+		console.error('  - SUPABASE_SERVICE_ROLE_KEY_PROD');
+		process.exit(1);
+	}
+} else {
+	supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+	supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+	appUrl = 'http://localhost:3000';
+
+	if (!supabaseUrl || !supabaseServiceKey) {
+		console.error('❌ Missing local environment variables!');
+		console.error('Make sure these are set in .env.local:');
+		console.error('  - NEXT_PUBLIC_SUPABASE_URL');
+		console.error('  - SUPABASE_SERVICE_ROLE_KEY');
+		process.exit(1);
+	}
+}
+
+console.log(`🔧 Environment: ${env.toUpperCase()}`);
+console.log(`🔗 Supabase URL: ${supabaseUrl}\n`);
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 	auth: {
@@ -21,13 +61,14 @@ async function createTestPartners() {
 	// Get or create company
 	let companyId: string;
 	let companyName: string;
+	let companySlug: string;
 	let warehouseId: string;
 	let warehouseName: string;
 	let userId: string;
 
 	const { data: companies, error: companyError } = await supabase
 		.from('companies')
-		.select('id, name')
+		.select('id, name, slug')
 		.limit(1);
 
 	if (companyError) {
@@ -60,6 +101,7 @@ async function createTestPartners() {
 
 		companyId = newCompany.id;
 		companyName = newCompany.name;
+		companySlug = newCompany.slug;
 		console.log(`✅ Created company: ${companyId}\n`);
 
 		// Create a test warehouse
@@ -125,6 +167,7 @@ async function createTestPartners() {
 	} else {
 		companyId = companies[0].id;
 		companyName = companies[0].name;
+		companySlug = companies[0].slug;
 		console.log(`📦 Using existing company: ${companyId}\n`);
 
 		// Get existing warehouse
@@ -276,7 +319,7 @@ async function createTestPartners() {
 	];
 
 	for (const partner of testPartners) {
-		const { data, error } = await supabase
+		const { error } = await supabase
 			.from('partners')
 			.insert({
 				...partner,
@@ -843,7 +886,7 @@ async function createTestPartners() {
 					}
 
 					// Use the atomic function to create outward with items
-					const { data, error } = await supabase.rpc('create_goods_outward_with_items', {
+					const { error } = await supabase.rpc('create_goods_outward_with_items', {
 						p_outward_data: {
 							...outward,
 							created_by: userId,
@@ -1292,10 +1335,12 @@ async function createTestPartners() {
 	console.log(`   Warehouse ID: ${warehouseId}\n`);
 	console.log('🔗 Invite Links (valid for 7 days):\n');
 	console.log('👤 Admin Invite:');
-	console.log(`   http://localhost:3000/invite/${adminToken}\n`);
+	console.log(`   ${appUrl}/invite/${adminToken}\n`);
 	console.log('👷 Staff Invite:');
-	console.log(`   http://localhost:3000/invite/${staffToken}\n`);
-	console.log('💡 Use these invite links to create users for the test company with partners data');
+	console.log(`   ${appUrl}/invite/${staffToken}\n`);
+	console.log('💡 Use these invite links to create users for the test company with partners data\n');
+	console.log('🏪 Online store:');
+	console.log(`   ${appUrl}/company/${companySlug}/store/products\n`);
 	console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 }
 

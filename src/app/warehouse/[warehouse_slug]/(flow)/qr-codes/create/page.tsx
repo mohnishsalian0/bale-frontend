@@ -193,8 +193,8 @@ export default function CreateQRBatchPage() {
 	const canProceedToTemplate = selectedStockUnitIds.length > 0;
 
 	return (
-		<div className="h-dvh flex flex-col items-center">
-			<div className="flex-1 flex flex-col w-full max-w-2xl border-x-1 border-border overflow-y-hidden">
+		<div className="h-full flex flex-col items-center">
+			<div className="flex-1 flex flex-col w-full overflow-y-hidden">
 				{/* Header - Fixed at top */}
 				<div className="shrink-0 border-b border-gray-200 bg-background">
 					<div className="flex items-center gap-3 px-4 py-3">

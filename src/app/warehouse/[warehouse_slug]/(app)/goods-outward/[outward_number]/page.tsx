@@ -87,8 +87,16 @@ export default function GoodsOutwardDetailPage({ params }: PageParams) {
 						stock_unit:stock_units(
 							id, sequence_number, initial_quantity, remaining_quantity,
 							product:products(
-								id, name, material, color_name, measuring_unit,
-								product_images, sequence_number
+								id, name, measuring_unit, product_images, sequence_number,
+								product_material_assignments(
+									material:product_materials(*)
+								),
+								product_color_assignments(
+									color:product_colors(*)
+								),
+								product_tag_assignments(
+									tag:product_tags(*)
+								)
 							)
 						)
 					)
@@ -130,7 +138,7 @@ export default function GoodsOutwardDetailPage({ params }: PageParams) {
 
 	return (
 		<div className="flex flex-col flex-1 overflow-y-auto">
-			<div className="relative flex flex-col flex-1 max-w-3xl border-r border-border">
+			<div className="relative flex flex-col flex-1">
 				{/* Header */}
 				<div className="p-4">
 					<div>

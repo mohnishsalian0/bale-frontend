@@ -263,7 +263,6 @@ export default function InventoryPage() {
 									{/* Product Info */}
 									<div className="flex-1 flex flex-col items-start">
 										<p className="text-base font-medium text-gray-900">{product.name}</p>
-										<p className="text-xs text-gray-500">PROD-{product.sequence_number}</p>
 										<p className="text-xs text-gray-500">
 											{productInfoText}
 										</p>

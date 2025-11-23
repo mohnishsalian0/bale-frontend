@@ -209,7 +209,7 @@ export default function ProductDetailPage({ params }: PageParams) {
 
 	return (
 		<div className="flex flex-col flex-1 overflow-y-auto">
-			<div className="relative flex flex-col flex-1 max-w-3xl border-r border-border">
+			<div className="relative flex flex-col flex-1">
 				{/* Header */}
 				<div className="p-4 pb-6">
 					<div className="flex items-start gap-4">
