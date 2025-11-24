@@ -300,6 +300,7 @@ export default function ProductDetailPage({ params }: PageParams) {
 						<StockUnitsTab
 							stockUnits={stockUnits}
 							measuringUnit={product.measuring_unit as MeasuringUnit}
+							product={product}
 						/>
 					)}
 					{activeTab === 'stock_flow' && (

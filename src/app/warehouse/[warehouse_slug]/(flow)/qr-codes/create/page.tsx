@@ -224,7 +224,7 @@ export default function CreateQRBatchPage() {
 				</div>
 
 				{/* Main Content - Scrollable */}
-				<div className="flex-1 overflow-y-auto flex">
+				<div className="flex-1 overflow-y-auto flex flex-col">
 					{currentStep === 'product' && (
 						<QRProductSelectionStep
 							products={products}

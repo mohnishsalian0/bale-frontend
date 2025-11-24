@@ -5,10 +5,12 @@ import { IconBox } from '@tabler/icons-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { StockUnitDetailsModal, type StockUnitWithProduct } from '@/components/layouts/stock-unit-modal';
 import { formatAbsoluteDate, formatRelativeDate } from '@/lib/utils/date';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import type { Tables } from '@/types/database/supabase';
 import type { MeasuringUnit } from '@/types/database/enums';
+import type { ProductWithAttributes } from '@/lib/queries/products';
 
 type StockUnit = Tables<'stock_units'>;
 type GoodsInward = Tables<'goods_inwards'>;
@@ -20,13 +22,26 @@ interface StockUnitWithInward extends StockUnit {
 interface StockUnitsTabProps {
 	stockUnits: StockUnitWithInward[];
 	measuringUnit: MeasuringUnit | null;
+	product: ProductWithAttributes;
 }
 
 type SortOption = 'latest' | 'oldest' | 'quantity_high' | 'quantity_low';
 
-export function StockUnitsTab({ stockUnits, measuringUnit }: StockUnitsTabProps) {
+export function StockUnitsTab({ stockUnits, measuringUnit, product }: StockUnitsTabProps) {
 	const [sortBy, setSortBy] = useState<SortOption>('latest');
 	const [qrPendingOnly, setQrPendingOnly] = useState(false);
+	const [selectedStockUnit, setSelectedStockUnit] = useState<StockUnitWithProduct | null>(null);
+	const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+	const handleStockUnitClick = (unit: StockUnitWithInward) => {
+		// Convert to StockUnitWithProduct format for the modal
+		const stockUnitWithProduct: StockUnitWithProduct = {
+			...unit,
+			product,
+		};
+		setSelectedStockUnit(stockUnitWithProduct);
+		setShowDetailsModal(true);
+	};
 
 	const unitAbbr = getMeasuringUnitAbbreviation(measuringUnit);
 
@@ -151,9 +166,10 @@ export function StockUnitsTab({ stockUnits, measuringUnit }: StockUnitsTabProps)
 								if (unit.supplier_number) subtitleParts.push(unit.supplier_number);
 
 								return (
-									<div
+									<button
 										key={unit.id}
-										className="flex items-start justify-between gap-4 px-4 py-3 border-t border-dashed border-gray-200 hover:bg-gray-50 transition-colors"
+										onClick={() => handleStockUnitClick(unit)}
+										className="flex items-start justify-between gap-4 px-4 py-3 border-t border-dashed border-gray-200 hover:bg-gray-50 transition-colors w-full text-left cursor-pointer"
 									>
 										<div className="flex-1 min-w-0">
 											<h3 className="text-base font-medium text-gray-900">
@@ -171,10 +187,18 @@ export function StockUnitsTab({ stockUnits, measuringUnit }: StockUnitsTabProps)
 													: 'QR pending'}
 											</p>
 
-											{/* Additional Info */}
-											{subtitleParts.length > 0 && (
-												<p className="text-xs text-gray-500 mt-0.5">{subtitleParts.join(' • ')}</p>
-											)}
+											{/* Additional Details */}
+											<div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-0.5">
+												{unit.quality_grade && (
+													<span>Grade: {unit.quality_grade}</span>
+												)}
+												{unit.supplier_number && (
+													<span>Supplier #: {unit.supplier_number}</span>
+												)}
+												{unit.warehouse_location && (
+													<span>Location: {unit.warehouse_location}</span>
+												)}
+											</div>
 										</div>
 
 										<div className="shrink-0 text-right">
@@ -182,13 +206,20 @@ export function StockUnitsTab({ stockUnits, measuringUnit }: StockUnitsTabProps)
 												{unit.remaining_quantity} {unitAbbr}
 											</span>
 										</div>
-									</div>
+									</button>
 								);
 							})}
 						</div>
 					))
 				)}
 			</div>
+
+			{/* Stock Unit Details Modal */}
+			<StockUnitDetailsModal
+				open={showDetailsModal}
+				onOpenChange={setShowDetailsModal}
+				stockUnit={selectedStockUnit}
+			/>
 		</div>
 	);
 }

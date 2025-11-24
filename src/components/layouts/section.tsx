@@ -18,7 +18,7 @@ export function Section({
 	children,
 }: SectionProps) {
 	return (
-		<section className="p-5 space-y-4 border-b border-border">
+		<section className="mx-4 mt-3 p-5 space-y-4 rounded-lg border border-border">
 			{/* Header Row */}
 			<div className="flex items-center justify-between gap-3">
 				<div className="size-12 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">

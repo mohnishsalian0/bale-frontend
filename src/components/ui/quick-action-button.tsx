@@ -16,7 +16,7 @@ export function QuickActionButton({ action, onClick }: QuickActionButtonProps) {
 	return (
 		<button
 			onClick={onClick}
-			className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-primary-500 transition-colors"
+			className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-primary-500 transition-colors cursor-pointer"
 		>
 			<div className="h-12 min-w-12 px-3 rounded-xl bg-primary-500 flex items-center justify-center">
 				<Icon className="h-6 text-white" />

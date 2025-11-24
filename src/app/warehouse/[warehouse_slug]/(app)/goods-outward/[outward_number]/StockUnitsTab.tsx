@@ -1,9 +1,11 @@
 'use client';
 
-import Image from 'next/image';
 import { IconPhoto } from '@tabler/icons-react';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import type { Tables } from '@/types/database/supabase';
+import ImageWrapper from '@/components/ui/image-wrapper';
+import { getProductIcon } from '@/lib/utils/product';
+import { MeasuringUnit, StockType } from '@/types/database/enums';
 
 type Product = Tables<'products'>;
 type StockUnit = Tables<'stock_units'>;
@@ -37,43 +39,54 @@ export function StockUnitsTab({ items }: StockUnitsTabProps) {
 			{items.map((item) => {
 				const stockUnit = item.stock_unit;
 				const product = stockUnit?.product;
+				const productImage = product?.product_images?.[0];
+				const productName = product?.name || 'Unknown Product';
+				const stockType = product?.stock_type as StockType;
+				const measuringUnit = product?.measuring_unit as MeasuringUnit;
 
 				return (
 					<li
 						key={item.id}
-						className="flex gap-3 p-4 border-b border-border"
+						className="flex gap-3 p-3 border border-gray-200 rounded-lg mx-4 mt-3 hover:border-gray-300 transition-colors"
 					>
 						{/* Product Image */}
-						<div className="relative size-12 rounded-lg overflow-hidden bg-gray-200 shrink-0">
-							{product?.product_images?.[0] ? (
-								<Image
-									src={product.product_images[0]}
-									alt={product.name || ''}
-									fill
-									className="object-cover"
-								/>
-							) : (
-								<div className="size-full flex items-center justify-center text-gray-400">
-									<IconPhoto className="size-6" />
-								</div>
-							)}
-						</div>
+						<ImageWrapper
+							size="md"
+							shape="square"
+							imageUrl={productImage}
+							alt={productName}
+							placeholderIcon={getProductIcon(stockType)}
+						/>
 
 						{/* Product Info */}
 						<div className="flex-1 min-w-0">
-							<p className="font-medium text-gray-700 truncate" title={product?.name}>
+							<p className="font-medium text-gray-700 truncate" title={productName}>
 								{product?.name || 'Unknown Product'}
 							</p>
+
 							<p className="text-xs text-gray-500 mt-0.5">
-								SU-{stockUnit?.sequence_number || 'N/A'}
+								SU-{stockUnit?.sequence_number || 'No unit number'}
 							</p>
+
+							{/* Additional Details */}
+							<div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-0.5">
+								{stockUnit?.quality_grade && (
+									<span>Grade: {stockUnit.quality_grade}</span>
+								)}
+								{stockUnit?.supplier_number && (
+									<span>Supplier #: {stockUnit.supplier_number}</span>
+								)}
+								{stockUnit?.warehouse_location && (
+									<span>Location: {stockUnit.warehouse_location}</span>
+								)}
+							</div>
 						</div>
 
 						{/* Quantity */}
 						<div className="text-right shrink-0">
 							<p className="font-semibold text-gray-700">
 								{item.quantity_dispatched}{' '}
-								{getMeasuringUnitAbbreviation(product?.measuring_unit as any)}
+								{getMeasuringUnitAbbreviation(measuringUnit)}
 							</p>
 							<p className="text-xs text-gray-500 mt-0.5">Dispatched</p>
 						</div>

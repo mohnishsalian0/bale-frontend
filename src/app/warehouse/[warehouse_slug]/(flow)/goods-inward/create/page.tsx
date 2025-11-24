@@ -18,7 +18,7 @@ import {
 	type ProductColor,
 	type ProductTag
 } from '@/lib/queries/products';
-import type { Tables, TablesInsert } from '@/types/database/supabase';
+import type { TablesInsert } from '@/types/database/supabase';
 import { useSession } from '@/contexts/session-context';
 import { toast } from 'sonner';
 

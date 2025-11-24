@@ -85,7 +85,7 @@ export default function GoodsOutwardDetailPage({ params }: PageParams) {
 					goods_outward_items(
 						id, quantity_dispatched,
 						stock_unit:stock_units(
-							id, sequence_number, initial_quantity, remaining_quantity,
+							*,
 							product:products(
 								id, name, measuring_unit, product_images, sequence_number,
 								product_material_assignments(
@@ -160,7 +160,7 @@ export default function GoodsOutwardDetailPage({ params }: PageParams) {
 				/>
 
 				{/* Tab Content */}
-				<div className="flex-1">
+				<div className="flex-1 border-r border-border">
 					{activeTab === 'details' ? (
 						<OutwardDetailsTab outward={outward} />
 					) : (

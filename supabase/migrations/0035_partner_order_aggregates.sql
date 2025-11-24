@@ -182,7 +182,7 @@ BEGIN
         last_order_date = EXCLUDED.last_order_date,
         last_updated_at = NOW();
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger function to update aggregates when sales orders change
 CREATE OR REPLACE FUNCTION trigger_update_partner_order_aggregates()

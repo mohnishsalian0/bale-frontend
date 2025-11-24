@@ -1,8 +1,10 @@
 'use client';
 
-import Image from 'next/image';
 import { IconBox } from '@tabler/icons-react';
 import type { Tables } from '@/types/database/supabase';
+import ImageWrapper from '@/components/ui/image-wrapper';
+import { getProductIcon } from '@/lib/utils/product';
+import { StockType } from '@/types/database/enums';
 
 type StockUnit = Tables<'stock_units'>;
 type Product = Tables<'products'>;
@@ -29,38 +31,31 @@ export function StockUnitsTab({ stockUnits }: StockUnitsTabProps) {
 	}
 
 	return (
-		<div className="flex flex-col gap-3 p-4">
+		<ul>
 			{stockUnits.map((item) => {
 				const product = item.product;
 				const productImage = product?.product_images?.[0];
 				const productName = product?.name || 'Unknown Product';
+				const stockType = product?.stock_type as StockType;
 				const measuringUnit = product?.measuring_unit;
 
 				return (
-					<div
+					<li
 						key={item.id}
-						className="flex gap-3 p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+						className="flex gap-3 p-3 border border-gray-200 rounded-lg mx-4 mt-3 hover:border-gray-300 transition-colors"
 					>
 						{/* Product Image */}
-						<div className="shrink-0">
-							{productImage ? (
-								<Image
-									src={productImage}
-									alt={productName}
-									width={64}
-									height={64}
-									className="size-16 rounded object-cover"
-								/>
-							) : (
-								<div className="size-16 rounded bg-gray-100 flex items-center justify-center">
-									<IconBox className="size-8 text-gray-400" />
-								</div>
-							)}
-						</div>
+						<ImageWrapper
+							size="md"
+							shape="square"
+							imageUrl={productImage}
+							alt={product?.name || ''}
+							placeholderIcon={getProductIcon(stockType)}
+						/>
 
 						{/* Stock Unit Details */}
 						<div className="flex-1 min-w-0">
-							<div className="flex items-start justify-between gap-2 mb-1">
+							<div className="flex items-start justify-between gap-2">
 								<h3 className="font-medium text-gray-900 truncate" title={productName}>
 									{productName}
 								</h3>
@@ -69,12 +64,12 @@ export function StockUnitsTab({ stockUnits }: StockUnitsTabProps) {
 								</span>
 							</div>
 
-							<p className="text-sm text-gray-600 mb-2">
+							<p className="text-xs text-gray-500 mt-0.5">
 								SU-{item.sequence_number}
 							</p>
 
 							{/* Additional Details */}
-							<div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+							<div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-0.5">
 								{item.quality_grade && (
 									<span>Grade: {item.quality_grade}</span>
 								)}
@@ -86,9 +81,9 @@ export function StockUnitsTab({ stockUnits }: StockUnitsTabProps) {
 								)}
 							</div>
 						</div>
-					</div>
+					</li>
 				);
 			})}
-		</div>
+		</ul>
 	);
 }

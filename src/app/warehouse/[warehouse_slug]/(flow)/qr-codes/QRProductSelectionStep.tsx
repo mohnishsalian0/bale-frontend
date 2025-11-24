@@ -121,7 +121,7 @@ export function QRProductSelectionStep({
 			</div>
 
 			{/* Product List - Scrollable */}
-			<div className="flex-1 overflow-y-auto">
+			<div className="flex flex-col flex-1 overflow-y-auto">
 				{loading ? (
 					<div className="flex items-center justify-center py-12">
 						<p className="text-sm text-gray-500">Loading products...</p>
