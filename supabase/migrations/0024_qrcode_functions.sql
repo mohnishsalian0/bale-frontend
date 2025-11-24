@@ -18,7 +18,14 @@ DECLARE
     v_batch_id UUID;
     v_stock_unit_id UUID;
     v_result JSONB;
+    v_company_id UUID;
 BEGIN
+    -- Derive company_id from JWT if not provided
+    v_company_id := COALESCE(
+        (p_batch_data->>'company_id')::UUID,
+        get_jwt_company_id()
+    );
+
     -- Insert QR batch
     INSERT INTO qr_batches (
         company_id,
@@ -30,13 +37,13 @@ BEGIN
         created_by
     )
     VALUES (
-        (p_batch_data->>'company_id')::UUID,
+        v_company_id,
         (p_batch_data->>'warehouse_id')::UUID,
         p_batch_data->>'batch_name',
         p_batch_data->>'image_url',
         (SELECT ARRAY(SELECT jsonb_array_elements_text(p_batch_data->'fields_selected'))),
         p_batch_data->>'pdf_url',
-        (p_batch_data->>'created_by')::UUID
+        COALESCE((p_batch_data->>'created_by')::UUID, auth.uid())
     )
     RETURNING id INTO v_batch_id;
 

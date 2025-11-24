@@ -132,13 +132,16 @@ export default function CreateQRBatchPage() {
 					quality_grade,
 					warehouse_location,
 					products (
-						name,
-						sequence_number,
-						hsn_code,
-						material,
-						color_name,
-						gsm,
-						selling_price_per_unit
+						name, sequence_number, hsn_code, gsm, selling_price_per_unit,
+						product_material_assignments(
+							material:product_materials(*)
+						),
+						product_color_assignments(
+							color:product_colors(*)
+						),
+						product_tag_assignments(
+							tag:product_tags(*)
+						)
 					)
 				`)
 				.in('id', selectedStockUnitIds);
@@ -165,8 +168,14 @@ export default function CreateQRBatchPage() {
 					name: unit.products?.name || '',
 					sequence_number: unit.products?.sequence_number || 0,
 					hsn_code: unit.products?.hsn_code,
-					material: unit.products?.material,
-					color_name: unit.products?.color_name,
+					material: unit.products?.product_material_assignments
+						?.map((a: any) => a.material?.name)
+						.filter(Boolean)
+						.join(', ') || '',
+					color_name: unit.products?.product_color_assignments
+						?.map((a: any) => a.color?.name)
+						.filter(Boolean)
+						.join(', ') || '',
 					gsm: unit.products?.gsm,
 					selling_price_per_unit: unit.products?.selling_price_per_unit,
 				},
