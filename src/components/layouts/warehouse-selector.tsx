@@ -11,8 +11,6 @@ import { createClient } from '@/lib/supabase/client';
 import { AddWarehouseSheet } from '@/app/warehouse/AddWarehouseSheet';
 import { useSession } from '@/contexts/session-context';
 import type { Tables } from '@/types/database/supabase';
-import ImageWrapper from '../ui/image-wrapper';
-import { getInitials } from '@/lib/utils/initials';
 
 type Warehouse = Tables<'warehouses'>;
 

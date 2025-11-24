@@ -5,8 +5,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { IconBuildingWarehouse } from '@tabler/icons-react';
 import { createClient, getCurrentUser } from '@/lib/supabase/client';
-import ImageWrapper from '@/components/ui/image-wrapper';
-import { getInitials } from '@/lib/utils/initials';
 import type { Tables } from '@/types/database/supabase';
 import { LoadingState } from '@/components/layouts/loading-state';
 

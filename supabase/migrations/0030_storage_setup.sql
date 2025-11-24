@@ -49,17 +49,6 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- Warehouse images bucket
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES (
-    'warehouse-images',
-    'warehouse-images',
-    true, -- Public read access
-    2097152, -- 2MB in bytes
-    ARRAY['image/jpeg', 'image/png', 'image/webp']
-)
-ON CONFLICT (id) DO NOTHING;
-
 -- =====================================================
 -- STORAGE POLICIES - COMPANY LOGOS
 -- =====================================================
@@ -240,51 +229,6 @@ ON storage.objects FOR DELETE
 TO authenticated
 USING (
     bucket_id = 'partner-images'
-    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
-    AND public.authorize('storage.delete')
-);
-
--- =====================================================
--- STORAGE POLICIES - WAREHOUSE IMAGES
--- =====================================================
-
--- Anyone can view warehouse images
-CREATE POLICY "Anyone can view warehouse images"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'warehouse-images');
-
--- Authorized users can upload warehouse images
--- Path format: {company_id}/{warehouse_id}/image.{ext}
-CREATE POLICY "Authorized users can upload warehouse images"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (
-    bucket_id = 'warehouse-images'
-    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
-    AND public.authorize('storage.create')
-);
-
--- Authorized users can update warehouse images
-CREATE POLICY "Authorized users can update warehouse images"
-ON storage.objects FOR UPDATE
-TO authenticated
-USING (
-    bucket_id = 'warehouse-images'
-    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
-    AND public.authorize('storage.update')
-)
-WITH CHECK (
-    bucket_id = 'warehouse-images'
-    AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
-    AND public.authorize('storage.update')
-);
-
--- Authorized users can delete warehouse images
-CREATE POLICY "Authorized users can delete warehouse images"
-ON storage.objects FOR DELETE
-TO authenticated
-USING (
-    bucket_id = 'warehouse-images'
     AND (storage.foldername(name))[1] = public.get_jwt_company_id()::text
     AND public.authorize('storage.delete')
 );

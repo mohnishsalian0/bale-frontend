@@ -1,16 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { IconUser, IconPhone, IconChevronDown, IconBuildingWarehouse } from '@tabler/icons-react';
+import { IconUser, IconPhone, IconChevronDown } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { validateImageFile, uploadWarehouseImage } from '@/lib/storage';
 import { createClient } from '@/lib/supabase/client';
 import type { TablesInsert, Tables } from '@/types/database/supabase';
-import { useSession } from '@/contexts/session-context';
 
 interface AddWarehouseSheetProps {
 	open: boolean;
@@ -29,7 +26,6 @@ interface WarehouseFormData {
 	state: string;
 	country: string;
 	pinCode: string;
-	image: File | null;
 }
 
 export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, warehouse }: AddWarehouseSheetProps) {
@@ -43,15 +39,11 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 		state: '',
 		country: 'India',
 		pinCode: '',
-		image: null,
 	});
 
-	const [imagePreview, setImagePreview] = useState<string | null>(null);
-	const [imageError, setImageError] = useState<string | null>(null);
 	const [showAddress, setShowAddress] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
-	const { user } = useSession();
 
 	const isEditMode = !!warehouse;
 
@@ -68,32 +60,9 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 				state: warehouse.state || '',
 				country: warehouse.country || 'India',
 				pinCode: warehouse.pin_code || '',
-				image: null,
 			});
-			setImagePreview(warehouse.image_url || null);
 		}
 	}, [warehouse, open]);
-
-	const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
-
-		const validation = validateImageFile(file);
-		if (!validation.valid) {
-			setImageError(validation.error!);
-			return;
-		}
-
-		setImageError(null);
-		setFormData({ ...formData, image: file });
-
-		// Create preview
-		const reader = new FileReader();
-		reader.onloadend = () => {
-			setImagePreview(reader.result as string);
-		};
-		reader.readAsDataURL(file);
-	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -102,25 +71,6 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 
 		try {
 			const supabase = createClient();
-
-			let imageUrl: string | null = warehouse?.image_url || null;
-
-			// Upload image if new file is provided
-			if (formData.image) {
-				try {
-					// Generate warehouse ID for new warehouse or use existing ID
-					const warehouseId = warehouse?.id || crypto.randomUUID();
-					const { publicUrl } = await uploadWarehouseImage(
-						user.company_id,
-						warehouseId,
-						formData.image
-					);
-					imageUrl = publicUrl;
-				} catch (uploadError) {
-					console.error('Image upload failed:', uploadError);
-					throw new Error('Failed to upload image. Please try again.');
-				}
-			}
 
 			if (isEditMode && warehouse) {
 				// Update existing warehouse
@@ -134,7 +84,6 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 					state: formData.state || null,
 					country: formData.country || null,
 					pin_code: formData.pinCode || null,
-					image_url: imageUrl,
 				};
 
 				const { error: updateError } = await supabase
@@ -156,7 +105,6 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 					state: formData.state || null,
 					country: formData.country || null,
 					pin_code: formData.pinCode || null,
-					image_url: imageUrl,
 				};
 
 				const { error: insertError } = await supabase
@@ -191,10 +139,7 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 			state: '',
 			country: 'India',
 			pinCode: '',
-			image: null,
 		});
-		setImagePreview(null);
-		setImageError(null);
 		setSaveError(null);
 		onOpenChange(false);
 	};
@@ -210,40 +155,8 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 				{/* Form Content - Scrollable */}
 				<form onSubmit={handleSubmit} className="flex flex-col h-full overflow-y-hidden">
 					<div className="flex-1 overflow-y-auto">
-						{/* Image Upload & Basic Info */}
+						{/* Basic Info */}
 						<div className="flex flex-col gap-5 px-4 py-5">
-							{/* Image Upload */}
-							<div className="flex justify-center">
-								<label
-									htmlFor="warehouse-image"
-									className="relative flex flex-col items-center justify-center size-40 rounded-full border-shadow-gray bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors"
-								>
-									{imagePreview ? (
-										<Image
-											src={imagePreview}
-											alt="Warehouse preview"
-											fill
-											className="object-cover rounded-full"
-										/>
-									) : (
-										<>
-											<IconBuildingWarehouse className="size-12 text-gray-700 mb-2" />
-											<span className="text-base text-gray-700">Add image</span>
-										</>
-									)}
-									<input
-										id="warehouse-image"
-										type="file"
-										accept="image/jpeg,image/png,image/webp"
-										onChange={handleImageSelect}
-										className="sr-only"
-									/>
-								</label>
-							</div>
-							{imageError && (
-								<p className="text-sm text-red-600 text-center">{imageError}</p>
-							)}
-
 							{/* Warehouse Name */}
 							<Input
 								placeholder="Warehouse name"

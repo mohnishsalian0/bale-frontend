@@ -12,7 +12,6 @@ CREATE TABLE warehouses (
     name VARCHAR(100) NOT NULL,
     contact_name VARCHAR(100),
     contact_number VARCHAR(20),
-    image_url TEXT,
     address_line1 VARCHAR(255),
     address_line2 VARCHAR(255),
     city VARCHAR(100),
