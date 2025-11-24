@@ -2,6 +2,7 @@
 
 import { IconPhoto } from '@tabler/icons-react';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
+import { formatStockUnitNumber } from '@/lib/utils/stock-unit';
 import type { Tables } from '@/types/database/supabase';
 import ImageWrapper from '@/components/ui/image-wrapper';
 import { getProductIcon } from '@/lib/utils/product';
@@ -65,7 +66,7 @@ export function StockUnitsTab({ items }: StockUnitsTabProps) {
 							</p>
 
 							<p className="text-xs text-gray-500 mt-0.5">
-								SU-{stockUnit?.sequence_number || 'No unit number'}
+								{stockUnit?.sequence_number ? formatStockUnitNumber(stockUnit.sequence_number, stockType) : 'No unit number'}
 							</p>
 
 							{/* Additional Details */}

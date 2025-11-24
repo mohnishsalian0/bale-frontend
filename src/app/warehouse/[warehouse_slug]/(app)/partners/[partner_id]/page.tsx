@@ -368,7 +368,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
 				/>
 
 				{/* Tab Content */}
-				<div className="flex-1">
+				<div className="flex-1 border-r border-border">
 					{activeTab === 'summary' && (
 						<SummaryTab
 							partner={partner}

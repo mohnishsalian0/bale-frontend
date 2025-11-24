@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { StockUnitDetailsModal, type StockUnitWithProduct } from '@/components/layouts/stock-unit-modal';
 import { formatAbsoluteDate, formatRelativeDate } from '@/lib/utils/date';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
+import { formatStockUnitNumber } from '@/lib/utils/stock-unit';
 import type { Tables } from '@/types/database/supabase';
-import type { MeasuringUnit } from '@/types/database/enums';
+import type { MeasuringUnit, StockType } from '@/types/database/enums';
 import type { ProductWithAttributes } from '@/lib/queries/products';
 
 type StockUnit = Tables<'stock_units'>;
@@ -173,7 +174,7 @@ export function StockUnitsTab({ stockUnits, measuringUnit, product }: StockUnits
 									>
 										<div className="flex-1 min-w-0">
 											<h3 className="text-base font-medium text-gray-900">
-												SU-{unit.sequence_number}
+												{formatStockUnitNumber(unit.sequence_number, product.stock_type as StockType)}
 											</h3>
 
 											{/* QR Status */}

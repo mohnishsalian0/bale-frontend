@@ -540,10 +540,11 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 										{formData.images.length < MAX_PRODUCT_IMAGES && (
 											<label
 												htmlFor="product-images"
-												className="flex items-center justify-center gap-2 h-20 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
+												className="flex flex-col items-center justify-center gap-2 h-32 rounded-lg border-2 border-dashed border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors"
 											>
-												<IconPhoto className="size-6 text-gray-500" />
+												<IconPhoto className="size-8 text-gray-500" />
 												<span className="text-sm text-gray-700">Add images</span>
+												<span className="text-xs text-gray-500">JPEG, PNG, WEBP · Upto 6 files · 2MB each</span>
 												<input
 													id="product-images"
 													type="file"

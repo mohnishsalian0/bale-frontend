@@ -76,7 +76,7 @@ export function OrderDetailsTab({
 	onEditNotes,
 }: OrderDetailsTabProps) {
 	return (
-		<div className="flex flex-col">
+		<div className="flex flex-col gap-3 p-4">
 			{/* Line Items Section */}
 			<Section
 				title={`${order.sales_order_items.length} items at ₹${formatCurrency(financials?.totalAmount || 0)}`}

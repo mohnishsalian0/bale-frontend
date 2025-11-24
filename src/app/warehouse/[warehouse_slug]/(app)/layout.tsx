@@ -55,10 +55,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 					/>
 				)}
 
-				<div className="flex flex-col flex-1 overflow-y-auto">
-					<div className="max-w-4xl relative flex flex-col flex-1">
-						{children}
-					</div>
+				<div className="flex flex-col flex-1 overflow-y-auto max-w-4xl">
+					{children}
 				</div>
 
 				<BottomNav />

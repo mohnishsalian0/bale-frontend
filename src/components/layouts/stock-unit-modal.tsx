@@ -10,6 +10,7 @@ import ImageWrapper from '@/components/ui/image-wrapper';
 import { getProductIcon, getProductInfo } from '@/lib/utils/product';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import { formatAbsoluteDate } from '@/lib/utils/date';
+import { formatStockUnitNumber } from '@/lib/utils/stock-unit';
 import type { Tables } from '@/types/database/supabase';
 import type { ProductWithAttributes } from '@/lib/queries/products';
 import type { MeasuringUnit, StockType, StockUnitStatus } from '@/types/database/enums';
@@ -80,89 +81,65 @@ export function StockUnitDetailsModal({
 			<div className="space-y-3">
 				<h3 className="text-sm font-medium text-gray-500">Quantity & Status</h3>
 				<div className="flex justify-between text-sm">
-					<span className="text-gray-700">Initial quantity</span>
-					<span className="font-semibold text-gray-700">
-						{stockUnit.initial_quantity} {unitAbbr}
-					</span>
-				</div>
-				<div className="flex justify-between text-sm">
 					<span className="text-gray-700">Remaining quantity</span>
 					<span className="font-semibold text-gray-700">
 						{stockUnit.remaining_quantity} {unitAbbr}
 					</span>
 				</div>
-				<div className="flex justify-between text-sm items-center">
-					<span className="text-gray-700">Status</span>
-					<StockStatusBadge status={stockUnit.status as StockUnitStatus} />
+				<div className="flex justify-between text-sm">
+					<span className="text-gray-700">Initial quantity</span>
+					<span className="font-semibold text-gray-700">
+						{stockUnit.initial_quantity} {unitAbbr}
+					</span>
 				</div>
 			</div>
 
 			{/* Stock Details Section */}
 			<div className="space-y-3">
 				<h3 className="text-sm font-medium text-gray-500">Stock Details</h3>
-				{stockUnit.quality_grade && (
-					<div className="flex justify-between text-sm">
-						<span className="text-gray-700">Quality grade</span>
-						<span className="font-semibold text-gray-700">{stockUnit.quality_grade}</span>
-					</div>
-				)}
-				{stockUnit.supplier_number && (
-					<div className="flex justify-between text-sm">
-						<span className="text-gray-700">Supplier number</span>
-						<span className="font-semibold text-gray-700">{stockUnit.supplier_number}</span>
-					</div>
-				)}
-				{stockUnit.warehouse_location && (
-					<div className="flex justify-between text-sm">
-						<span className="text-gray-700">Warehouse location</span>
-						<span className="font-semibold text-gray-700">{stockUnit.warehouse_location}</span>
-					</div>
-				)}
-				{stockUnit.manufacturing_date && (
-					<div className="flex justify-between text-sm">
-						<span className="text-gray-700">Manufacturing date</span>
+				<div className="flex justify-between text-sm">
+					<span className="text-gray-700">Quality grade</span>
+					<span className="font-semibold text-gray-700">{stockUnit.quality_grade || '-'}</span>
+				</div>
+				<div className="flex justify-between text-sm">
+					<span className="text-gray-700">Supplier number</span>
+					<span className="font-semibold text-gray-700">{stockUnit.supplier_number || '-'}</span>
+				</div>
+				<div className="flex justify-between text-sm">
+					<span className="text-gray-700">Warehouse location</span>
+					<span className="font-semibold text-gray-700">{stockUnit.warehouse_location || '-'}</span>
+				</div>
+				<div className="flex justify-between text-sm">
+					<span className="text-gray-700">Manufacturing date</span>
+					{stockUnit.manufacturing_date ? (
 						<span className="font-semibold text-gray-700">
 							{formatAbsoluteDate(stockUnit.manufacturing_date)}
 						</span>
-					</div>
-				)}
-				{!stockUnit.quality_grade && !stockUnit.supplier_number && !stockUnit.warehouse_location && !stockUnit.manufacturing_date && (
-					<p className="text-sm text-gray-500">No additional details</p>
-				)}
-			</div>
-
-			{/* Dates & Tracking Section */}
-			<div className="space-y-3">
-				<h3 className="text-sm font-medium text-gray-500">Dates & Tracking</h3>
-				<div className="flex justify-between text-sm">
-					<span className="text-gray-700">Created at</span>
-					<span className="font-semibold text-gray-700">
-						{formatAbsoluteDate(stockUnit.created_at)}
-					</span>
+					) : (
+						<span className="font-semibold text-gray-700">
+							-
+						</span>
+					)}
 				</div>
-				{stockUnit.qr_generated_at && (
-					<div className="flex justify-between text-sm">
-						<span className="text-gray-700">QR generated at</span>
+				<div className="flex justify-between text-sm">
+					<span className="text-gray-700">QR generated at</span>
+					{stockUnit.qr_generated_at ? (
 						<span className="font-semibold text-gray-700">
 							{formatAbsoluteDate(stockUnit.qr_generated_at)}
 						</span>
-					</div>
-				)}
-				{stockUnit.created_from_inward_id && (
-					<div className="flex justify-between text-sm">
-						<span className="text-gray-700">Created from inward</span>
-						<span className="font-semibold text-gray-700">Yes</span>
-					</div>
-				)}
+					) : (
+						<span className="font-semibold text-gray-700">
+							-
+						</span>
+					)}
+				</div>
 			</div>
 
 			{/* Notes Section */}
-			{stockUnit.notes && (
-				<div className="space-y-3">
-					<h3 className="text-sm font-medium text-gray-500">Notes</h3>
-					<p className="text-sm text-gray-700">{stockUnit.notes}</p>
-				</div>
-			)}
+			<div className="space-y-3">
+				<h3 className="text-sm font-medium text-gray-500">Notes</h3>
+				<p className="text-sm text-gray-700">{stockUnit.notes || '-'}</p>
+			</div>
 		</div>
 	);
 
@@ -171,11 +148,11 @@ export function StockUnitDetailsModal({
 			<Button
 				type="button"
 				variant="outline"
-				onClick={handleWastage}
-				className="flex-1"
+				size="icon"
+				onClick={handleDelete}
+				className="text-red-600 hover:text-red-700 hover:bg-red-50"
 			>
-				<IconPlus className="size-4 mr-1" />
-				Wastage
+				<IconTrash className="size-4" />
 			</Button>
 			<Button
 				type="button"
@@ -188,11 +165,11 @@ export function StockUnitDetailsModal({
 			<Button
 				type="button"
 				variant="outline"
-				size="icon"
-				onClick={handleDelete}
-				className="text-red-600 hover:text-red-700 hover:bg-red-50"
+				onClick={handleWastage}
+				className="flex-1"
 			>
-				<IconTrash className="size-4" />
+				<IconPlus className="size-4 mr-1" />
+				Wastage
 			</Button>
 		</div>
 	);
@@ -202,7 +179,10 @@ export function StockUnitDetailsModal({
 			<Drawer open={open} onOpenChange={onOpenChange}>
 				<DrawerContent>
 					<DrawerHeader>
-						<DrawerTitle>SU-{stockUnit.sequence_number}</DrawerTitle>
+						<DrawerTitle>
+							{formatStockUnitNumber(stockUnit.sequence_number, product?.stock_type as StockType)}
+							<StockStatusBadge status={stockUnit.status as StockUnitStatus} />
+						</DrawerTitle>
 					</DrawerHeader>
 					{content}
 					<DrawerFooter>
@@ -217,7 +197,10 @@ export function StockUnitDetailsModal({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>SU-{stockUnit.sequence_number}</DialogTitle>
+					<DialogTitle>
+						{formatStockUnitNumber(stockUnit.sequence_number, product?.stock_type as StockType)}
+						<StockStatusBadge status={stockUnit.status as StockUnitStatus} />
+					</DialogTitle>
 				</DialogHeader>
 				{content}
 				<DialogFooter>

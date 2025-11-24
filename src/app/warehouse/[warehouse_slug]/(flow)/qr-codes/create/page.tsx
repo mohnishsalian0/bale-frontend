@@ -132,7 +132,7 @@ export default function CreateQRBatchPage() {
 					quality_grade,
 					warehouse_location,
 					products (
-						name, sequence_number, hsn_code, gsm, selling_price_per_unit,
+						name, sequence_number, hsn_code, gsm, selling_price_per_unit, stock_type,
 						product_material_assignments(
 							material:product_materials(*)
 						),
@@ -168,6 +168,7 @@ export default function CreateQRBatchPage() {
 					name: unit.products?.name || '',
 					sequence_number: unit.products?.sequence_number || 0,
 					hsn_code: unit.products?.hsn_code,
+					stock_type: unit.products?.stock_type,
 					material: unit.products?.product_material_assignments
 						?.map((a: any) => a.material?.name)
 						.filter(Boolean)

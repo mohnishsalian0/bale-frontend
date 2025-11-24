@@ -93,7 +93,7 @@ export function InwardDetailsTab({ inward }: InwardDetailsTabProps) {
 	const TransportIcon = getTransportIcon(inward.transport_type);
 
 	return (
-		<div className="flex flex-col">
+		<div className="flex flex-col gap-3 p-4">
 			{/* Reason for Inward Section */}
 			<Section
 				title={reasonTitle}

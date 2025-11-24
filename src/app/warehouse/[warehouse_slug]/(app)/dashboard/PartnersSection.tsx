@@ -6,7 +6,7 @@ import { PartnerButton } from '@/components/ui/partner-button';
 import { IconPlus, IconUsers } from '@tabler/icons-react';
 import type { RecentPartner } from '@/lib/queries/dashboard';
 import { AddPartnerSheet } from '../partners/AddPartnerSheet';
-import router from 'next/router';
+import { useRouter } from 'next/navigation';
 import { useSession } from '@/contexts/session-context';
 import { PartnerType } from '@/types/database/enums';
 
@@ -27,6 +27,7 @@ export function PartnersSection({
 	totalCount,
 	onPartnerAdded,
 }: PartnersSectionProps) {
+	const router = useRouter();
 	const { warehouse } = useSession();
 	const [showAddPartnerSheet, setShowAddPartnerSheet] = useState(false);
 
@@ -58,7 +59,7 @@ export function PartnersSection({
 					</Button>
 				</div>
 				<div className="px-4">
-					<div className="grid grid-cols-4 gap-3">
+					<div className="flex gap-10">
 						{partners.map((partner) => (
 							<PartnerButton
 								key={partner.id}

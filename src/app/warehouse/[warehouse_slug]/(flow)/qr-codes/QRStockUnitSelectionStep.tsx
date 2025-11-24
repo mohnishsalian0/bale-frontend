@@ -6,7 +6,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { createClient } from '@/lib/supabase/client';
 import { formatRelativeDate } from '@/lib/utils/date';
+import { formatStockUnitNumber } from '@/lib/utils/stock-unit';
 import type { Tables } from '@/types/database/supabase';
+import type { StockType } from '@/types/database/enums';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSession } from '@/contexts/session-context';
 
@@ -225,7 +227,7 @@ export function QRStockUnitSelectionStep({
 											/>
 											<div className="flex items-center gap-3 flex-1">
 												<div className="flex-1 min-w-0">
-													<p className="text-xs font-medium text-gray-900">SU-{unit.sequence_number}</p>
+													<p className="text-xs font-medium text-gray-900">{formatStockUnitNumber(unit.sequence_number, unit.product?.stock_type as StockType)}</p>
 													<div className="flex items-center gap-1.5 text-xs text-gray-500">
 														{unit.manufacturing_date && (
 															<Fragment>

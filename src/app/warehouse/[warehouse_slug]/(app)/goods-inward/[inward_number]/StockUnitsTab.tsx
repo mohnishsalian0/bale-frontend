@@ -4,6 +4,7 @@ import { IconBox } from '@tabler/icons-react';
 import type { Tables } from '@/types/database/supabase';
 import ImageWrapper from '@/components/ui/image-wrapper';
 import { getProductIcon } from '@/lib/utils/product';
+import { formatStockUnitNumber } from '@/lib/utils/stock-unit';
 import { StockType } from '@/types/database/enums';
 
 type StockUnit = Tables<'stock_units'>;
@@ -65,7 +66,7 @@ export function StockUnitsTab({ stockUnits }: StockUnitsTabProps) {
 							</div>
 
 							<p className="text-xs text-gray-500 mt-0.5">
-								SU-{item.sequence_number}
+								{formatStockUnitNumber(item.sequence_number, stockType)}
 							</p>
 
 							{/* Additional Details */}

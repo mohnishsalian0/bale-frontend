@@ -20,7 +20,7 @@ export function SummaryTab({ product }: SummaryTabProps) {
 	const productImages = product.product_images || [];
 
 	return (
-		<div className="flex flex-col">
+		<div className="flex flex-col p-4 gap-3">
 			{/* Sales Section */}
 			<Section
 				title={`0 ${unitAbbr} sold`}

@@ -98,7 +98,7 @@ export function OutwardDetailsTab({ outward }: OutwardDetailsTabProps) {
 	const TransportIcon = getTransportIcon(outward.transport_type);
 
 	return (
-		<div className="flex flex-col">
+		<div className="flex flex-col gap-3 p-4">
 			{/* Reason for Outward Section */}
 			<Section
 				title={reasonTitle}

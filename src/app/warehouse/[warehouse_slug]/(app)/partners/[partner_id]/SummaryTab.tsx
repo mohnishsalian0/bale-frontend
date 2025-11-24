@@ -19,7 +19,7 @@ export function SummaryTab({ partner, onEdit }: SummaryTabProps) {
 		: null;
 
 	return (
-		<div className="flex flex-col">
+		<div className="flex flex-col gap-3 p-4">
 			{/* Contact Information Section */}
 			<Section
 				title="Contact information"

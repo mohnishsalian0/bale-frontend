@@ -1,8 +1,10 @@
 import React from 'react';
 import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer';
 import QRCode from 'qrcode';
+import { formatStockUnitNumber } from '@/lib/utils/stock-unit';
 import type { QRTemplateField } from '@/app/warehouse/[warehouse_slug]/(flow)/qr-codes/QRTemplateCustomisationStep';
 import type { Tables } from '@/types/database/supabase';
+import type { StockType } from '@/types/database/enums';
 
 // Type for product attributes in label data
 interface LabelProductAttribute {
@@ -17,7 +19,7 @@ export type LabelData = Pick<
 > & {
 	product: Pick<
 		Tables<'products'>,
-		'name' | 'sequence_number' | 'hsn_code' | 'gsm' | 'selling_price_per_unit'
+		'name' | 'sequence_number' | 'hsn_code' | 'gsm' | 'selling_price_per_unit' | 'stock_type'
 	> & {
 		materials?: LabelProductAttribute[];
 		colors?: LabelProductAttribute[];
@@ -140,8 +142,7 @@ function getFieldValue(unit: LabelData, field: QRTemplateField): string {
 			value = unit.product.selling_price_per_unit;
 			break;
 		case 'unit_number':
-			value = unit.sequence_number;
-			break;
+			return formatStockUnitNumber(unit.sequence_number, unit.product.stock_type as StockType);
 		case 'manufacturing_date':
 			value = unit.manufacturing_date;
 			break;

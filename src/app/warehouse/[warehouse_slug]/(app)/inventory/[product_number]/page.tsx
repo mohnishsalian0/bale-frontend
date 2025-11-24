@@ -290,7 +290,7 @@ export default function ProductDetailPage({ params }: PageParams) {
 				/>
 
 				{/* Tab Content */}
-				<div className="flex-1">
+				<div className="flex-1 border-r border-border">
 					{activeTab === 'summary' && (
 						<SummaryTab
 							product={product}
