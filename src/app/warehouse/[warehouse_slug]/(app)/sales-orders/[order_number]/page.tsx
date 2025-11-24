@@ -3,7 +3,7 @@
 import { use, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { SalesStatusBadge } from '@/components/ui/sales-status-badge';
 import { Progress } from '@/components/ui/progress';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { ErrorState } from '@/components/layouts/error-state';
@@ -202,7 +202,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 					<div>
 						<div className="flex items-center gap-2">
 							<h1 className="text-2xl font-bold text-gray-900">SO-{order.sequence_number}</h1>
-							<StatusBadge status={displayStatus} />
+							<SalesStatusBadge status={displayStatus} />
 						</div>
 						<p className="text-sm text-gray-500">Sales order on {formatAbsoluteDate(order.order_date)}</p>
 					</div>

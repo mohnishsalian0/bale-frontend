@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { SalesStatusBadge } from '@/components/ui/sales-status-badge';
 import { Progress } from '@/components/ui/progress';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { IconDotsVertical, IconPlus } from '@tabler/icons-react';
@@ -73,7 +73,7 @@ export function ActiveSalesOrdersSection({
 										<div>
 											<div className="flex items-center justify-between gap-2">
 												<p className="text-base font-medium text-gray-900">{customerName}</p>
-												<StatusBadge status={displayStatus} />
+												<SalesStatusBadge status={displayStatus} />
 											</div>
 
 											{/* Subtexts spanning full width */}

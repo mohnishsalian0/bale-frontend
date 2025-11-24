@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { IconShoppingCart } from '@tabler/icons-react';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { SalesStatusBadge } from '@/components/ui/sales-status-badge';
 import { Progress } from '@/components/ui/progress';
 import { formatAbsoluteDate } from '@/lib/utils/date';
 import { calculateCompletionPercentage, getOrderDisplayStatus, type DisplayStatus } from '@/lib/utils/sales-order';
@@ -121,7 +121,7 @@ export function OrdersTab({ orders, warehouseSlug }: OrdersTabProps) {
 									<p className="text-base font-medium text-gray-900 text-left">
 										{getProductSummary(order.sales_order_items)}
 									</p>
-									<StatusBadge status={displayStatus} />
+									<SalesStatusBadge status={displayStatus} />
 								</div>
 
 								{/* Subtexts spanning full width */}

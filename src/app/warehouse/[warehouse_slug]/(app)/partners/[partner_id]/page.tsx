@@ -2,13 +2,12 @@
 
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { IconPlus, IconShoppingCart, IconPackage, IconClockHour8, IconTrash } from '@tabler/icons-react';
 import ImageWrapper from '@/components/ui/image-wrapper';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { ErrorState } from '@/components/layouts/error-state';
 import { TabUnderline } from '@/components/ui/tab-underline';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { SalesStatusBadge } from '@/components/ui/sales-status-badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import {
@@ -331,7 +330,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
 											{pendingOrdersCount} pending {pendingOrdersCount === 1 ? 'order' : 'orders'}
 										</span>
 									</div>
-									<StatusBadge status={displayStatus} />
+									<SalesStatusBadge status={displayStatus} />
 								</div>
 								<p className="font-medium text-gray-900">
 									{pendingOrder.sales_order_items

@@ -7,7 +7,7 @@ import { IconSearch } from '@tabler/icons-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Fab } from '@/components/ui/fab';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { SalesStatusBadge } from '@/components/ui/sales-status-badge';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { ErrorState } from '@/components/layouts/error-state';
 import { useSession } from '@/contexts/session-context';
@@ -322,7 +322,7 @@ export default function OrdersPage() {
 										<div>
 											<div className="flex items-center justify-between gap-2">
 												<p className="text-base font-medium text-gray-900">{order.customerName}</p>
-												<StatusBadge status={order.status} />
+												<SalesStatusBadge status={order.status} />
 											</div>
 
 											{/* Subtexts spanning full width */}
