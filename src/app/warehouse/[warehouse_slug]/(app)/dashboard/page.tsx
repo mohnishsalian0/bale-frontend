@@ -3,24 +3,21 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { Progress } from '@/components/ui/progress';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { ErrorState } from '@/components/layouts/error-state';
-import ImageWrapper from '@/components/ui/image-wrapper';
 import { useSession } from '@/contexts/session-context';
-import { getDashboardSalesOrders, getLowStockProducts, getPendingQRProducts } from '@/lib/queries/dashboard';
-import type { DashboardSalesOrder, LowStockProduct, PendingQRProduct } from '@/lib/queries/dashboard';
-import { calculateCompletionPercentage, getOrderDisplayStatus, getProductSummary, type DisplayStatus } from '@/lib/utils/sales-order';
-import { getPartnerName } from '@/lib/utils/partner';
-import { getProductIcon, getProductInfo } from '@/lib/utils/product';
-import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
-import { formatAbsoluteDate } from '@/lib/utils/date';
-import type { SalesOrderStatus, StockType, MeasuringUnit } from '@/types/database/enums';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { IconDotsVertical, IconAlertTriangle } from '@tabler/icons-react';
+import { getDashboardSalesOrders, getLowStockProducts, getPendingQRProducts, getRecentPartners } from '@/lib/queries/dashboard';
+import type { DashboardSalesOrder, LowStockProduct, PendingQRProduct, RecentPartner } from '@/lib/queries/dashboard';
+import { QuickActionButton, type QuickAction } from '@/components/ui/quick-action-button';
+import { PartnersSection } from './PartnersSection';
+import { ActiveSalesOrdersSection } from './ActiveSalesOrdersSection';
+import { LowStockProductsSection } from './LowStockProductsSection';
+import { PendingQRCodesSection } from './PendingQRCodesSection';
+import { AddProductSheet } from '../inventory/AddProductSheet';
+import { IconShirt, IconQrcode } from '@tabler/icons-react';
+import IconGoodsInward from '@/components/icons/IconGoodsInward';
+import IconGoodsOutward from '@/components/icons/IconGoodsOutward';
 
 export default function DashboardPage() {
 	const router = useRouter();
@@ -28,23 +25,59 @@ export default function DashboardPage() {
 	const [salesOrders, setSalesOrders] = useState<DashboardSalesOrder[]>([]);
 	const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
 	const [pendingQRProducts, setPendingQRProducts] = useState<PendingQRProduct[]>([]);
+	const [recentCustomers, setRecentCustomers] = useState<RecentPartner[]>([]);
+	const [recentSuppliers, setRecentSuppliers] = useState<RecentPartner[]>([]);
+	const [totalCustomers, setTotalCustomers] = useState(0);
+	const [totalSuppliers, setTotalSuppliers] = useState(0);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+
+	// Sheet states
+	const [showAddProductSheet, setShowAddProductSheet] = useState(false);
+
+	// Quick actions array
+	const quickActions: QuickAction[] = [
+		{
+			icon: IconShirt,
+			label: 'Create product',
+			href: `/warehouse/${warehouse.slug}/inventory?action=add`,
+		},
+		{
+			icon: IconGoodsInward,
+			label: 'Goods inward',
+			href: `/warehouse/${warehouse.slug}/goods-inward/create`,
+		},
+		{
+			icon: IconQrcode,
+			label: 'QR code batch',
+			href: `/warehouse/${warehouse.slug}/qr-codes/create`,
+		},
+		{
+			icon: IconGoodsOutward,
+			label: 'Goods outward',
+			href: `/warehouse/${warehouse.slug}/goods-outward/create`,
+		},
+	];
 
 	const fetchDashboardData = async () => {
 		try {
 			setLoading(true);
 			setError(null);
 
-			const [orders, lowStock, pendingQR] = await Promise.all([
+			const [orders, lowStock, pendingQR, partnersData] = await Promise.all([
 				getDashboardSalesOrders(warehouse.id),
 				getLowStockProducts(warehouse.id),
 				getPendingQRProducts(warehouse.id),
+				getRecentPartners(),
 			]);
 
 			setSalesOrders(orders);
 			setLowStockProducts(lowStock);
 			setPendingQRProducts(pendingQR);
+			setRecentCustomers(partnersData.customers);
+			setRecentSuppliers(partnersData.suppliers);
+			setTotalCustomers(partnersData.totalCustomers);
+			setTotalSuppliers(partnersData.totalSuppliers);
 		} catch (err) {
 			console.error('Error fetching dashboard data:', err);
 			setError(err instanceof Error ? err.message : 'Failed to load dashboard');
@@ -102,286 +135,74 @@ export default function DashboardPage() {
 				</div>
 			</div>
 
-			{/* Sales Orders Section */}
-			<div className="flex flex-col mt-6">
-				<div className="flex items-center justify-between px-4 py-2">
-					<h2 className="text-lg font-bold text-gray-900">Active sales orders</h2>
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => router.push(`/warehouse/${warehouse.slug}/sales-orders`)}
-					>
-						View all →
-					</Button>
-				</div>
-
-				{salesOrders.length === 0 ? (
-					<div className="px-4 py-8 text-center">
-						<p className="text-sm text-gray-500">No pending or in-progress orders</p>
-					</div>
-				) : (
-					<div className="px-4 flex flex-col gap-3">
-						{salesOrders.map((order) => {
-							const displayStatus: DisplayStatus = getOrderDisplayStatus(
-								order.status as SalesOrderStatus,
-								order.expected_delivery_date
-							);
-							const completionPercentage = calculateCompletionPercentage(order.sales_order_items);
-							const showProgressBar = displayStatus === 'in_progress' || displayStatus === 'overdue';
-							const progressColor = displayStatus === 'overdue' ? 'yellow' : 'blue';
-							const customerName = order.customer ? getPartnerName(order.customer) : 'Unknown Customer';
-							const products = order.sales_order_items.map((item) => ({
-								name: item.product?.[0]?.name || 'Unknown Product',
-								quantity: item.required_quantity,
-							}));
-
-							return (
-								<Card
-									key={order.id}
-									className="rounded-none border-2 rounded-lg shadow-none bg-transparent"
-								>
-									<CardContent className="p-4 flex flex-col gap-3">
-										<button
-											onClick={() =>
-												router.push(`/warehouse/${warehouse.slug}/sales-orders/${order.sequence_number}`)
-											}
-											className="flex flex-col gap-2 text-left"
-										>
-											{/* Title and Status Badge */}
-											<div>
-												<div className="flex items-center justify-between gap-2">
-													<p className="text-base font-medium text-gray-900">{customerName}</p>
-													<StatusBadge status={displayStatus} />
-												</div>
-
-												{/* Subtexts spanning full width */}
-												<p className="text-xs text-gray-500 mt-1">
-													{getProductSummary(products)}
-												</p>
-												<div className="flex items-center justify-between mt-1">
-													<p className="text-xs text-gray-500">
-														SO-{order.sequence_number}
-														{order.expected_delivery_date &&
-															` • Due on ${formatAbsoluteDate(order.expected_delivery_date)}`}
-													</p>
-													{order.status !== 'approval_pending' && (
-														<p className="text-xs text-gray-500">{completionPercentage}% completed</p>
-													)}
-												</div>
-											</div>
-
-											{/* Progress Bar */}
-											{showProgressBar && <Progress color={progressColor} value={completionPercentage} />}
-										</button>
-
-										{/* Action Buttons */}
-										<div className="flex">
-											{order.status === 'approval_pending' ? (
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={(e) => {
-														e.stopPropagation();
-														console.log('Approve order');
-													}}
-												>
-													Approve order
-												</Button>
-											) : (
-												<>
-													<Button
-														variant="ghost"
-														size="sm"
-														onClick={(e) => {
-															e.stopPropagation();
-															router.push(
-																`/warehouse/${warehouse.slug}/goods-outward/create?order=${order.sequence_number}`
-															);
-														}}
-													>
-														Create outward
-													</Button>
-													<Button
-														variant="ghost"
-														size="sm"
-														onClick={(e) => {
-															e.stopPropagation();
-															console.log('Make invoice');
-														}}
-													>
-														Make invoice
-													</Button>
-												</>
-											)}
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-													<Button variant="ghost" size="icon-sm">
-														<IconDotsVertical className="size-5" />
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="end">
-													{(order.status === 'in_progress' || displayStatus === 'overdue') && (
-														<>
-															<DropdownMenuItem
-																onClick={(e) => {
-																	e.stopPropagation();
-																	console.log('Mark as complete');
-																}}
-															>
-																Mark as complete
-															</DropdownMenuItem>
-															<DropdownMenuSeparator />
-														</>
-													)}
-													<DropdownMenuItem
-														onClick={(e) => {
-															e.stopPropagation();
-															console.log('Share');
-														}}
-													>
-														Share
-													</DropdownMenuItem>
-													<DropdownMenuItem
-														onClick={(e) => {
-															e.stopPropagation();
-															console.log('Download');
-														}}
-													>
-														Download
-													</DropdownMenuItem>
-													<DropdownMenuSeparator />
-													<DropdownMenuItem
-														variant="destructive"
-														onClick={(e) => {
-															e.stopPropagation();
-															console.log('Cancel order');
-														}}
-													>
-														Cancel order
-													</DropdownMenuItem>
-												</DropdownMenuContent>
-											</DropdownMenu>
-										</div>
-									</CardContent>
-								</Card>
-							);
-						})}
-					</div>
-				)}
+			{/* Quick Actions */}
+			<div className="grid grid-cols-4 gap-3 px-4 mt-6">
+				{quickActions.map((action) => (
+					<QuickActionButton
+						key={action.label}
+						action={action}
+						onClick={() => {
+							if (action.label === 'Create product') {
+								setShowAddProductSheet(true);
+							} else {
+								router.push(action.href);
+							}
+						}}
+					/>
+				))}
 			</div>
+
+			{/* Customers Section */}
+			<div className="mt-6">
+				<PartnersSection
+					title="Customers"
+					newButtonLabel="New customer"
+					partnerType="customer"
+					partners={recentCustomers}
+					totalCount={totalCustomers}
+					onPartnerAdded={fetchDashboardData}
+				/>
+			</div>
+
+			{/* Suppliers Section */}
+			<div className="mt-6">
+				<PartnersSection
+					title="Suppliers"
+					newButtonLabel="New supplier"
+					partnerType="supplier"
+					partners={recentSuppliers}
+					totalCount={totalSuppliers}
+					onPartnerAdded={fetchDashboardData}
+				/>
+			</div>
+
+			{/* Sales Orders Section */}
+			<ActiveSalesOrdersSection
+				orders={salesOrders}
+				warehouseSlug={warehouse.slug}
+				onNavigate={(path) => router.push(path)}
+			/>
 
 			{/* Low Stock Products Section */}
-			<div className="flex flex-col mt-6">
-				<div className="flex items-center justify-between px-4 py-2">
-					<h2 className="text-lg font-bold text-gray-900">Low stock products</h2>
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => router.push(`/warehouse/${warehouse.slug}/inventory`)}
-					>
-						View all →
-					</Button>
-				</div>
-
-				{lowStockProducts.length === 0 ? (
-					<div className="px-4 py-8 text-center">
-						<p className="text-sm text-gray-500">No low stock products</p>
-					</div>
-				) : (
-					<div className="flex flex-col gap-3 px-4">
-						{lowStockProducts.map((product) => (
-							<Card
-								key={`low-stock-${product.id}`}
-								className="rounded-none border-2 rounded-lg shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
-								onClick={() =>
-									router.push(`/warehouse/${warehouse.slug}/inventory/${product.sequence_number}`)
-								}
-							>
-								<CardContent className="p-4 flex gap-4 items-center">
-									<ImageWrapper
-										size="md"
-										shape="square"
-										imageUrl={product.product_images?.[0]}
-										alt={product.name}
-										placeholderIcon={getProductIcon(product.stock_type as StockType)}
-									/>
-
-									<div className="flex-1 flex flex-col items-start">
-										<p className="font-medium text-gray-900">{product.name}</p>
-										<p className="text-xs text-gray-500">
-											{getProductInfo(product) || 'No details'}
-										</p>
-									</div>
-
-									<div className="flex flex-col items-end gap-1">
-										<div className="flex items-center gap-1">
-											<IconAlertTriangle className="size-4 text-yellow-700" />
-											<p className="text-base font-bold text-yellow-700">
-												{product.current_stock}{' '}
-												{getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null)}
-											</p>
-										</div>
-									</div>
-								</CardContent>
-							</Card>
-						))}
-					</div>
-				)}
-			</div>
+			<LowStockProductsSection
+				products={lowStockProducts}
+				warehouseSlug={warehouse.slug}
+				onNavigate={(path) => router.push(path)}
+			/>
 
 			{/* Pending QR Codes Section */}
-			<div className="flex flex-col mt-6 pb-4">
-				<div className="flex items-center justify-between px-4 py-2">
-					<h2 className="text-lg font-bold text-gray-900">Pending QR codes</h2>
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => router.push(`/warehouse/${warehouse.slug}/inventory`)}
-					>
-						View all →
-					</Button>
-				</div>
+			<PendingQRCodesSection
+				products={pendingQRProducts}
+				warehouseSlug={warehouse.slug}
+				onNavigate={(path) => router.push(path)}
+			/>
 
-				{pendingQRProducts.length === 0 ? (
-					<div className="px-4 py-8 text-center">
-						<p className="text-sm text-gray-500">No pending QR codes</p>
-					</div>
-				) : (
-					<div className="flex flex-col gap-3 px-4">
-						{pendingQRProducts.map((product) => (
-							<Card
-								key={`pending-qr-${product.id}`}
-								className="rounded-none border-2 rounded-lg shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
-								onClick={() =>
-									router.push(`/warehouse/${warehouse.slug}/inventory/${product.sequence_number}`)
-								}
-							>
-								<CardContent className="p-4 flex gap-4 items-center">
-									<ImageWrapper
-										size="md"
-										shape="square"
-										imageUrl={product.product_images?.[0]}
-										alt={product.name}
-										placeholderIcon={getProductIcon(product.stock_type as StockType)}
-									/>
-
-									<div className="flex-1 flex flex-col items-start">
-										<p className="font-medium text-gray-900">{product.name || 'Unknown product'}</p>
-										<p className="text-xs text-gray-500">
-											{getProductInfo(product) || 'No details'}
-										</p>
-									</div>
-
-									<div className="flex flex-col items-end">
-										<p className="text-sm font-medium text-gray-900">{product.pending_qr_count} QR codes</p>
-										<p className="text-xs text-gray-500">pending</p>
-									</div>
-								</CardContent>
-							</Card>
-						))}
-					</div>
-				)}
-			</div>
+			{/* Add Product Sheet */}
+			<AddProductSheet
+				open={showAddProductSheet}
+				onOpenChange={setShowAddProductSheet}
+				onProductAdded={fetchDashboardData}
+			/>
 		</div>
 	);
 }

@@ -226,7 +226,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
 		);
 	}
 
-	const partnerName = partner.company_name || getPartnerName(partner);
+	const partnerName = getPartnerName(partner);
 	const partnerType = partner.partner_type as PartnerType;
 	const isCustomer = partnerType === 'customer';
 	const isSupplier = partnerType === 'supplier';

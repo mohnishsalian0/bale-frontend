@@ -20,6 +20,7 @@ interface AddPartnerSheetProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onPartnerAdded?: () => void;
+	partnerType?: PartnerType;
 }
 
 interface PartnerFormData {
@@ -41,10 +42,10 @@ interface PartnerFormData {
 	image: File | null;
 }
 
-export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartnerSheetProps) {
+export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerType }: AddPartnerSheetProps) {
 	const { user } = useSession();
 	const [formData, setFormData] = useState<PartnerFormData>({
-		partnerType: 'customer',
+		partnerType: partnerType || 'customer',
 		firstName: '',
 		lastName: '',
 		phoneNumber: '',
@@ -239,6 +240,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded }: AddPartn
 										setFormData({ ...formData, partnerType: value as PartnerType })
 									}
 									name="partner-type"
+									className="overflow-x-auto"
 								>
 									<RadioGroupItem value="customer">Customer</RadioGroupItem>
 									<RadioGroupItem value="supplier">Supplier</RadioGroupItem>

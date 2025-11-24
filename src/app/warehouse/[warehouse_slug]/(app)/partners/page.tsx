@@ -18,6 +18,7 @@ import { useSession } from '@/contexts/session-context';
 import { getInitials } from '@/lib/utils/initials';
 import type { Tables } from '@/types/database/supabase';
 import type { PartnerType } from '@/types/database/enums';
+import { getFormattedAddress, getPartnerName } from '@/lib/utils/partner';
 
 type PartnerRow = Tables<'partners'>;
 
@@ -83,11 +84,9 @@ export default function PartnersPage() {
 			// Transform data to match Partner interface
 			const transformedPartners: Partner[] = (data || []).map((p: PartnerRow) => ({
 				id: p.id,
-				name: `${p.first_name} ${p.last_name}`.trim(),
+				name: getPartnerName(p),
 				type: p.partner_type as PartnerType,
-				address: [p.address_line1, p.city, p.state]
-					.filter(Boolean)
-					.join(', ') || undefined,
+				address: getFormattedAddress(p).join(', '),
 				phone: p.phone_number || undefined,
 				// TODO: Fetch transaction amounts from orders/inwards
 				amount: undefined,

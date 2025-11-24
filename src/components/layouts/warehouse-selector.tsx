@@ -153,7 +153,7 @@ export default function WarehouseSelector({
 				<SheetContent side="bottom" className='items-center'>
 					<div className='w-full max-w-md px-4'>
 						{/* Header with illustration */}
-						<SheetHeader className="flex flex-row flex-1 items-end justify-between my-6 p-0">
+						<SheetHeader className="flex flex-row flex-1 items-end justify-between mt-10 mb-4 p-0">
 							<SheetTitle className="text-3xl text-gray-900">Warehouses</SheetTitle>
 							<div className="relative size-25">
 								<Image
@@ -173,7 +173,7 @@ export default function WarehouseSelector({
 							) : warehouses.length === 0 ? (
 								<p className="text-sm text-gray-500 text-center py-4">No warehouses found</p>
 							) : (
-								<div className="flex flex-col gap-3 pb-20 overflow-y-auto">
+								<div className="flex flex-col gap-3 pb-24 overflow-y-auto">
 									{warehouses.map((warehouse) => {
 										const isSelected = warehouse.id === currentWarehouse;
 
@@ -194,11 +194,11 @@ export default function WarehouseSelector({
 											>
 												{/* Icon */}
 												<div
-													className={`flex-shrink-0 w-14 h-14 rounded-lg flex items-center justify-center ${isSelected ? 'bg-primary-100' : 'bg-gray-100'
+													className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center ${isSelected ? 'bg-primary-100' : 'bg-gray-100'
 														}`}
 												>
 													<IconBuildingWarehouse
-														className={`size-6 ${isSelected ? 'text-primary-700' : 'text-gray-500'
+														className={`size-5 ${isSelected ? 'text-primary-700' : 'text-gray-500'
 															}`}
 													/>
 												</div>

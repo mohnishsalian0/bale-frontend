@@ -17,22 +17,6 @@ export function getPartnerName(partner: PartnerNameFields | null): string {
 }
 
 /**
- * Get formatted address for a partner (single line, comma-separated)
- * @deprecated Use getFormattedAddress for multi-line formatting
- */
-export function getPartnerAddress(partner: Partner | null): string {
-	if (!partner) return '';
-	const parts = [
-		partner.address_line1,
-		partner.address_line2,
-		partner.city,
-		partner.state,
-		partner.pin_code,
-	].filter(Boolean);
-	return parts.join(', ');
-}
-
-/**
  * Address fields interface for flexible address formatting
  */
 interface AddressFields {

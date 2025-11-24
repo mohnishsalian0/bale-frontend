@@ -37,9 +37,9 @@ export default function TopBar({
 				{/* Left side - Menu + Warehouse selector */}
 				<div className="flex items-center gap-2">
 					{/* Menu Button */}
-					{isMobile &&
-						<SidebarTrigger className='size-10 text-gray-700' />
-					}
+					{/* {isMobile && */}
+					{/* 	<SidebarTrigger className='size-10 text-gray-700' /> */}
+					{/* } */}
 
 					{/* Warehouse Selector */}
 					<Button
