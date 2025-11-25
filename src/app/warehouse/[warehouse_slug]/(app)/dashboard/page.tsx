@@ -220,11 +220,11 @@ export default function DashboardPage() {
 			/>
 
 			{/* Pending QR Codes Section */}
-			<PendingQRCodesSection
-				products={pendingQRProducts}
-				warehouseSlug={warehouse.slug}
-				onNavigate={(path) => router.push(path)}
-			/>
+			{/* <PendingQRCodesSection */}
+			{/* 	products={pendingQRProducts} */}
+			{/* 	warehouseSlug={warehouse.slug} */}
+			{/* 	onNavigate={(path) => router.push(path)} */}
+			{/* /> */}
 
 			{/* Add Product Sheet */}
 			<AddProductSheet
