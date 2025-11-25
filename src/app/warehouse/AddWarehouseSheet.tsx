@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { IconUser, IconPhone, IconChevronDown } from '@tabler/icons-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -43,7 +44,6 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 
 	const [showAddress, setShowAddress] = useState(false);
 	const [saving, setSaving] = useState(false);
-	const [saveError, setSaveError] = useState<string | null>(null);
 
 	const isEditMode = !!warehouse;
 
@@ -67,7 +67,6 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setSaving(true);
-		setSaveError(null);
 
 		try {
 			const supabase = createClient();
@@ -115,13 +114,15 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 			}
 
 			// Success! Close sheet and notify parent
+			toast.success(isEditMode ? 'Warehouse updated successfully' : 'Warehouse created successfully');
 			handleCancel();
 			if (onWarehouseAdded) {
 				onWarehouseAdded();
 			}
 		} catch (error) {
 			console.error('Error saving warehouse:', error);
-			setSaveError(error instanceof Error ? error.message : 'Failed to save warehouse');
+			const errorMessage = error instanceof Error ? error.message : 'Failed to save warehouse';
+			toast.error(errorMessage);
 		} finally {
 			setSaving(false);
 		}
@@ -140,7 +141,6 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 			country: 'India',
 			pinCode: '',
 		});
-		setSaveError(null);
 		onOpenChange(false);
 	};
 
@@ -258,9 +258,6 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 					</div>
 
 					<SheetFooter>
-						{saveError && (
-							<p className="text-sm text-red-600 text-center">{saveError}</p>
-						)}
 						<div className="flex gap-3">
 							<Button
 								type="button"

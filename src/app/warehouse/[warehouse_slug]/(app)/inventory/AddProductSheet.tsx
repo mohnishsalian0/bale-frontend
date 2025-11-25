@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { IconChevronDown, IconX, IconPhoto } from '@tabler/icons-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -72,7 +73,6 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 	const [showFeaturesImages, setShowFeaturesImages] = useState(false);
 	const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 	const [saving, setSaving] = useState(false);
-	const [saveError, setSaveError] = useState<string | null>(null);
 
 	// Attribute options for MultipleSelector
 	const [materialOptions, setMaterialOptions] = useState<Option[]>([]);
@@ -152,7 +152,6 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setSaving(true);
-		setSaveError(null);
 
 		try {
 			const supabase = createClient();
@@ -275,13 +274,15 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 			}
 
 			// Success! Close sheet and notify parent
+			toast.success('Product created successfully');
 			handleCancel();
 			if (onProductAdded) {
 				onProductAdded();
 			}
 		} catch (error) {
 			console.error('Error saving product:', error);
-			setSaveError(error instanceof Error ? error.message : 'Failed to save product');
+			const errorMessage = error instanceof Error ? error.message : 'Failed to save product';
+			toast.error(errorMessage);
 		} finally {
 			setSaving(false);
 		}
@@ -619,9 +620,6 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 					</div>
 
 					<SheetFooter>
-						{saveError && (
-							<p className="text-sm text-red-600 text-center">{saveError}</p>
-						)}
 						<div className="flex gap-3">
 							<Button
 								type="button"

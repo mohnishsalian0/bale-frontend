@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { IconUser, IconPhone, IconChevronDown, IconBuildingFactory2, IconBuilding, IconId } from '@tabler/icons-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -70,7 +71,6 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 	const [showTaxDetails, setShowTaxDetails] = useState(false);
 	const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 	const [saving, setSaving] = useState(false);
-	const [saveError, setSaveError] = useState<string | null>(null);
 
 	const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
@@ -96,7 +96,6 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setSaving(true);
-		setSaveError(null);
 
 		try {
 			const supabase = createClient();
@@ -149,13 +148,15 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 			if (insertError) throw insertError;
 
 			// Success! Close sheet and notify parent
+			toast.success('Partner created successfully');
 			handleCancel();
 			if (onPartnerAdded) {
 				onPartnerAdded();
 			}
 		} catch (error) {
 			console.error('Error saving partner:', error);
-			setSaveError(error instanceof Error ? error.message : 'Failed to save partner');
+			const errorMessage = error instanceof Error ? error.message : 'Failed to save partner';
+			toast.error(errorMessage);
 		} finally {
 			setSaving(false);
 		}
@@ -450,9 +451,6 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 					</div>
 
 					<SheetFooter>
-						{saveError && (
-							<p className="text-sm text-red-600 text-center">{saveError}</p>
-						)}
 						<div className="flex gap-3">
 							<Button
 								type="button"

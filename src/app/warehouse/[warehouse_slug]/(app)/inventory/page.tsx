@@ -229,7 +229,7 @@ export default function InventoryPage() {
 			</div>
 
 			{/* Product List */}
-			<div className="flex flex-col gap-0">
+			<div className="flex flex-col gap-3 p-4">
 				{filteredProducts.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-12 text-center">
 						<p className="text-gray-600 mb-2">No products found</p>
@@ -247,7 +247,7 @@ export default function InventoryPage() {
 
 							<Card
 								key={product.id}
-								className="rounded-none border-0 border-b border-gray-200 shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
+								className="border border-border shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
 								onClick={() => router.push(`/warehouse/${warehouse.slug}/inventory/${product.productNumber}`)}
 							>
 								<CardContent className="p-4 flex gap-4 items-center">

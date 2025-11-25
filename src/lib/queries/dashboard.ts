@@ -98,64 +98,56 @@ export async function getDashboardSalesOrders(
 /**
  * Fetch products with low stock (below minimum threshold)
  * Limited to 5 products
+ * Uses RPC function with aggregates for efficient single-query lookup
  */
 export async function getLowStockProducts(
 	warehouseId: string
 ): Promise<LowStockProduct[]> {
 	const supabase = createClient();
 
-	// First, get products with min_stock_alert enabled
-	const { data: products, error: productsError } = await supabase
-		.from('products')
-		.select(PRODUCT_WITH_ATTRIBUTES_SELECT)
-		.eq('min_stock_alert', true)
-		.is('deleted_at', null)
-		.not('min_stock_threshold', 'is', null);
+	// Use RPC function to get low stock product IDs efficiently
+	const { data: lowStockData, error: rpcError } = await supabase
+		.rpc('get_low_stock_products', {
+			p_warehouse_id: warehouseId,
+			p_limit: 5
+		});
 
-	if (productsError) {
-		console.error('Error fetching low stock products:', productsError);
-		throw productsError;
+	if (rpcError) {
+		console.error('Error fetching low stock products:', rpcError);
+		throw rpcError;
 	}
 
-	if (!products || products.length === 0) {
+	if (!lowStockData || lowStockData.length === 0) {
 		return [];
 	}
 
-	// For each product, calculate current stock in the warehouse
-	const lowStockProducts: LowStockProduct[] = [];
+	// Fetch full product details for the low stock products
+	const productIds = lowStockData.map((item: any) => item.product_id);
 
-	for (const product of products) {
-		const { data: stockUnits, error: stockError } = await supabase
-			.from('stock_units')
-			.select('remaining_quantity')
-			.eq('product_id', product.id)
-			.eq('warehouse_id', warehouseId)
-			.eq('status', 'in_stock');
+	const { data: products, error: productsError } = await supabase
+		.from('products')
+		.select(PRODUCT_WITH_ATTRIBUTES_SELECT)
+		.in('id', productIds);
 
-		if (stockError) {
-			console.error('Error fetching stock for product:', product.id, stockError);
-			continue;
-		}
-
-		const currentStock = (stockUnits || []).reduce(
-			(sum, unit) => sum + (Number(unit.remaining_quantity) || 0),
-			0
-		);
-
-		// Check if stock is below threshold
-		if (currentStock < (product.min_stock_threshold || 0)) {
-			const transformedProduct = transformProductWithAttributes(product);
-			lowStockProducts.push({
-				...transformedProduct,
-				current_stock: Number(currentStock.toFixed(2)),
-			});
-		}
-
-		// Limit to 5 products
-		if (lowStockProducts.length >= 5) {
-			break;
-		}
+	if (productsError) {
+		console.error('Error fetching product details:', productsError);
+		throw productsError;
 	}
+
+	if (!products) {
+		return [];
+	}
+
+	// Map products with their current stock from RPC result
+	const lowStockProducts: LowStockProduct[] = products.map((product: any) => {
+		const stockData = lowStockData.find((item: any) => item.product_id === product.id);
+		const transformedProduct = transformProductWithAttributes(product);
+
+		return {
+			...transformedProduct,
+			current_stock: Number(stockData?.in_stock_quantity || 0),
+		};
+	});
 
 	return lowStockProducts;
 }

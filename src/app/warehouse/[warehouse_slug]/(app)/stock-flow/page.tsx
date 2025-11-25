@@ -16,6 +16,7 @@ import IconGoodsOutward from '@/components/icons/IconGoodsOutward';
 import { LoadingState } from '@/components/layouts/loading-state';
 import { ErrorState } from '@/components/layouts/error-state';
 import { useSession } from '@/contexts/session-context';
+import { aggregateQuantitiesByUnit, formatQuantitiesByUnit } from '@/lib/utils/measuring-units';
 
 interface StockFlowItem {
 	id: string;
@@ -32,8 +33,8 @@ interface StockFlowItem {
 interface MonthGroup {
 	month: string;
 	monthYear: string;
-	inCount: number;
-	outCount: number;
+	inCount: Map<string, number>;
+	outCount: Map<string, number>;
 	items: StockFlowItem[];
 }
 
@@ -46,8 +47,8 @@ export default function StockFlowPage() {
 	const [monthGroups, setMonthGroups] = useState<MonthGroup[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [totalReceived, setTotalReceived] = useState(0);
-	const [totalOutwarded, setTotalOutwarded] = useState(0);
+	const [totalReceived, setTotalReceived] = useState<Map<string, number>>(new Map());
+	const [totalOutwarded, setTotalOutwarded] = useState<Map<string, number>>(new Map());
 
 	const fetchStockFlow = async () => {
 		try {
@@ -178,8 +179,8 @@ export default function StockFlowPage() {
 					groups[monthKey] = {
 						month: monthName,
 						monthYear: `${monthName} ${year}`,
-						inCount: 0,
-						outCount: 0,
+						inCount: new Map<string, number>(),
+						outCount: new Map<string, number>(),
 						items: [],
 					};
 				}
@@ -187,17 +188,32 @@ export default function StockFlowPage() {
 				groups[monthKey].items.push(item);
 
 				if (item.type === 'inward') {
-					groups[monthKey].inCount += item.quantity;
+					const currentIn = groups[monthKey].inCount.get(item.unit) || 0;
+					groups[monthKey].inCount.set(item.unit, currentIn + item.quantity);
 				} else {
-					groups[monthKey].outCount += item.quantity;
+					const currentOut = groups[monthKey].outCount.get(item.unit) || 0;
+					groups[monthKey].outCount.set(item.unit, currentOut + item.quantity);
 				}
 			});
 
-			const sortedGroups = Object.values(groups).map(group => ({
-				...group,
-				inCount: Number(group.inCount.toFixed(2)),
-				outCount: Number(group.outCount.toFixed(2)),
-			})).sort((a, b) => {
+			const sortedGroups = Object.values(groups).map(group => {
+				// Round quantities in the Maps
+				const roundedInCount = new Map<string, number>();
+				group.inCount.forEach((qty, unit) => {
+					roundedInCount.set(unit, Number(qty.toFixed(2)));
+				});
+
+				const roundedOutCount = new Map<string, number>();
+				group.outCount.forEach((qty, unit) => {
+					roundedOutCount.set(unit, Number(qty.toFixed(2)));
+				});
+
+				return {
+					...group,
+					inCount: roundedInCount,
+					outCount: roundedOutCount,
+				};
+			}).sort((a, b) => {
 				const [yearA, monthA] = a.monthYear.split(' ');
 				const [yearB, monthB] = b.monthYear.split(' ');
 				const dateA = new Date(`${monthA} 1, ${yearA}`);
@@ -207,22 +223,29 @@ export default function StockFlowPage() {
 
 			setMonthGroups(sortedGroups);
 
-			// Calculate totals for past month
+			// Calculate totals for past month, aggregated by unit
 			const oneMonthAgo = new Date();
 			oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-			const inward = Number(inwardItems
-				.filter((item) => new Date(item.date) >= oneMonthAgo)
-				.reduce((sum, item) => sum + item.quantity, 0)
-				.toFixed(2));
+			const recentInwardItems = inwardItems.filter((item) => new Date(item.date) >= oneMonthAgo);
+			const recentOutwardItems = outwardItems.filter((item) => new Date(item.date) >= oneMonthAgo);
 
-			const outwarded = Number(outwardItems
-				.filter((item) => new Date(item.date) >= oneMonthAgo)
-				.reduce((sum, item) => sum + item.quantity, 0)
-				.toFixed(2));
+			const inwardByUnit = aggregateQuantitiesByUnit(recentInwardItems);
+			const outwardByUnit = aggregateQuantitiesByUnit(recentOutwardItems);
 
-			setTotalReceived(inward);
-			setTotalOutwarded(outwarded);
+			// Round the values
+			const roundedInward = new Map<string, number>();
+			inwardByUnit.forEach((qty, unit) => {
+				roundedInward.set(unit, Number(qty.toFixed(2)));
+			});
+
+			const roundedOutward = new Map<string, number>();
+			outwardByUnit.forEach((qty, unit) => {
+				roundedOutward.set(unit, Number(qty.toFixed(2)));
+			});
+
+			setTotalReceived(roundedInward);
+			setTotalOutwarded(roundedOutward);
 		} catch (err) {
 			console.error('Error fetching stock flow:', err);
 			setError(err instanceof Error ? err.message : 'Failed to load stock flow');
@@ -284,9 +307,9 @@ export default function StockFlowPage() {
 					<div className="flex flex-col gap-1">
 						<h1 className="text-3xl font-bold text-gray-900">Stock flow</h1>
 						<p className="text-sm text-gray-500">
-							<span className="text-teal-700">{totalReceived} received</span>
+							<span className="text-teal-700">{formatQuantitiesByUnit(totalReceived)} received</span>
 							<span> & </span>
-							<span className="text-yellow-700">{totalOutwarded} dispatched</span>
+							<span className="text-yellow-700">{formatQuantitiesByUnit(totalOutwarded)} dispatched</span>
 							<span> in past month</span>
 						</p>
 					</div>
@@ -361,10 +384,10 @@ export default function StockFlowPage() {
 							>
 								<p className="text-xs font-semibold text-gray-700">{group.month}</p>
 								<p className="text-sm font-bold">
-									<span className="text-teal-700">{group.inCount} </span>
+									<span className="text-teal-700">{formatQuantitiesByUnit(group.inCount)} </span>
 									<span className="text-teal-700 font-normal">In</span>
 									<span>, </span>
-									<span className="text-yellow-700">{group.outCount} </span>
+									<span className="text-yellow-700">{formatQuantitiesByUnit(group.outCount)} </span>
 									<span className="text-yellow-700 font-normal">Out</span>
 								</p>
 							</div>

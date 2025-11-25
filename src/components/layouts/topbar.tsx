@@ -1,6 +1,6 @@
 'use client';
 
-import { IconChevronDown, IconSettings, IconLogout } from '@tabler/icons-react';
+import { IconChevronDown, IconLogout, IconBuilding } from '@tabler/icons-react';
 import { SidebarTrigger, useSidebar } from '../ui/sidebar';
 import { Button } from '../ui/button';
 import {
@@ -73,8 +73,8 @@ export default function TopBar({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-48">
 						<DropdownMenuItem onClick={onSettingsClick}>
-							<IconSettings className="text-gray-700" />
-							<span>Settings</span>
+							<IconBuilding className="text-gray-700" />
+							<span>Company settings</span>
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem onClick={onLogoutClick} variant="destructive">
