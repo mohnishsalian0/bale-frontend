@@ -182,28 +182,28 @@ export default function DashboardPage() {
 			</div>
 
 			{/* Customers Section */}
-			<div className="mt-6">
-				<PartnersSection
-					title="Customers"
-					newButtonLabel="New customer"
-					partnerType="customer"
-					partners={recentCustomers}
-					totalCount={totalCustomers}
-					onPartnerAdded={fetchDashboardData}
-				/>
-			</div>
-
+			{/* <div className="mt-6"> */}
+			{/* 	<PartnersSection */}
+			{/* 		title="Customers" */}
+			{/* 		newButtonLabel="New customer" */}
+			{/* 		partnerType="customer" */}
+			{/* 		partners={recentCustomers} */}
+			{/* 		totalCount={totalCustomers} */}
+			{/* 		onPartnerAdded={fetchDashboardData} */}
+			{/* 	/> */}
+			{/* </div> */}
+			{/**/}
 			{/* Suppliers Section */}
-			<div className="mt-6">
-				<PartnersSection
-					title="Suppliers"
-					newButtonLabel="New supplier"
-					partnerType="supplier"
-					partners={recentSuppliers}
-					totalCount={totalSuppliers}
-					onPartnerAdded={fetchDashboardData}
-				/>
-			</div>
+			{/* <div className="mt-6"> */}
+			{/* 	<PartnersSection */}
+			{/* 		title="Suppliers" */}
+			{/* 		newButtonLabel="New supplier" */}
+			{/* 		partnerType="supplier" */}
+			{/* 		partners={recentSuppliers} */}
+			{/* 		totalCount={totalSuppliers} */}
+			{/* 		onPartnerAdded={fetchDashboardData} */}
+			{/* 	/> */}
+			{/* </div> */}
 
 			{/* Sales Orders Section */}
 			<ActiveSalesOrdersSection
