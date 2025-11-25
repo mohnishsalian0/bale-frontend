@@ -91,20 +91,20 @@ export default function DashboardPage() {
 			setLoading(true);
 			setError(null);
 
-			const [orders, lowStock, pendingQR, partnersData] = await Promise.all([
+			const [orders, lowStock, pendingQR] = await Promise.all([
 				getDashboardSalesOrders(warehouse.id),
 				getLowStockProducts(warehouse.id),
 				getPendingQRProducts(warehouse.id),
-				getRecentPartners(),
+				// getRecentPartners(),
 			]);
 
 			setSalesOrders(orders);
 			setLowStockProducts(lowStock);
 			setPendingQRProducts(pendingQR);
-			setRecentCustomers(partnersData.customers);
-			setRecentSuppliers(partnersData.suppliers);
-			setTotalCustomers(partnersData.totalCustomers);
-			setTotalSuppliers(partnersData.totalSuppliers);
+			// setRecentCustomers(partnersData.customers);
+			// setRecentSuppliers(partnersData.suppliers);
+			// setTotalCustomers(partnersData.totalCustomers);
+			// setTotalSuppliers(partnersData.totalSuppliers);
 		} catch (err) {
 			console.error('Error fetching dashboard data:', err);
 			setError(err instanceof Error ? err.message : 'Failed to load dashboard');
@@ -220,11 +220,11 @@ export default function DashboardPage() {
 			/>
 
 			{/* Pending QR Codes Section */}
-			{/* <PendingQRCodesSection */}
-			{/* 	products={pendingQRProducts} */}
-			{/* 	warehouseSlug={warehouse.slug} */}
-			{/* 	onNavigate={(path) => router.push(path)} */}
-			{/* /> */}
+			<PendingQRCodesSection
+				products={pendingQRProducts}
+				warehouseSlug={warehouse.slug}
+				onNavigate={(path) => router.push(path)}
+			/>
 
 			{/* Add Product Sheet */}
 			<AddProductSheet
