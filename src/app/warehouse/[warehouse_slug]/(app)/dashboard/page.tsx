@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { LoadingState } from '@/components/layouts/loading-state';
@@ -10,14 +11,40 @@ import { useSession } from '@/contexts/session-context';
 import { getDashboardSalesOrders, getLowStockProducts, getPendingQRProducts, getRecentPartners } from '@/lib/queries/dashboard';
 import type { DashboardSalesOrder, LowStockProduct, PendingQRProduct, RecentPartner } from '@/lib/queries/dashboard';
 import { QuickActionButton, type QuickAction } from '@/components/ui/quick-action-button';
-import { PartnersSection } from './PartnersSection';
-import { ActiveSalesOrdersSection } from './ActiveSalesOrdersSection';
-import { LowStockProductsSection } from './LowStockProductsSection';
-import { PendingQRCodesSection } from './PendingQRCodesSection';
-import { AddProductSheet } from '../inventory/AddProductSheet';
 import { IconShirt, IconQrcode } from '@tabler/icons-react';
 import IconGoodsInward from '@/components/icons/IconGoodsInward';
 import IconGoodsOutward from '@/components/icons/IconGoodsOutward';
+
+// Dynamic imports for below-the-fold sections
+const PartnersSection = dynamic(() => import('./PartnersSection').then(mod => ({ default: mod.PartnersSection })), {
+	loading: () => <SectionSkeleton />,
+});
+
+const ActiveSalesOrdersSection = dynamic(() => import('./ActiveSalesOrdersSection').then(mod => ({ default: mod.ActiveSalesOrdersSection })), {
+	loading: () => <SectionSkeleton />,
+});
+
+const LowStockProductsSection = dynamic(() => import('./LowStockProductsSection').then(mod => ({ default: mod.LowStockProductsSection })), {
+	loading: () => <SectionSkeleton />,
+});
+
+const PendingQRCodesSection = dynamic(() => import('./PendingQRCodesSection').then(mod => ({ default: mod.PendingQRCodesSection })), {
+	loading: () => <SectionSkeleton />,
+});
+
+const AddProductSheet = dynamic(() => import('../inventory/AddProductSheet').then(mod => ({ default: mod.AddProductSheet })), {
+	ssr: false, // Modal doesn't need SSR
+});
+
+// Loading skeleton for sections
+function SectionSkeleton() {
+	return (
+		<div className="mt-6 px-4 animate-pulse">
+			<div className="h-6 w-32 bg-gray-200 rounded mb-3" />
+			<div className="h-32 bg-gray-100 rounded" />
+		</div>
+	);
+}
 
 export default function DashboardPage() {
 	const router = useRouter();
@@ -127,10 +154,12 @@ export default function DashboardPage() {
 				<div className="relative size-25 shrink-0">
 					<Image
 						src="/mascot/dashboard-wave.png"
-						alt="Dashboard"
+						alt="Dashboard mascot waving"
 						fill
 						sizes="100px"
 						className="object-contain"
+						priority
+						quality={85}
 					/>
 				</div>
 			</div>

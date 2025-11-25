@@ -17,6 +17,22 @@ const nextConfig: NextConfig = {
 				hostname: "localhost",
 			},
 		],
+		formats: ['image/avif', 'image/webp'],
+	},
+
+	// Performance optimizations
+	compiler: {
+		removeConsole: process.env.NODE_ENV === 'production' ? {
+			exclude: ['error', 'warn'],
+		} : false,
+	},
+
+	// Enable SWC minification (faster than Terser)
+	swcMinify: true,
+
+	// Optimize package imports
+	experimental: {
+		optimizePackageImports: ['@tabler/icons-react'],
 	},
 };
 
