@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { IconChevronDown, IconLogout, IconBuilding } from '@tabler/icons-react';
 import { SidebarTrigger, useSidebar } from '../ui/sidebar';
 import { Button } from '../ui/button';
@@ -27,8 +28,17 @@ export default function TopBar({
 	onLogoutClick,
 	isWarehouseSelectorOpen = false,
 }: TopBarProps) {
+	const router = useRouter();
 	const { isMobile } = useSidebar();
 	const { user, warehouse } = useSession();
+
+	const handleCompanySettingsClick = () => {
+		if (onSettingsClick) {
+			onSettingsClick();
+		} else {
+			router.push('/company');
+		}
+	};
 
 	return (
 		<div className={`z-30 sticky top-0 bg-background-100 ${isWarehouseSelectorOpen ? '' : 'border-b border-border'
@@ -72,7 +82,7 @@ export default function TopBar({
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-48">
-						<DropdownMenuItem onClick={onSettingsClick}>
+						<DropdownMenuItem onClick={handleCompanySettingsClick}>
 							<IconBuilding className="text-gray-700" />
 							<span>Company settings</span>
 						</DropdownMenuItem>

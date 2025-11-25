@@ -91,19 +91,12 @@ BEGIN
         RAISE EXCEPTION 'Invalid or expired invite token';
     END IF;
 
-    -- Get first warehouse for backward compatibility with users.warehouse_id
-    SELECT warehouse_id INTO v_first_warehouse_id
-    FROM invite_warehouses
-    WHERE invite_id = v_invite_record.id
-    LIMIT 1;
-
     -- Create user record
     INSERT INTO users (
         company_id,
         first_name,
         last_name,
         role,
-        warehouse_id,
         all_warehouses_access,
         auth_user_id,
         created_by
@@ -112,15 +105,14 @@ BEGIN
         p_first_name,
         p_last_name,
         v_invite_record.role,
-        v_first_warehouse_id,
         p_all_warehouses_access,
         p_auth_user_id,
         v_invite_record.created_by
     ) RETURNING id INTO v_new_user_id;
 
     -- Copy warehouse assignments from invite_warehouses to user_warehouses
-    INSERT INTO user_warehouses (user_id, warehouse_id, created_by)
-    SELECT v_new_user_id, warehouse_id, v_invite_record.created_by
+    INSERT INTO user_warehouses (company_id, user_id, warehouse_id, created_by)
+    SELECT v_invite_record.company_id, v_new_user_id, warehouse_id, v_invite_record.created_by
     FROM invite_warehouses
     WHERE invite_id = v_invite_record.id;
 

@@ -130,16 +130,19 @@ export type Database = {
           created_at: string
           created_by: string | null
           deleted_at: string | null
+          email: string | null
           gst_number: string | null
           id: string
           logo_url: string | null
           modified_by: string | null
           name: string
           pan_number: string | null
+          phone_number: string | null
           pin_code: string | null
           slug: string
           state: string | null
           updated_at: string
+          website_url: string | null
         }
         Insert: {
           address_line1?: string | null
@@ -150,16 +153,19 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
+          email?: string | null
           gst_number?: string | null
           id?: string
           logo_url?: string | null
           modified_by?: string | null
           name: string
           pan_number?: string | null
+          phone_number?: string | null
           pin_code?: string | null
           slug: string
           state?: string | null
           updated_at?: string
+          website_url?: string | null
         }
         Update: {
           address_line1?: string | null
@@ -170,16 +176,19 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
+          email?: string | null
           gst_number?: string | null
           id?: string
           logo_url?: string | null
           modified_by?: string | null
           name?: string
           pan_number?: string | null
+          phone_number?: string | null
           pin_code?: string | null
           slug?: string
           state?: string | null
           updated_at?: string
+          website_url?: string | null
         }
         Relationships: []
       }
@@ -214,7 +223,7 @@ export type Database = {
           attachments?: string[] | null
           company_id?: string
           created_at?: string
-          created_by: string
+          created_by?: string
           deleted_at?: string | null
           expected_delivery_date?: string | null
           from_warehouse_id?: string | null
@@ -2143,7 +2152,6 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           id: string
-          image_url: string | null
           modified_by: string | null
           name: string
           pin_code: string | null
@@ -2163,7 +2171,6 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           id?: string
-          image_url?: string | null
           modified_by?: string | null
           name: string
           pin_code?: string | null
@@ -2183,7 +2190,6 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           id?: string
-          image_url?: string | null
           modified_by?: string | null
           name?: string
           pin_code?: string | null
@@ -2274,6 +2280,14 @@ export type Database = {
       get_jwt_company_id: { Args: never; Returns: string }
       get_jwt_user_id: { Args: never; Returns: string }
       get_jwt_user_role: { Args: never; Returns: string }
+      get_low_stock_products: {
+        Args: { p_limit?: number; p_warehouse_id: string }
+        Returns: {
+          in_stock_quantity: number
+          min_stock_threshold: number
+          product_id: string
+        }[]
+      }
       get_next_sequence: {
         Args: { p_company_id?: string; p_table_name: string }
         Returns: number
