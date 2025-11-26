@@ -37,7 +37,7 @@ export function OutwardDetailsStep({ formData, onChange }: OutwardDetailsStepPro
 	const [partners, setPartners] = useState<Tables<'partners'>[]>([]);
 	const [warehouses, setWarehouses] = useState<Tables<'warehouses'>[]>([]);
 	const [jobWorks, setJobWorks] = useState<{ id: string; name: string }[]>([]);
-	const [salesOrders, setSalesOrders] = useState<{ id: string; order_number: string }[]>([]);
+	const [salesOrders, setSalesOrders] = useState<{ id: string; sequence_number: string }[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 
@@ -63,20 +63,20 @@ export function OutwardDetailsStep({ formData, onChange }: OutwardDetailsStepPro
 				// Fetch job works
 				const { data: jobWorksData } = await supabase
 					.from('job_works')
-					.select('id, job_work_number')
+					.select('id, sequence_number')
 					.eq('warehouse_id', warehouse.id)
 					.order('created_at', { ascending: false });
 
 				// Fetch sales orders
 				const { data: salesOrdersData } = await supabase
 					.from('sales_orders')
-					.select('id, order_number')
+					.select('id, sequence_number')
 					.eq('warehouse_id', warehouse.id)
 					.order('created_at', { ascending: false });
 
 				setPartners(partnersData || []);
 				setWarehouses(warehousesData || []);
-				setJobWorks(jobWorksData?.map(jw => ({ id: jw.id, name: jw.job_work_number })) || []);
+				setJobWorks(jobWorksData?.map(jw => ({ id: jw.id, name: jw.sequence_number })) || []);
 				setSalesOrders(salesOrdersData || []);
 			} catch (error) {
 				console.error('Error fetching data:', error);
@@ -183,7 +183,7 @@ export function OutwardDetailsStep({ formData, onChange }: OutwardDetailsStepPro
 						<SelectContent>
 							{salesOrders.map(so => (
 								<SelectItem key={so.id} value={so.id}>
-									{so.order_number}
+									SO-{so.sequence_number}
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -221,7 +221,7 @@ export function OutwardDetailsStep({ formData, onChange }: OutwardDetailsStepPro
 						<SelectContent>
 							{salesOrders.map(so => (
 								<SelectItem key={so.id} value={so.id}>
-									{so.order_number}
+									SO-{so.sequence_number}
 								</SelectItem>
 							))}
 						</SelectContent>
