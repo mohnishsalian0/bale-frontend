@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ProductSelectionStep, ProductWithUnits, StockUnitSpec } from '../ProductSelectionStep';
 import { StockUnitEntrySheet } from '../StockUnitEntrySheet';
 import { AllSpecificationsSheet } from '../AllSpecificationsSheet';
+import { PieceQuantitySheet } from '../PieceQuantitySheet';
 import { InwardDetailsStep } from '../InwardDetailsStep';
 import { AddProductSheet } from '../../inventory/AddProductSheet';
 import { createClient } from '@/lib/supabase/client';
@@ -59,6 +60,7 @@ export default function CreateGoodsInwardPage() {
 	// Unit entry sheet state
 	const [showUnitEntrySheet, setShowUnitEntrySheet] = useState(false);
 	const [showAllSpecsSheet, setShowAllSpecsSheet] = useState(false);
+	const [showPieceQuantitySheet, setShowPieceQuantitySheet] = useState(false);
 	const [showAddProductSheet, setShowAddProductSheet] = useState(false);
 	const [selectedProduct, setSelectedProduct] = useState<ProductWithAttributes | null>(null);
 
@@ -108,7 +110,11 @@ export default function CreateGoodsInwardPage() {
 	// Handle opening unit sheet
 	const handleOpenUnitSheet = (product: ProductWithAttributes, hasExistingUnits: boolean) => {
 		setSelectedProduct(product);
-		if (hasExistingUnits) {
+
+		// For piece type, always open the quantity sheet (simpler flow, no specifications)
+		if (product.stock_type === 'piece') {
+			setShowPieceQuantitySheet(true);
+		} else if (hasExistingUnits) {
 			setShowAllSpecsSheet(true);
 		} else {
 			setShowUnitEntrySheet(true);
@@ -196,6 +202,26 @@ export default function CreateGoodsInwardPage() {
 		setShowUnitEntrySheet(true);
 	};
 
+	// Handle piece quantity confirmation
+	const handlePieceQuantityConfirm = (quantity: number) => {
+		if (!selectedProduct) return;
+
+		// For piece type, we store a single unit with the total quantity
+		// Count will be 1 because we're tracking total pieces in quantity field
+		const newUnit: StockUnitSpec = {
+			id: `temp-${Date.now()}-${Math.random()}`,
+			quantity,
+			grade: 'A', // Default grade for pieces
+			count: 1, // Always 1 for pieces, quantity represents total pieces
+		};
+
+		setProducts(prev => prev.map(p =>
+			p.id === selectedProduct.id
+				? { ...p, units: [newUnit] } // Replace any existing unit (singleton)
+				: p
+		));
+	};
+
 	// Check if user can proceed to step 2
 	const canProceed = useMemo(() =>
 		products.some(p => p.units.length > 0),
@@ -250,10 +276,49 @@ export default function CreateGoodsInwardPage() {
 				notes: detailsFormData.notes || undefined,
 			};
 
-			// Prepare stock units
+				// Handle piece type products separately (update singleton stock units)
+			const pieceProducts = products.filter(p => p.stock_type === 'piece' && p.units.length > 0);
+			for (const pieceProduct of pieceProducts) {
+				const quantity = pieceProduct.units[0]?.quantity || 0;
+				if (quantity <= 0) continue;
+
+				// Find existing singleton stock unit or create it
+				const { data: existingUnit } = await supabase
+					.from('stock_units')
+					.select('*')
+					.eq('product_id', pieceProduct.id)
+					.eq('warehouse_id', warehouse.id)
+					.single();
+
+				if (existingUnit) {
+					// Update existing singleton
+					await supabase
+						.from('stock_units')
+						.update({
+							initial_quantity: existingUnit.initial_quantity + quantity,
+							remaining_quantity: existingUnit.remaining_quantity + quantity,
+						})
+						.eq('id', existingUnit.id);
+				} else {
+					// Create new singleton stock unit
+					await supabase
+						.from('stock_units')
+						.insert({
+							warehouse_id: warehouse.id,
+							product_id: pieceProduct.id,
+							initial_quantity: quantity,
+							remaining_quantity: quantity,
+							status: 'in_stock',
+							quality_grade: 'A',
+						});
+				}
+			}
+
+			// Prepare stock units for non-piece products
 			const stockUnits: Omit<TablesInsert<'stock_units'>, 'created_by' | 'modified_by' | 'sequence_number'>[] = [];
 			for (const product of products) {
 				if (product.units.length === 0) continue;
+				if (product.stock_type === 'piece') continue; // Skip piece products (handled above)
 
 				for (const unit of product.units) {
 					// Create multiple stock units based on count
@@ -390,6 +455,17 @@ export default function CreateGoodsInwardPage() {
 						onUpdateUnitCount={handleUpdateUnitCount}
 						onDeleteUnit={handleDeleteUnit}
 						onAddNewUnit={handleAddNewUnitFromAllSpecs}
+					/>
+				)}
+
+				{/* Piece Quantity Sheet */}
+				{showPieceQuantitySheet && selectedProduct && (
+					<PieceQuantitySheet
+						open={showPieceQuantitySheet}
+						onOpenChange={setShowPieceQuantitySheet}
+						product={selectedProduct}
+						initialQuantity={currentProductUnits[0]?.quantity || 0}
+						onConfirm={handlePieceQuantityConfirm}
 					/>
 				)}
 

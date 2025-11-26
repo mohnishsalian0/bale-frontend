@@ -172,7 +172,10 @@ export function ProductSelectionStep({
 
 							const hasUnits = product.units.length > 0;
 
-							const totalUnits = product.units.reduce((sum, unit) => sum + unit.count, 0);
+							// For piece type: show total quantity (pieces), for others: show count of units
+							const totalUnits = product.stock_type === 'piece'
+								? product.units.reduce((sum, unit) => sum + unit.quantity, 0)
+								: product.units.reduce((sum, unit) => sum + unit.count, 0);
 
 							const productInfoText = getProductInfo(product);
 

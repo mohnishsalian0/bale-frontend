@@ -19,6 +19,21 @@ export function getMeasuringUnitAbbreviation(unit: MeasuringUnit | null | undefi
 }
 
 /**
+ * Pluralize an abbreviated measuring unit based on quantity
+ * Only 'pc' (piece) and 'unit' get pluralized
+ */
+export function pluralizeMeasuringUnitAbbreviation(quantity: number, abbreviation: string): string {
+	if (quantity === 1) return abbreviation;
+
+	// Handle special cases that need pluralization
+	if (abbreviation === 'pc') return 'pcs';
+	if (abbreviation === 'unit') return 'units';
+
+	// Other abbreviations (m, yd, kg) don't change
+	return abbreviation;
+}
+
+/**
  * Interface for items with unit and quantity
  */
 export interface QuantityByUnitItem {

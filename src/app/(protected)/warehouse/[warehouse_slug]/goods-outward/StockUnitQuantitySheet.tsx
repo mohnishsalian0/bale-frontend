@@ -8,7 +8,6 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ImageWrapper from '@/components/ui/image-wrapper';
-import { getProductIcon } from '@/lib/utils/product';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import { formatStockUnitNumber } from '@/lib/utils/stock-unit';
 import type { Tables } from '@/types/database/supabase';
@@ -83,8 +82,6 @@ export function StockUnitQuantitySheet({
 		setQuantity(Math.max(0, Math.min(maxQuantity, parsed)));
 	};
 
-	// Show presets only for roll type
-	const showPresets = stockType === 'roll';
 	const presetAmounts = [5, 10, 25, 50, 100, 250];
 
 	const formContent = (
@@ -109,73 +106,78 @@ export function StockUnitQuantitySheet({
 					</div>
 				</div>
 
-				{/* Quantity Input */}
-				<div className="flex items-center gap-1 shrink-0">
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon"
-						onClick={handleDecrement}
-						disabled={quantity <= 0}
-					>
-						<IconMinus />
-					</Button>
-					<div className="relative">
-						<Input
-							type="number"
-							value={quantity}
-							onFocus={e => e.target.select()}
-							onChange={e => handleQuantityChange(e.target.value)}
-							className="text-center text-lg font-medium max-w-25 pr-10"
-							min="0"
-							max={maxQuantity}
-							step="0.01"
-						/>
-						<span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
-							{unitAbbreviation}
-						</span>
+				<div className="shrink-0">
+					{/* Quantity Input */}
+					<div className="flex items-center gap-1 shrink-0">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							onClick={handleDecrement}
+							disabled={quantity <= 0}
+						>
+							<IconMinus />
+						</Button>
+						<div className="relative">
+							<Input
+								type="number"
+								value={quantity}
+								onFocus={e => e.target.select()}
+								onChange={e => handleQuantityChange(e.target.value)}
+								className="text-center text-lg font-medium max-w-25 pr-10"
+								min="0"
+								max={maxQuantity}
+								step="0.01"
+							/>
+							<span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
+								{unitAbbreviation}
+							</span>
+						</div>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							onClick={handleIncrement}
+							disabled={quantity >= maxQuantity}
+						>
+							<IconPlus />
+						</Button>
 					</div>
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon"
-						onClick={handleIncrement}
-						disabled={quantity >= maxQuantity}
-					>
-						<IconPlus />
-					</Button>
+
+					{/* Available Quantity Display */}
+					<p className="text-sm text-gray-500 text-center mt-1">
+						{maxQuantity} {unitAbbreviation} avail.
+					</p>
 				</div>
 			</div>
 
 			{/* Preset options (only for roll type) */}
-			{showPresets && (
-				<div className="flex flex-wrap items-center gap-2 flex-2">
-					{presetAmounts.map(amount => (
-						<Button
-							key={amount}
-							type="button"
-							variant="outline"
-							size="sm"
-							className="border-border shadow-gray-sm"
-							onClick={() => handlePresetAdd(amount)}
-							disabled={quantity >= maxQuantity}
-						>
-							<IconPlus />
-							{amount}
-						</Button>
-					))}
+			<div className="flex flex-wrap items-center gap-2 flex-2">
+				{presetAmounts.map(amount => (
 					<Button
+						key={amount}
 						type="button"
 						variant="outline"
 						size="sm"
 						className="border-border shadow-gray-sm"
-						onClick={handleFullQuantity}
+						onClick={() => handlePresetAdd(amount)}
 						disabled={quantity >= maxQuantity}
 					>
-						Full
+						<IconPlus />
+						{amount}
 					</Button>
-				</div>
-			)}
+				))}
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					className="border-border shadow-gray-sm"
+					onClick={handleFullQuantity}
+					disabled={quantity >= maxQuantity}
+				>
+					Full
+				</Button>
+			</div>
 		</div>
 	);
 

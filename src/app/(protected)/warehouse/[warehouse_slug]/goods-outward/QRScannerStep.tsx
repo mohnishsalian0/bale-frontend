@@ -12,7 +12,7 @@ import { createClient } from '@/lib/supabase/client';
 import { formatStockUnitNumber } from '@/lib/utils/stock-unit';
 import type { Tables } from '@/types/database/supabase';
 import type { MeasuringUnit, StockType } from '@/types/database/enums';
-import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
+import { getMeasuringUnitAbbreviation, pluralizeMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import { useSession } from '@/contexts/session-context';
 
 const SCAN_DELAY: number = 1200;
@@ -321,6 +321,7 @@ export function QRScannerStep({
 							const imageUrl = item.product.product_images?.[0];
 							const maxQuantity = item.stockUnit.remaining_quantity;
 							const unitAbbreviation = getMeasuringUnitAbbreviation(item.product.measuring_unit as MeasuringUnit | null);
+							const pluralizedUnit = pluralizeMeasuringUnitAbbreviation(item.quantity, unitAbbreviation);
 							const stockType = item.product.stock_type as StockType;
 							const stockUnitNumber = formatStockUnitNumber(item.stockUnit.sequence_number, stockType);
 
@@ -356,7 +357,7 @@ export function QRScannerStep({
 											size="sm"
 											onClick={() => handleEditQuantity(index)}
 										>
-											{item.quantity} / {maxQuantity} {unitAbbreviation}
+											{item.quantity} / {maxQuantity} {pluralizedUnit}
 										</Button>
 
 										{/* Delete Button */}
