@@ -26,14 +26,6 @@ const nextConfig: NextConfig = {
 			exclude: ['error', 'warn'],
 		} : false,
 	},
-
-	// Enable SWC minification (faster than Terser)
-	swcMinify: true,
-
-	// Optimize package imports
-	experimental: {
-		optimizePackageImports: ['@tabler/icons-react'],
-	},
 };
 
 export default nextConfig;

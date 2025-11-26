@@ -2,7 +2,7 @@ import React from 'react';
 import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer';
 import QRCode from 'qrcode';
 import { formatStockUnitNumber } from '@/lib/utils/stock-unit';
-import type { QRTemplateField } from '@/app/warehouse/[warehouse_slug]/(flow)/qr-codes/QRTemplateCustomisationStep';
+import type { QRTemplateField } from '@/app/(protected)/warehouse/[warehouse_slug]/qr-codes/QRTemplateCustomisationStep';
 import type { Tables } from '@/types/database/supabase';
 import type { StockType } from '@/types/database/enums';
 

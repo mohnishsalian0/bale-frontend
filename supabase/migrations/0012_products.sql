@@ -150,6 +150,3 @@ USING (
 -- =====================================================
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON products TO authenticated;
-
--- Grant limited permissions to anonymous users (for public catalog)
-GRANT SELECT ON products TO anon;

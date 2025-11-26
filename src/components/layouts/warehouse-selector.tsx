@@ -8,7 +8,7 @@ import { Fab } from '../ui/fab';
 import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../ui/sheet';
 import { createClient } from '@/lib/supabase/client';
-import { AddWarehouseSheet } from '@/app/warehouse/AddWarehouseSheet';
+import { AddWarehouseSheet } from '@/app/(protected)/warehouse/AddWarehouseSheet';
 import { useSession } from '@/contexts/session-context';
 import type { Tables } from '@/types/database/supabase';
 

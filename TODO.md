@@ -87,6 +87,12 @@
 - [x] Create (flow)/ route group for focused multi-step experiences (no app chrome)
 - [x] Move all existing pages to (app)/ route group
 - [x] Update parent layout to only provide SessionProvider
+- [x] **REFACTOR**: Restructure routes into (protected) and (public) groups
+- [x] **REFACTOR**: Create AppChromeContext for dynamic chrome visibility control
+- [x] **REFACTOR**: Merge (app) and (flow) into single route structure
+- [x] **REFACTOR**: Centralize public routes configuration (lib/auth/public-routes.ts)
+- [x] **REFACTOR**: Move SessionProvider to (protected) layout only
+- [x] **REFACTOR**: Update REQUIREMENTS.md with new routing architecture documentation
 
 ## Phase 4: Core UI Components
 - [x] Install and configure shadcn/ui components (button, input, label, form, select, textarea, card, dialog, table, sidebar)

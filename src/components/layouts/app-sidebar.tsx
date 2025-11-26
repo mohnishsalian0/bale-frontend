@@ -3,7 +3,6 @@
 import * as React from "react"
 import type { ComponentType } from 'react';
 import {
-	IconBuildingStore,
 	IconChartBar,
 	IconIdBadge2,
 	IconPhotoScan,

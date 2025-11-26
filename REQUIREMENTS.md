@@ -29,10 +29,76 @@
 - **Multi-tenant**: Company-based isolation with warehouse-level staff access
 - **Role-based Access**: Admin (full access) + Staff (warehouse-specific)
 - **Mobile-first**: Primary interface for all inventory operations
-- **Route Groups Architecture**: Separate layout hierarchies for different UI contexts
-  - `(app)/` - Regular pages with full navigation chrome (TopBar, Sidebar, BottomNav)
-  - `(flow)/` - Focused multi-step flows without app chrome (full-page creation experiences)
 - **Collapsible Sidebar**: Icon-only by default, expands on hover for desktop, full-width on mobile
+
+### Routing Architecture
+
+The app uses Next.js App Router with two main route groups for clean separation of public and protected content:
+
+#### (protected)/ - Protected Routes
+**Location**: `src/app/(protected)/`
+
+**Layout Features**:
+- Handles authentication (redirects to /auth/login if not authenticated)
+- Validates warehouse access via RLS
+- Provides SessionProvider with warehouse, user, and permissions
+- Provides AppChromeProvider for dynamic chrome visibility control
+- Conditionally renders chrome (TopBar, BottomNav, Sidebar) based on AppChromeContext
+- Supports chrome-less mode for immersive flows (goods inward/outward, sales orders, QR batch creation)
+
+**Routes**:
+- `/warehouse` - Warehouse selection page
+- `/warehouse/[warehouse_slug]/dashboard` - Dashboard
+- `/warehouse/[warehouse_slug]/inventory` - Product catalog
+- `/warehouse/[warehouse_slug]/partners` - Partners management
+- `/warehouse/[warehouse_slug]/sales-orders` - Sales orders
+- `/warehouse/[warehouse_slug]/stock-flow` - Stock flow (inward/outward)
+- `/warehouse/[warehouse_slug]/qr-codes` - QR code batches
+- `/warehouse/[warehouse_slug]/staff` - Staff management
+- `/warehouse/[warehouse_slug]/goods-inward/create` - Create goods inward (chrome-less)
+- `/warehouse/[warehouse_slug]/goods-outward/create` - Create goods outward (chrome-less)
+- `/warehouse/[warehouse_slug]/qr-codes/create` - Create QR batch (chrome-less)
+- `/warehouse/[warehouse_slug]/sales-orders/create` - Create sales order (chrome-less)
+- `/company` - Company settings
+
+#### (public)/ - Public Routes
+**Location**: `src/app/(public)/`
+
+**Layout Features**:
+- Minimal wrapper, no authentication required
+- No SessionProvider
+- No app chrome
+
+**Routes**:
+- `/auth/login` - Login page
+- `/auth/callback` - OAuth callback
+- `/invite/[code]` - Invite acceptance
+- `/company/[slug]/store/products` - Public product catalog
+- `/company/[slug]/store/checkout` - Checkout
+- `/company/[slug]/order/[order_number]` - Order tracking
+
+#### AppChromeContext
+**Location**: `src/contexts/app-chrome-context.tsx`
+
+**Purpose**: Controls visibility of TopBar, BottomNav, and Sidebar dynamically
+
+**Methods**:
+- `hideChrome()` - Hides all chrome elements
+- `showChromeUI()` - Shows all chrome elements
+- `showChrome` - Boolean state
+
+**Usage**: Flow pages (create goods inward, goods outward, QR batches, sales orders) call `hideChrome()` on mount and `showChromeUI()` on unmount for immersive, distraction-free experiences.
+
+#### Public Routes Config
+**Location**: `src/lib/auth/public-routes.ts`
+
+**Purpose**: Centralized list of public route patterns
+
+**Functions**:
+- `isPublicRoute(pathname)` - Checks if a path is public
+- `getAuthRedirectUrl(pathname)` - Gets login redirect URL
+
+**Used by**: Middleware for auth checks and route protection
 
 ---
 

@@ -28,7 +28,7 @@ export interface CreateCatalogOrderParams {
 }
 
 /**
- * Find existing customer by email or phone, or create a new one
+ * Update existing customer by email or phone, or create a new one
  */
 export async function findOrCreateCustomer(
 	companyId: string,
@@ -36,68 +36,43 @@ export async function findOrCreateCustomer(
 ): Promise<Partner> {
 	const supabase = createClient();
 
-	// Try to find existing customer by email
-	const { data: existingByEmail } = await supabase
+	const payload = {
+		company_id: companyId,
+		partner_type: 'customer',
+		first_name: formData.firstName,
+		last_name: formData.lastName,
+		email: formData.email,
+		phone_number: formData.phone,
+		address_line1: formData.addressLine1,
+		address_line2: formData.addressLine2 || null,
+		city: formData.city,
+		state: formData.state,
+		country: formData.country,
+		pin_code: formData.pinCode,
+		gst_number: formData.gstin || null,
+		source: 'catalog',
+		is_guest: true,
+	};
+
+	const { data, error } = await supabase
 		.from('partners')
-		.select('*')
-		.eq('company_id', companyId)
-		.eq('email', formData.email)
-		.eq('partner_type', 'customer')
-		.is('deleted_at', null)
-		.single();
-
-	if (existingByEmail) {
-		return existingByEmail as Partner;
-	}
-
-	// Try to find by phone
-	const { data: existingByPhone } = await supabase
-		.from('partners')
-		.select('*')
-		.eq('company_id', companyId)
-		.eq('phone', formData.phone)
-		.eq('partner_type', 'customer')
-		.is('deleted_at', null)
-		.single();
-
-	if (existingByPhone) {
-		return existingByPhone as Partner;
-	}
-
-	// Create new customer
-	const { data: newCustomer, error: customerError } = await supabase
-		.from('partners')
-		.insert({
-			company_id: companyId, // Explicit company_id for anonymous users
-			partner_type: 'customer',
-			name: `${formData.firstName} ${formData.lastName}`,
-			first_name: formData.firstName,
-			last_name: formData.lastName,
-			email: formData.email,
-			phone: formData.phone,
-			address_line1: formData.addressLine1,
-			address_line2: formData.addressLine2 || null,
-			city: formData.city,
-			state: formData.state,
-			country: formData.country,
-			pin_code: formData.pinCode,
-			gstin: formData.gstin || null,
-			source: 'catalog',
-			is_guest: true,
+		.upsert(payload, {
+			onConflict: 'company_id,phone_number',
+			ignoreDuplicates: false,
 		})
 		.select()
 		.single();
 
-	if (customerError) {
-		console.error('Error creating customer:', customerError);
-		throw new Error('Failed to create customer');
+	if (error) {
+		console.error('Customer upsert error:', error);
+		throw new Error(error.message);
 	}
 
-	return newCustomer as Partner;
+	return data as Partner;
 }
 
 /**
- * Create a sales order from catalog checkout
+ * Create a sales order from catalog checkout using RPC function
  */
 export async function createCatalogOrder({
 	companyId,
@@ -109,40 +84,45 @@ export async function createCatalogOrder({
 	// Find or create customer
 	const customer = await findOrCreateCustomer(companyId, formData);
 
-	// Create sales order with explicit company_id and warehouse_id as null
-	const { data: salesOrder, error: orderError } = await supabase
-		.from('sales_orders')
-		.insert({
-			company_id: companyId, // Explicit for anonymous users
-			customer_id: customer.id,
-			warehouse_id: null, // Will be assigned during approval
-			source: 'catalog',
-			status: 'approval_pending',
-			notes: formData.specialInstructions || null,
-			order_date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
-		})
-		.select()
-		.single();
+	// Prepare order data
+	const orderData = {
+		company_id: companyId, // Explicit for anonymous users
+		customer_id: customer.id,
+		warehouse_id: null, // Will be assigned during approval
+		order_date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+		notes: formData.specialInstructions || null,
+		source: 'catalog',
+		status: 'approval_pending',
+	};
+
+	// Prepare line items
+	const lineItems = cartItems.map((item) => ({
+		product_id: item.product.id,
+		required_quantity: item.quantity,
+		unit_rate: 0, // Default to 0, can be set later by admin
+	}));
+
+	// Create sales order with items atomically using RPC function
+	const { data: orderId, error: orderError } = await supabase.rpc('create_sales_order_with_items', {
+		p_order_data: orderData,
+		p_line_items: lineItems,
+	});
 
 	if (orderError) {
 		console.error('Error creating sales order:', orderError);
 		throw new Error('Failed to create sales order');
 	}
 
-	// Create order items
-	const orderItems = cartItems.map((item) => ({
-		sales_order_id: salesOrder.id,
-		product_id: item.product.id,
-		quantity: item.quantity,
-		unit_price: 0, // Default to 0, can be set later by admin
-		line_total: 0,
-	}));
+	// Fetch the created order to return
+	const { data: salesOrder, error: fetchError } = await supabase
+		.from('sales_orders')
+		.select('*')
+		.eq('id', orderId)
+		.single();
 
-	const { error: itemsError } = await supabase.from('sales_order_items').insert(orderItems);
-
-	if (itemsError) {
-		console.error('Error creating order items:', itemsError);
-		throw new Error('Failed to create order items');
+	if (fetchError) {
+		console.error('Error fetching created sales order:', fetchError);
+		throw new Error('Failed to fetch sales order');
 	}
 
 	return salesOrder as SalesOrder;

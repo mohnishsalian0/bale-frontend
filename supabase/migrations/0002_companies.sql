@@ -124,19 +124,9 @@ WITH CHECK (
     id = get_jwt_company_id() AND authorize('companies.update')
 );
 
--- Anonymous users can view companies by slug (for public catalog)
-CREATE POLICY "Anonymous users can view companies by slug"
-ON companies
-FOR SELECT
-TO anon
-USING (true);
-
 -- =====================================================
 -- GRANT PERMISSIONS TO AUTHENTICATED USERS
 -- =====================================================
 
 -- Grant basic permissions to authenticated users
 GRANT SELECT, INSERT, UPDATE, DELETE ON companies TO authenticated;
-
--- Grant SELECT to anonymous users for public catalog
-GRANT SELECT ON companies TO anon;

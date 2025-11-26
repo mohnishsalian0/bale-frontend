@@ -129,6 +129,30 @@ async function createTestPartners() {
 		warehouseName = warehouse.name;
 		console.log(`✅ Created warehouse: ${warehouseId}\n`);
 
+		// Create catalog configuration
+		console.log('🏪 Creating catalog configuration...');
+		const { data: catalogConfig, error: catalogError } = await supabase
+			.from('catalog_configurations')
+			.insert({
+				company_id: companyId,
+				accepting_orders: true,
+				catalog_name: 'Bale Test Store',
+				contact_phone: '+91 98765 43210',
+				contact_email: 'contact@baletest.com',
+				contact_address: '123 Test Street, Mumbai, Maharashtra, 400001',
+				terms_conditions: 'Standard terms and conditions apply.',
+				return_policy: 'Returns accepted within 7 days of delivery.',
+				privacy_policy: 'We respect your privacy and protect your data.',
+			})
+			.select()
+			.single();
+
+		if (catalogError || !catalogConfig) {
+			console.error('❌ Failed to create catalog configuration:', catalogError);
+		} else {
+			console.log(`✅ Created catalog configuration\n`);
+		}
+
 		// Create a test admin user
 		console.log('👤 Creating test admin user...');
 		const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
