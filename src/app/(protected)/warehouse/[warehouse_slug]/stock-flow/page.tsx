@@ -379,7 +379,7 @@ export default function StockFlowPage() {
 									}`}
 							>
 								<p className="text-xs font-semibold text-gray-700">{group.month}</p>
-								<p className="text-sm font-bold">
+								<p className="text-sm font-bold text-right max-w-2/3">
 									<span className="text-teal-700">{formatQuantitiesByUnit(group.inCount)} </span>
 									<span className="text-teal-700 font-normal">In</span>
 									<span>, </span>

@@ -5,7 +5,8 @@ import type { Tables } from '@/types/database/supabase';
 import ImageWrapper from '@/components/ui/image-wrapper';
 import { getProductIcon } from '@/lib/utils/product';
 import { formatStockUnitNumber } from '@/lib/utils/stock-unit';
-import { StockType } from '@/types/database/enums';
+import { MeasuringUnit, StockType } from '@/types/database/enums';
+import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 
 type StockUnit = Tables<'stock_units'>;
 type Product = Tables<'products'>;
@@ -38,7 +39,7 @@ export function StockUnitsTab({ stockUnits }: StockUnitsTabProps) {
 				const productImage = product?.product_images?.[0];
 				const productName = product?.name || 'Unknown Product';
 				const stockType = product?.stock_type as StockType;
-				const measuringUnit = product?.measuring_unit;
+				const unitAbbreviation = getMeasuringUnitAbbreviation(product?.measuring_unit as MeasuringUnit | null);
 
 				return (
 					<li
@@ -61,7 +62,7 @@ export function StockUnitsTab({ stockUnits }: StockUnitsTabProps) {
 									{productName}
 								</h3>
 								<span className="shrink-0 text-sm font-semibold text-gray-700">
-									{item.initial_quantity} {measuringUnit}
+									{item.initial_quantity} {unitAbbreviation}
 								</span>
 							</div>
 
