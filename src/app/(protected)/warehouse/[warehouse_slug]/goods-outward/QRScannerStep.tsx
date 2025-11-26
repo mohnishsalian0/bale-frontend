@@ -54,8 +54,8 @@ export function QRScannerStep({
 
 		const decodedText = detectedCodes[0].rawValue;
 
-		// Fetch stock unit from database by ID
 		try {
+			// Fetch stock unit from database by ID
 			const { data: stockUnit, error: stockError } = await supabase
 				.from('stock_units')
 				.select('*')

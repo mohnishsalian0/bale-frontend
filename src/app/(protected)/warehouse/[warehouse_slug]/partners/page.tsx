@@ -256,7 +256,7 @@ export default function PartnersPage() {
 
 								<CardFooter className="px-6 pb-4 pt-0">
 									<Button variant="ghost" size="sm" className='text-primary-700'>
-										<IconPlus className="size-4" />
+										<IconPlus />
 										{getActionLabel(partner.type)}
 									</Button>
 								</CardFooter>

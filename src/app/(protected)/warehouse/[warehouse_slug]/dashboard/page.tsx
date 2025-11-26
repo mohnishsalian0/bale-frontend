@@ -14,6 +14,8 @@ import { QuickActionButton, type QuickAction } from '@/components/ui/quick-actio
 import { IconShirt, IconQrcode } from '@tabler/icons-react';
 import IconGoodsInward from '@/components/icons/IconGoodsInward';
 import IconGoodsOutward from '@/components/icons/IconGoodsOutward';
+import { Fab } from '@/components/ui/fab';
+import { DashboardScannerModal } from './DashboardScannerModal';
 
 // Dynamic imports for below-the-fold sections
 const PartnersSection = dynamic(() => import('./PartnersSection').then(mod => ({ default: mod.PartnersSection })), {
@@ -59,6 +61,7 @@ export default function DashboardPage() {
 
 	// Sheet states
 	const [showAddProductSheet, setShowAddProductSheet] = useState(false);
+	const [showScannerModal, setShowScannerModal] = useState(false);
 
 	// Quick actions array
 	const quickActions: QuickAction[] = [
@@ -225,6 +228,19 @@ export default function DashboardPage() {
 				open={showAddProductSheet}
 				onOpenChange={setShowAddProductSheet}
 				onProductAdded={fetchDashboardData}
+			/>
+
+			{/* Scanner Modal */}
+			<DashboardScannerModal
+				open={showScannerModal}
+				onOpenChange={setShowScannerModal}
+			/>
+
+			{/* FAB */}
+			<Fab
+				icon={IconQrcode}
+				onClick={() => setShowScannerModal(true)}
+				className="fixed bottom-20 right-4"
 			/>
 		</div>
 	);

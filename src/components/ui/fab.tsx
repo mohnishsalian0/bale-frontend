@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { IconPlus } from '@tabler/icons-react';
+import type { Icon } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils/cn';
 
@@ -8,10 +9,14 @@ export interface FabProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 	 * Additional className for the button
 	 */
 	className?: string;
+	/**
+	 * Icon component to display (defaults to IconPlus)
+	 */
+	icon?: React.ComponentType<{ className?: string }>;
 }
 
 const Fab = React.forwardRef<HTMLButtonElement, FabProps>(
-	({ className, ...props }, ref) => {
+	({ className, icon: IconComponent = IconPlus, ...props }, ref) => {
 		return (
 			<Button
 				ref={ref}
@@ -22,7 +27,7 @@ const Fab = React.forwardRef<HTMLButtonElement, FabProps>(
 				)}
 				{...props}
 			>
-				<IconPlus className="size-6 text-base-white" />
+				<IconComponent className="size-6 text-base-white" />
 			</Button>
 		);
 	}
