@@ -107,6 +107,13 @@ CREATE TRIGGER trigger_auto_outward_sequence
     BEFORE INSERT ON goods_outwards
     FOR EACH ROW EXECUTE FUNCTION auto_generate_outward_sequence();
 
+-- Update partner's last_interaction_at timestamp
+CREATE TRIGGER trigger_goods_outwards_update_partner_interaction
+    AFTER INSERT OR UPDATE ON goods_outwards
+    FOR EACH ROW
+    WHEN (NEW.deleted_at IS NULL AND NEW.partner_id IS NOT NULL)
+    EXECUTE FUNCTION update_partner_last_interaction();
+
 -- =====================================================
 -- GOODS OUTWARD TABLE RLS POLICIES
 -- =====================================================

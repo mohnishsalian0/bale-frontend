@@ -188,7 +188,7 @@ export default function InventoryPage() {
 					<IconAlertTriangle className="size-5" />
 				</Button>
 				<Select value={materialFilter} onValueChange={setMaterialFilter}>
-					<SelectTrigger className="w-[140px] h-10 shrink-0">
+					<SelectTrigger className="max-w-34 h-10 shrink-0">
 						<SelectValue placeholder="Material" />
 					</SelectTrigger>
 					<SelectContent>
@@ -201,7 +201,7 @@ export default function InventoryPage() {
 					</SelectContent>
 				</Select>
 				<Select value={colorFilter} onValueChange={setColorFilter}>
-					<SelectTrigger className="w-[140px] h-10 shrink-0">
+					<SelectTrigger className="max-w-34 h-10 shrink-0">
 						<SelectValue placeholder="Color" />
 					</SelectTrigger>
 					<SelectContent>
@@ -214,7 +214,7 @@ export default function InventoryPage() {
 					</SelectContent>
 				</Select>
 				<Select value={tagFilter} onValueChange={setTagFilter}>
-					<SelectTrigger className="w-[140px] h-10 shrink-0">
+					<SelectTrigger className="max-w-34 h-10 shrink-0">
 						<SelectValue placeholder="Tags" />
 					</SelectTrigger>
 					<SelectContent>

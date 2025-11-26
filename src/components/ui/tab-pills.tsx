@@ -19,7 +19,7 @@ const TabPills = React.forwardRef<HTMLDivElement, TabPillsProps>(
 			<div
 				ref={ref}
 				className={cn(
-					'bg-primary-100 flex gap-1 h-11 items-center p-1 pb-1.5 rounded-md w-fit',
+					'bg-primary-100 flex gap-1 h-10 items-center p-1 pb-1.5 rounded-md w-fit',
 					className
 				)}
 			>

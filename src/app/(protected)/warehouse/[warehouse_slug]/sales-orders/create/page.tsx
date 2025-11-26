@@ -9,20 +9,19 @@ import { ProductQuantitySheet } from '../ProductQuantitySheet';
 import { ProductSelectionStep } from '../ProductSelectionStep';
 import { OrderDetailsStep } from '../OrderDetailsStep';
 import { AddProductSheet } from '../../inventory/AddProductSheet';
-import type { TablesInsert } from '@/types/database/supabase';
 import { useSession } from '@/contexts/session-context';
 import { useAppChrome } from '@/contexts/app-chrome-context';
 import { toast } from 'sonner';
 import {
-	getProductsWithAttributes,
+	getProductsWithInventory,
 	getProductAttributeLists,
-	type ProductWithAttributes,
+	type ProductWithInventory,
 	type ProductMaterial,
 	type ProductColor,
 	type ProductTag
 } from '@/lib/queries/products';
 
-interface ProductWithSelection extends ProductWithAttributes {
+interface ProductWithSelection extends ProductWithInventory {
 	selected: boolean;
 	quantity: number;
 }
@@ -57,7 +56,7 @@ export default function CreateSalesOrderPage() {
 		return () => showChromeUI(); // Restore chrome on unmount
 	}, [hideChrome, showChromeUI]);
 	const [loading, setLoading] = useState(true);
-	const [selectedProduct, setSelectedProduct] = useState<ProductWithAttributes | null>(null);
+	const [selectedProduct, setSelectedProduct] = useState<ProductWithInventory | null>(null);
 	const [showQuantitySheet, setShowQuantitySheet] = useState(false);
 	const [showAddProductSheet, setShowAddProductSheet] = useState(false);
 	const [saving, setSaving] = useState(false);
@@ -84,9 +83,9 @@ export default function CreateSalesOrderPage() {
 	const loadData = async () => {
 		setLoading(true);
 		try {
-			// Fetch products and attributes in parallel
+			// Fetch products with inventory and attributes in parallel
 			const [productsData, attributeLists] = await Promise.all([
-				getProductsWithAttributes(),
+				getProductsWithInventory(warehouse.id),
 				getProductAttributeLists(),
 			]);
 
@@ -109,7 +108,7 @@ export default function CreateSalesOrderPage() {
 		}
 	};
 
-	const handleOpenQuantitySheet = (product: ProductWithAttributes) => {
+	const handleOpenQuantitySheet = (product: ProductWithInventory) => {
 		setSelectedProduct(product);
 		setShowQuantitySheet(true);
 	};

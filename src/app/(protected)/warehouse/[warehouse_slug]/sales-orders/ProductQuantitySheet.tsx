@@ -10,13 +10,13 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import ImageWrapper from '@/components/ui/image-wrapper';
 import { getProductIcon, getProductInfo } from '@/lib/utils/product';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
-import type { ProductWithAttributes } from '@/lib/queries/products';
+import type { ProductWithInventory } from '@/lib/queries/products';
 import type { MeasuringUnit, StockType } from '@/types/database/enums';
 
 interface ProductQuantitySheetProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	product: ProductWithAttributes | null;
+	product: ProductWithInventory | null;
 	initialQuantity?: number;
 	onConfirm: (quantity: number) => void;
 }

@@ -15,7 +15,6 @@ interface PartnersSectionProps {
 	newButtonLabel: string;
 	partnerType: PartnerType;
 	partners: RecentPartner[];
-	totalCount: number;
 	onPartnerAdded?: () => void;
 }
 
@@ -24,7 +23,6 @@ export function PartnersSection({
 	newButtonLabel,
 	partnerType,
 	partners,
-	totalCount,
 	onPartnerAdded,
 }: PartnersSectionProps) {
 	const router = useRouter();
@@ -48,6 +46,9 @@ export function PartnersSection({
 		);
 	}
 
+	const hasMore = partners.length === 8;
+	const displayPartners = partners.slice(0, 7);
+
 	return (
 		<>
 			<div className="flex flex-col">
@@ -60,7 +61,7 @@ export function PartnersSection({
 				</div>
 				<div className="px-1">
 					<div className="grid grid-cols-4 md:grid-cols-6">
-						{partners.map((partner) => (
+						{displayPartners.map((partner) => (
 							<PartnerButton
 								key={partner.id}
 								partner={partner}
@@ -68,7 +69,7 @@ export function PartnersSection({
 							/>
 						))}
 						{/* View all button if more than 7 partners */}
-						{totalCount > 7 && (
+						{hasMore && (
 							<button
 								onClick={() => router.push(`/warehouse/${warehouse.slug}/partners?type=customer`)}
 								className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-100 transition-colors"

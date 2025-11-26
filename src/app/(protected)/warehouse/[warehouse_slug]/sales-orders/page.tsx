@@ -13,6 +13,7 @@ import { ErrorState } from '@/components/layouts/error-state';
 import { useSession } from '@/contexts/session-context';
 import { Progress } from '@/components/ui/progress';
 import { getSalesOrders } from '@/lib/queries/sales-orders';
+import { getCustomers } from '@/lib/queries/partners';
 import { getPartnerName } from '@/lib/utils/partner';
 import { calculateCompletionPercentage, getOrderDisplayStatus, getProductSummary } from '@/lib/utils/sales-order';
 import type { SalesOrderStatus } from '@/types/database/enums';
@@ -21,6 +22,7 @@ import { formatAbsoluteDate } from '@/lib/utils/date';
 interface OrderListItem {
 	id: string;
 	orderNumber: number;
+	customerId: string;
 	customerName: string;
 	products: Array<{ name: string; quantity: number }>;
 	dueDate: string | null;
@@ -56,8 +58,11 @@ export default function OrdersPage() {
 			setLoading(true);
 			setError(null);
 
-			// Use query function from queries folder
-			const orders = await getSalesOrders(warehouse.id);
+			// Fetch orders and customers in parallel
+			const [orders, customers] = await Promise.all([
+				getSalesOrders(warehouse.id),
+				getCustomers(),
+			]);
 
 			// Transform orders
 			const orderItems: OrderListItem[] = orders.map((order) => {
@@ -81,6 +86,7 @@ export default function OrdersPage() {
 				return {
 					id: order.id,
 					orderNumber: order.sequence_number,
+					customerId: order.customer_id,
 					customerName,
 					products,
 					dueDate: order.expected_delivery_date,
@@ -91,22 +97,22 @@ export default function OrdersPage() {
 				};
 			});
 
-			// Extract unique products and customers for filters
+			// Extract unique products from orders
 			const productSet = new Set<string>();
-			const customerMap = new Map<string, string>();
-
 			orders.forEach((order) => {
 				order.sales_order_items.forEach((item) => {
 					if (item.product?.name) productSet.add(item.product.name);
 				});
-				if (order.customer) {
-					customerMap.set(order.customer_id, getPartnerName(order.customer));
-				}
 			});
 
 			setAvailableProducts(Array.from(productSet).sort());
+
+			// Set customers from separate query
 			setAvailableCustomers(
-				Array.from(customerMap.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name))
+				customers.map(customer => ({
+					id: customer.id,
+					name: getPartnerName(customer),
+				}))
 			);
 
 			// Group by month (based on order creation date)
@@ -178,7 +184,7 @@ export default function OrdersPage() {
 					const matchesProduct =
 						selectedProduct === 'all' || order.products.some((p) => p.name === selectedProduct);
 
-					const matchesCustomer = selectedCustomer === 'all' || order.customerName === selectedCustomer;
+					const matchesCustomer = selectedCustomer === 'all' || order.customerId === selectedCustomer;
 
 					return matchesSearch && matchesStatus && matchesProduct && matchesCustomer;
 				}),
@@ -246,7 +252,7 @@ export default function OrdersPage() {
 			<div className="flex gap-3 p-4 overflow-x-auto shrink-0">
 				{/* Status Filter */}
 				<Select value={selectedStatus} onValueChange={setSelectedStatus}>
-					<SelectTrigger className="flex-shrink-0 w-[160px]">
+					<SelectTrigger className="flex-shrink-0 h-10 max-w-34">
 						<SelectValue placeholder="All status" />
 					</SelectTrigger>
 					<SelectContent>
@@ -261,7 +267,7 @@ export default function OrdersPage() {
 
 				{/* Product Filter */}
 				<Select value={selectedProduct} onValueChange={setSelectedProduct}>
-					<SelectTrigger className="flex-shrink-0 w-[160px]">
+					<SelectTrigger className="flex-shrink-0 h-10 max-w-34">
 						<SelectValue placeholder="All products" />
 					</SelectTrigger>
 					<SelectContent>
@@ -276,13 +282,13 @@ export default function OrdersPage() {
 
 				{/* Customer Filter */}
 				<Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
-					<SelectTrigger className="flex-shrink-0 max-w-[160px]">
+					<SelectTrigger className="flex-shrink-0 h-10 max-w-34">
 						<SelectValue placeholder="All customers" />
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="all">All customers</SelectItem>
 						{availableCustomers.map((customer) => (
-							<SelectItem key={customer.id} value={customer.name}>
+							<SelectItem key={customer.id} value={customer.id}>
 								{customer.name}
 							</SelectItem>
 						))}

@@ -110,9 +110,9 @@ export function ProductSelectionStep({
 				</div>
 
 				{/* Filter Dropdowns */}
-				<div className="flex gap-3">
+				<div className="flex gap-3 overflow-x-auto p-1">
 					<Select value={materialFilter} onValueChange={setMaterialFilter}>
-						<SelectTrigger className="flex-1 h-10">
+						<SelectTrigger className="flex-1 h-10 min-w-34">
 							<SelectValue placeholder="Material" />
 						</SelectTrigger>
 						<SelectContent>
@@ -126,7 +126,7 @@ export function ProductSelectionStep({
 					</Select>
 
 					<Select value={colorFilter} onValueChange={setColorFilter}>
-						<SelectTrigger className="flex-1 h-10">
+						<SelectTrigger className="flex-1 h-10 min-w-34">
 							<SelectValue placeholder="Color" />
 						</SelectTrigger>
 						<SelectContent>
@@ -140,7 +140,7 @@ export function ProductSelectionStep({
 					</Select>
 
 					<Select value={tagsFilter} onValueChange={setTagsFilter}>
-						<SelectTrigger className="flex-1 h-10">
+						<SelectTrigger className="flex-1 h-10 min-w-34">
 							<SelectValue placeholder="Tags" />
 						</SelectTrigger>
 						<SelectContent>

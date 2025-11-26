@@ -60,7 +60,7 @@ export function QRProductSelectionStep({
 	return (
 		<>
 			{/* Filters Section */}
-			<div className="flex flex-col gap-3 px-4 py-4 shrink-0">
+			<div className="flex flex-col gap-3 p-4 shrink-0">
 				<h3 className="text-lg font-semibold text-gray-900">Select product</h3>
 
 				{/* Search */}
@@ -75,9 +75,9 @@ export function QRProductSelectionStep({
 				</div>
 
 				{/* Filter Dropdowns */}
-				<div className="flex gap-3">
+				<div className="flex gap-3 p-1 overflow-x-auto shrink-0">
 					<Select value={materialFilter} onValueChange={setMaterialFilter}>
-						<SelectTrigger className="flex-1 h-10">
+						<SelectTrigger className="flex-1 h-10 min-w-34">
 							<SelectValue placeholder="Material" />
 						</SelectTrigger>
 						<SelectContent>
@@ -91,7 +91,7 @@ export function QRProductSelectionStep({
 					</Select>
 
 					<Select value={colorFilter} onValueChange={setColorFilter}>
-						<SelectTrigger className="flex-1 h-10">
+						<SelectTrigger className="flex-1 h-10 min-w-34">
 							<SelectValue placeholder="Color" />
 						</SelectTrigger>
 						<SelectContent>
@@ -105,7 +105,7 @@ export function QRProductSelectionStep({
 					</Select>
 
 					<Select value={tagsFilter} onValueChange={setTagsFilter}>
-						<SelectTrigger className="flex-1 h-10">
+						<SelectTrigger className="flex-1 h-10 min-w-34">
 							<SelectValue placeholder="Tags" />
 						</SelectTrigger>
 						<SelectContent>

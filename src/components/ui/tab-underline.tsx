@@ -9,7 +9,7 @@ interface TabUnderlineProps {
 
 export function TabUnderline({ activeTab, onTabChange, tabs }: TabUnderlineProps) {
 	return (
-		<div className="sticky top-0 z-10 flex px-4 pt-2 border-b border-border bg-background overflow-x-auto">
+		<div className="sticky top-0 z-20 flex px-4 pt-2 border-b border-border bg-background overflow-x-auto">
 			{tabs.map((tab) => (
 				<button
 					key={tab.value}

@@ -224,100 +224,51 @@ export async function getPendingQRProducts(
 
 /**
  * Fetch recent partners based on last interaction (sales orders, goods inward/outward)
- * Returns customers and suppliers separately, up to 7 each, ordered by most recent interaction
+ * Returns customers and suppliers separately, up to 8 each (fetch 8 to check if more exist)
  */
 export async function getRecentPartners(): Promise<{
 	customers: RecentPartner[];
 	suppliers: RecentPartner[];
-	totalCustomers: number;
-	totalSuppliers: number;
 }> {
 	const supabase = createClient();
 
-	// Get all partners with their last interaction dates
-	const { data: partners, error: partnersError } = await supabase
+	// Fetch 8 customers (to check if more than 7 exist)
+	const { data: customerData, error: customersError } = await supabase
 		.from('partners')
 		.select('*')
+		.eq('partner_type', 'customer')
 		.is('deleted_at', null)
-		.order('updated_at', { ascending: false });
+		.order('last_interaction_at', { ascending: false, nullsFirst: false })
+		.limit(8);
 
-	if (partnersError) {
-		console.error('Error fetching partners:', partnersError);
-		throw partnersError;
+	if (customersError) {
+		console.error('Error fetching customers:', customersError);
+		throw customersError;
 	}
 
-	if (!partners || partners.length === 0) {
-		return { customers: [], suppliers: [], totalCustomers: 0, totalSuppliers: 0 };
+	// Fetch 8 suppliers/vendors (to check if more than 7 exist)
+	const { data: supplierData, error: suppliersError } = await supabase
+		.from('partners')
+		.select('*')
+		.in('partner_type', ['supplier', 'vendor'])
+		.is('deleted_at', null)
+		.order('last_interaction_at', { ascending: false, nullsFirst: false })
+		.limit(8);
+
+	if (suppliersError) {
+		console.error('Error fetching suppliers:', suppliersError);
+		throw suppliersError;
 	}
 
-	// For each partner, find their most recent interaction
-	const partnersWithInteraction: RecentPartner[] = [];
+	// Map to RecentPartner type
+	const customers: RecentPartner[] = (customerData || [])
+		.map(p => ({ ...p, last_interaction: p.last_interaction_at }));
 
-	for (const partner of partners) {
-		// Check sales orders (as customer)
-		const { data: salesOrders } = await supabase
-			.from('sales_orders')
-			.select('created_at')
-			.eq('customer_id', partner.id)
-			.is('deleted_at', null)
-			.order('created_at', { ascending: false })
-			.limit(1);
-
-		// Check goods inwards (as supplier/vendor)
-		const { data: goodsInwards } = await supabase
-			.from('goods_inwards')
-			.select('created_at')
-			.eq('partner_id', partner.id)
-			.is('deleted_at', null)
-			.order('created_at', { ascending: false })
-			.limit(1);
-
-		// Check goods outwards
-		const { data: goodsOutwards } = await supabase
-			.from('goods_outwards')
-			.select('created_at')
-			.eq('partner_id', partner.id)
-			.is('deleted_at', null)
-			.order('created_at', { ascending: false })
-			.limit(1);
-
-		// Find the most recent interaction
-		const dates = [
-			salesOrders?.[0]?.created_at,
-			goodsInwards?.[0]?.created_at,
-			goodsOutwards?.[0]?.created_at,
-		].filter(Boolean) as string[];
-
-		const lastInteraction = dates.length > 0
-			? dates.reduce((latest, date) => date > latest ? date : latest)
-			: partner.updated_at;
-
-		partnersWithInteraction.push({
-			...partner,
-			last_interaction: lastInteraction,
-		});
-	}
-
-	// Separate customers and suppliers
-	const allCustomers = partnersWithInteraction.filter(p => p.partner_type === 'customer');
-	const allSuppliers = partnersWithInteraction.filter(p =>
-		p.partner_type === 'supplier' || p.partner_type === 'vendor'
-	);
-
-	// Sort by last interaction
-	const sortByInteraction = (a: RecentPartner, b: RecentPartner) => {
-		const dateA = a.last_interaction || '';
-		const dateB = b.last_interaction || '';
-		return dateB.localeCompare(dateA);
-	};
-
-	const customers = allCustomers.sort(sortByInteraction).slice(0, 7);
-	const suppliers = allSuppliers.sort(sortByInteraction).slice(0, 7);
+	const suppliers: RecentPartner[] = (supplierData || [])
+		.map(p => ({ ...p, last_interaction: p.last_interaction_at }));
 
 	return {
 		customers,
 		suppliers,
-		totalCustomers: allCustomers.length,
-		totalSuppliers: allSuppliers.length,
 	};
 }

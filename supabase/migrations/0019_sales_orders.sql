@@ -158,6 +158,13 @@ CREATE TRIGGER trigger_update_sales_order_total_on_discount
     BEFORE UPDATE ON sales_orders
     FOR EACH ROW EXECUTE FUNCTION update_sales_order_total_on_discount();
 
+-- Update partner's last_interaction_at timestamp
+CREATE TRIGGER trigger_sales_orders_update_partner_interaction
+    AFTER INSERT OR UPDATE ON sales_orders
+    FOR EACH ROW
+    WHEN (NEW.deleted_at IS NULL)
+    EXECUTE FUNCTION update_partner_last_interaction();
+
 -- =====================================================
 -- SALES ORDERS TABLE RLS POLICIES
 -- =====================================================

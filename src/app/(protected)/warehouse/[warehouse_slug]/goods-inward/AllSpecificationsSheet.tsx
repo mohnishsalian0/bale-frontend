@@ -137,8 +137,8 @@ export function AllSpecificationsSheet({
 				onClick={handleAddNewUnit}
 				className="flex-1"
 			>
-				<IconPlus className="size-4" />
-				Add new specification
+				<IconPlus />
+				Add new {product.stock_type}
 			</Button>
 		</div>
 	);

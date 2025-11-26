@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ImageWrapper from '@/components/ui/image-wrapper';
 import { getMeasuringUnitAbbreviation } from '@/lib/utils/measuring-units';
 import { getProductIcon, getProductInfo } from '@/lib/utils/product';
-import type { ProductWithAttributes, ProductMaterial, ProductColor, ProductTag } from '@/lib/queries/products';
+import { pluralizeStockType } from '@/lib/utils/pluralize';
+import type { ProductWithInventory, ProductMaterial, ProductColor, ProductTag } from '@/lib/queries/products';
 import { MeasuringUnit, StockType } from '@/types/database/enums';
 
-interface ProductWithSelection extends ProductWithAttributes {
+interface ProductWithSelection extends ProductWithInventory {
 	selected: boolean;
 	quantity: number;
 }
@@ -22,7 +23,7 @@ interface ProductSelectionStepProps {
 	colors: ProductColor[];
 	tags: ProductTag[];
 	loading: boolean;
-	onOpenQuantitySheet: (product: ProductWithAttributes) => void;
+	onOpenQuantitySheet: (product: ProductWithInventory) => void;
 	onAddNewProduct: () => void;
 	onRemoveProduct: (productId: string) => void;
 }
@@ -41,6 +42,22 @@ export function ProductSelectionStep({
 	const [materialFilter, setMaterialFilter] = useState<string>('all');
 	const [colorFilter, setColorFilter] = useState<string>('all');
 	const [tagsFilter, setTagsFilter] = useState<string>('all');
+
+	// Helper function to format available stock text
+	const getAvailableStockText = (product: ProductWithSelection): string => {
+		const stockType = product.stock_type as StockType;
+		const units = product.in_stock_units;
+		const quantity = product.in_stock_quantity;
+		const unitAbbreviation = getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit | null);
+
+		if (stockType === 'roll') {
+			return `${quantity.toFixed(0)} ${unitAbbreviation} avail.`;
+		} else if (stockType === 'batch') {
+			return `${quantity.toFixed(0)} units avail.`;
+		} else {
+			return `${pluralizeStockType(units, stockType)} avail.`;
+		}
+	};
 
 	// Filter and sort products using useMemo
 	const filteredProducts = useMemo(() => {
@@ -80,7 +97,7 @@ export function ProductSelectionStep({
 	return (
 		<>
 			{/* Filters Section */}
-			<div className="flex flex-col gap-3 px-4 py-4 shrink-0">
+			<div className="flex flex-col gap-3 p-4 shrink-0">
 				<div className="flex items-center justify-between">
 					<h3 className="text-lg font-semibold text-gray-900">Select products</h3>
 					<Button variant="ghost" onClick={onAddNewProduct}>
@@ -101,9 +118,9 @@ export function ProductSelectionStep({
 				</div>
 
 				{/* Filter Dropdowns */}
-				<div className="flex gap-3">
+				<div className="flex gap-3 p-1 overflow-x-auto shrink-0">
 					<Select value={materialFilter} onValueChange={setMaterialFilter}>
-						<SelectTrigger className="flex-1 h-10">
+						<SelectTrigger className="flex-1 h-10 min-w-34">
 							<SelectValue placeholder="Material" />
 						</SelectTrigger>
 						<SelectContent>
@@ -117,7 +134,7 @@ export function ProductSelectionStep({
 					</Select>
 
 					<Select value={colorFilter} onValueChange={setColorFilter}>
-						<SelectTrigger className="flex-1 h-10">
+						<SelectTrigger className="flex-1 h-10 min-w-34">
 							<SelectValue placeholder="Color" />
 						</SelectTrigger>
 						<SelectContent>
@@ -131,7 +148,7 @@ export function ProductSelectionStep({
 					</Select>
 
 					<Select value={tagsFilter} onValueChange={setTagsFilter}>
-						<SelectTrigger className="flex-1 h-10">
+						<SelectTrigger className="flex-1 h-10 min-w-34">
 							<SelectValue placeholder="Tags" />
 						</SelectTrigger>
 						<SelectContent>
@@ -190,35 +207,38 @@ export function ProductSelectionStep({
 									</div>
 
 									{/* Add/Quantity Button */}
-									{product.selected && product.quantity > 0 ? (
-										<div className="flex items-center gap-2">
+									<div className="flex flex-col items-end gap-2">
+										{product.selected && product.quantity > 0 ? (
+											<div className="flex items-center gap-2">
+												<Button
+													type="button"
+													size="sm"
+													onClick={() => onOpenQuantitySheet(product)}
+												>
+													{product.quantity} {unitAbbreviation}
+												</Button>
+												<Button
+													type="button"
+													variant="destructive"
+													size="icon"
+													onClick={() => onRemoveProduct(product.id)}
+												>
+													<IconTrash />
+												</Button>
+											</div>
+										) : (
 											<Button
 												type="button"
+												variant="outline"
 												size="sm"
 												onClick={() => onOpenQuantitySheet(product)}
 											>
-												{product.quantity} {unitAbbreviation}
+												<IconPlus />
+												Add {product.stock_type}
 											</Button>
-											<Button
-												type="button"
-												variant="destructive"
-												size="icon"
-												onClick={() => onRemoveProduct(product.id)}
-											>
-												<IconTrash />
-											</Button>
-										</div>
-									) : (
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onClick={() => onOpenQuantitySheet(product)}
-										>
-											<IconPlus />
-											Add {product.stock_type}
-										</Button>
-									)}
+										)}
+										<p className="text-xs text-gray-500">{getAvailableStockText(product)}</p>
+									</div>
 								</div>
 							);
 						})}

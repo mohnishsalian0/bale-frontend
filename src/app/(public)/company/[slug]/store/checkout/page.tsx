@@ -200,7 +200,7 @@ export default function CheckoutPage() {
 							return (
 								<div
 									key={item.product.id}
-									className="flex items-center"
+									className="flex items-center gap-3"
 								>
 									{/* Product Image */}
 									<ImageWrapper

@@ -41,7 +41,10 @@ CREATE TABLE partners (
     image_url TEXT,
 
     notes TEXT,
-    
+
+    -- Interaction tracking
+    last_interaction_at TIMESTAMPTZ,
+
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -80,6 +83,9 @@ CREATE INDEX idx_partners_gst ON partners(company_id, gst_number) WHERE gst_numb
 
 -- Location-based queries
 CREATE INDEX idx_partners_city ON partners(company_id, city);
+
+-- Last interaction sorting (for dashboard recent partners)
+CREATE INDEX idx_partners_last_interaction ON partners(company_id, last_interaction_at DESC NULLS LAST) WHERE deleted_at IS NULL;
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES
@@ -139,6 +145,41 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND authorize('partners.delete')
 );
+
+-- =====================================================
+-- TRIGGER FUNCTION FOR PARTNER LAST INTERACTION
+-- =====================================================
+
+-- Function to update partner's last_interaction_at timestamp
+CREATE OR REPLACE FUNCTION update_partner_last_interaction()
+RETURNS TRIGGER AS $$
+DECLARE
+    partner_id_to_update UUID;
+    interaction_time TIMESTAMPTZ;
+BEGIN
+    -- Determine which partner_id to update based on the table
+    IF TG_TABLE_NAME = 'sales_orders' THEN
+        partner_id_to_update := COALESCE(NEW.customer_id, OLD.customer_id);
+    ELSIF TG_TABLE_NAME IN ('goods_inwards', 'goods_outwards') THEN
+        partner_id_to_update := COALESCE(NEW.partner_id, OLD.partner_id);
+    END IF;
+
+    -- Get interaction timestamp
+    interaction_time := COALESCE(NEW.created_at, NEW.updated_at, CURRENT_TIMESTAMP);
+
+    -- Update the partner's last_interaction_at if partner exists
+    IF partner_id_to_update IS NOT NULL THEN
+        UPDATE partners
+        SET last_interaction_at = GREATEST(
+            COALESCE(last_interaction_at, '-infinity'::timestamptz),
+            interaction_time
+        )
+        WHERE id = partner_id_to_update;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 -- =====================================================
 -- GRANT PERMISSIONS

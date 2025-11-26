@@ -198,3 +198,56 @@ export async function getProductAttributeLists(): Promise<{
 
 	return { materials, colors, tags };
 }
+
+/**
+ * Product with inventory aggregates for a specific warehouse
+ */
+export interface ProductWithInventory extends ProductWithAttributes {
+	in_stock_units: number;
+	in_stock_quantity: number;
+}
+
+/**
+ * Get all products with attributes and inventory aggregates for a specific warehouse
+ */
+export async function getProductsWithInventory(warehouseId: string): Promise<ProductWithInventory[]> {
+	const supabase = createClient();
+
+	const { data, error } = await supabase
+		.from('products')
+		.select(`
+			*,
+			product_material_assignments(
+				material:product_materials(*)
+			),
+			product_color_assignments(
+				color:product_colors(*)
+			),
+			product_tag_assignments(
+				tag:product_tags(*)
+			),
+			product_inventory_aggregates!inner(
+				in_stock_units,
+				in_stock_quantity
+			)
+		`)
+		.eq('product_inventory_aggregates.warehouse_id', warehouseId)
+		.is('deleted_at', null)
+		.order('name', { ascending: true });
+
+	if (error) {
+		console.error('Error fetching products with inventory:', error);
+		return [];
+	}
+
+	return (data || []).map((product: any) => {
+		const transformed = transformProductWithAttributes(product);
+		const inventory = product.product_inventory_aggregates?.[0];
+
+		return {
+			...transformed,
+			in_stock_units: inventory?.in_stock_units || 0,
+			in_stock_quantity: inventory?.in_stock_quantity || 0,
+		};
+	});
+}

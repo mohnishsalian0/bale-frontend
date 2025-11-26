@@ -87,7 +87,7 @@ export default function GoodsOutwardDetailPage({ params }: PageParams) {
 						stock_unit:stock_units(
 							*,
 							product:products(
-								id, name, measuring_unit, product_images, sequence_number,
+								id, name, stock_type, measuring_unit, product_images, sequence_number,
 								product_material_assignments(
 									material:product_materials(*)
 								),

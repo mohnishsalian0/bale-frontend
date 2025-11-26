@@ -106,6 +106,13 @@ CREATE TRIGGER trigger_auto_inward_sequence
     BEFORE INSERT ON goods_inwards
     FOR EACH ROW EXECUTE FUNCTION auto_generate_inward_sequence();
 
+-- Update partner's last_interaction_at timestamp
+CREATE TRIGGER trigger_goods_inwards_update_partner_interaction
+    AFTER INSERT OR UPDATE ON goods_inwards
+    FOR EACH ROW
+    WHEN (NEW.deleted_at IS NULL AND NEW.partner_id IS NOT NULL)
+    EXECUTE FUNCTION update_partner_last_interaction();
+
 -- =====================================================
 -- GOODS INWARD TABLE RLS POLICIES
 -- =====================================================

@@ -17,11 +17,14 @@ import { LoadingState } from '@/components/layouts/loading-state';
 import { ErrorState } from '@/components/layouts/error-state';
 import { useSession } from '@/contexts/session-context';
 import { aggregateQuantitiesByUnit, formatQuantitiesByUnit } from '@/lib/utils/measuring-units';
+import { getPartners } from '@/lib/queries/partners';
+import { getPartnerName } from '@/lib/utils/partner';
 
 interface StockFlowItem {
 	id: string;
 	type: 'outward' | 'inward';
 	productName: string;
+	partnerId: string | null;
 	partnerName: string;
 	date: string;
 	quantity: number;
@@ -49,6 +52,7 @@ export default function StockFlowPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [totalReceived, setTotalReceived] = useState<Map<string, number>>(new Map());
 	const [totalOutwarded, setTotalOutwarded] = useState<Map<string, number>>(new Map());
+	const [availablePartners, setAvailablePartners] = useState<Array<{ id: string; name: string }>>([]);
 
 	const fetchStockFlow = async () => {
 		try {
@@ -57,39 +61,50 @@ export default function StockFlowPage() {
 
 			const supabase = createClient();
 
-			// Fetch inwards with partner details and stock units
-			const { data: inwards, error: inwardError } = await supabase
-				.from('goods_inwards')
-				.select(`
-					*,
-					partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, company_name),
-					stock_units(
-						product:products(id, name, measuring_unit),
-						initial_quantity
-					)
-				`)
-				.eq('warehouse_id', warehouse.id)
-				.order('inward_date', { ascending: false });
+			// Fetch partners and stock flow data in parallel
+			const [partners, inwardsResult, outwardsResult] = await Promise.all([
+				getPartners(),
+				supabase
+					.from('goods_inwards')
+					.select(`
+						*,
+						partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, company_name),
+						stock_units(
+							product:products(id, name, measuring_unit),
+							initial_quantity
+						)
+					`)
+					.eq('warehouse_id', warehouse.id)
+					.order('inward_date', { ascending: false }),
+				supabase
+					.from('goods_outwards')
+					.select(`
+						*,
+						partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name),
+						goods_outward_items(
+							quantity_dispatched,
+							stock_unit:stock_units(
+								product:products(id, name, measuring_unit)
+							)
+						)
+					`)
+					.eq('warehouse_id', warehouse.id)
+					.order('outward_date', { ascending: false }),
+			]);
+
+			const { data: inwards, error: inwardError } = inwardsResult;
+			const { data: outwards, error: outwardError } = outwardsResult;
 
 			if (inwardError) throw inwardError;
-
-			// Fetch outwards with partner details
-			const { data: outwards, error: outwardError } = await supabase
-				.from('goods_outwards')
-				.select(`
-					*,
-					partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name),
-					goods_outward_items(
-						quantity_dispatched,
-						stock_unit:stock_units(
-							product:products(id, name, measuring_unit)
-						)
-					)
-				`)
-				.eq('warehouse_id', warehouse.id)
-				.order('outward_date', { ascending: false });
-
 			if (outwardError) throw outwardError;
+
+			// Set available partners for filter
+			setAvailablePartners(
+				partners.map(partner => ({
+					id: partner.id,
+					name: getPartnerName(partner),
+				}))
+			);
 
 			// Transform inwards
 			const inwardItems: StockFlowItem[] = (inwards || []).map((r) => {
@@ -107,16 +122,17 @@ export default function StockFlowPage() {
 					? `${firstProduct?.name || 'Unknown Product'}, ${productCount - 1} more`
 					: firstProduct?.name || 'Unknown Product';
 
-				const totalQty = Number(stockUnits.reduce(
+				const totalQty = stockUnits.reduce(
 					(sum: number, unit: any) => sum + (Number(unit.initial_quantity) || 0),
 					0
-				).toFixed(2));
+				);
 				const unit = firstProduct?.measuring_unit || 'm';
 
 				return {
 					id: r.id,
 					type: 'inward',
 					productName,
+					partnerId: r.partner_id,
 					partnerName,
 					date: r.inward_date,
 					quantity: totalQty,
@@ -142,16 +158,17 @@ export default function StockFlowPage() {
 					? `${firstProduct?.name || 'Unknown Product'}, ${productCount - 1} more`
 					: firstProduct?.name || 'Unknown Product';
 
-				const totalQty = Number(items.reduce(
+				const totalQty = items.reduce(
 					(sum: number, item: any) => sum + (Number(item.quantity_dispatched) || 0),
 					0
-				).toFixed(2));
+				);
 				const unit = firstProduct?.measuring_unit || 'm';
 
 				return {
 					id: d.id,
 					type: 'outward',
 					productName,
+					partnerId: d.partner_id,
 					partnerName,
 					date: d.outward_date,
 					quantity: totalQty,
@@ -196,24 +213,7 @@ export default function StockFlowPage() {
 				}
 			});
 
-			const sortedGroups = Object.values(groups).map(group => {
-				// Round quantities in the Maps
-				const roundedInCount = new Map<string, number>();
-				group.inCount.forEach((qty, unit) => {
-					roundedInCount.set(unit, Number(qty.toFixed(2)));
-				});
-
-				const roundedOutCount = new Map<string, number>();
-				group.outCount.forEach((qty, unit) => {
-					roundedOutCount.set(unit, Number(qty.toFixed(2)));
-				});
-
-				return {
-					...group,
-					inCount: roundedInCount,
-					outCount: roundedOutCount,
-				};
-			}).sort((a, b) => {
+			const sortedGroups = Object.values(groups).sort((a, b) => {
 				const [yearA, monthA] = a.monthYear.split(' ');
 				const [yearB, monthB] = b.monthYear.split(' ');
 				const dateA = new Date(`${monthA} 1, ${yearA}`);
@@ -233,19 +233,8 @@ export default function StockFlowPage() {
 			const inwardByUnit = aggregateQuantitiesByUnit(recentInwardItems);
 			const outwardByUnit = aggregateQuantitiesByUnit(recentOutwardItems);
 
-			// Round the values
-			const roundedInward = new Map<string, number>();
-			inwardByUnit.forEach((qty, unit) => {
-				roundedInward.set(unit, Number(qty.toFixed(2)));
-			});
-
-			const roundedOutward = new Map<string, number>();
-			outwardByUnit.forEach((qty, unit) => {
-				roundedOutward.set(unit, Number(qty.toFixed(2)));
-			});
-
-			setTotalReceived(roundedInward);
-			setTotalOutwarded(roundedOutward);
+			setTotalReceived(inwardByUnit);
+			setTotalOutwarded(outwardByUnit);
 		} catch (err) {
 			console.error('Error fetching stock flow:', err);
 			setError(err instanceof Error ? err.message : 'Failed to load stock flow');
@@ -271,7 +260,9 @@ export default function StockFlowPage() {
 				(selectedFilter === 'outward' && item.type === 'outward') ||
 				(selectedFilter === 'inward' && item.type === 'inward');
 
-			return matchesSearch && matchesFilter;
+			const matchesPartner = selectedPartner === 'all' || item.partnerId === selectedPartner;
+
+			return matchesSearch && matchesFilter && matchesPartner;
 		}),
 	})).filter((group) => group.items.length > 0);
 
@@ -356,11 +347,16 @@ export default function StockFlowPage() {
 
 				{/* Partner Filter */}
 				<Select value={selectedPartner} onValueChange={setSelectedPartner}>
-					<SelectTrigger className="flex-1 max-w-3xs">
+					<SelectTrigger className="flex-1 h-10 max-w-34">
 						<SelectValue placeholder="All partners" />
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="all">All partners</SelectItem>
+						{availablePartners.map((partner) => (
+							<SelectItem key={partner.id} value={partner.id}>
+								{partner.name}
+							</SelectItem>
+						))}
 					</SelectContent>
 				</Select>
 			</div>
@@ -418,7 +414,7 @@ export default function StockFlowPage() {
 											className={`text-base font-bold ${item.type === 'inward' ? 'text-teal-700' : 'text-yellow-700'
 												}`}
 										>
-											{item.quantity} {item.unit}
+											{item.quantity.toFixed(2)} {item.unit}
 										</p>
 										<p className="text-xs text-gray-500">
 											{item.type === 'inward' ? 'In' : 'Out'}

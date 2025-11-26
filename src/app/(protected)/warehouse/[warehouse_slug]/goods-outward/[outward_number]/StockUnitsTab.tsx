@@ -44,6 +44,7 @@ export function StockUnitsTab({ items }: StockUnitsTabProps) {
 				const productName = product?.name || 'Unknown Product';
 				const stockType = product?.stock_type as StockType;
 				const measuringUnit = product?.measuring_unit as MeasuringUnit;
+				console.log(stockType);
 
 				return (
 					<li

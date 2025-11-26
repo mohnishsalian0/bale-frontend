@@ -54,8 +54,6 @@ export default function DashboardPage() {
 	const [pendingQRProducts, setPendingQRProducts] = useState<PendingQRProduct[]>([]);
 	const [recentCustomers, setRecentCustomers] = useState<RecentPartner[]>([]);
 	const [recentSuppliers, setRecentSuppliers] = useState<RecentPartner[]>([]);
-	const [totalCustomers, setTotalCustomers] = useState(0);
-	const [totalSuppliers, setTotalSuppliers] = useState(0);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -103,8 +101,6 @@ export default function DashboardPage() {
 			setPendingQRProducts(pendingQR);
 			setRecentCustomers(partnersData.customers);
 			setRecentSuppliers(partnersData.suppliers);
-			setTotalCustomers(partnersData.totalCustomers);
-			setTotalSuppliers(partnersData.totalSuppliers);
 		} catch (err) {
 			console.error('Error fetching dashboard data:', err);
 			setError(err instanceof Error ? err.message : 'Failed to load dashboard');
@@ -188,7 +184,6 @@ export default function DashboardPage() {
 					newButtonLabel="New customer"
 					partnerType="customer"
 					partners={recentCustomers}
-					totalCount={totalCustomers}
 					onPartnerAdded={fetchDashboardData}
 				/>
 			</div>
@@ -200,7 +195,6 @@ export default function DashboardPage() {
 					newButtonLabel="New supplier"
 					partnerType="supplier"
 					partners={recentSuppliers}
-					totalCount={totalSuppliers}
 					onPartnerAdded={fetchDashboardData}
 				/>
 			</div>
