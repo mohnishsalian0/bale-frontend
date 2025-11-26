@@ -20,7 +20,6 @@ interface QRBatch {
 	id: string;
 	batchName: string;
 	imageUrl: string | null;
-	pdfUrl: string | null;
 	itemCount: number;
 	createdAt: string;
 }
@@ -68,7 +67,6 @@ export default function QRCodesPage() {
 					id,
 					batch_name,
 					image_url,
-					pdf_url,
 					created_at,
 					qr_batch_items (
 						id,
@@ -87,7 +85,6 @@ export default function QRCodesPage() {
 				id: batch.id,
 				batchName: batch.batch_name,
 				imageUrl: batch.image_url,
-				pdfUrl: batch.pdf_url,
 				itemCount: batch.qr_batch_items?.length || 0,
 				createdAt: batch.created_at,
 			}));
@@ -123,49 +120,59 @@ export default function QRCodesPage() {
 	}, [selectedProduct]);
 
 	const handleShare = async (batch: QRBatch) => {
-		if (!batch.pdfUrl) {
-			toast.error('No PDF available to share');
-			return;
-		}
+		try {
+			toast.loading('Generating PDF...', { id: 'share-pdf' });
 
-		// Check if running on mobile with share API support
-		if (navigator.share) {
-			try {
-				await navigator.share({
-					title: batch.batchName,
-					text: `QR Code Batch: ${batch.batchName}`,
-					url: batch.pdfUrl,
-				});
-			} catch (err) {
-				// User cancelled or error occurred
-				console.log('Share cancelled or failed:', err);
+			const { generateBatchPDF } = await import('@/lib/pdf/batch-pdf-generator');
+			const { blob, batchName } = await generateBatchPDF(batch.id, warehouse.company_id);
+
+			// Check if Web Share API is supported
+			if (navigator.share && navigator.canShare) {
+				const file = new File([blob], `${batchName}.pdf`, { type: 'application/pdf' });
+
+				// Check if we can share files
+				if (navigator.canShare({ files: [file] })) {
+					await navigator.share({
+						title: batchName,
+						text: `QR Code Batch: ${batchName}`,
+						files: [file],
+					});
+					toast.success('Shared successfully!', { id: 'share-pdf' });
+					return;
+				}
 			}
-		} else {
-			// Desktop: Copy link to clipboard
-			try {
-				await navigator.clipboard.writeText(batch.pdfUrl);
-				toast.success('Link copied to clipboard!');
-			} catch (err) {
-				toast.error('Failed to copy link');
+
+			// Sharing not supported
+			toast.error('Sharing is not supported on this device', { id: 'share-pdf' });
+		} catch (error) {
+			// User cancelled share or error occurred
+			if (error instanceof Error && error.name === 'AbortError') {
+				toast.dismiss('share-pdf');
+				return;
 			}
+			console.error('Error sharing PDF:', error);
+			toast.error(
+				error instanceof Error ? error.message : 'Failed to share PDF',
+				{ id: 'share-pdf' }
+			);
 		}
 	};
 
-	const handleDownload = (batch: QRBatch) => {
-		if (!batch.pdfUrl) {
-			toast.error('No PDF available to download');
-			return;
+	const handleDownload = async (batch: QRBatch) => {
+		try {
+			toast.loading('Generating PDF...', { id: 'download-pdf' });
+
+			const { generateAndDownloadBatchPDF } = await import('@/lib/pdf/batch-pdf-generator');
+			await generateAndDownloadBatchPDF(batch.id, warehouse.company_id);
+
+			toast.success('PDF downloaded!', { id: 'download-pdf' });
+		} catch (error) {
+			console.error('Error downloading PDF:', error);
+			toast.error(
+				error instanceof Error ? error.message : 'Failed to download PDF',
+				{ id: 'download-pdf' }
+			);
 		}
-
-		// Trigger download
-		const link = document.createElement('a');
-		link.href = batch.pdfUrl;
-		link.download = `${batch.batchName}.pdf`;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-
-		toast.success('Download started');
 	};
 
 	// Loading state

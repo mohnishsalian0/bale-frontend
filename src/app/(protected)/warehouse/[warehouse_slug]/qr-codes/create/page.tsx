@@ -12,7 +12,8 @@ import type { QRTemplateField } from '../QRTemplateCustomisationStep';
 import { useSession } from '@/contexts/session-context';
 import { useAppChrome } from '@/contexts/app-chrome-context';
 import { toast } from 'sonner';
-import { generateAndDownloadPDF, type LabelData } from '@/lib/pdf/qr-label-generator';
+import { generatePDFBlob, downloadPDF } from '@/lib/pdf/batch-pdf-generator';
+import type { LabelData } from '@/lib/pdf/qr-label-generator';
 import {
 	getProductsWithAttributes,
 	getProductAttributeLists,
@@ -110,7 +111,7 @@ export default function CreateQRBatchPage() {
 		try {
 
 			// Generate batch name
-			const batchName = `${selectedProduct.name} - ${new Date().toLocaleDateString()}`;
+			const batchName = `${selectedProduct.name} QRs - ${new Date().toLocaleDateString()}`;
 
 			// Prepare batch data
 			const batchData = {
@@ -177,26 +178,25 @@ export default function CreateQRBatchPage() {
 					sequence_number: unit.products?.sequence_number || 0,
 					hsn_code: unit.products?.hsn_code,
 					stock_type: unit.products?.stock_type,
-					material: unit.products?.product_material_assignments
-						?.map((a: any) => a.material?.name)
-						.filter(Boolean)
-						.join(', ') || '',
-					color_name: unit.products?.product_color_assignments
-						?.map((a: any) => a.color?.name)
-						.filter(Boolean)
-						.join(', ') || '',
 					gsm: unit.products?.gsm,
 					selling_price_per_unit: unit.products?.selling_price_per_unit,
+					// Keep as arrays of objects - PDF generator will handle joining
+					materials: unit.products?.product_material_assignments
+						?.map((a: any) => a.material)
+						.filter(Boolean) || [],
+					colors: unit.products?.product_color_assignments
+						?.map((a: any) => a.color)
+						.filter(Boolean) || [],
 				},
 			}));
 
 			// Generate and download PDF
-			await generateAndDownloadPDF(
+			const blob = await generatePDFBlob(
 				stockUnits,
 				selectedFields,
-				companyData?.logo_url || null,
-				batchName
+				companyData?.logo_url || null
 			);
+			downloadPDF(blob, `${batchName}.pdf`);
 
 			toast.success(`QR batch created with ${selectedStockUnitIds.length} units`);
 			router.push(`/warehouse/${warehouse.slug}/qr-codes`);

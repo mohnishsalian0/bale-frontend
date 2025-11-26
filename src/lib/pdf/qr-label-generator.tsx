@@ -235,39 +235,3 @@ export const QRLabelDocument: React.FC<QRLabelDocumentProps> = ({
 	</Document>
 );
 
-// Generate PDF and trigger download
-export async function generateAndDownloadPDF(
-	stockUnits: LabelData[],
-	selectedFields: QRTemplateField[],
-	companyLogoUrl: string | null,
-	batchName: string
-) {
-	const { pdf } = await import('@react-pdf/renderer');
-
-	// Generate QR codes for all stock units
-	const unitsWithQR = await Promise.all(
-		stockUnits.map(async (unit) => {
-			const qrCodeDataUrl = await generateQRCodeDataUrl(unit.id);
-			return { ...unit, qrCodeDataUrl };
-		})
-	);
-
-	// Generate PDF
-	const blob = await pdf(
-		<QRLabelDocument
-			stockUnits={unitsWithQR}
-			selectedFields={selectedFields}
-			companyLogoUrl={companyLogoUrl}
-		/>
-	).toBlob();
-
-	// Trigger download
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement('a');
-	link.href = url;
-	link.download = `QR-Batch-${batchName}-${new Date().toISOString().split('T')[0]}.pdf`;
-	document.body.appendChild(link);
-	link.click();
-	document.body.removeChild(link);
-	URL.revokeObjectURL(url);
-}
