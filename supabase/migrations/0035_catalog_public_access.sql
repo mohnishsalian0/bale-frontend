@@ -75,6 +75,19 @@ WITH CHECK (
     )
 );
 
+CREATE POLICY "Anonymous users can select customers from catalog"
+ON partners
+FOR SELECT
+TO anon
+USING (
+    partners.partner_type = 'customer' AND
+    EXISTS (
+        SELECT 1 FROM catalog_configurations cc
+        WHERE cc.company_id = partners.company_id
+        AND cc.accepting_orders = true
+    )
+);
+
 
 -- =====================================================
 -- PUBLIC CATALOG ACCESS (ANONYMOUS USERS) - SALES ORDERS
@@ -251,6 +264,7 @@ USING (accepting_orders = true);
 -- Grant SELECT permissions for reading data
 GRANT SELECT ON companies TO anon;
 GRANT SELECT ON products TO anon;
+GRANT SELECT ON partners TO anon;
 GRANT SELECT ON product_inventory_aggregates TO anon;
 GRANT SELECT ON product_materials TO anon;
 GRANT SELECT ON product_colors TO anon;

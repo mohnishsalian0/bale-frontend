@@ -87,7 +87,14 @@ export default function CheckoutPage() {
     }
 
     fetchCompany();
-  }, [slug, router]);
+
+    // Clear cart on unmount after successful order
+    return () => {
+      if (submitting) {
+        clearCart();
+      }
+    };
+  }, []);
 
   // Redirect if cart is empty
   useEffect(() => {
@@ -140,12 +147,10 @@ export default function CheckoutPage() {
         formData,
         cartItems,
       });
+      console.log("Order", order.id);
 
-      // Clear cart after successful order
-      clearCart();
-
-      // Redirect to order confirmation page
-      router.push(`/company/${slug}/order/${order.sequence_number}`);
+      // Redirect to order confirmation page (cart cleared in cleanup)
+      router.push(`/company/${slug}/order/${order.id}`);
       toast.success("Order placed successfully!");
     } catch (error) {
       console.error("Error creating order:", error);
@@ -494,7 +499,7 @@ export default function CheckoutPage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push(`/company/${slug}/store`)}
+            onClick={() => router.push(`/company/${slug}/store/products`)}
             disabled={submitting}
           >
             Back

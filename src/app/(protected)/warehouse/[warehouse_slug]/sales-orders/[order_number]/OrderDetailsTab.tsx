@@ -8,7 +8,6 @@ import {
   IconMapPin,
   IconCurrencyRupee,
   IconPercentage,
-  IconPhoto,
 } from "@tabler/icons-react";
 import { Progress } from "@/components/ui/progress";
 import ImageWrapper from "@/components/ui/image-wrapper";
@@ -20,6 +19,7 @@ import type { DisplayStatus } from "@/lib/utils/sales-order";
 import type { Tables } from "@/types/database/supabase";
 import type { SalesOrderStatus } from "@/types/database/enums";
 import { Section } from "@/components/layouts/section";
+import { getProductIcon } from "@/lib/utils/product";
 
 type Partner = Tables<"partners">;
 type Warehouse = Tables<"warehouses">;
@@ -94,7 +94,9 @@ export function OrderDetailsTab({
                     shape="square"
                     imageUrl={item.product?.product_images?.[0]}
                     alt={item.product?.name || ""}
-                    placeholderIcon={IconPhoto}
+                    placeholderIcon={getProductIcon(
+                      item.product?.stock_type as StockType,
+                    )}
                   />
                 </div>
                 <div className="flex-1 min-w-0">

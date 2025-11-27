@@ -23,16 +23,12 @@ export interface PublicProduct extends Product {
 export async function getCompanyBySlug(slug: string): Promise<Company | null> {
   const supabase = createClient();
 
-  console.log("Fetching company with slug:", slug);
-
   const { data, error } = await supabase
     .from("companies")
     .select("*")
     .eq("slug", slug)
     .is("deleted_at", null)
     .single();
-
-  console.log("Query result:", { data, error });
 
   if (error) {
     console.error("Error fetching company:", error);

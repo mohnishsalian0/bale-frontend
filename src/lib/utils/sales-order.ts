@@ -32,7 +32,7 @@ export function calculateCompletionPercentage(items: OrderItem[]): number {
  */
 export function getOrderDisplayStatus(
   status: SalesOrderStatus,
-  expectedDeliveryDate: string | null,
+  expectedDeliveryDate?: string | null,
 ): DisplayStatus {
   if (status === "completed") return "completed";
   if (status === "cancelled") return "cancelled";

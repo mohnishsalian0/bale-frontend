@@ -6,14 +6,15 @@ import { cn } from "@/lib/utils";
 const imageWrapperVariants = cva("shrink-0 object-cover", {
   variants: {
     size: {
-      sm: "size-10",
-      md: "size-12",
-      lg: "size-16",
-      xl: "size-20",
+      sm: "h-10",
+      md: "h-12",
+      lg: "h-16",
+      xl: "h-20",
     },
     shape: {
-      circle: "rounded-full",
-      square: "",
+      circle: "aspect-1/1 rounded-full",
+      square: "aspect-1/1",
+      rectangle: "aspect-4/3",
     },
   },
   compoundVariants: [
@@ -21,6 +22,10 @@ const imageWrapperVariants = cva("shrink-0 object-cover", {
     { size: "md", shape: "square", class: "rounded-lg" },
     { size: "lg", shape: "square", class: "rounded-lg" },
     { size: "xl", shape: "square", class: "rounded-xl" },
+    { size: "sm", shape: "rectangle", class: "rounded-md" },
+    { size: "md", shape: "rectangle", class: "rounded-lg" },
+    { size: "lg", shape: "rectangle", class: "rounded-lg" },
+    { size: "xl", shape: "rectangle", class: "rounded-xl" },
   ],
   defaultVariants: {
     size: "md",

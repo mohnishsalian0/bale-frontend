@@ -136,7 +136,7 @@ export async function createCatalogOrder({
  */
 export async function getSalesOrderBySequenceNumber(
   companyId: string,
-  sequenceNumber: number,
+  orderId: string,
 ): Promise<SalesOrder | null> {
   const supabase = createClient();
 
@@ -153,7 +153,7 @@ export async function getSalesOrderBySequenceNumber(
 		`,
     )
     .eq("company_id", companyId)
-    .eq("sequence_number", sequenceNumber)
+    .eq("id", orderId)
     .single();
 
   if (error) {

@@ -2,10 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
-import { IconCheck, IconDownload, IconArrowLeft } from "@tabler/icons-react";
+import {
+  IconCheck,
+  IconDownload,
+  IconArrowLeft,
+  IconPackage,
+  IconUser,
+  IconMapPin,
+  IconNote,
+} from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { getCompanyBySlug } from "@/lib/queries/catalog";
 import { getSalesOrderBySequenceNumber } from "@/lib/queries/catalog-orders";
 import { LoadingState } from "@/components/layouts/loading-state";
@@ -13,14 +19,23 @@ import { OrderConfirmationPDF } from "@/components/pdf/OrderConfirmationPDF";
 import { pdf } from "@react-pdf/renderer";
 import type { Tables } from "@/types/database/supabase";
 import { toast } from "sonner";
+import { Section } from "@/components/layouts/section";
+import ImageWrapper from "@/components/ui/image-wrapper";
+import { getProductIcon } from "@/lib/utils/product";
+import { SalesOrderStatus, StockType } from "@/types/database/enums";
+import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
+import { getFormattedAddress, getPartnerName } from "@/lib/utils/partner";
+import { DisplayStatus, getOrderDisplayStatus } from "@/lib/utils/sales-order";
+import { CatalogOrderStatusBadge } from "@/components/ui/catalog-order-status-badge";
 
 type Company = Tables<"companies">;
+type SalesOrder = Tables<"sales_orders">;
 
 export default function OrderConfirmationPage() {
   const params = useParams();
   const router = useRouter();
   const slug = params.slug as string;
-  const orderNumber = parseInt(params.order_number as string);
+  const orderId = params.order_id as string;
 
   const [company, setCompany] = useState<Company | null>(null);
   const [order, setOrder] = useState<any>(null);
@@ -37,13 +52,11 @@ export default function OrderConfirmationPage() {
         }
         setCompany(companyData);
 
-        const orderData = await getSalesOrderBySequenceNumber(
-          companyData.id,
-          orderNumber,
-        );
+        const orderData: SalesOrder | null =
+          await getSalesOrderBySequenceNumber(companyData.id, orderId);
         if (!orderData) {
           toast.error("Order not found");
-          router.push(`/company/${slug}/store`);
+          router.push(`/company/${slug}/store/products`);
           return;
         }
         setOrder(orderData);
@@ -56,7 +69,7 @@ export default function OrderConfirmationPage() {
     }
 
     fetchData();
-  }, [slug, orderNumber, router]);
+  }, []);
 
   const handleDownloadPDF = async () => {
     if (!company || !order) return;
@@ -93,145 +106,137 @@ export default function OrderConfirmationPage() {
     return null;
   }
 
+  // Compute display status (includes 'overdue' logic) using utility
+  const displayStatus: DisplayStatus = getOrderDisplayStatus(
+    order.status as SalesOrderStatus,
+    order.expected_delivery_date,
+  );
+
   return (
     <div className="container max-w-4xl mx-auto px-4 py-6">
       {/* Success Header */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center size-16 bg-green-100 rounded-full mb-4">
-          <IconCheck className="size-8 text-green-600" />
+        <div className="inline-flex items-center justify-center size-20 bg-green-100 rounded-full mb-4">
+          <IconCheck className="size-12 text-green-600" />
         </div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Order Confirmed!
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-500">
           Thank you for your order. We'll get back to you soon.
         </p>
+        <div className="flex items-center justify-center gap-3 mt-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Order #{order.sequence_number}
+          </h2>
+          <CatalogOrderStatusBadge status={displayStatus} />
+        </div>
       </div>
 
       {/* Order Details */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              Order Details
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Order #{order.sequence_number}
-            </p>
-          </div>
-          <Badge color="orange">{order.status.replace("_", " ")}</Badge>
-        </div>
-
+      <div className="flex flex-col gap-3">
         {/* Order Items */}
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Items</h3>
+        <Section
+          title="Items"
+          subtitle={`${order.sales_order_items?.length || 0} item(s)`}
+          icon={IconPackage}
+        >
           <div className="space-y-3">
             {order.sales_order_items?.map((item: any) => (
-              <div key={item.id} className="flex items-center gap-4">
-                {item.product?.product_images &&
-                item.product.product_images.length > 0 ? (
-                  <div className="relative size-16 bg-gray-100 rounded overflow-clip shrink-0">
-                    <Image
-                      src={item.product.product_images[0]}
-                      alt={item.product.name}
-                      fill
-                      sizes="64px"
-                      className="object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="size-16 bg-gray-100 rounded shrink-0" />
-                )}
+              <div key={item.id} className="flex gap-3">
+                <ImageWrapper
+                  size="xl"
+                  shape="rectangle"
+                  imageUrl={item.product?.product_images?.[0]}
+                  alt={item.product?.name || ""}
+                  placeholderIcon={getProductIcon(
+                    item.product?.stock_type as StockType,
+                  )}
+                />
                 <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-500">
+                    PROD-{item.product?.sequence_number}
+                  </p>
                   <p
-                    className="font-medium text-gray-900 truncate"
+                    className="text-lg font-medium text-gray-700 truncate"
                     title={item.product?.name}
                   >
                     {item.product?.name}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    PROD-{item.product?.sequence_number}
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-sm font-medium text-gray-900">
-                    Qty: {item.quantity}
+                  <p className="text-sm font-medium text-gray-700 mt-0.5">
+                    Qty: {item.required_quantity}{" "}
+                    {getMeasuringUnitAbbreviation(
+                      item.product?.measuring_unit as any,
+                    )}
                   </p>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Section>
 
         {/* Customer Information */}
-        <div className="border-t border-gray-200 pt-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">
-            Contact Details
-          </h3>
+        <Section
+          title="Contact Details"
+          subtitle={getPartnerName(order.customer)}
+          icon={IconUser}
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-gray-500">Name</p>
-              <p className="text-gray-900 font-medium">
-                {order.customer?.name}
+              <p className="text-gray-700 font-medium">
+                {order.customer?.first_name} {order.customer?.last_name}
               </p>
             </div>
             <div>
               <p className="text-gray-500">Email</p>
-              <p className="text-gray-900 font-medium">
-                {order.customer?.email}
+              <p className="text-gray-700 font-medium">
+                {order.customer?.email || "-"}
               </p>
             </div>
             <div>
               <p className="text-gray-500">Phone</p>
-              <p className="text-gray-900 font-medium">
-                {order.customer?.phone}
+              <p className="text-gray-700 font-medium">
+                {order.customer?.phone_number}
               </p>
             </div>
-            {order.customer?.gstin && (
-              <div>
-                <p className="text-gray-500">GSTIN</p>
-                <p className="text-gray-900 font-medium">
-                  {order.customer.gstin}
-                </p>
-              </div>
-            )}
+            <div>
+              <p className="text-gray-500">GSTIN</p>
+              <p className="text-gray-700 font-medium">
+                {order.customer.gst_number || "-"}
+              </p>
+            </div>
           </div>
-        </div>
+        </Section>
 
         {/* Address */}
-        <div className="border-t border-gray-200 pt-6 mt-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">
-            Delivery Address
-          </h3>
-          <div className="text-sm text-gray-900">
-            <p>{order.customer?.address_line_1}</p>
-            {order.customer?.address_line_2 && (
-              <p>{order.customer.address_line_2}</p>
-            )}
-            <p>
-              {order.customer?.city}, {order.customer?.state}{" "}
-              {order.customer?.pin_code}
-            </p>
-            <p>{order.customer?.country}</p>
+        <Section
+          title="Delivery Address"
+          subtitle={`${order.customer?.city || ""}, ${order.customer?.state || ""}`}
+          icon={IconMapPin}
+        >
+          <div className="text-sm text-gray-700">
+            {getFormattedAddress(order.customer).map((addrLine, index) => (
+              <p key={index}>{addrLine}</p>
+            ))}
           </div>
-        </div>
+        </Section>
 
         {/* Special Instructions */}
-        {order.notes && (
-          <div className="border-t border-gray-200 pt-6 mt-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">
-              Special Instructions
-            </h3>
-            <p className="text-sm text-gray-600">{order.notes}</p>
-          </div>
-        )}
+        <Section
+          title="Special Instructions"
+          subtitle="Additional notes"
+          icon={IconNote}
+        >
+          <p className="text-sm text-gray-600">{order.notes || "-"}</p>
+        </Section>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-4">
         <Button
           variant="outline"
-          onClick={() => router.push(`/company/${slug}/store`)}
+          onClick={() => router.push(`/company/${slug}/store/products`)}
         >
           <IconArrowLeft className="size-4" />
           Back to Store

@@ -255,7 +255,7 @@ export default function StorePage() {
       )}
 
       {/* Cart Footer */}
-      {totalItems > 0 && (
+      {cartItems.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border shadow-lg">
           <div className="container max-w-7xl mx-auto px-4 py-4">
             <Button
@@ -266,7 +266,8 @@ export default function StorePage() {
               <div className="flex items-center gap-2 flex-1">
                 <IconShoppingCart className="size-5" />
                 <span>
-                  {totalItems} {totalItems === 1 ? "item" : "items"} in cart
+                  {cartItems.length}{" "}
+                  {cartItems.length === 1 ? "product" : "products"} in cart
                 </span>
               </div>
               <span>Checkout</span>

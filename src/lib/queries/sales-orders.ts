@@ -44,7 +44,7 @@ export async function getSalesOrders(
 			)
 		`,
     )
-    .eq("warehouse_id", warehouseId)
+    .or(`warehouse_id.eq.${warehouseId},warehouse_id.is.null`)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
