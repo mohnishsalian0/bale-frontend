@@ -1,14 +1,13 @@
-
 /**
  * Address fields interface for flexible address formatting
  */
 interface AddressFields {
-	address_line1?: string | null;
-	address_line2?: string | null;
-	city?: string | null;
-	state?: string | null;
-	country?: string | null;
-	pin_code?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  pin_code?: string | null;
 }
 
 /**
@@ -19,14 +18,18 @@ interface AddressFields {
  * - Line 3: city, state
  * - Line 4: country - pincode
  */
-export function getWarehouseFormattedAddress(warehouse: AddressFields | null): string {
-	// Build address string
-	const addressParts = [
-		warehouse?.address_line1,
-		warehouse?.address_line2,
-		warehouse?.city && warehouse?.state ? `${warehouse.city}, ${warehouse.state}` : warehouse?.city || warehouse?.state,
-		warehouse?.pin_code,
-	].filter(Boolean);
+export function getWarehouseFormattedAddress(
+  warehouse: AddressFields | null,
+): string {
+  // Build address string
+  const addressParts = [
+    warehouse?.address_line1,
+    warehouse?.address_line2,
+    warehouse?.city && warehouse?.state
+      ? `${warehouse.city}, ${warehouse.state}`
+      : warehouse?.city || warehouse?.state,
+    warehouse?.pin_code,
+  ].filter(Boolean);
 
-	return addressParts.join(', ') || 'No address';
+  return addressParts.join(", ") || "No address";
 }

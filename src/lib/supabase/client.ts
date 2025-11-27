@@ -1,18 +1,18 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { Session } from "@supabase/supabase-js";
-import { UserRole } from '@/types/database/enums';
-import type { Tables } from '@/types/database/supabase';
+import { UserRole } from "@/types/database/enums";
+import type { Tables } from "@/types/database/supabase";
 
-type User = Tables<'users'>;
+type User = Tables<"users">;
 
 /**
  * Creates a Supabase client for use in Client Components
  */
 export function createClient() {
-	return createBrowserClient(
-		process.env.NEXT_PUBLIC_SUPABASE_URL!,
-		process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-	);
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
 }
 
 /**
@@ -23,73 +23,72 @@ export function createClient() {
  * Security: Session data is trusted in client-side context with auto-refresh enabled
  */
 export async function getCurrentUser(): Promise<User | null> {
-	const supabase = createBrowserClient(
-		process.env.NEXT_PUBLIC_SUPABASE_URL!,
-		process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-	);
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
 
-	// 1. Get session from localStorage (no API call unless token expired)
-	const {
-		data: { session },
-		error: sessionError,
-	} = await supabase.auth.getSession();
+  // 1. Get session from localStorage (no API call unless token expired)
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
 
-	if (sessionError || !session?.user) {
-		console.warn('Session error or no user:', sessionError?.message);
-		return null;
-	}
+  if (sessionError || !session?.user) {
+    console.warn("Session error or no user:", sessionError?.message);
+    return null;
+  }
 
-	// 2. Fetch user profile from `users` table
-	const { data: user, error: userError } = await supabase
-		.from('users')
-		.select('*')
-		.eq('auth_user_id', session.user.id)
-		.single();
+  // 2. Fetch user profile from `users` table
+  const { data: user, error: userError } = await supabase
+    .from("users")
+    .select("*")
+    .eq("auth_user_id", session.user.id)
+    .single();
 
-	if (userError) {
-		console.error('Error fetching user profile:', userError.message);
-		return null;
-	}
+  if (userError) {
+    console.error("Error fetching user profile:", userError.message);
+    return null;
+  }
 
-	return user;
+  return user;
 }
 
 export async function getSession(): Promise<Session | null> {
-	const supabase = createClient();
+  const supabase = createClient();
 
-	const { data, error } = await supabase.auth.getSession();
-	if (error) {
-		console.error('Error fetching session:', error.message);
-		return null;
-	}
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    console.error("Error fetching session:", error.message);
+    return null;
+  }
 
-	return data.session;
+  return data.session;
 }
 
-
 export async function isAdmin(): Promise<boolean> {
-	const user = await getCurrentUser();
-	return user?.role === 'admin';
+  const user = await getCurrentUser();
+  return user?.role === "admin";
 }
 
 export async function isStaff(): Promise<boolean> {
-	const user = await getCurrentUser();
-	return user?.role === 'staff';
+  const user = await getCurrentUser();
+  return user?.role === "staff";
 }
 
 export async function getUserRole(): Promise<UserRole | null> {
-	const user = await getCurrentUser();
-	return user?.role as UserRole | null;
+  const user = await getCurrentUser();
+  return user?.role as UserRole | null;
 }
 
 export async function getCompanyId(): Promise<string | null> {
-	const user = await getCurrentUser();
-	return user?.company_id || null;
+  const user = await getCurrentUser();
+  return user?.company_id || null;
 }
 
 export async function getWarehouseId(): Promise<string | null> {
-	const user = await getCurrentUser();
-	return user?.warehouse_id || null;
+  const user = await getCurrentUser();
+  return user?.warehouse_id || null;
 }
 
 /**
@@ -97,32 +96,30 @@ export async function getWarehouseId(): Promise<string | null> {
  * Queries database directly - RLS filters based on user's warehouse access
  */
 export async function getUserWarehouseIds(): Promise<string[]> {
-	const supabase = createClient();
+  const supabase = createClient();
 
-	// Query warehouses - RLS automatically filters based on all_warehouses_access or user_warehouses
-	const { data, error } = await supabase
-		.from('warehouses')
-		.select('id');
+  // Query warehouses - RLS automatically filters based on all_warehouses_access or user_warehouses
+  const { data, error } = await supabase.from("warehouses").select("id");
 
-	if (error) {
-		console.error('Error fetching user warehouse IDs:', error.message);
-		return [];
-	}
+  if (error) {
+    console.error("Error fetching user warehouse IDs:", error.message);
+    return [];
+  }
 
-	return (data || []).map(w => w.id);
+  return (data || []).map((w) => w.id);
 }
 
 export async function requireAdmin() {
-	const admin = await isAdmin();
-	if (!admin) {
-		throw new Error('Admin access required');
-	}
+  const admin = await isAdmin();
+  if (!admin) {
+    throw new Error("Admin access required");
+  }
 }
 
 export async function requireAuth() {
-	const user = await getCurrentUser();
-	if (!user) {
-		throw new Error('Authentication required');
-	}
-	return user;
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("Authentication required");
+  }
+  return user;
 }

@@ -3,53 +3,56 @@
  * Handles file uploads, deletions, and URL generation for Supabase Storage
  */
 
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from "@/lib/supabase/client";
 
 // Bucket names
 export const STORAGE_BUCKETS = {
-	COMPANY_LOGOS: 'company-logos',
-	PROFILE_IMAGES: 'profile-images',
-	PRODUCT_IMAGES: 'product-images',
-	PARTNER_IMAGES: 'partner-images',
+  COMPANY_LOGOS: "company-logos",
+  PROFILE_IMAGES: "profile-images",
+  PRODUCT_IMAGES: "product-images",
+  PARTNER_IMAGES: "partner-images",
 } as const;
 
 // File validation constants
 export const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
-export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export const MAX_PRODUCT_IMAGES = 5;
 
 // Error types
 export class StorageError extends Error {
-	constructor(
-		message: string,
-		public code?: string
-	) {
-		super(message);
-		this.name = 'StorageError';
-	}
+  constructor(
+    message: string,
+    public code?: string,
+  ) {
+    super(message);
+    this.name = "StorageError";
+  }
 }
 
 /**
  * Validate file before upload
  */
-export function validateImageFile(file: File): { valid: boolean; error?: string } {
-	// Check file size
-	if (file.size > MAX_FILE_SIZE) {
-		return {
-			valid: false,
-			error: `File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-		};
-	}
+export function validateImageFile(file: File): {
+  valid: boolean;
+  error?: string;
+} {
+  // Check file size
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      valid: false,
+      error: `File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+    };
+  }
 
-	// Check file type
-	if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-		return {
-			valid: false,
-			error: `File type must be JPEG, PNG, or WebP`,
-		};
-	}
+  // Check file type
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return {
+      valid: false,
+      error: `File type must be JPEG, PNG, or WebP`,
+    };
+  }
 
-	return { valid: true };
+  return { valid: true };
 }
 
 /**
@@ -57,41 +60,41 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
  * Path format: {company_id}/logo.{ext}
  */
 export async function uploadCompanyLogo(
-	companyId: string,
-	file: File
+  companyId: string,
+  file: File,
 ): Promise<{ publicUrl: string; path: string }> {
-	const validation = validateImageFile(file);
-	if (!validation.valid) {
-		throw new StorageError(validation.error!);
-	}
+  const validation = validateImageFile(file);
+  if (!validation.valid) {
+    throw new StorageError(validation.error!);
+  }
 
-	const supabase = createClient();
-	const fileExt = file.name.split('.').pop();
-	const filePath = `${companyId}/logo.${fileExt}`;
+  const supabase = createClient();
+  const fileExt = file.name.split(".").pop();
+  const filePath = `${companyId}/logo.${fileExt}`;
 
-	// Delete existing logo if any
-	await supabase.storage.from(STORAGE_BUCKETS.COMPANY_LOGOS).remove([filePath]);
+  // Delete existing logo if any
+  await supabase.storage.from(STORAGE_BUCKETS.COMPANY_LOGOS).remove([filePath]);
 
-	// Upload new logo
-	const { data, error } = await supabase.storage
-		.from(STORAGE_BUCKETS.COMPANY_LOGOS)
-		.upload(filePath, file, {
-			cacheControl: '3600',
-			upsert: true,
-		});
+  // Upload new logo
+  const { data, error } = await supabase.storage
+    .from(STORAGE_BUCKETS.COMPANY_LOGOS)
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: true,
+    });
 
-	if (error) {
-		throw new StorageError(error.message, error.name);
-	}
+  if (error) {
+    throw new StorageError(error.message, error.name);
+  }
 
-	const { data: urlData } = supabase.storage
-		.from(STORAGE_BUCKETS.COMPANY_LOGOS)
-		.getPublicUrl(data.path);
+  const { data: urlData } = supabase.storage
+    .from(STORAGE_BUCKETS.COMPANY_LOGOS)
+    .getPublicUrl(data.path);
 
-	return {
-		publicUrl: urlData.publicUrl,
-		path: data.path,
-	};
+  return {
+    publicUrl: urlData.publicUrl,
+    path: data.path,
+  };
 }
 
 /**
@@ -99,41 +102,43 @@ export async function uploadCompanyLogo(
  * Path format: {user_id}/profile.{ext}
  */
 export async function uploadProfileImage(
-	userId: string,
-	file: File
+  userId: string,
+  file: File,
 ): Promise<{ publicUrl: string; path: string }> {
-	const validation = validateImageFile(file);
-	if (!validation.valid) {
-		throw new StorageError(validation.error!);
-	}
+  const validation = validateImageFile(file);
+  if (!validation.valid) {
+    throw new StorageError(validation.error!);
+  }
 
-	const supabase = createClient();
-	const fileExt = file.name.split('.').pop();
-	const filePath = `${userId}/profile.${fileExt}`;
+  const supabase = createClient();
+  const fileExt = file.name.split(".").pop();
+  const filePath = `${userId}/profile.${fileExt}`;
 
-	// Delete existing profile image if any
-	await supabase.storage.from(STORAGE_BUCKETS.PROFILE_IMAGES).remove([filePath]);
+  // Delete existing profile image if any
+  await supabase.storage
+    .from(STORAGE_BUCKETS.PROFILE_IMAGES)
+    .remove([filePath]);
 
-	// Upload new profile image
-	const { data, error } = await supabase.storage
-		.from(STORAGE_BUCKETS.PROFILE_IMAGES)
-		.upload(filePath, file, {
-			cacheControl: '3600',
-			upsert: true,
-		});
+  // Upload new profile image
+  const { data, error } = await supabase.storage
+    .from(STORAGE_BUCKETS.PROFILE_IMAGES)
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: true,
+    });
 
-	if (error) {
-		throw new StorageError(error.message, error.name);
-	}
+  if (error) {
+    throw new StorageError(error.message, error.name);
+  }
 
-	const { data: urlData } = supabase.storage
-		.from(STORAGE_BUCKETS.PROFILE_IMAGES)
-		.getPublicUrl(data.path);
+  const { data: urlData } = supabase.storage
+    .from(STORAGE_BUCKETS.PROFILE_IMAGES)
+    .getPublicUrl(data.path);
 
-	return {
-		publicUrl: urlData.publicUrl,
-		path: data.path,
-	};
+  return {
+    publicUrl: urlData.publicUrl,
+    path: data.path,
+  };
 }
 
 /**
@@ -141,42 +146,44 @@ export async function uploadProfileImage(
  * Path format: {company_id}/{partner_id}/image.{ext}
  */
 export async function uploadPartnerImage(
-	companyId: string,
-	partnerId: string,
-	file: File
+  companyId: string,
+  partnerId: string,
+  file: File,
 ): Promise<{ publicUrl: string; path: string }> {
-	const validation = validateImageFile(file);
-	if (!validation.valid) {
-		throw new StorageError(validation.error!);
-	}
+  const validation = validateImageFile(file);
+  if (!validation.valid) {
+    throw new StorageError(validation.error!);
+  }
 
-	const supabase = createClient();
-	const fileExt = file.name.split('.').pop();
-	const filePath = `${companyId}/${partnerId}/image.${fileExt}`;
+  const supabase = createClient();
+  const fileExt = file.name.split(".").pop();
+  const filePath = `${companyId}/${partnerId}/image.${fileExt}`;
 
-	// Delete existing partner image if any
-	await supabase.storage.from(STORAGE_BUCKETS.PARTNER_IMAGES).remove([filePath]);
+  // Delete existing partner image if any
+  await supabase.storage
+    .from(STORAGE_BUCKETS.PARTNER_IMAGES)
+    .remove([filePath]);
 
-	// Upload partner image
-	const { data, error } = await supabase.storage
-		.from(STORAGE_BUCKETS.PARTNER_IMAGES)
-		.upload(filePath, file, {
-			cacheControl: '3600',
-			upsert: true,
-		});
+  // Upload partner image
+  const { data, error } = await supabase.storage
+    .from(STORAGE_BUCKETS.PARTNER_IMAGES)
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: true,
+    });
 
-	if (error) {
-		throw new StorageError(error.message, error.name);
-	}
+  if (error) {
+    throw new StorageError(error.message, error.name);
+  }
 
-	const { data: urlData } = supabase.storage
-		.from(STORAGE_BUCKETS.PARTNER_IMAGES)
-		.getPublicUrl(data.path);
+  const { data: urlData } = supabase.storage
+    .from(STORAGE_BUCKETS.PARTNER_IMAGES)
+    .getPublicUrl(data.path);
 
-	return {
-		publicUrl: urlData.publicUrl,
-		path: data.path,
-	};
+  return {
+    publicUrl: urlData.publicUrl,
+    path: data.path,
+  };
 }
 
 /**
@@ -184,135 +191,142 @@ export async function uploadPartnerImage(
  * Path format: {company_id}/{product_id}/{index}.{ext}
  */
 export async function uploadProductImage(
-	companyId: string,
-	productId: string,
-	file: File,
-	index: number
+  companyId: string,
+  productId: string,
+  file: File,
+  index: number,
 ): Promise<{ publicUrl: string; path: string }> {
-	const validation = validateImageFile(file);
-	if (!validation.valid) {
-		throw new StorageError(validation.error!);
-	}
+  const validation = validateImageFile(file);
+  if (!validation.valid) {
+    throw new StorageError(validation.error!);
+  }
 
-	if (index < 0 || index >= MAX_PRODUCT_IMAGES) {
-		throw new StorageError(`Image index must be between 0 and ${MAX_PRODUCT_IMAGES - 1}`);
-	}
+  if (index < 0 || index >= MAX_PRODUCT_IMAGES) {
+    throw new StorageError(
+      `Image index must be between 0 and ${MAX_PRODUCT_IMAGES - 1}`,
+    );
+  }
 
-	const supabase = createClient();
-	const fileExt = file.name.split('.').pop();
-	const filePath = `${companyId}/${productId}/${index}.${fileExt}`;
+  const supabase = createClient();
+  const fileExt = file.name.split(".").pop();
+  const filePath = `${companyId}/${productId}/${index}.${fileExt}`;
 
-	// Upload product image
-	const { data, error } = await supabase.storage
-		.from(STORAGE_BUCKETS.PRODUCT_IMAGES)
-		.upload(filePath, file, {
-			cacheControl: '3600',
-			upsert: true,
-		});
+  // Upload product image
+  const { data, error } = await supabase.storage
+    .from(STORAGE_BUCKETS.PRODUCT_IMAGES)
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: true,
+    });
 
-	if (error) {
-		throw new StorageError(error.message, error.name);
-	}
+  if (error) {
+    throw new StorageError(error.message, error.name);
+  }
 
-	const { data: urlData } = supabase.storage
-		.from(STORAGE_BUCKETS.PRODUCT_IMAGES)
-		.getPublicUrl(data.path);
+  const { data: urlData } = supabase.storage
+    .from(STORAGE_BUCKETS.PRODUCT_IMAGES)
+    .getPublicUrl(data.path);
 
-	return {
-		publicUrl: urlData.publicUrl,
-		path: data.path,
-	};
+  return {
+    publicUrl: urlData.publicUrl,
+    path: data.path,
+  };
 }
 
 /**
  * Delete a file from storage
  */
 export async function deleteFile(bucket: string, path: string): Promise<void> {
-	const supabase = createClient();
+  const supabase = createClient();
 
-	const { error } = await supabase.storage.from(bucket).remove([path]);
+  const { error } = await supabase.storage.from(bucket).remove([path]);
 
-	if (error) {
-		throw new StorageError(error.message, error.name);
-	}
+  if (error) {
+    throw new StorageError(error.message, error.name);
+  }
 }
 
 /**
  * Delete all product images for a product
  */
 export async function deleteProductImages(
-	companyId: string,
-	productId: string
+  companyId: string,
+  productId: string,
 ): Promise<void> {
-	const supabase = createClient();
-	const folderPath = `${companyId}/${productId}`;
+  const supabase = createClient();
+  const folderPath = `${companyId}/${productId}`;
 
-	// List all files in the product folder
-	const { data: files, error: listError } = await supabase.storage
-		.from(STORAGE_BUCKETS.PRODUCT_IMAGES)
-		.list(folderPath);
+  // List all files in the product folder
+  const { data: files, error: listError } = await supabase.storage
+    .from(STORAGE_BUCKETS.PRODUCT_IMAGES)
+    .list(folderPath);
 
-	if (listError) {
-		throw new StorageError(listError.message, listError.name);
-	}
+  if (listError) {
+    throw new StorageError(listError.message, listError.name);
+  }
 
-	if (!files || files.length === 0) {
-		return; // No files to delete
-	}
+  if (!files || files.length === 0) {
+    return; // No files to delete
+  }
 
-	// Delete all files
-	const filePaths = files.map((file) => `${folderPath}/${file.name}`);
-	const { error: deleteError } = await supabase.storage
-		.from(STORAGE_BUCKETS.PRODUCT_IMAGES)
-		.remove(filePaths);
+  // Delete all files
+  const filePaths = files.map((file) => `${folderPath}/${file.name}`);
+  const { error: deleteError } = await supabase.storage
+    .from(STORAGE_BUCKETS.PRODUCT_IMAGES)
+    .remove(filePaths);
 
-	if (deleteError) {
-		throw new StorageError(deleteError.message, deleteError.name);
-	}
+  if (deleteError) {
+    throw new StorageError(deleteError.message, deleteError.name);
+  }
 }
 
 /**
  * Get public URL for a file
  */
 export function getPublicUrl(bucket: string, path: string): string {
-	const supabase = createClient();
+  const supabase = createClient();
 
-	const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
 
-	return data.publicUrl;
+  return data.publicUrl;
 }
 
 /**
  * Get product image URLs
  */
 export async function getProductImageUrls(
-	companyId: string,
-	productId: string
+  companyId: string,
+  productId: string,
 ): Promise<string[]> {
-	const supabase = createClient();
-	const folderPath = `${companyId}/${productId}`;
+  const supabase = createClient();
+  const folderPath = `${companyId}/${productId}`;
 
-	// List all files in the product folder
-	const { data: files, error } = await supabase.storage
-		.from(STORAGE_BUCKETS.PRODUCT_IMAGES)
-		.list(folderPath);
+  // List all files in the product folder
+  const { data: files, error } = await supabase.storage
+    .from(STORAGE_BUCKETS.PRODUCT_IMAGES)
+    .list(folderPath);
 
-	if (error) {
-		throw new StorageError(error.message, error.name);
-	}
+  if (error) {
+    throw new StorageError(error.message, error.name);
+  }
 
-	if (!files || files.length === 0) {
-		return [];
-	}
+  if (!files || files.length === 0) {
+    return [];
+  }
 
-	// Sort by filename (which is the index) and get public URLs
-	return files
-		.sort((a, b) => {
-			const aIndex = parseInt(a.name.split('.')[0]);
-			const bIndex = parseInt(b.name.split('.')[0]);
-			return aIndex - bIndex;
-		})
-		.map((file) => getPublicUrl(STORAGE_BUCKETS.PRODUCT_IMAGES, `${folderPath}/${file.name}`));
+  // Sort by filename (which is the index) and get public URLs
+  return files
+    .sort((a, b) => {
+      const aIndex = parseInt(a.name.split(".")[0]);
+      const bIndex = parseInt(b.name.split(".")[0]);
+      return aIndex - bIndex;
+    })
+    .map((file) =>
+      getPublicUrl(
+        STORAGE_BUCKETS.PRODUCT_IMAGES,
+        `${folderPath}/${file.name}`,
+      ),
+    );
 }
 
 /**
@@ -320,50 +334,53 @@ export async function getProductImageUrls(
  * Example: https://...storage.../product-images/{companyId}/{productId}/0.jpg
  * Returns: {companyId}/{productId}/0.jpg
  */
-export function extractStoragePathFromUrl(url: string, bucket: string): string | null {
-	try {
-		const urlObj = new URL(url);
-		const pathParts = urlObj.pathname.split('/');
-		const bucketIndex = pathParts.indexOf(bucket);
+export function extractStoragePathFromUrl(
+  url: string,
+  bucket: string,
+): string | null {
+  try {
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split("/");
+    const bucketIndex = pathParts.indexOf(bucket);
 
-		if (bucketIndex === -1) {
-			return null;
-		}
+    if (bucketIndex === -1) {
+      return null;
+    }
 
-		// Get everything after the bucket name
-		const path = pathParts.slice(bucketIndex + 1).join('/');
-		return path;
-	} catch {
-		return null;
-	}
+    // Get everything after the bucket name
+    const path = pathParts.slice(bucketIndex + 1).join("/");
+    return path;
+  } catch {
+    return null;
+  }
 }
 
 /**
  * Delete product images by their URLs
  */
 export async function deleteProductImagesByUrls(urls: string[]): Promise<void> {
-	if (urls.length === 0) return;
+  if (urls.length === 0) return;
 
-	const supabase = createClient();
-	const paths: string[] = [];
+  const supabase = createClient();
+  const paths: string[] = [];
 
-	// Extract paths from URLs
-	for (const url of urls) {
-		const path = extractStoragePathFromUrl(url, STORAGE_BUCKETS.PRODUCT_IMAGES);
-		if (path) {
-			paths.push(path);
-		}
-	}
+  // Extract paths from URLs
+  for (const url of urls) {
+    const path = extractStoragePathFromUrl(url, STORAGE_BUCKETS.PRODUCT_IMAGES);
+    if (path) {
+      paths.push(path);
+    }
+  }
 
-	if (paths.length === 0) return;
+  if (paths.length === 0) return;
 
-	// Delete files from storage
-	const { error } = await supabase.storage
-		.from(STORAGE_BUCKETS.PRODUCT_IMAGES)
-		.remove(paths);
+  // Delete files from storage
+  const { error } = await supabase.storage
+    .from(STORAGE_BUCKETS.PRODUCT_IMAGES)
+    .remove(paths);
 
-	if (error) {
-		console.error('Error deleting product images:', error);
-		// Don't throw - we don't want to fail the operation if image deletion fails
-	}
+  if (error) {
+    console.error("Error deleting product images:", error);
+    // Don't throw - we don't want to fail the operation if image deletion fails
+  }
 }

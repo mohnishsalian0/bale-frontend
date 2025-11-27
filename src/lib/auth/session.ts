@@ -1,7 +1,7 @@
-import { createClient as createServerClient } from '@/lib/supabase/server';
-import type { Tables } from '@/types/database/supabase';
+import { createClient as createServerClient } from "@/lib/supabase/server";
+import type { Tables } from "@/types/database/supabase";
 
-type User = Tables<'users'>;
+type User = Tables<"users">;
 
 /**
  * Get the current authenticated user with their profile
@@ -22,9 +22,9 @@ export async function getCurrentUser(): Promise<User | null> {
 
   // Fetch user profile from users table
   const { data: user, error: userError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('auth_user_id', authUser.id)
+    .from("users")
+    .select("*")
+    .eq("auth_user_id", authUser.id)
     .single();
 
   if (userError || !user) {

@@ -6,18 +6,18 @@
  */
 
 export const PUBLIC_ROUTES = [
-	// Root
-	'/',
+  // Root
+  "/",
 
-	// Auth routes
-	'/auth/login',
-	'/auth/callback',
+  // Auth routes
+  "/auth/login",
+  "/auth/callback",
 
-	// Invite acceptance
-	'/invite',
+  // Invite acceptance
+  "/invite",
 
-	// Public catalog and store
-	'/company',
+  // Public catalog and store
+  "/company",
 ] as const;
 
 /**
@@ -28,20 +28,20 @@ export const PUBLIC_ROUTES = [
  * @returns true if the pathname is public, false otherwise
  */
 export function isPublicRoute(pathname: string): boolean {
-	// Exact match check
-	if (PUBLIC_ROUTES.includes(pathname as any)) {
-		return true;
-	}
+  // Exact match check
+  if (PUBLIC_ROUTES.includes(pathname as any)) {
+    return true;
+  }
 
-	// Pattern matching for dynamic routes
-	const publicPatterns = [
-		/^\/auth\/.+$/,              // /auth/*
-		/^\/invite\/.+$/,            // /invite/*
-		/^\/company\/[^\/]+\/store/, // /company/*/store/*
-		/^\/company\/[^\/]+\/order/, // /company/*/order/*
-	];
+  // Pattern matching for dynamic routes
+  const publicPatterns = [
+    /^\/auth\/.+$/, // /auth/*
+    /^\/invite\/.+$/, // /invite/*
+    /^\/company\/[^\/]+\/store/, // /company/*/store/*
+    /^\/company\/[^\/]+\/order/, // /company/*/order/*
+  ];
 
-	return publicPatterns.some(pattern => pattern.test(pathname));
+  return publicPatterns.some((pattern) => pattern.test(pathname));
 }
 
 /**
@@ -51,11 +51,11 @@ export function isPublicRoute(pathname: string): boolean {
  * @returns URL to redirect to (typically /auth/login with redirectTo param)
  */
 export function getAuthRedirectUrl(pathname: string): string {
-	// Don't redirect if already on a public route
-	if (isPublicRoute(pathname)) {
-		return pathname;
-	}
+  // Don't redirect if already on a public route
+  if (isPublicRoute(pathname)) {
+    return pathname;
+  }
 
-	// Redirect to login with the original path as redirectTo param
-	return `/auth/login?redirectTo=${encodeURIComponent(pathname)}`;
+  // Redirect to login with the original path as redirectTo param
+  return `/auth/login?redirectTo=${encodeURIComponent(pathname)}`;
 }

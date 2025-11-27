@@ -1,7 +1,7 @@
-import { ReactNode } from 'react';
+import { ReactNode } from "react";
 
 interface PublicLayoutProps {
-	children: ReactNode;
+  children: ReactNode;
 }
 
 /**
@@ -10,5 +10,5 @@ interface PublicLayoutProps {
  * No authentication or session management required
  */
 export default function PublicLayout({ children }: PublicLayoutProps) {
-	return <>{children}</>;
+  return <>{children}</>;
 }

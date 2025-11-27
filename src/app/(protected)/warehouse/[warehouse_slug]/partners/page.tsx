@@ -1,285 +1,314 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { IconMapPin, IconPhone, IconPlus, IconSearch } from '@tabler/icons-react';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Fab } from '@/components/ui/fab';
-import { TabPills } from '@/components/ui/tab-pills';
-import { LoadingState } from '@/components/layouts/loading-state';
-import { ErrorState } from '@/components/layouts/error-state';
-import ImageWrapper from '@/components/ui/image-wrapper';
-import { AddPartnerSheet } from './AddPartnerSheet';
-import { createClient } from '@/lib/supabase/client';
-import { useSession } from '@/contexts/session-context';
-import { getInitials } from '@/lib/utils/initials';
-import type { Tables } from '@/types/database/supabase';
-import type { PartnerType } from '@/types/database/enums';
-import { getFormattedAddress, getPartnerName } from '@/lib/utils/partner';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import {
+  IconMapPin,
+  IconPhone,
+  IconPlus,
+  IconSearch,
+} from "@tabler/icons-react";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Fab } from "@/components/ui/fab";
+import { TabPills } from "@/components/ui/tab-pills";
+import { LoadingState } from "@/components/layouts/loading-state";
+import { ErrorState } from "@/components/layouts/error-state";
+import ImageWrapper from "@/components/ui/image-wrapper";
+import { AddPartnerSheet } from "./AddPartnerSheet";
+import { createClient } from "@/lib/supabase/client";
+import { useSession } from "@/contexts/session-context";
+import { getInitials } from "@/lib/utils/initials";
+import type { Tables } from "@/types/database/supabase";
+import type { PartnerType } from "@/types/database/enums";
+import { getFormattedAddress, getPartnerName } from "@/lib/utils/partner";
 
-type PartnerRow = Tables<'partners'>;
+type PartnerRow = Tables<"partners">;
 
 interface Partner {
-	id: string;
-	name: string;
-	type: PartnerType;
-	amount?: number;
-	transactionType?: 'sales' | 'purchase';
-	address?: string;
-	phone?: string;
+  id: string;
+  name: string;
+  type: PartnerType;
+  amount?: number;
+  transactionType?: "sales" | "purchase";
+  address?: string;
+  phone?: string;
 }
 
-const PARTNER_TYPES: { value: PartnerType | 'all'; label: string }[] = [
-	{ value: 'all', label: 'All' },
-	{ value: 'customer', label: 'Customer' },
-	{ value: 'supplier', label: 'Supplier' },
-	{ value: 'vendor', label: 'Vendor' },
-	{ value: 'agent', label: 'Agent' },
+const PARTNER_TYPES: { value: PartnerType | "all"; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "customer", label: "Customer" },
+  { value: "supplier", label: "Supplier" },
+  { value: "vendor", label: "Vendor" },
+  { value: "agent", label: "Agent" },
 ];
 
 function getActionLabel(type: PartnerType): string {
-	switch (type) {
-		case 'customer':
-			return 'Sales order';
-		case 'supplier':
-		case 'vendor':
-			return 'Goods inward';
-		default:
-			return 'Job work';
-	}
+  switch (type) {
+    case "customer":
+      return "Sales order";
+    case "supplier":
+    case "vendor":
+      return "Goods inward";
+    default:
+      return "Job work";
+  }
 }
 
 export default function PartnersPage() {
-	const router = useRouter();
-	const { warehouse } = useSession();
-	const [selectedType, setSelectedType] = useState<PartnerType | 'all'>('all');
-	const [searchQuery, setSearchQuery] = useState('');
-	const [partners, setPartners] = useState<Partner[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-	const [showAddPartner, setShowAddPartner] = useState(false);
+  const router = useRouter();
+  const { warehouse } = useSession();
+  const [selectedType, setSelectedType] = useState<PartnerType | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showAddPartner, setShowAddPartner] = useState(false);
 
-	const supabase = createClient();
+  const supabase = createClient();
 
-	const fetchPartners = async () => {
-		try {
-			setLoading(true);
-			setError(null);
+  const fetchPartners = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-			let query = supabase
-				.from('partners')
-				.select('*');
+      let query = supabase.from("partners").select("*");
 
-			if (selectedType !== 'all') {
-				query = query.eq('partner_type', selectedType);
-			}
+      if (selectedType !== "all") {
+        query = query.eq("partner_type", selectedType);
+      }
 
-			const { data, error: fetchError } = await query.order('first_name', { ascending: true });
+      const { data, error: fetchError } = await query.order("first_name", {
+        ascending: true,
+      });
 
-			if (fetchError) throw fetchError;
+      if (fetchError) throw fetchError;
 
-			// Transform data to match Partner interface
-			const transformedPartners: Partner[] = (data || []).map((p: PartnerRow) => ({
-				id: p.id,
-				name: getPartnerName(p),
-				type: p.partner_type as PartnerType,
-				address: getFormattedAddress(p).join(', '),
-				phone: p.phone_number || undefined,
-				// TODO: Fetch transaction amounts from orders/inwards
-				amount: undefined,
-				transactionType: undefined,
-			}));
+      // Transform data to match Partner interface
+      const transformedPartners: Partner[] = (data || []).map(
+        (p: PartnerRow) => ({
+          id: p.id,
+          name: getPartnerName(p),
+          type: p.partner_type as PartnerType,
+          address: getFormattedAddress(p).join(", "),
+          phone: p.phone_number || undefined,
+          // TODO: Fetch transaction amounts from orders/inwards
+          amount: undefined,
+          transactionType: undefined,
+        }),
+      );
 
-			setPartners(transformedPartners);
-		} catch (err) {
-			console.error('Error fetching partners:', err);
-			setError(err instanceof Error ? err.message : 'Failed to load partners');
-		} finally {
-			setLoading(false);
-		}
-	};
+      setPartners(transformedPartners);
+    } catch (err) {
+      console.error("Error fetching partners:", err);
+      setError(err instanceof Error ? err.message : "Failed to load partners");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-	useEffect(() => {
-		fetchPartners();
-	}, [selectedType]);
+  useEffect(() => {
+    fetchPartners();
+  }, [selectedType]);
 
-	const filteredPartners = partners.filter((partner) => {
-		const matchesSearch = partner.name.toLowerCase().includes(searchQuery.toLowerCase());
-		return matchesSearch;
-	});
+  const filteredPartners = partners.filter((partner) => {
+    const matchesSearch = partner.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
 
-	// Loading state
-	if (loading) {
-		return <LoadingState message="Loading partners..." />;
-	}
+  // Loading state
+  if (loading) {
+    return <LoadingState message="Loading partners..." />;
+  }
 
-	// Error state
-	if (error) {
-		return (
-			<ErrorState
-				title="Failed to load partners"
-				message={error}
-				onRetry={() => window.location.reload()}
-			/>
-		);
-	}
+  // Error state
+  if (error) {
+    return (
+      <ErrorState
+        title="Failed to load partners"
+        message={error}
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
 
-	return (
-		<div className="relative flex flex-col flex-1 overflow-y-auto">
-			{/* Header */}
-			<div className="flex items-end justify-between gap-4 p-4">
-				<div className="flex-1">
-					<div className="mb-2">
-						<h1 className="text-3xl font-bold text-gray-900">Partners</h1>
-						<p className="text-sm text-gray-500">
-							<span className="text-teal-700 font-medium">₹40,000 sales</span>
-							{' • '}
-							<span className="text-yellow-700 font-medium">₹20,000 purchase</span>
-							{' in past month'}
-						</p>
-					</div>
+  return (
+    <div className="relative flex flex-col flex-1 overflow-y-auto">
+      {/* Header */}
+      <div className="flex items-end justify-between gap-4 p-4">
+        <div className="flex-1">
+          <div className="mb-2">
+            <h1 className="text-3xl font-bold text-gray-900">Partners</h1>
+            <p className="text-sm text-gray-500">
+              <span className="text-teal-700 font-medium">₹40,000 sales</span>
+              {" • "}
+              <span className="text-yellow-700 font-medium">
+                ₹20,000 purchase
+              </span>
+              {" in past month"}
+            </p>
+          </div>
 
-					{/* Search */}
-					<div className="relative max-w-md">
-						<Input
-							type="text"
-							placeholder="Search for partner"
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							className="pr-10"
-						/>
-						<IconSearch className="absolute right-3 top-1/2 -translate-y-1/2 size-5 text-gray-700" />
-					</div>
-				</div>
+          {/* Search */}
+          <div className="relative max-w-md">
+            <Input
+              type="text"
+              placeholder="Search for partner"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pr-10"
+            />
+            <IconSearch className="absolute right-3 top-1/2 -translate-y-1/2 size-5 text-gray-700" />
+          </div>
+        </div>
 
-				{/* Mascot */}
-				<div className="relative size-25 shrink-0">
-					<Image
-						src="/mascot/partner-handshake.png"
-						alt="Partners"
-						fill
-						sizes="100px"
-						className="object-contain"
-					/>
-				</div>
-			</div>
+        {/* Mascot */}
+        <div className="relative size-25 shrink-0">
+          <Image
+            src="/mascot/partner-handshake.png"
+            alt="Partners"
+            fill
+            sizes="100px"
+            className="object-contain"
+          />
+        </div>
+      </div>
 
-			{/* Filter */}
-			<div className="px-4 py-2">
-				<TabPills
-					options={PARTNER_TYPES}
-					value={selectedType}
-					onValueChange={(value) => setSelectedType(value as PartnerType | 'all')}
-				/>
-			</div>
+      {/* Filter */}
+      <div className="px-4 py-2">
+        <TabPills
+          options={PARTNER_TYPES}
+          value={selectedType}
+          onValueChange={(value) =>
+            setSelectedType(value as PartnerType | "all")
+          }
+        />
+      </div>
 
-			{/* Partner Cards */}
-			<li className="grid grid-cols-1 lg:grid-cols-2 3xl:grid-cols-3 gap-4 items-stretch p-4">
-				{filteredPartners.length === 0 ? (
-					<div className="flex flex-col items-center justify-center py-12 text-center">
-						<p className="text-gray-600 mb-2">No partners found</p>
-						<p className="text-sm text-gray-500">
-							{searchQuery
-								? 'Try adjusting your search'
-								: `Add your first ${selectedType.toLowerCase()}`}
-						</p>
-					</div>
-				) : (
-					filteredPartners.map((partner) => (
-						<ul
-							key={partner.id}
-						>
-							<Card
-								className="cursor-pointer hover:bg-gray-50 transition-colors"
-								onClick={() => router.push(`/warehouse/${warehouse.slug}/partners/${partner.id}`)}
-							>
-								<CardContent className="p-4 pb-3 flex flex-col gap-4">
-									{/* Partner Info */}
-									<div className="flex gap-4">
-										{/* Avatar */}
-										<ImageWrapper
-											size="lg"
-											shape="circle"
-											alt={partner.name}
-											placeholderInitials={getInitials(partner.name)}
-										/>
+      {/* Partner Cards */}
+      <li className="grid grid-cols-1 lg:grid-cols-2 3xl:grid-cols-3 gap-4 items-stretch p-4">
+        {filteredPartners.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-gray-600 mb-2">No partners found</p>
+            <p className="text-sm text-gray-500">
+              {searchQuery
+                ? "Try adjusting your search"
+                : `Add your first ${selectedType.toLowerCase()}`}
+            </p>
+          </div>
+        ) : (
+          filteredPartners.map((partner) => (
+            <ul key={partner.id}>
+              <Card
+                className="cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() =>
+                  router.push(
+                    `/warehouse/${warehouse.slug}/partners/${partner.id}`,
+                  )
+                }
+              >
+                <CardContent className="p-4 pb-3 flex flex-col gap-4">
+                  {/* Partner Info */}
+                  <div className="flex gap-4">
+                    {/* Avatar */}
+                    <ImageWrapper
+                      size="lg"
+                      shape="circle"
+                      alt={partner.name}
+                      placeholderInitials={getInitials(partner.name)}
+                    />
 
-										{/* Details */}
-										<div className="flex-1 flex justify-between py-2">
-											<div className="flex flex-col">
-												<p className="text-base font-medium text-gray-900">
-													{partner.name}
-												</p>
-												<p className="text-xs text-gray-500">
-													{PARTNER_TYPES.find((t) => t.value === partner.type)?.label}
-												</p>
-											</div>
+                    {/* Details */}
+                    <div className="flex-1 flex justify-between py-2">
+                      <div className="flex flex-col">
+                        <p className="text-base font-medium text-gray-900">
+                          {partner.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {
+                            PARTNER_TYPES.find((t) => t.value === partner.type)
+                              ?.label
+                          }
+                        </p>
+                      </div>
 
-											{/* Amount */}
-											{partner.amount && (
-												<div className="flex flex-col items-end justify-center">
-													<p
-														className={`text-base font-bold ${partner.transactionType === 'sales'
-															? 'text-teal-700'
-															: 'text-yellow-700'
-															}`}
-													>
-														₹{partner.amount.toLocaleString('en-IN')}
-													</p>
-													<p className="text-xs text-gray-500">
-														in {partner.transactionType}
-													</p>
-												</div>
-											)}
-										</div>
-									</div>
+                      {/* Amount */}
+                      {partner.amount && (
+                        <div className="flex flex-col items-end justify-center">
+                          <p
+                            className={`text-base font-bold ${
+                              partner.transactionType === "sales"
+                                ? "text-teal-700"
+                                : "text-yellow-700"
+                            }`}
+                          >
+                            ₹{partner.amount.toLocaleString("en-IN")}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            in {partner.transactionType}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-									{/* Contact Info */}
-									<div className="flex gap-6 px-2 text-sm">
-										<div className="flex gap-1.5 items-center">
-											<IconMapPin className="size-4 text-gray-500 shrink-0" />
-											<span className="text-gray-700">
-												{partner.address || 'No address'}
-											</span>
-										</div>
-										<div className="flex gap-1.5 items-center text-nowrap">
-											<IconPhone className="size-4 text-primary-700" />
-											<span className={partner.phone ? 'text-primary-700 font-medium' : 'text-gray-700'}>
-												{partner.phone || 'No phone number'}
-											</span>
-										</div>
-									</div>
-								</CardContent>
+                  {/* Contact Info */}
+                  <div className="flex gap-6 px-2 text-sm">
+                    <div className="flex gap-1.5 items-center">
+                      <IconMapPin className="size-4 text-gray-500 shrink-0" />
+                      <span className="text-gray-700">
+                        {partner.address || "No address"}
+                      </span>
+                    </div>
+                    <div className="flex gap-1.5 items-center text-nowrap">
+                      <IconPhone className="size-4 text-primary-700" />
+                      <span
+                        className={
+                          partner.phone
+                            ? "text-primary-700 font-medium"
+                            : "text-gray-700"
+                        }
+                      >
+                        {partner.phone || "No phone number"}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
 
-								<CardFooter className="px-6 pb-4 pt-0">
-									<Button variant="ghost" size="sm" className='text-primary-700'>
-										<IconPlus />
-										{getActionLabel(partner.type)}
-									</Button>
-								</CardFooter>
-							</Card>
-						</ul>
-					))
-				)}
-			</li>
+                <CardFooter className="px-6 pb-4 pt-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-primary-700"
+                  >
+                    <IconPlus />
+                    {getActionLabel(partner.type)}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </ul>
+          ))
+        )}
+      </li>
 
-			{/* Floating Action Button */}
-			<Fab
-				onClick={() => setShowAddPartner(true)}
-				className="fixed bottom-20 right-4"
-			/>
+      {/* Floating Action Button */}
+      <Fab
+        onClick={() => setShowAddPartner(true)}
+        className="fixed bottom-20 right-4"
+      />
 
-			{/* Add Partner Sheet */}
-			{showAddPartner && (
-				<AddPartnerSheet
-					open={showAddPartner}
-					onOpenChange={setShowAddPartner}
-					onPartnerAdded={fetchPartners}
-				/>
-			)}
-		</div >
-	);
+      {/* Add Partner Sheet */}
+      {showAddPartner && (
+        <AddPartnerSheet
+          open={showAddPartner}
+          onOpenChange={setShowAddPartner}
+          onPartnerAdded={fetchPartners}
+        />
+      )}
+    </div>
+  );
 }

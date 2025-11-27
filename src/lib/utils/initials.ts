@@ -8,16 +8,19 @@
  * - "John Doe" → "JD"
  */
 export function getInitials(name: string): string {
-	if (!name) return '??';
+  if (!name) return "??";
 
-	const words = name
-		.trim()
-		.split(/\s+/)
-		.filter(word => word.length > 0)
-		.filter(word => !['&', 'and', 'pvt', 'ltd', 'llc', 'inc'].includes(word.toLowerCase()));
+  const words = name
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0)
+    .filter(
+      (word) =>
+        !["&", "and", "pvt", "ltd", "llc", "inc"].includes(word.toLowerCase()),
+    );
 
-	if (words.length === 0) return '??';
-	if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+  if (words.length === 0) return "??";
+  if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
 
-	return (words[0][0] + words[1][0]).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
 }

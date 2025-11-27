@@ -17,7 +17,9 @@
 ## Pending Tasks
 
 ### 1. Build Outwards Tab
+
 Currently shows placeholder text. Need to:
+
 - Fetch and display linked goods outward records for the order
 - Show outward details (outward number, date, items dispatched, status)
 - Display dispatch progress per line item
@@ -25,12 +27,15 @@ Currently shows placeholder text. Need to:
 - Show "No outwards" state when has_outward is false
 
 **Files to modify:**
+
 - `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/page.tsx`
 
 ---
 
 ### 2. Create OrderActionsMenu and DeleteOrderDialog
+
 The three-dot menu button currently just logs. Need to:
+
 - Create dropdown menu component with actions based on order status
 - Implement delete dialog with validation:
   - Can delete if: `status === 'approval_pending' OR !has_outward`
@@ -43,16 +48,20 @@ The three-dot menu button currently just logs. Need to:
   - **Completed:** Mark as incomplete (reopen)
 
 **Files to create:**
+
 - `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/OrderActionsMenu.tsx`
 - `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/DeleteOrderDialog.tsx`
 
 **Files to modify:**
+
 - `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/page.tsx`
 
 ---
 
 ### 3. Implement Approve Order Logic
+
 The "Approve order" button currently logs. Need to:
+
 - Create confirmation dialog: "Approve this order?"
 - Update order status from `approval_pending` to `in_progress`
 - Add status change tracking:
@@ -62,15 +71,19 @@ The "Approve order" button currently logs. Need to:
 - Handle errors appropriately
 
 **Files to create:**
+
 - `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/ApproveOrderDialog.tsx`
 
 **Files to modify:**
+
 - `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/page.tsx`
 
 ---
 
 ### 4. Integrate with Goods Outward Creation
+
 The "Create outward" button navigates but needs full integration:
+
 - Pass order ID via query parameter: `/goods-outward/create?order_id={orderId}`
 - Update goods outward create page to:
   - Detect `order_id` query param
@@ -81,42 +94,50 @@ The "Create outward" button navigates but needs full integration:
 - After outward creation, redirect back to order detail page
 
 **Files to modify:**
+
 - `src/app/warehouse/[warehouse_slug]/(flow)/goods-outward/create/page.tsx` (or app version)
 - `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/page.tsx`
 
 ---
 
 ### 5. Add Permission Gates and Validation
+
 Need to add proper authorization and validation:
 
 **Permission checks:**
+
 - Edit buttons: Check `sales_orders.update` permission
 - Delete action: Check `sales_orders.delete` permission
 - Approve button: Check `sales_orders.update` permission
 - Hide/disable actions based on user role (staff can only access assigned warehouse)
 
 **Status-based validation:**
+
 - Cannot edit line items if status is `completed` or `cancelled`
 - Cannot edit warehouse if `has_outward` is true
 - Cannot approve if status is not `approval_pending`
 - Cannot delete if `has_outward` is true AND status is not `approval_pending`
 
 **Implementation:**
+
 - Use `useSession()` hook to get user permissions
 - Create helper function: `canEditOrder(order, user)`
 - Add conditional rendering/disabling for protected actions
 - Show appropriate error messages when actions are blocked
 
 **Files to modify:**
+
 - `src/app/warehouse/[warehouse_slug]/(app)/sales-orders/[order_number]/page.tsx`
 - All edit sheet components (add permission checks)
 
 ---
 
 ### 6. Test All Functionality
+
 End-to-end testing of complete feature:
 
 **Edit Sheets:**
+
 - [ ] Test all 7 edit sheets open correctly
 - [ ] Verify data saves and UI refreshes
 - [ ] Test validation (e.g., warehouse edit blocked if has_outward)
@@ -125,29 +146,34 @@ End-to-end testing of complete feature:
 - [ ] Test responsive behavior (Dialog on desktop, Drawer on mobile)
 
 **Delete Flow:**
+
 - [ ] Test delete validation (approval_pending OR !has_outward)
 - [ ] Verify soft delete (deleted_at set, not hard delete)
 - [ ] Test error message when delete is blocked
 - [ ] Verify redirect after successful delete
 
 **Approve Flow:**
+
 - [ ] Test approve button only shows for approval_pending orders
 - [ ] Verify status changes to in_progress
 - [ ] Verify status_changed_at and status_changed_by are set
 - [ ] Test error handling
 
 **Navigation:**
+
 - [ ] Test list → detail → back navigation
 - [ ] Test detail → create outward → back navigation
 - [ ] Verify breadcrumbs (if implemented)
 
 **Permissions:**
+
 - [ ] Test as admin (full access)
 - [ ] Test as staff (limited to assigned warehouse)
 - [ ] Verify RLS policies enforce data access
 - [ ] Test permission-based UI hiding/disabling
 
 **Edge Cases:**
+
 - [ ] Test with order that has no line items
 - [ ] Test with order that has no agent
 - [ ] Test with order that has no expected delivery date

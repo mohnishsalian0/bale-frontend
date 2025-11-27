@@ -1,7 +1,9 @@
 # Fabric Inventory Management System - PRD ## Technical Architecture & Stack
+
 ### Core Technology Stack
 
 #### MVP Architecture
+
 - **Frontend**: Next.js with Tailwind CSS (mobile-focused web app)
 - **Database**: Supabase (PostgreSQL with Row Level Security)
 - **Authentication**: Supabase Auth (JWT-based)
@@ -10,14 +12,17 @@
 - **Backend**: Direct Supabase client integration (no custom backend for MVP)
 
 #### Future Architecture (Post-MVP)
+
 - **Backend**: Rust + Axum (as system complexity grows)
 - **Deployment**: Railway or Fly.io
 
 #### Public Sales Catalog
+
 - **Framework**: Next.js with Tailwind CSS (integrated with main app)
 - **Deployment**: Hostinger
 
 #### Additional Services
+
 - **PDF Generation**: For barcode printing
 - **Barcode Generation**: QR codes for stock units
 - **Image Processing**: Product image optimization
@@ -25,6 +30,7 @@
 - **Real-time Updates**: Not in Phase 1 (future consideration)
 
 ### Architecture Decisions
+
 - **Single App Approach**: Admins manage products/inventory through mobile app (no separate web dashboard)
 - **Multi-tenant**: Company-based isolation with warehouse-level staff access
 - **Role-based Access**: Admin (full access) + Staff (warehouse-specific)
@@ -36,9 +42,11 @@
 The app uses Next.js App Router with two main route groups for clean separation of public and protected content:
 
 #### (protected)/ - Protected Routes
+
 **Location**: `src/app/(protected)/`
 
 **Layout Features**:
+
 - Handles authentication (redirects to /auth/login if not authenticated)
 - Validates warehouse access via RLS
 - Provides SessionProvider with warehouse, user, and permissions
@@ -47,6 +55,7 @@ The app uses Next.js App Router with two main route groups for clean separation 
 - Supports chrome-less mode for immersive flows (goods inward/outward, sales orders, QR batch creation)
 
 **Routes**:
+
 - `/warehouse` - Warehouse selection page
 - `/warehouse/[warehouse_slug]/dashboard` - Dashboard
 - `/warehouse/[warehouse_slug]/inventory` - Product catalog
@@ -62,14 +71,17 @@ The app uses Next.js App Router with two main route groups for clean separation 
 - `/company` - Company settings
 
 #### (public)/ - Public Routes
+
 **Location**: `src/app/(public)/`
 
 **Layout Features**:
+
 - Minimal wrapper, no authentication required
 - No SessionProvider
 - No app chrome
 
 **Routes**:
+
 - `/auth/login` - Login page
 - `/auth/callback` - OAuth callback
 - `/invite/[code]` - Invite acceptance
@@ -78,11 +90,13 @@ The app uses Next.js App Router with two main route groups for clean separation 
 - `/company/[slug]/order/[order_number]` - Order tracking
 
 #### AppChromeContext
+
 **Location**: `src/contexts/app-chrome-context.tsx`
 
 **Purpose**: Controls visibility of TopBar, BottomNav, and Sidebar dynamically
 
 **Methods**:
+
 - `hideChrome()` - Hides all chrome elements
 - `showChromeUI()` - Shows all chrome elements
 - `showChrome` - Boolean state
@@ -90,11 +104,13 @@ The app uses Next.js App Router with two main route groups for clean separation 
 **Usage**: Flow pages (create goods inward, goods outward, QR batches, sales orders) call `hideChrome()` on mount and `showChromeUI()` on unmount for immersive, distraction-free experiences.
 
 #### Public Routes Config
+
 **Location**: `src/lib/auth/public-routes.ts`
 
 **Purpose**: Centralized list of public route patterns
 
 **Functions**:
+
 - `isPublicRoute(pathname)` - Checks if a path is public
 - `getAuthRedirectUrl(pathname)` - Gets login redirect URL
 
@@ -119,10 +135,12 @@ India's textile industry (₹20.1 lakh crore/$240.8B market) has 96.66% unorgani
 **Positioning:** "The only inventory management platform designed specifically for fabric - not too simple like generic software, not too complex like enterprise ERP, but just right for fabric"
 
 **Core Value Props:**
+
 - Fabric-specific inventory tracking (roll, color, weight, quality)
 - Trading workflow optimization
 
 **Competitive Advantage:**
+
 - **vs Generic Software:** Built for fabric specifications
 - **vs Enterprise ERP:** Right-sized complexity and cost
 - **vs Textile Apps:** Comprehensive inventory beyond basic transactions
@@ -134,11 +152,13 @@ India's textile industry (₹20.1 lakh crore/$240.8B market) has 96.66% unorgani
 ### Primary Persona: Embroidery Fabric Trading Business Owner
 
 **Demographics:**
+
 - Role: Owner of embroidery fabric trading business
 - Experience: Managing 250+ designs, 15 new designs weekly
 - Technology comfort: Moderate (currently uses Excel, Tally, WhatsApp)
 
 **Daily Workflow:**
+
 - Check WhatsApp orders from clients
 - Coordinate between fabric suppliers, embroidery masters, and customers
 - Track design progress across multiple embroidery units
@@ -146,6 +166,7 @@ India's textile industry (₹20.1 lakh crore/$240.8B market) has 96.66% unorgani
 - Physical visits/calls to embroidery masters for work updates
 
 **Responsibilities:**
+
 - Manage 250+ designs with custom design codes and client numbering systems
 - Source base fabrics from multiple suppliers
 - Coordinate embroidery work (currently: 20 designs total, 4 complete, 5 in pipeline, 10 pending)
@@ -153,6 +174,7 @@ India's textile industry (₹20.1 lakh crore/$240.8B market) has 96.66% unorgani
 - Track inventory by meters with fabric specifications (color, design, quantity)
 
 **Pain Points:**
+
 - **Time-consuming coordination:** Regular physical visits/calls to embroidery masters for updates
 - **Manual tracking:** Excel-based design codes, color management, client details
 - **Stock visibility:** Cannot instantly confirm fabric availability (e.g., "Black 100m, Blue 100m")
@@ -160,11 +182,13 @@ India's textile industry (₹20.1 lakh crore/$240.8B market) has 96.66% unorgani
 - **Communication gaps:** Miscommunication with embroidery masters on designs and colors
 
 **Technology Constraints:**
+
 - Current budget range: ₹10-20K (₹1 lakh systems not affordable)
 - Wants barcode system but needs it simple for less-educated staff
 - Prefers mobile-friendly solutions for field coordination
 
 **User Stories:**
+
 1. "I want to track embroidery work progress without physical visits so I can save time and give accurate delivery dates"
 2. "I want instant fabric stock visibility so I can confirm orders immediately when sales team asks"
 3. "I want design code management with photos and color charts so embroidery masters don't make mistakes"
@@ -172,11 +196,13 @@ India's textile industry (₹20.1 lakh crore/$240.8B market) has 96.66% unorgani
 ### Primary Persona: Sports Fabric Trading Business Owner
 
 **Demographics:**
+
 - Role: Owner of sports fabric trading business (jerseys, sportswear fabrics)
 - Experience: Cotton yarn to finished fabric coordination with dyeing houses
 - Technology comfort: Basic (uses physical files, TurboTax for billing, no Excel)
 
 **Daily Workflow:**
+
 - Check physical files for order status (ingoing/outgoing files)
 - Coordinate dyeing work across 2-5 different dyeing houses
 - Manage quality checks and handle damaged/re-dyeing processes
@@ -184,6 +210,7 @@ India's textile industry (₹20.1 lakh crore/$240.8B market) has 96.66% unorgani
 - Handle customer orders based on current stock availability
 
 **Responsibilities:**
+
 - Manage 4000+ fabric rolls across 20+ categories (Dry Fit, Polo Matte, etc.)
 - Coordinate with multiple dyeing houses based on rates, quality, delivery times
 - Handle peak season planning (3-4 week rush periods) vs off-season stock building
@@ -192,6 +219,7 @@ India's textile industry (₹20.1 lakh crore/$240.8B market) has 96.66% unorgani
 - Maintain customer relationships (direct customers, corporate clients)
 
 **Pain Points:**
+
 - **No stock visibility:** Cannot check current inventory during peak seasons
 - **Manual file tracking:** Physical files for all inventory management (no digital records)
 - **Weight vs roll confusion:** Orders by rolls, pricing by kg, leading to calculation errors
@@ -200,12 +228,14 @@ India's textile industry (₹20.1 lakh crore/$240.8B market) has 96.66% unorgani
 - **Customer communication:** Cannot provide instant stock confirmation
 
 **Current Process:**
+
 - Uses WhatsApp and phone calls for all communication
 - Creates PO only for high-value orders
 - Handles returns through debit notes via accountant
 - Uses Tally-like accounting software for basic billing (sales orders, dyeing orders, outstanding tracking)
 
 **User Stories:**
+
 1. "I want real-time stock visibility by weight and roll count so I can confirm orders instantly"
 2. "I want to track dyeing house work progress so I can manage delivery commitments better"
 3. "I want easy damage/wastage recording with date tracking so I can reduce losses"
@@ -213,34 +243,40 @@ India's textile industry (₹20.1 lakh crore/$240.8B market) has 96.66% unorgani
 ### Secondary Persona: Outward Staff
 
 **Demographics:**
+
 - Role: Warehouse and outward handling
 - Technology comfort: Basic smartphone usage
 - Education: Limited formal education
 
 **Daily Workflow:**
+
 - Handle physical roll movements (50+ rolls daily)
 - Update manual outward sheets
 - Coordinate with sales team on stock availability
 - Process returns and damaged inventory
 
 **Responsibilities:**
+
 - Physical inventory movement and outward
 - Manual record keeping on paper
 - Customer coordination for walk-in orders
 - Basic quality checks during outward
 
 **Pain Points:**
+
 - **Paper-based systems:** Manual outward sheets lead to errors and time loss
 - **No instant stock lookup:** Cannot check availability when customers call
 - **End-of-day reconciliation:** Time-consuming manual updates to main records
 - **Limited technology skills:** Needs very simple interface requiring minimal training
 
 **Technology Requirements:**
+
 - Simple mobile interface for basic operations
 - Minimal training required (staff has limited education)
 - Budget-friendly solution (not ₹1 lakh enterprise systems)
 
 **User Stories:**
+
 1. "I want simple barcode scanning so I can update stock without paperwork"
 2. "I want to check stock quickly when customers ask so I can help them immediately"
 3. "I want easy return processing so damaged items are tracked properly"
@@ -261,6 +297,7 @@ India's textile industry (₹20.1 lakh crore/$240.8B market) has 96.66% unorgani
 **Technology:** Database-driven flexible permission system with dot-path notation and wildcard support
 
 **Key Features:**
+
 - Flexible hierarchical permissions using dot notation (e.g., `inventory.products.read`, `movement.inward.create`)
 - Wildcard support for broad grants (e.g., `inventory.*` grants all inventory permissions)
 - Greedy wildcard matching (e.g., `movement.*.create` matches `movement.inward.create` and `movement.outward.create`)
@@ -268,6 +305,7 @@ India's textile industry (₹20.1 lakh crore/$240.8B market) has 96.66% unorgani
 - Consistent authorization logic between backend (PostgreSQL) and frontend (React)
 
 **Implementation:**
+
 - Backend: PostgreSQL `authorize()` function with backtracking wildcard matcher
 - Frontend: React `SessionContext` with `hasPermission()`, `hasAnyPermission()`, `hasAllPermissions()` methods
 - UI Component: `<PermissionGate>` for conditional rendering based on permissions
@@ -277,6 +315,7 @@ India's textile industry (₹20.1 lakh crore/$240.8B market) has 96.66% unorgani
 Permissions are organized hierarchically with the following top-level categories:
 
 **Top Level Resources:**
+
 - `companies.*` - Company management
 - `warehouses.*` - Warehouse management
 - `users.*` - User/staff management
@@ -287,6 +326,7 @@ Permissions are organized hierarchically with the following top-level categories
 - `storage.*` - File upload and management
 
 **Grouped Resources:**
+
 - `inventory.*` - Products, stock units, QR batches
   - `inventory.products.*` - Product master CRUD
   - `inventory.stock_units.*` - Stock unit CRUD
@@ -296,6 +336,7 @@ Permissions are organized hierarchically with the following top-level categories
   - `movement.outward.*` - Goods outward operations
 
 **Permission Format:**
+
 - Standard CRUD: `{resource}.{action}` (e.g., `products.read`, `partners.create`)
 - Nested resources: `{category}.{resource}.{action}` (e.g., `inventory.products.read`, `movement.inward.create`)
 - Wildcards: `*` for all, `inventory.*` for all inventory operations
@@ -303,11 +344,13 @@ Permissions are organized hierarchically with the following top-level categories
 ### Role Permissions Matrix
 
 #### Admin Role
+
 - **Permission:** `*` (wildcard - full access)
 - **Scope:** All warehouses
 - **Access:** Complete system access including company settings, warehouse creation, staff management, and all operational features
 
 #### Staff Role
+
 - **Scope:** Assigned warehouse only (enforced by RLS)
 - **Permissions:**
   - **Read-only access:**
@@ -328,6 +371,7 @@ Permissions are organized hierarchically with the following top-level categories
 ### Access Control Implementation
 
 **Warehouse Access Control:**
+
 - User-level `all_warehouses_access` flag determines warehouse scope
 - Admin users: `all_warehouses_access = true` (access all warehouses)
 - Staff users: `all_warehouses_access = false` (access only assigned warehouses via `user_warehouses` table)
@@ -335,11 +379,13 @@ Permissions are organized hierarchically with the following top-level categories
 - Frontend queries respect warehouse filtering via RLS
 
 **Permission Checking:**
+
 - Backend: `authorize('permission.path')` function in RLS policies
 - Frontend: `hasPermission('permission.path')` in React components
 - UI: `<PermissionGate permission="permission.path">...</PermissionGate>`
 
 **Example Usage:**
+
 ```tsx
 // Single permission
 <PermissionGate permission="inventory.products.create">
@@ -363,17 +409,20 @@ Permissions are organized hierarchically with the following top-level categories
 ### Permission Management
 
 **Adding New Permissions:**
+
 1. Add permission to `supabase/migrations/0031_rbac_seed_data.sql`
 2. Assign to appropriate roles in same migration file
 3. Run database migration
 4. Use permission in RLS policies and frontend code
 
 **Wildcard Benefits:**
+
 - Simplifies role management (admin gets `*` instead of hundreds of individual permissions)
 - Easy to grant access to entire modules (e.g., `inventory.*` for all inventory features)
 - Flexible permission patterns (e.g., `movement.*.create` for both inward and outward creation)
 
 **Legend:**
+
 - ✅ = Permitted (has required permission)
 - ❌ = Not Permitted (missing permission)
 - 🔒 = Warehouse-scoped (filtered by RLS based on user's warehouse access)
@@ -391,6 +440,7 @@ Permissions are organized hierarchically with the following top-level categories
 **Specifications:**
 
 **Company Registration**
+
 - **Company Details:**
   - Company Name (required, 100 chars)
   - Complete Address (structured fields)
@@ -400,6 +450,7 @@ Permissions are organized hierarchically with the following top-level categories
   - PAN number (optional) - under more information
 
 **Audit information:**
+
 - Unique ID (unique and auto-generated in backend)
 - Created on (date, time and generated in backend)
 - Updated on (date, time and generated in backend)
@@ -408,6 +459,7 @@ Permissions are organized hierarchically with the following top-level categories
 - Deleted at (date, time and generated in backend)
 
 **Business Rules**
+
 - One company = One tenant with multi tenant strategy
 - Company admin has full system access
 - All other entities (staff, warehouse, partners) belong to company
@@ -417,6 +469,7 @@ Permissions are organized hierarchically with the following top-level categories
 **Feature Description:** Role-based staff management with single warehouse assignment and company admin control
 
 **Staff Creation (Company Admin Only)**
+
 - **Personal Information:**
   - First & Last Name (required)
   - Phone Number (required, unique within company)
@@ -434,6 +487,7 @@ Permissions are organized hierarchically with the following top-level categories
   - Deleted at (date, time and generated in backend)
 
 **Warehouse Assignment Rules**
+
 - Staff is assigned to exactly one warehouse by Company Admin
 - Staff cannot create or switch warehouses
 - Staff can only access their assigned warehouse
@@ -441,6 +495,7 @@ Permissions are organized hierarchically with the following top-level categories
 - All staff operations are limited to their assigned warehouse scope
 
 **Role-Based Permissions**
+
 - **Company Admin:** Full system access, warehouse creation, staff management
 - **Staff:** Basic warehouse operations like goods outward, goods inward and job work within assigned warehouse
 
@@ -453,6 +508,7 @@ Permissions are organized hierarchically with the following top-level categories
 **Specifications:**
 
 **Warehouse Setup (Company Admin Only)**
+
 - **Basic Information:**
   - Warehouse Name (required)
   - Complete Address (structured fields)
@@ -466,6 +522,7 @@ Permissions are organized hierarchically with the following top-level categories
   - Deleted at (date, time and generated in backend)
 
 **Business Rules**
+
 - Only Company Admin can create/modify warehouses
 - Staff operations automatically restricted to their assigned warehouse
 - All stock movements auto-tagged with staff's assigned warehouse
@@ -480,6 +537,7 @@ Permissions are organized hierarchically with the following top-level categories
 **Specifications:**
 
 **Product Creation (Company Admin Only)**
+
 - **Identity Fields:**
   - Product Name (required, design name)
   - Product Number (auto-generated: PROD-{SEQUENCE})
@@ -508,11 +566,13 @@ Permissions are organized hierarchically with the following top-level categories
   - Deleted at (date, time and generated in backend)
 
 **Access Restrictions:**
+
 - Staff: View-only access to product master
 - Cannot create, edit, or delete products
 - Can view product details for operational purposes only
 
 **Business Rules**
+
 - Product Number unique across company (all warehouses)
 - Color validation: Standard names + hex codes for custom colors
 - Cannot delete product if stock units exist in any warehouse
@@ -525,16 +585,19 @@ Permissions are organized hierarchically with the following top-level categories
 **Specifications:**
 
 **Inventory Control Business Rules**
+
 - **Stock Entry**: Stock units can ONLY be added to inventory via Goods Inward process
 - **Stock Removal**: Stock units can ONLY be removed from inventory via Goods Outward process
 - **Traceability**: Every stock unit must be linked to its originating goods inward (created_from_inward_id)
 - **Special Case Inwards**: For opening stock, adjustments, and manual additions, use link_type = 'other' with descriptive other_reference (e.g., "Opening Stock - System Setup", "Stock Adjustment - Found Inventory")
 
 **Unit Creation Methods**
+
 - Automatic Creation: From goods inward items (creates individual stock units equal to quantity_received)
 - System-assigned to receiving warehouse
 
 **Unit Information**
+
 - **Identity:**
   - Unit Number (auto: {PRODUCT_NUMBER}-SU{SEQUENCE})
   - QR Code (auto-generated by Unit number)
@@ -560,6 +623,7 @@ Permissions are organized hierarchically with the following top-level categories
   - Deleted at (date, time and generated in backend)
 
 **Business Rules**
+
 - All units automatically tagged with creating staff's assigned warehouse
 - **Inventory Control**: Stock units can only be added via Goods Inward and removed via Goods Outward
 - **Complete Traceability**: Every stock unit must reference its creating goods inward for audit trail
@@ -574,11 +638,13 @@ Permissions are organized hierarchically with the following top-level categories
 **Specifications:**
 
 **Sales Order Creation Access:**
+
 - **Owner:** Can create sales orders via both Sales Catalog (public interface) and Inventory App (internal system)
 - **Sales Staff/Customers:** Can create sales orders only via Sales Catalog (public interface)
 - Both methods link to same underlying sales order system
 
 **Order Header**
+
 - **Order Information:**
   - Order Number (auto: SO-{SEQUENCE})
   - Customer (required, from Partners with type=Customer)
@@ -590,6 +656,7 @@ Permissions are organized hierarchically with the following top-level categories
     - **Inventory App orders:** Auto-assigned from owner's warehouse
 
 **Order Line Items**
+
 - **Product Selection:**
   - Product (searchable dropdown from product master)
   - Required Quantity (in product measuring unit)
@@ -605,7 +672,7 @@ Permissions are organized hierarchically with the following top-level categories
     - Order Request Quantity (from assigned warehouse stock only)
     - Outwarded Quantity (from this warehouse)
     - Pending Quantity (auto-calculated: Order Request Quantity - Outwarded Quantity)
-    - Total Completion in % (auto-calculated: (Outwarded Quantity/ Order Request Quantity) *100)
+    - Total Completion in % (auto-calculated: (Outwarded Quantity/ Order Request Quantity) \*100)
   - **For Sales Catalog orders (no warehouse assignment):**
     - Shows aggregate stock across all warehouses
     - No automatic reservation until warehouse is assigned by owner
@@ -618,11 +685,13 @@ Permissions are organized hierarchically with the following top-level categories
   - Deleted at (date, time and generated in backend)
 
 **Staff Access Controls:**
+
 - **Sales Staff (Sales Catalog):** Can create orders without warehouse restrictions, no stock reservation capability
 - **Owner (Inventory App):** Can create orders for their assigned warehouse with full stock management
 - **Owner (Sales Catalog):** Can create orders without warehouse restrictions (same as sales staff)
 
 **Business Rules**
+
 - Cannot confirm order without customer details
 - Expected delivery date is optional during order creation, can be updated during processing
 - **For Sales Catalog orders:** No automatic stock reservation until warehouse assigned
@@ -635,28 +704,33 @@ Permissions are organized hierarchically with the following top-level categories
 **Specifications:**
 
 **Order Management Interface List View (Warehouse-Filtered):**
+
 - Auto-filtered to show only orders for the warehouse admin is logged into and auto assigned for staff
 - Filter by status (approval_pending, in_progress, completed, cancelled), customer, product, agent
 - Sort by order date
 
 **Order Status Workflow:**
+
 - **approval_pending** - Initial status for all new orders, awaiting owner approval
 - **in_progress** - Order approved and being fulfilled
 - **completed** - Order fully outwarded and delivered (requires completion notes)
 - **cancelled** - Order cancelled by customer or owner (requires cancellation reason)
 
 **Status Change Tracking:**
+
 - **status_changed_at** - Timestamp when status was changed to completed/cancelled
 - **status_changed_by** - User who changed the status
 - **status_notes** - Completion notes (for completed) or cancellation reason (for cancelled)
 - Full audit trail of status changes with efficient single-field design
 
 **Detail View:**
+
 - Complete order information
 - Real-time fulfillment status (warehouse-specific)
 - Linked job works and outwards (from assigned warehouse)
 
 **Sales Order Details Page:**
+
 - **Layout**: Tabbed interface with "Order details", "Products", and "Outwards" tabs
 - **Header**: SO-{sequence_number} title with order date subtitle, status badge, and progress bar (for in_progress/overdue orders)
 - **Details Tab Sections**:
@@ -670,6 +744,7 @@ Permissions are organized hierarchically with the following top-level categories
 - **Outwards Tab**: List of linked goods outward records with GO-{number}, date, outward type, destination, and clickable navigation
 
 **Audit Information**
+
 - Unique ID (auto-generated in backend)
 - Created on (date, time, auto-generated)
 - Updated on (date, time, auto-generated)
@@ -686,6 +761,7 @@ Permissions are organized hierarchically with the following top-level categories
 **Specifications:**
 
 **Primary Information**
+
 - Partner ID (auto-generated unique identifier)
 - First & Last Name (required)
 - Company Name (optional)
@@ -695,6 +771,7 @@ Permissions are organized hierarchically with the following top-level categories
 - PAN Number (optional, tax identification)
 
 **Address Information**
+
 - Address Line 1 (optional, warehouse number, street)
 - Address Line 2 (optional, locality, area)
 - City (optional)
@@ -703,9 +780,11 @@ Permissions are organized hierarchically with the following top-level categories
 - Pin Code (optional)
 
 **Additional Information**
+
 - Notes (additional information)
 
 **Audit Information**
+
 - Unique ID (auto-generated in backend)
 - Created on (date, time, auto-generated)
 - Updated on (date, time, auto-generated)
@@ -714,6 +793,7 @@ Permissions are organized hierarchically with the following top-level categories
 - Deleted at (soft delete timestamp)
 
 **Business Rules**
+
 - Partner types can only have one selection
 - Phone number must be unique within company
 - GST and PAN basic validation for Indian businesses
@@ -727,6 +807,7 @@ Permissions are organized hierarchically with the following top-level categories
 **Specifications:**
 
 **Job Work Header**
+
 - Job Work Number (auto-generated) (auto: JW-{SEQUENCE}))
 - Job Type (required, custom text field with auto-suggestions from previously used values - e.g., "Dyeing", "Embroidery", "Printing", "Stitching", "Block Printing", "Digital Printing", etc.)
 - Vendor (required, from Partners with type=Vendor as filter and free to choose other partners by changing filter)
@@ -738,40 +819,47 @@ Permissions are organized hierarchically with the following top-level categories
 - Add files (attachments for job work documents)
 
 **Raw Material Specification**
+
 - Raw material is NOT reserved from inventory but highlighted in inventory
 - Raw material Required Quantity (from assigned warehouse stock only)
 - Raw material Outwarded Quantity (from this warehouse)
 - Raw Pending Quantity (auto-calculated: Raw material Required Quantity - Outwarded Quantity)
 
 **Finished Goods Specification**
+
 - Finished Goods Request Quantity (from assigned warehouse stock only)
 - Finished Goods Received Quantity (from this warehouse)
 - Finished Goods Pending Quantity (updated via linked goods inward)
 - Finished Goods Pending Quantity (auto-calculated: Finished goods Request Quantity - Received Quantity)
-- Total Completion in % (auto-calculated: (Finished Goods Received Quantity/ Finished Goods Request Quantity) *100)
+- Total Completion in % (auto-calculated: (Finished Goods Received Quantity/ Finished Goods Request Quantity) \*100)
 
 **Linked Transactions**
+
 - Goods Outward List (raw materials sent to vendor)
 - Goods Inward List (finished goods received from vendor)
 
 **Job Work Status Workflow**
+
 - **in_progress** - Default status, work is active with vendor
 - **completed** - Job work finished, goods received back (requires completion notes)
 - **cancelled** - Job work cancelled before completion (requires cancellation reason)
 
 **Status Change Tracking:**
+
 - **status_changed_at** - Timestamp when status was changed to completed/cancelled
 - **status_changed_by** - User who changed the status
 - **status_notes** - Completion notes (for completed) or cancellation reason (for cancelled)
 - Full audit trail of status changes with efficient single-field design
 
 **Communication Features**
+
 - Option to call/message vendor directly from job work
 - Share job work status with vendor/team
 - Mark job work as complete
 - Cancel job work if needed
 
 **Audit Information**
+
 - Unique ID (auto-generated in backend)
 - Created on (date, time, auto-generated)
 - Updated on (date, time, auto-generated)
@@ -780,11 +868,13 @@ Permissions are organized hierarchically with the following top-level categories
 - Deleted at (soft delete timestamp)
 
 **Staff Access Controls**
+
 - Job works created within assigned warehouse scope
 - Raw materials and finished goods linked to assigned warehouse
 - Cannot access job works from other warehouses
 
 **Business Rules**
+
 - Raw material quantities are not allocated from inventory only highlighted
 - Pending quantities update based on actual goods outward/inward transactions
 - Job work can exist independently without sales order linkage
@@ -800,9 +890,11 @@ Permissions are organized hierarchically with the following top-level categories
 **Outward Header**
 
 **Outward Type Selection (required)**
+
 - Outward Type (radio buttons: "Outward to Partner" or "Transfer to Warehouse")
 
 **Recipient Configuration (based on outward type)**
+
 - **For Partner Outward:**
   - Partner (required dropdown from partners list - customers, vendors, suppliers)
   - Agent (optional dropdown from partners with type=Agent)
@@ -811,12 +903,14 @@ Permissions are organized hierarchically with the following top-level categories
   - Agent field not applicable (hidden/disabled)
 
 **Transaction Linking**
+
 - Link to (radio options: sales order, job work, other)
 - Sales Order (optional link to system sales order)
 - Job Work (optional link to system job work)
 - Other (custom reference with text field for description - e.g., "Sample outward", "Return goods", "Emergency stock")
 
 **Outward Details**
+
 - Date (required, date of outward)
 - Expected Delivery Date (optional, expected delivery date)
 - Transport Type (optional, dropdown: road, rail, air, sea, courier)
@@ -827,20 +921,24 @@ Permissions are organized hierarchically with the following top-level categories
 - Add files (attachments for invoices and documents)
 
 **Items List**
+
 - Stock Units (either barcode scanned or selected from list)
 - Real-time stock validation (assigned warehouse only)
 - Unit status updates upon outward
 
 **PWA Barcode Scanning**
+
 - Camera-based barcode scanning (PWA capability)
 - Continuous scanning with running totals
 
 **Staff Access Controls**
+
 - Can only outward from assigned warehouse inventory
 - Barcode scanning limited to assigned warehouse units
 - All outward documentation auto-tagged with warehouse
 
 **Audit Information**
+
 - Unique ID (auto-generated in backend)
 - Created on (date, time, auto-generated)
 - Updated on (date, time, auto-generated)
@@ -849,6 +947,7 @@ Permissions are organized hierarchically with the following top-level categories
 - Deleted at (soft delete timestamp)
 
 **Business Rules**
+
 - Stock units automatically marked as outwarded
 - Inventory levels updated in real-time
 - Linked job work raw material pending quantities updated
@@ -864,6 +963,7 @@ Permissions are organized hierarchically with the following top-level categories
   - Real-time validation prevents invalid field combinations
 
 **Outward Cancellation/Reversal Process:**
+
 - Outward records remain as permanent historical records
 - Cancellation marks outward as `is_cancelled = true` with timestamp and reason
 - Automatic reversal of stock unit status (back to available)
@@ -874,6 +974,7 @@ Permissions are organized hierarchically with the following top-level categories
 - Notification to relevant parties (owners/customer/vendor)
 
 **Outward Details Page:**
+
 - **Layout**: Tabbed interface with "Outward details" and "Stock units" tabs
 - **Header**: GO-{sequence_number} title with outward date subtitle
 - **Details Tab Sections**:
@@ -891,6 +992,7 @@ Permissions are organized hierarchically with the following top-level categories
 **Specifications:**
 
 **Inward Header**
+
 - Inward Type (radio buttons: "From Partner" or "From Warehouse")
 - **For Partner Inward:**
   - Partner (required, sender of goods)
@@ -912,6 +1014,7 @@ Permissions are organized hierarchically with the following top-level categories
 - Add files (attachments for invoices and documents)
 
 **Stock Units Creation**
+
 - User directly creates stock units with complete details (size, quality grade, location, etc.)
 - Each stock unit created with full specifications during inward process
 - If multiple units have identical details, user can specify quantity to create multiple at once
@@ -919,15 +1022,18 @@ Permissions are organized hierarchically with the following top-level categories
 - All units automatically linked to this goods inward via created_from_inward_id
 
 **Staff Access Controls**
+
 - All inwards automatically assigned to staff's warehouse
 - Cannot create inwards for other warehouses
 - Unit creation limited to assigned warehouse scope
 
 **Update stock units in case of discrepancy**
+
 - Add stock units. Creates new units with unique number and status 'Received'
 - Remove stock units. The removed unit status will be updated to 'Removed'
 
 **Audit Information**
+
 - Unique ID (auto-generated in backend)
 - Created on (date, time, auto-generated)
 - Updated on (date, time, auto-generated)
@@ -936,6 +1042,7 @@ Permissions are organized hierarchically with the following top-level categories
 - Deleted at (soft delete timestamp)
 
 **Business Rules**
+
 - All received units auto-assigned to staff's warehouse
 - Linked job work finished goods pending quantities updated
 - Real-time inventory updates within warehouse scope
@@ -952,6 +1059,7 @@ Permissions are organized hierarchically with the following top-level categories
   - All inward records must specify inward_type ('job_work', 'sales_return', or 'other')
 
 **Inward Details Page:**
+
 - **Layout**: Tabbed interface with "Inward details" and "Stock units" tabs
 - **Header**: GI-{sequence_number} title with inward date subtitle
 - **Details Tab Sections**:
@@ -971,9 +1079,10 @@ Permissions are organized hierarchically with the following top-level categories
 
 **Specifications:**
 
-**Unit Selection Interface** 
+**Unit Selection Interface**
 
 **Selection Criteria:**
+
 - Bulk select all units without barcodes generated
 - Search for product by name or number
 - Filter by material, color, tags
@@ -981,49 +1090,57 @@ Permissions are organized hierarchically with the following top-level categories
 - Individual/bulk unit selection from list
 
 **Selection Methods:**
+
 - Units grouped by Goods inward and sorted by latest to earliest
 - Select All Units Without Barcodes (warehouse-filtered)
 - Goods inward wise bulk selection
 - Manual individual selection
 
-**Fields Selection and Preview** 
+**Fields Selection and Preview**
 
 **Field Selection Options:**
+
 - Select which fields to display on barcode (product name, unit number, size, etc.)
 - Preview barcode with selected fields for single item
 
-**Print Format** 
+**Print Format**
 
 **Print Layout:**
+
 - Fixed format with 10-20 barcodes per A4 sheet
 - Dashed reference lines for cutting guidance
 - Optimized for sticky paper printing
 - Professional formatting for easy application
 
 **Output Options:**
+
 - Save as PDF for printing
 - Email PDF directly to specified address
 - WhatsApp sharing capability
 
-**Post-Generation Workflow** 
+**Post-Generation Workflow**
 
 **Physical Application:**
+
 - Print barcodes on sticky paper
 - Cut along dashed reference lines
 - Attach to individual fabric rolls/units
 
 **Digital Updates:**
+
 - Scan barcode to open stock unit information
 - Edit unit details (size, wastage, manufacturing date, notes)
 - Real-time updates to inventory system
 - Mobile-optimized scanning interface
 
 **Staff Access Controls**
+
 - Warehouse filter automatically applied to assigned warehouse
 - Cannot generate barcodes for other warehouse units
 - All generation activities logged per warehouse
 
 **Audit Information**
+
 - Unique ID (auto-generated in backend)
 - Created on (date, time, auto-generated)
 - Updated on (date, time, auto-generated)
@@ -1032,6 +1149,7 @@ Permissions are organized hierarchically with the following top-level categories
 - Deleted at (soft delete timestamp)
 
 **Business Rules**
+
 - Barcode generation limited to assigned warehouse units
 - Generated barcodes immediately marked in system
 - Templates can be saved for consistent formatting
@@ -1046,6 +1164,7 @@ Based on the specifications provided, here's how I would divide this into 2 dist
 **Feature Description**: Admin-controlled catalog creation and content management system
 
 **Admin Functions:**
+
 - **Catalog Setup & Configuration**
   - Branding setup- font, logo & color & fav icon
   - Product information configuration- which fields to show
@@ -1061,6 +1180,7 @@ Based on the specifications provided, here's how I would divide this into 2 dist
 **Feature Description**: Customer-facing product catalog with complete ordering capabilities
 
 **Customer Functions:**
+
 - **Product Browsing & Discovery**
   - Browse products without login requirement
   - Search functionality for product names/codes
@@ -1079,6 +1199,7 @@ Based on the specifications provided, here's how I would divide this into 2 dist
   - Notification to owner
 
 **Integration Features:**
+
 - Automatic sales order generation in backend
 - Public domain accessibility with shareable links
 
@@ -1092,6 +1213,7 @@ Based on the specifications provided, here's how I would divide this into 2 dist
 All entity detail pages (Sales Orders, Goods Inward, Goods Outward and others) follow a consistent architecture:
 
 **Layout Structure:**
+
 - **Container**: `max-w-3xl` width with `border-r border-border` for clean separation
 - **Header Section**: Entity number (SO-/GI-/GO-{sequence_number}) with subtitle, status badges, and progress bars where applicable
 - **Tab Navigation**: TabUnderline component with smooth animation and active state indication

@@ -1,35 +1,39 @@
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { UserRole } from '@/types/database/enums';
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { UserRole } from "@/types/database/enums";
 
 interface RoleBadgeProps {
-	role: UserRole;
-	className?: string;
+  role: UserRole;
+  className?: string;
 }
 
 interface RoleConfig {
-	color: 'blue' | 'green' | 'orange' | 'red' | 'gray';
-	variant: 'default' | 'secondary' | 'outline';
-	label: string;
+  color: "blue" | "green" | "orange" | "red" | "gray";
+  variant: "default" | "secondary" | "outline";
+  label: string;
 }
 
 function getRoleConfig(role: UserRole): RoleConfig {
-	switch (role) {
-		case 'admin':
-			return { color: 'blue', variant: 'secondary', label: 'Admin' };
-		case 'staff':
-			return { color: 'green', variant: 'secondary', label: 'Staff' };
-		default:
-			return { color: 'blue', variant: 'secondary', label: role };
-	}
+  switch (role) {
+    case "admin":
+      return { color: "blue", variant: "secondary", label: "Admin" };
+    case "staff":
+      return { color: "green", variant: "secondary", label: "Staff" };
+    default:
+      return { color: "blue", variant: "secondary", label: role };
+  }
 }
 
 export function RoleBadge({ role, className }: RoleBadgeProps) {
-	const config = getRoleConfig(role);
+  const config = getRoleConfig(role);
 
-	return (
-		<Badge color={config.color} variant={config.variant} className={cn('rounded-2xl text-nowrap', className)}>
-			{config.label}
-		</Badge>
-	);
+  return (
+    <Badge
+      color={config.color}
+      variant={config.variant}
+      className={cn("rounded-2xl text-nowrap", className)}
+    >
+      {config.label}
+    </Badge>
+  );
 }

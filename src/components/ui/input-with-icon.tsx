@@ -1,32 +1,28 @@
-import * as React from 'react';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils/cn';
+import * as React from "react";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils/cn";
 
 export interface InputWithIconProps extends React.InputHTMLAttributes<HTMLInputElement> {
-	icon?: React.ReactNode;
+  icon?: React.ReactNode;
 }
 
 const InputWithIcon = React.forwardRef<HTMLInputElement, InputWithIconProps>(
-	({ className, icon, ...props }, ref) => {
-		if (!icon) {
-			return <Input ref={ref} className={className} {...props} />;
-		}
+  ({ className, icon, ...props }, ref) => {
+    if (!icon) {
+      return <Input ref={ref} className={className} {...props} />;
+    }
 
-		return (
-			<div className={cn("relative", className)}>
-				<div className="absolute flex justify-center items-center left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500">
-					{icon}
-				</div>
-				<Input
-					ref={ref}
-					className="pl-12"
-					{...props}
-				/>
-			</div>
-		);
-	}
+    return (
+      <div className={cn("relative", className)}>
+        <div className="absolute flex justify-center items-center left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500">
+          {icon}
+        </div>
+        <Input ref={ref} className="pl-12" {...props} />
+      </div>
+    );
+  },
 );
 
-InputWithIcon.displayName = 'InputWithIcon';
+InputWithIcon.displayName = "InputWithIcon";
 
 export { InputWithIcon };

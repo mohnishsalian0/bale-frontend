@@ -8,9 +8,9 @@ import { StockType } from "@/types/database/enums";
  * @returns The correctly pluralized string with count
  */
 export function pluralizeStockType(count: number, singular: StockType): string {
-	let word = singular as string;
-	if (count !== 1) {
-		word = singular === 'batch' ? 'batches' : word + 's';
-	}
-	return `${count} ${word}`;
+  let word = singular as string;
+  if (count !== 1) {
+    word = singular === "batch" ? "batches" : word + "s";
+  }
+  return `${count} ${word}`;
 }

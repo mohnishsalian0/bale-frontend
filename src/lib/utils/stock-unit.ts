@@ -1,4 +1,4 @@
-import type { StockType } from '@/types/database/enums';
+import type { StockType } from "@/types/database/enums";
 
 /**
  * Format stock unit number with appropriate prefix based on stock type
@@ -12,13 +12,17 @@ import type { StockType } from '@/types/database/enums';
  * formatStockUnitNumber(111, null) // "SU-111"
  */
 export function formatStockUnitNumber(
-	sequenceNumber: number,
-	stockType: StockType | null | undefined
+  sequenceNumber: number,
+  stockType: StockType | null | undefined,
 ): string {
-	const prefix = stockType === 'roll' ? 'ROLL'
-		: stockType === 'batch' ? 'BATCH'
-		: stockType === 'piece' ? 'PIECE'
-		: 'SU'; // fallback to generic SU if type unknown
+  const prefix =
+    stockType === "roll"
+      ? "ROLL"
+      : stockType === "batch"
+        ? "BATCH"
+        : stockType === "piece"
+          ? "PIECE"
+          : "SU"; // fallback to generic SU if type unknown
 
-	return `${prefix}-${sequenceNumber}`;
+  return `${prefix}-${sequenceNumber}`;
 }

@@ -24,20 +24,20 @@ NEXT_PUBLIC_APP_URL=https://your-app-domain.com
 
    ```typescript
    const COMPANY_INFO = {
-     name: 'Your Company Name',
-     gst_number: '27AABCT1234A1Z5',
+     name: "Your Company Name",
+     gst_number: "27AABCT1234A1Z5",
      // ... edit all fields
    };
 
    const WAREHOUSE_INFO = {
-     name: 'Main Warehouse',
+     name: "Main Warehouse",
      // ... edit all fields
    };
 
    const ADMIN_INVITE = {
-     name: 'Admin User',
-     email: 'admin@yourcompany.com',
-     phone_number: '+91 9876543210',
+     name: "Admin User",
+     email: "admin@yourcompany.com",
+     phone_number: "+91 9876543210",
    };
    ```
 
@@ -50,6 +50,7 @@ NEXT_PUBLIC_APP_URL=https://your-app-domain.com
 3. **Copy the invite link**
 
    The script will output an invite link like:
+
    ```
    https://your-app-domain.com/invite/abc123def456...
    ```
@@ -81,13 +82,16 @@ NEXT_PUBLIC_APP_URL=https://your-app-domain.com
 ### Troubleshooting
 
 **Error: Missing environment variables**
+
 - Make sure `.env.local` exists and has the required variables
 
 **Error: Failed to create company**
+
 - Check that your Supabase service role key is correct
 - Verify the database is accessible and migrations are applied
 
 **Invite link not working**
+
 - Make sure `NEXT_PUBLIC_APP_URL` matches your deployed app URL
 - Check that the invite code matches what's in the database
 - Verify the invite hasn't expired (expires_at timestamp)

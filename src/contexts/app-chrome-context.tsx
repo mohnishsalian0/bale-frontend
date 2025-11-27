@@ -1,41 +1,41 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from "react";
 
 interface AppChromeContextType {
-	showChrome: boolean;
-	hideChrome: () => void;
-	showChromeUI: () => void;
+  showChrome: boolean;
+  hideChrome: () => void;
+  showChromeUI: () => void;
 }
 
 const AppChromeContext = createContext<AppChromeContextType | null>(null);
 
 interface AppChromeProviderProps {
-	children: ReactNode;
+  children: ReactNode;
 }
 
 export function AppChromeProvider({ children }: AppChromeProviderProps) {
-	const [showChrome, setShowChrome] = useState(true);
+  const [showChrome, setShowChrome] = useState(true);
 
-	const hideChrome = () => {
-		setShowChrome(false);
-	};
+  const hideChrome = () => {
+    setShowChrome(false);
+  };
 
-	const showChromeUI = () => {
-		setShowChrome(true);
-	};
+  const showChromeUI = () => {
+    setShowChrome(true);
+  };
 
-	return (
-		<AppChromeContext.Provider
-			value={{
-				showChrome,
-				hideChrome,
-				showChromeUI,
-			}}
-		>
-			{children}
-		</AppChromeContext.Provider>
-	);
+  return (
+    <AppChromeContext.Provider
+      value={{
+        showChrome,
+        hideChrome,
+        showChromeUI,
+      }}
+    >
+      {children}
+    </AppChromeContext.Provider>
+  );
 }
 
 /**
@@ -45,11 +45,11 @@ export function AppChromeProvider({ children }: AppChromeProviderProps) {
  * @returns Chrome visibility state and control methods
  */
 export function useAppChrome(): AppChromeContextType {
-	const context = useContext(AppChromeContext);
+  const context = useContext(AppChromeContext);
 
-	if (!context) {
-		throw new Error('useAppChrome must be used within an AppChromeProvider');
-	}
+  if (!context) {
+    throw new Error("useAppChrome must be used within an AppChromeProvider");
+  }
 
-	return context;
+  return context;
 }

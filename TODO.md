@@ -1,6 +1,7 @@
 # Development Plan
 
 ## Phase 1: Foundation & Setup
+
 - [x] Initialize Next.js 14+ with TypeScript, Tailwind CSS, App Router
 - [x] Set up folder structure (app routes, components, lib, types)
 - [x] Install dependencies (react-hook-form, zod, supabase) - shadcn/ui and barcode libs pending
@@ -9,6 +10,7 @@
 - [x] Configure Tailwind CSS with theme
 
 ## Phase 2: Database & Security
+
 - [x] Design and create database schema (companies, staff, warehouses, products, stock_units, partners, orders, job_works, outwards, inwards)
 - [x] Implement Row Level Security policies (tenant isolation, warehouse scoping, role-based permissions)
 - [x] Review and update migration schema (outward/inward types, stock status)
@@ -40,6 +42,7 @@
 - [x] Update layout.tsx to load permissions from database
 
 ## Phase 3: Authentication & Core Layout
+
 - [x] Build auth system (Google OAuth with Supabase Auth)
 - [x] Create role detection (Admin vs Staff) - session utilities created
 - [x] Create user profile from invite on first login
@@ -80,7 +83,7 @@
 - [x] Update staff page to display multiple warehouses per staff/invite
 - [x] Add getUserWarehouseIds() utility function
 - [x] Batch update all data-fetching components to use useWarehouse hook (7 files)
-- [x] Update middleware to redirect /protected/* to /warehouse
+- [x] Update middleware to redirect /protected/\* to /warehouse
 - [x] Regenerate TypeScript types with new tables
 - [x] Implement route groups architecture for separate layout hierarchies
 - [x] Create (app)/ route group with full navigation chrome (TopBar, Sidebar, BottomNav)
@@ -95,6 +98,7 @@
 - [x] **REFACTOR**: Update REQUIREMENTS.md with new routing architecture documentation
 
 ## Phase 4: Core UI Components
+
 - [x] Install and configure shadcn/ui components (button, input, label, form, select, textarea, card, dialog, table, sidebar)
 - [x] Configure shadcn with exact Figma color palette (primary, grays, background)
 - [x] Implement 3D button effect from Figma design (4px shadow, active state)
@@ -112,6 +116,7 @@
 - [ ] Create form components with validation (Zod + React Hook Form)
 
 ## Phase 5: Iteration 1 - Company/Warehouse/Staff
+
 - [ ] Company profile management
 - [ ] Warehouse CRUD (admin only)
 - [x] Staff page with 2-column grid layout showing staff cards
@@ -129,6 +134,7 @@
 - [ ] Delete staff functionality
 
 ## Phase 6: Iteration 2 - Products/Partners
+
 - [x] Inventory page UI with search, filters (material, color, tags), and product cards
 - [x] Connect inventory page to Supabase database (fetch, loading, error states)
 - [x] Add product form with typed insert (features & images, stock details, additional details)
@@ -159,6 +165,7 @@
 - [ ] Delete partner functionality
 
 ## Phase 7: Iteration 3 - Inward/Stock/Inventory
+
 - [x] Stock flow page UI with month grouping, search, filters, and transaction list
 - [x] Connect stock flow page to Supabase (fetch inwards/outwards with related data)
 - [x] Add goods inward form with automatic stock unit creation
@@ -194,6 +201,7 @@
 - [ ] Stock unit detail and edit
 
 ## Phase 8: Iteration 4 - Outward/Barcode Scanning
+
 - [x] Create AddGoodsOutwardSheet component with 2-step flow (scanner → details)
 - [x] Implement QRScannerStep with camera scanner using @yudiel/react-qr-scanner
 - [x] Add custom overlay with rounded cutout for QR scanner
@@ -219,6 +227,7 @@
 - [ ] Outward cancellation functionality
 
 ## Phase 9: Iteration 5 - Sales Orders/Job Work
+
 - [x] Sales orders page UI with month grouping, search, filters (status, products, customers)
 - [x] Connect sales orders page to Supabase (fetch orders with customer and product details)
 - [x] Display order cards with customer name, products, due date, status badges
@@ -273,6 +282,7 @@
 - [ ] Link outwards/inwards to job work
 
 ## Phase 10: Iteration 6 - Barcode Generation/Public Catalog
+
 - [x] QR codes page UI with product filter, batch list, share/download actions
 - [x] Connect QR codes page to Supabase (fetch batches with item counts)
 - [x] Add dynamic relative date formatting (today, yesterday, this week, this month, on August, 2024)
@@ -301,17 +311,20 @@
 - [ ] Catalog configuration (branding, product display settings)
 
 ## Phase 11: Mobile & PWA Optimization
+
 - [ ] Mobile-first UI refinement (touch targets, bottom nav, swipe gestures)
 - [ ] PWA configuration (manifest, service worker, icons, camera permissions)
 - [ ] Performance optimization (lazy loading, image optimization, caching)
 
 ## Phase 12: Testing
+
 - [ ] Unit tests (utils, hooks, validations)
 - [ ] Integration tests (CRUD operations, workflows)
 - [ ] User acceptance testing (admin and staff flows)
 - [ ] Device testing (mobile, barcode scanning)
 
 ## Phase 13: Deployment
+
 - [ ] Set up production Supabase project
 - [ ] Configure Hostinger hosting
 - [ ] Production build and optimization

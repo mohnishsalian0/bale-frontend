@@ -1,6 +1,7 @@
 # Fabric Inventory Management System - Development Guide
 
 ## Tech Stack
+
 - **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS
 - **Database**: Supabase (PostgreSQL + Auth + Storage)
 - **Deployment**: Hostinger
@@ -9,11 +10,13 @@
 ## Key Architecture
 
 ### Multi-Tenancy
+
 - Company = Tenant (complete isolation)
 - **Admin**: Full access to all warehouses
 - **Staff**: Limited to assigned warehouse only
 
 ### Access Hierarchy
+
 ```
 Company
 ├── Warehouses (multiple)
@@ -25,20 +28,21 @@ Company
 
 ## Permission Matrix
 
-| Feature | Admin | Staff |
-|---------|-------|-------|
-| Company/Warehouse/Staff | Full CRUD | No access |
-| Products | Full CRUD | Read only |
-| Partners | Full CRUD | Read only |
-| Stock Units | All warehouses | Assigned warehouse only |
-| Sales Orders | Full CRUD all | Read assigned warehouse only |
-| Job Work | All warehouses | Assigned warehouse (CRUD) |
-| Outward/Inward | All warehouses | Assigned warehouse (CRUD) |
-| Barcode Generation | All warehouses | Assigned warehouse only |
+| Feature                 | Admin          | Staff                        |
+| ----------------------- | -------------- | ---------------------------- |
+| Company/Warehouse/Staff | Full CRUD      | No access                    |
+| Products                | Full CRUD      | Read only                    |
+| Partners                | Full CRUD      | Read only                    |
+| Stock Units             | All warehouses | Assigned warehouse only      |
+| Sales Orders            | Full CRUD all  | Read assigned warehouse only |
+| Job Work                | All warehouses | Assigned warehouse (CRUD)    |
+| Outward/Inward          | All warehouses | Assigned warehouse (CRUD)    |
+| Barcode Generation      | All warehouses | Assigned warehouse only      |
 
 ## Common Commands
 
 ### Development
+
 ```bash
 # Install dependencies
 npm install
@@ -63,6 +67,7 @@ npx tsx scripts/create-invite.ts
 ```
 
 ### Supabase
+
 ```bash
 # Login to Supabase
 npx supabase login
@@ -81,6 +86,7 @@ npx supabase gen types typescript --local > src/types/database.ts
 ```
 
 ### Deployment
+
 ```bash
 # Build and export for static hosting
 npm run build
@@ -89,6 +95,7 @@ npm run build
 ```
 
 ## Project Structure
+
 ```
 /src
   /app                    # Next.js App Router

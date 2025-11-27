@@ -1,31 +1,34 @@
-import type { Tables } from '@/types/database/supabase';
+import type { Tables } from "@/types/database/supabase";
 
-type Partner = Tables<'partners'>;
+type Partner = Tables<"partners">;
 
 /**
  * Partial partner with only the fields needed for name formatting
  */
-type PartnerNameFields = Pick<Partner, 'first_name' | 'last_name' | 'company_name'>;
+type PartnerNameFields = Pick<
+  Partner,
+  "first_name" | "last_name" | "company_name"
+>;
 
 /**
  * Get formatted name for a partner (customer/vendor/agent)
  * Returns company name if available, otherwise first name + last name
  */
 export function getPartnerName(partner: PartnerNameFields | null): string {
-	if (!partner) return 'Unknown Partner';
-	return partner.company_name || `${partner.first_name} ${partner.last_name}`;
+  if (!partner) return "Unknown Partner";
+  return partner.company_name || `${partner.first_name} ${partner.last_name}`;
 }
 
 /**
  * Address fields interface for flexible address formatting
  */
 interface AddressFields {
-	address_line1?: string | null;
-	address_line2?: string | null;
-	city?: string | null;
-	state?: string | null;
-	country?: string | null;
-	pin_code?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  pin_code?: string | null;
 }
 
 /**
@@ -37,31 +40,33 @@ interface AddressFields {
  * - Line 4: country - pincode
  */
 export function getFormattedAddress(entity: AddressFields | null): string[] {
-	if (!entity) return [];
+  if (!entity) return [];
 
-	const lines: string[] = [];
+  const lines: string[] = [];
 
-	// Line 1: address_line1
-	if (entity.address_line1) {
-		lines.push(entity.address_line1);
-	}
+  // Line 1: address_line1
+  if (entity.address_line1) {
+    lines.push(entity.address_line1);
+  }
 
-	// Line 2: address_line2
-	if (entity.address_line2) {
-		lines.push(entity.address_line2);
-	}
+  // Line 2: address_line2
+  if (entity.address_line2) {
+    lines.push(entity.address_line2);
+  }
 
-	// Line 3: city, state (comma-separated)
-	const cityState = [entity.city, entity.state].filter(Boolean).join(', ');
-	if (cityState) {
-		lines.push(cityState);
-	}
+  // Line 3: city, state (comma-separated)
+  const cityState = [entity.city, entity.state].filter(Boolean).join(", ");
+  if (cityState) {
+    lines.push(cityState);
+  }
 
-	// Line 4: country - pincode (hyphen-separated)
-	const countryPincode = [entity.country, entity.pin_code].filter(Boolean).join(' - ');
-	if (countryPincode) {
-		lines.push(countryPincode);
-	}
+  // Line 4: country - pincode (hyphen-separated)
+  const countryPincode = [entity.country, entity.pin_code]
+    .filter(Boolean)
+    .join(" - ");
+  if (countryPincode) {
+    lines.push(countryPincode);
+  }
 
-	return lines;
+  return lines;
 }

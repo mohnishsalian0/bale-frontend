@@ -1,12 +1,12 @@
-import { getCurrentUser } from './session';
-import { UserRole } from '@/types/database/enums';
+import { getCurrentUser } from "./session";
+import { UserRole } from "@/types/database/enums";
 
 /**
  * Check if the current user has admin role
  */
 export async function isAdmin(): Promise<boolean> {
   const user = await getCurrentUser();
-  return user?.role === 'admin';
+  return user?.role === "admin";
 }
 
 /**
@@ -14,7 +14,7 @@ export async function isAdmin(): Promise<boolean> {
  */
 export async function isStaff(): Promise<boolean> {
   const user = await getCurrentUser();
-  return user?.role === 'staff';
+  return user?.role === "staff";
 }
 
 /**
@@ -47,7 +47,7 @@ export async function getWarehouseId(): Promise<string | null> {
 export async function requireAdmin() {
   const admin = await isAdmin();
   if (!admin) {
-    throw new Error('Admin access required');
+    throw new Error("Admin access required");
   }
 }
 
@@ -57,7 +57,7 @@ export async function requireAdmin() {
 export async function requireAuth() {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error('Authentication required');
+    throw new Error("Authentication required");
   }
   return user;
 }
