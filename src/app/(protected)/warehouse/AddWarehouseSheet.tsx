@@ -162,7 +162,7 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 								placeholder="Warehouse name"
 								value={formData.name}
 								onChange={(e) =>
-									setFormData({ ...formData, name: e.target.value })
+									setFormData((prev) => ({ ...prev, name: e.target.value }))
 								}
 								required
 							/>
@@ -174,7 +174,7 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 									placeholder="Contact person name"
 									value={formData.contactName}
 									onChange={(e) =>
-										setFormData({ ...formData, contactName: e.target.value })
+										setFormData((prev) => ({ ...prev, contactName: e.target.value }))
 									}
 									className="pl-12"
 								/>
@@ -188,7 +188,7 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 									placeholder="Contact person number"
 									value={formData.contactNumber}
 									onChange={(e) =>
-										setFormData({ ...formData, contactNumber: e.target.value })
+										setFormData((prev) => ({ ...prev, contactNumber: e.target.value }))
 									}
 									className="pl-12"
 								/>
@@ -214,26 +214,26 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 										placeholder="Address line 1"
 										value={formData.addressLine1}
 										onChange={(e) =>
-											setFormData({ ...formData, addressLine1: e.target.value })
+											setFormData((prev) => ({ ...prev, addressLine1: e.target.value }))
 										}
 									/>
 									<Input
 										placeholder="Address line 2"
 										value={formData.addressLine2}
 										onChange={(e) =>
-											setFormData({ ...formData, addressLine2: e.target.value })
+											setFormData((prev) => ({ ...prev, addressLine2: e.target.value }))
 										}
 									/>
 									<div className="flex gap-4">
 										<Input
 											placeholder="City"
 											value={formData.city}
-											onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+											onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))}
 										/>
 										<Input
 											placeholder="State"
 											value={formData.state}
-											onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+											onChange={(e) => setFormData((prev) => ({ ...prev, state: e.target.value }))}
 										/>
 									</div>
 									<div className="flex gap-4">
@@ -241,14 +241,14 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 											placeholder="Country"
 											value={formData.country}
 											onChange={(e) =>
-												setFormData({ ...formData, country: e.target.value })
+												setFormData((prev) => ({ ...prev, country: e.target.value }))
 											}
 										/>
 										<Input
 											placeholder="Pin code"
 											value={formData.pinCode}
 											onChange={(e) =>
-												setFormData({ ...formData, pinCode: e.target.value })
+												setFormData((prev) => ({ ...prev, pinCode: e.target.value }))
 											}
 										/>
 									</div>
@@ -269,7 +269,7 @@ export function AddWarehouseSheet({ open, onOpenChange, onWarehouseAdded, wareho
 								Cancel
 							</Button>
 							<Button type="submit" disabled={saving} className="flex-1">
-								{saving ? 'Saving...' : 'Save'}
+								{saving ? (isEditMode ? 'Updating...' : 'Saving...') : (isEditMode ? 'Update' : 'Save')}
 							</Button>
 						</div>
 					</SheetFooter>

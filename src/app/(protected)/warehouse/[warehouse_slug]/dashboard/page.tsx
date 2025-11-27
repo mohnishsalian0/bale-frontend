@@ -11,7 +11,7 @@ import { useSession } from '@/contexts/session-context';
 import { getDashboardSalesOrders, getLowStockProducts, getPendingQRProducts, getRecentPartners } from '@/lib/queries/dashboard';
 import type { DashboardSalesOrder, LowStockProduct, PendingQRProduct, RecentPartner } from '@/lib/queries/dashboard';
 import { QuickActionButton, type QuickAction } from '@/components/ui/quick-action-button';
-import { IconShirt, IconQrcode } from '@tabler/icons-react';
+import { IconShirt, IconQrcode, IconScan } from '@tabler/icons-react';
 import IconGoodsInward from '@/components/icons/IconGoodsInward';
 import IconGoodsOutward from '@/components/icons/IconGoodsOutward';
 import { Fab } from '@/components/ui/fab';
@@ -238,7 +238,7 @@ export default function DashboardPage() {
 
 			{/* FAB */}
 			<Fab
-				icon={IconQrcode}
+				icon={IconScan}
 				onClick={() => setShowScannerModal(true)}
 				className="fixed bottom-20 right-4"
 			/>

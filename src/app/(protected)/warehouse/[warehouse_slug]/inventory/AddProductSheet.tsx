@@ -13,9 +13,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group-pills';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import MultipleSelector, { type Option } from '@/components/ui/multiple-selector';
-import { validateImageFile, uploadProductImage, MAX_PRODUCT_IMAGES } from '@/lib/storage';
+import { validateImageFile, uploadProductImage, MAX_PRODUCT_IMAGES, deleteProductImagesByUrls } from '@/lib/storage';
 import { createClient } from '@/lib/supabase/client';
-import { getProductAttributeLists } from '@/lib/queries/products';
+import { getProductAttributeLists, type ProductWithAttributes } from '@/lib/queries/products';
 import type { TablesInsert } from '@/types/database/supabase';
 import type { StockType, MeasuringUnit } from '@/types/database/enums';
 import { useSession } from '@/contexts/session-context';
@@ -24,6 +24,7 @@ interface AddProductSheetProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onProductAdded?: () => void;
+	productToEdit?: ProductWithAttributes;
 }
 
 interface ProductFormData {
@@ -46,7 +47,7 @@ interface ProductFormData {
 	images: File[];
 }
 
-export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProductSheetProps) {
+export function AddProductSheet({ open, onOpenChange, onProductAdded, productToEdit }: AddProductSheetProps) {
 	const { user } = useSession();
 	const [formData, setFormData] = useState<ProductFormData>({
 		name: '',
@@ -73,6 +74,8 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 	const [showFeaturesImages, setShowFeaturesImages] = useState(false);
 	const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 	const [saving, setSaving] = useState(false);
+	const [existingImages, setExistingImages] = useState<string[]>([]);
+	const [originalImages, setOriginalImages] = useState<string[]>([]); // Track original images to detect removals
 
 	// Attribute options for MultipleSelector
 	const [materialOptions, setMaterialOptions] = useState<Option[]>([]);
@@ -90,26 +93,57 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 		fetchAttributes();
 	}, []);
 
+	// Populate form data when editing
+	useEffect(() => {
+		if (productToEdit && open) {
+			setFormData({
+				name: productToEdit.name,
+				productNumber: '', // Not used in edit mode
+				showOnCatalog: productToEdit.show_on_catalog ?? true,
+				materials: productToEdit.materials.map(m => ({ value: m.id, label: m.name })),
+				colors: productToEdit.colors.map(c => ({ value: c.id, label: c.name })),
+				gsm: productToEdit.gsm?.toString() || '',
+				threadCount: productToEdit.thread_count_cm?.toString() || '',
+				tags: productToEdit.tags.map(t => ({ value: t.id, label: t.name })),
+				stockType: productToEdit.stock_type as StockType,
+				measuringUnit: (productToEdit.measuring_unit as MeasuringUnit) || '',
+				costPrice: productToEdit.cost_price_per_unit?.toString() || '',
+				sellingPrice: productToEdit.selling_price_per_unit?.toString() || '',
+				minStockAlert: productToEdit.min_stock_alert ?? false,
+				minStockThreshold: productToEdit.min_stock_threshold?.toString() || '',
+				hsnCode: productToEdit.hsn_code || '',
+				notes: productToEdit.notes || '',
+				images: [],
+			});
+			// Set existing images
+			const images = productToEdit.product_images || [];
+			setExistingImages(images);
+			setOriginalImages(images); // Track original images for deletion
+			setImagePreviews(images);
+		}
+	}, [productToEdit, open]);
+
 	// Simple handlers - new items are identified by value === label
 	// They will be inserted to DB on form submit
 	const handleMaterialsChange = (options: Option[]) => {
-		setFormData({ ...formData, materials: options });
+		setFormData(prev => ({ ...prev, materials: options }));
 	};
 
 	const handleColorsChange = (options: Option[]) => {
-		setFormData({ ...formData, colors: options });
+		setFormData(prev => ({ ...prev, colors: options }));
 	};
 
 	const handleTagsChange = (options: Option[]) => {
-		setFormData({ ...formData, tags: options });
+		setFormData(prev => ({ ...prev, tags: options }));
 	};
 
 	const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const files = Array.from(e.target.files || []);
 		if (!files.length) return;
 
-		// Check if adding these files would exceed the limit
-		if (formData.images.length + files.length > MAX_PRODUCT_IMAGES) {
+		// Check if adding these files would exceed the limit (existing + new uploads + incoming files)
+		const totalImages = existingImages.length + formData.images.length + files.length;
+		if (totalImages > MAX_PRODUCT_IMAGES) {
 			setImageError(`Maximum ${MAX_PRODUCT_IMAGES} images allowed`);
 			return;
 		}
@@ -127,27 +161,50 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 
 		// Add files to form data
 		const newImages = [...formData.images, ...files];
-		setFormData({ ...formData, images: newImages });
+		setFormData(prev => ({ ...prev, images: newImages }));
 
-		// Create previews
-		const newPreviews = [...imagePreviews];
-		files.forEach((file) => {
-			const reader = new FileReader();
-			reader.onloadend = () => {
-				newPreviews.push(reader.result as string);
-				setImagePreviews([...newPreviews]);
-			};
-			reader.readAsDataURL(file);
-		});
+		// Create previews using object URLs
+		const newPreviews = files.map(file => URL.createObjectURL(file));
+		setImagePreviews(prev => [...prev, ...newPreviews]);
 	};
 
 	const handleRemoveImage = (index: number) => {
-		const newImages = formData.images.filter((_, i) => i !== index);
+		// Revoke blob URL if it exists
+		const urlToRemove = imagePreviews[index];
+		if (urlToRemove && urlToRemove.startsWith('blob:')) {
+			URL.revokeObjectURL(urlToRemove);
+		}
+
+		// Check if this is an existing image or a new upload
+		const isExistingImage = index < existingImages.length;
+
+		if (isExistingImage) {
+			// Remove from existing images
+			const newExistingImages = existingImages.filter((_, i) => i !== index);
+			setExistingImages(newExistingImages);
+		} else {
+			// Remove from new uploads
+			const adjustedIndex = index - existingImages.length;
+			const newImages = formData.images.filter((_, i) => i !== adjustedIndex);
+			setFormData(prev => ({ ...prev, images: newImages }));
+		}
+
+		// Update previews
 		const newPreviews = imagePreviews.filter((_, i) => i !== index);
-		setFormData({ ...formData, images: newImages });
 		setImagePreviews(newPreviews);
 		setImageError(null);
 	};
+
+	// Cleanup blob URLs on unmount
+	useEffect(() => {
+		return () => {
+			imagePreviews.forEach(url => {
+				if (url.startsWith('blob:')) {
+					URL.revokeObjectURL(url);
+				}
+			});
+		};
+	}, [imagePreviews]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -186,30 +243,53 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 				resolveOptions(formData.tags, 'product_tags'),
 			]);
 
-			// Prepare typed insert data
-			const productInsert: Omit<TablesInsert<'products'>, 'created_by' | 'modified_by' | 'sequence_number'> = {
+			// Prepare product data
+			const productData: Omit<TablesInsert<'products'>, 'created_by' | 'modified_by' | 'sequence_number'> = {
 				name: formData.name,
 				show_on_catalog: formData.showOnCatalog,
-				gsm: formData.gsm ? parseFloat(formData.gsm) : null,
-				thread_count_cm: formData.threadCount ? parseFloat(formData.threadCount) : null,
+				gsm: formData.gsm ? parseInt(formData.gsm) : null,
+				thread_count_cm: formData.threadCount ? parseInt(formData.threadCount) : null,
 				stock_type: formData.stockType as StockType,
 				measuring_unit: formData.measuringUnit || null,
 				cost_price_per_unit: formData.costPrice ? parseFloat(formData.costPrice) : null,
 				selling_price_per_unit: formData.sellingPrice ? parseFloat(formData.sellingPrice) : null,
 				min_stock_alert: formData.minStockAlert,
-				min_stock_threshold: formData.minStockThreshold ? parseFloat(formData.minStockThreshold) : null,
+				min_stock_threshold: formData.minStockThreshold ? parseInt(formData.minStockThreshold) : null,
 				hsn_code: formData.hsnCode || null,
 				notes: formData.notes || null,
 			};
 
-			// Insert product record
-			const { data: product, error: insertError } = await supabase
-				.from('products')
-				.insert(productInsert)
-				.select()
-				.single();
+			let product;
 
-			if (insertError) throw insertError;
+			if (productToEdit) {
+				// UPDATE existing product
+				const { data: updatedProduct, error: updateError } = await supabase
+					.from('products')
+					.update(productData)
+					.eq('id', productToEdit.id)
+					.select()
+					.single();
+
+				if (updateError) throw updateError;
+				product = updatedProduct;
+
+				// Delete old junction table entries
+				await Promise.all([
+					supabase.from('product_material_assignments').delete().eq('product_id', productToEdit.id),
+					supabase.from('product_color_assignments').delete().eq('product_id', productToEdit.id),
+					supabase.from('product_tag_assignments').delete().eq('product_id', productToEdit.id),
+				]);
+			} else {
+				// INSERT new product
+				const { data: newProduct, error: insertError } = await supabase
+					.from('products')
+					.insert(productData)
+					.select()
+					.single();
+
+				if (insertError) throw insertError;
+				product = newProduct;
+			}
 
 			// Insert material assignments
 			if (materialIds.length > 0 && product) {
@@ -247,26 +327,37 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 				if (tagError) console.error('Error inserting tags:', tagError);
 			}
 
-			// Upload images if provided
-			if (formData.images.length > 0 && product) {
+			// Handle images: merge existing images with new uploads
+			if (product) {
 				try {
-					const imageUrls: string[] = [];
+					// If editing, delete removed images from storage
+					if (productToEdit) {
+						const removedImages = originalImages.filter(url => !existingImages.includes(url));
+						if (removedImages.length > 0) {
+							await deleteProductImagesByUrls(removedImages);
+						}
+					}
 
+					const imageUrls: string[] = [...existingImages]; // Start with existing images
+
+					// Upload new images
 					for (let i = 0; i < formData.images.length; i++) {
 						const result = await uploadProductImage(
 							user.company_id,
 							product.id,
 							formData.images[i],
-							i
+							existingImages.length + i // Offset by existing images count
 						);
 						imageUrls.push(result.publicUrl);
 					}
 
-					// Update product with image URLs
-					await supabase
-						.from('products')
-						.update({ product_images: imageUrls })
-						.eq('id', product.id);
+					// Update product with merged image URLs (only if there are changes)
+					if (formData.images.length > 0 || existingImages.length !== (productToEdit?.product_images?.length || 0)) {
+						await supabase
+							.from('products')
+							.update({ product_images: imageUrls })
+							.eq('id', product.id);
+					}
 				} catch (uploadError) {
 					console.error('Image upload failed:', uploadError);
 					// Don't fail the whole operation if image upload fails
@@ -274,7 +365,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 			}
 
 			// Success! Close sheet and notify parent
-			toast.success('Product created successfully');
+			toast.success(productToEdit ? 'Product updated successfully' : 'Product created successfully');
 			handleCancel();
 			if (onProductAdded) {
 				onProductAdded();
@@ -311,6 +402,8 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 		});
 		setImagePreviews([]);
 		setImageError(null);
+		setExistingImages([]);
+		setOriginalImages([]);
 		onOpenChange(false);
 	};
 
@@ -319,7 +412,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 			<SheetContent>
 				{/* Header */}
 				<SheetHeader>
-					<SheetTitle>Create product</SheetTitle>
+					<SheetTitle>{productToEdit ? 'Edit product' : 'Create product'}</SheetTitle>
 				</SheetHeader>
 
 				{/* Form Content - Scrollable */}
@@ -332,7 +425,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 								placeholder="Product name"
 								value={formData.name}
 								onChange={(e) =>
-									setFormData({ ...formData, name: e.target.value })
+									setFormData(prev => ({ ...prev, name: e.target.value }))
 								}
 								required
 							/>
@@ -351,9 +444,10 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 											measuringUnit = 'unit';
 										}
 
-										setFormData({ ...formData, stockType, measuringUnit });
+										setFormData(prev => ({ ...prev, stockType, measuringUnit }));
 									}}
 									name="stock-type"
+									disabled={!!productToEdit}
 								>
 									<RadioGroupItem value="roll">Roll</RadioGroupItem>
 									<RadioGroupItem value="batch">Batch</RadioGroupItem>
@@ -368,9 +462,10 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 									<RadioGroup
 										value={formData.measuringUnit}
 										onValueChange={(value) =>
-											setFormData({ ...formData, measuringUnit: value as MeasuringUnit })
+											setFormData(prev => ({ ...prev, measuringUnit: value as MeasuringUnit }))
 										}
 										name="measuring-unit"
+										disabled={!!productToEdit}
 									>
 										<RadioGroupItem value="metre">Metre</RadioGroupItem>
 										<RadioGroupItem value="kilogram">Kilogram</RadioGroupItem>
@@ -386,7 +481,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 									placeholder="Purchase price"
 									value={formData.costPrice}
 									onChange={(e) =>
-										setFormData({ ...formData, costPrice: e.target.value })
+										setFormData(prev => ({ ...prev, costPrice: e.target.value }))
 									}
 									className="flex-1"
 									step="0.01"
@@ -396,7 +491,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 									placeholder="Sale price"
 									value={formData.sellingPrice}
 									onChange={(e) =>
-										setFormData({ ...formData, sellingPrice: e.target.value })
+										setFormData(prev => ({ ...prev, sellingPrice: e.target.value }))
 									}
 									className="flex-1"
 									step="0.01"
@@ -409,7 +504,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 								<Switch
 									checked={formData.minStockAlert}
 									onCheckedChange={(checked) =>
-										setFormData({ ...formData, minStockAlert: checked })
+										setFormData(prev => ({ ...prev, minStockAlert: checked }))
 									}
 								/>
 							</div>
@@ -421,9 +516,10 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 									placeholder="Minimum stock threshold"
 									value={formData.minStockThreshold}
 									onChange={(e) =>
-										setFormData({ ...formData, minStockThreshold: e.target.value })
+										setFormData(prev => ({ ...prev, minStockThreshold: e.target.value }))
 									}
-									step="0.01"
+									step="1"
+									min="0"
 								/>
 							)}
 						</div>
@@ -478,18 +574,23 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 											placeholder="GSM"
 											value={formData.gsm}
 											onChange={(e) =>
-												setFormData({ ...formData, gsm: e.target.value })
+												setFormData(prev => ({ ...prev, gsm: e.target.value }))
 											}
 											className="flex-1"
+											step="1"
+											min="50"
+											max="500"
 										/>
 										<Input
 											type="number"
 											placeholder="Thread count"
 											value={formData.threadCount}
 											onChange={(e) =>
-												setFormData({ ...formData, threadCount: e.target.value })
+												setFormData(prev => ({ ...prev, threadCount: e.target.value }))
 											}
 											className="flex-1"
+											step="1"
+											min="1"
 										/>
 									</div>
 
@@ -538,7 +639,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 										)}
 
 										{/* Add Images Button */}
-										{formData.images.length < MAX_PRODUCT_IMAGES && (
+										{(existingImages.length + formData.images.length) < MAX_PRODUCT_IMAGES && (
 											<label
 												htmlFor="product-images"
 												className="flex flex-col items-center justify-center gap-2 h-32 rounded-lg border-2 border-dashed border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors"
@@ -592,7 +693,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 										<Switch
 											checked={formData.showOnCatalog}
 											onCheckedChange={(checked) =>
-												setFormData({ ...formData, showOnCatalog: checked })
+												setFormData(prev => ({ ...prev, showOnCatalog: checked }))
 											}
 											className='mt-2'
 										/>
@@ -603,7 +704,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 										placeholder="HSN code"
 										value={formData.hsnCode}
 										onChange={(e) =>
-											setFormData({ ...formData, hsnCode: e.target.value })
+											setFormData(prev => ({ ...prev, hsnCode: e.target.value }))
 										}
 									/>
 
@@ -611,7 +712,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 									<Textarea
 										placeholder="Enter a note..."
 										value={formData.notes}
-										onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+										onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
 										className="min-h-32"
 									/>
 								</div>
@@ -639,7 +740,7 @@ export function AddProductSheet({ open, onOpenChange, onProductAdded }: AddProdu
 								}
 								className="flex-1"
 							>
-								{saving ? 'Saving...' : 'Save'}
+								{saving ? (productToEdit ? 'Updating...' : 'Saving...') : (productToEdit ? 'Update' : 'Save')}
 							</Button>
 						</div>
 					</SheetFooter>

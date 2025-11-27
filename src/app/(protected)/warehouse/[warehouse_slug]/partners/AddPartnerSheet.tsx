@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { IconUser, IconPhone, IconChevronDown, IconBuildingFactory2, IconBuilding, IconId } from '@tabler/icons-react';
 import { toast } from 'sonner';
@@ -13,15 +13,18 @@ import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/com
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { validateImageFile, uploadPartnerImage } from '@/lib/storage';
 import { createClient } from '@/lib/supabase/client';
-import type { TablesInsert } from '@/types/database/supabase';
+import type { TablesInsert, Tables } from '@/types/database/supabase';
 import type { PartnerType } from '@/types/database/enums';
 import { useSession } from '@/contexts/session-context';
+
+type Partner = Tables<'partners'>;
 
 interface AddPartnerSheetProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onPartnerAdded?: () => void;
 	partnerType?: PartnerType;
+	partnerToEdit?: Partner;
 }
 
 interface PartnerFormData {
@@ -43,7 +46,7 @@ interface PartnerFormData {
 	image: File | null;
 }
 
-export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerType }: AddPartnerSheetProps) {
+export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerType, partnerToEdit }: AddPartnerSheetProps) {
 	const { user } = useSession();
 	const [formData, setFormData] = useState<PartnerFormData>({
 		partnerType: partnerType || 'customer',
@@ -71,6 +74,36 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 	const [showTaxDetails, setShowTaxDetails] = useState(false);
 	const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 	const [saving, setSaving] = useState(false);
+	const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+
+	// Populate form data when editing
+	useEffect(() => {
+		if (partnerToEdit && open) {
+			setFormData({
+				partnerType: partnerToEdit.partner_type as PartnerType,
+				firstName: partnerToEdit.first_name,
+				lastName: partnerToEdit.last_name,
+				phoneNumber: partnerToEdit.phone_number,
+				businessType: '',
+				companyName: partnerToEdit.company_name || '',
+				addressLine1: partnerToEdit.address_line1 || '',
+				addressLine2: partnerToEdit.address_line2 || '',
+				city: partnerToEdit.city || '',
+				state: partnerToEdit.state || '',
+				country: partnerToEdit.country || 'India',
+				pinCode: partnerToEdit.pin_code || '',
+				gstNumber: partnerToEdit.gst_number || '',
+				panNumber: partnerToEdit.pan_number || '',
+				notes: partnerToEdit.notes || '',
+				image: null,
+			});
+			// Set existing image
+			if (partnerToEdit.image_url) {
+				setExistingImageUrl(partnerToEdit.image_url);
+				setImagePreview(partnerToEdit.image_url);
+			}
+		}
+	}, [partnerToEdit, open]);
 
 	const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
@@ -83,15 +116,32 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 		}
 
 		setImageError(null);
-		setFormData({ ...formData, image: file });
+		setFormData((prev) => ({ ...prev, image: file }));
 
-		// Create preview
-		const reader = new FileReader();
-		reader.onloadend = () => {
-			setImagePreview(reader.result as string);
-		};
-		reader.readAsDataURL(file);
+		// Create preview using object URL
+		const url = URL.createObjectURL(file);
+		setImagePreview(url);
 	};
+
+	const handleRemoveImage = () => {
+		// Revoke blob URL if it exists
+		if (imagePreview && imagePreview.startsWith('blob:')) {
+			URL.revokeObjectURL(imagePreview);
+		}
+		setImagePreview(null);
+		setFormData((prev) => ({ ...prev, image: null }));
+		setExistingImageUrl(null);
+		setImageError(null);
+	};
+
+	// Cleanup blob URLs on unmount or when preview changes
+	useEffect(() => {
+		return () => {
+			if (imagePreview && imagePreview.startsWith('blob:')) {
+				URL.revokeObjectURL(imagePreview);
+			}
+		};
+	}, [imagePreview]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -100,26 +150,8 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 		try {
 			const supabase = createClient();
 
-			// Upload image first (if provided)
-			let imageUrl: string | null = null;
-			if (formData.image) {
-				try {
-					// Generate a temporary ID for the upload path
-					const tempPartnerId = crypto.randomUUID();
-					const { publicUrl } = await uploadPartnerImage(
-						user.company_id,
-						tempPartnerId,
-						formData.image
-					);
-					imageUrl = publicUrl;
-				} catch (uploadError) {
-					console.error('Image upload failed:', uploadError);
-					throw new Error('Failed to upload image. Please try again.');
-				}
-			}
-
-			// Prepare typed insert data with image URL
-			const partnerInsert: Omit<TablesInsert<'partners'>, 'created_by' | 'modified_by'> = {
+			// Prepare partner data (without new image URL initially)
+			const partnerData: Omit<TablesInsert<'partners'>, 'created_by' | 'modified_by'> = {
 				partner_type: formData.partnerType,
 				first_name: formData.firstName,
 				last_name: formData.lastName,
@@ -135,20 +167,60 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 				gst_number: formData.gstNumber || null,
 				pan_number: formData.panNumber || null,
 				notes: formData.notes || null,
-				image_url: imageUrl,
+				image_url: existingImageUrl, // Keep existing image URL for now
 			};
 
-			// Insert partner record
-			const { data: _partner, error: insertError } = await supabase
-				.from('partners')
-				.insert(partnerInsert)
-				.select()
-				.single();
+			let partnerId: string;
 
-			if (insertError) throw insertError;
+			if (partnerToEdit) {
+				// UPDATE existing partner
+				const { error: updateError } = await supabase
+					.from('partners')
+					.update(partnerData)
+					.eq('id', partnerToEdit.id);
+
+				if (updateError) throw updateError;
+				partnerId = partnerToEdit.id;
+			} else {
+				// INSERT new partner
+				const { data: newPartner, error: insertError } = await supabase
+					.from('partners')
+					.insert(partnerData)
+					.select()
+					.single();
+
+				if (insertError) throw insertError;
+				if (!newPartner) throw new Error('Failed to create partner');
+				partnerId = newPartner.id;
+			}
+
+			// Handle image upload if new image provided
+			if (formData.image) {
+				try {
+					const { publicUrl } = await uploadPartnerImage(
+						user.company_id,
+						partnerId,
+						formData.image
+					);
+
+					// Update partner with new image URL
+					const { error: imageUpdateError } = await supabase
+						.from('partners')
+						.update({ image_url: publicUrl })
+						.eq('id', partnerId);
+
+					if (imageUpdateError) {
+						console.error('Failed to update partner with image URL:', imageUpdateError);
+						// Don't throw - partner is created, just image update failed
+					}
+				} catch (uploadError) {
+					console.error('Image upload failed:', uploadError);
+					// Don't throw - partner is created, just image upload failed
+				}
+			}
 
 			// Success! Close sheet and notify parent
-			toast.success('Partner created successfully');
+			toast.success(partnerToEdit ? 'Partner updated successfully' : 'Partner created successfully');
 			handleCancel();
 			if (onPartnerAdded) {
 				onPartnerAdded();
@@ -184,6 +256,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 		});
 		setImagePreview(null);
 		setImageError(null);
+		setExistingImageUrl(null);
 		onOpenChange(false);
 	};
 
@@ -192,7 +265,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 			<SheetContent>
 				{/* Header */}
 				<SheetHeader>
-					<SheetTitle>Add partner</SheetTitle>
+					<SheetTitle>{partnerToEdit ? 'Edit partner' : 'Add partner'}</SheetTitle>
 				</SheetHeader>
 
 				{/* Form Content - Scrollable */}
@@ -201,7 +274,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 						{/* Image Upload & Basic Info */}
 						<div className="flex flex-col gap-5 px-4 py-5">
 							{/* Image Upload */}
-							<div className="flex justify-center">
+							<div className="flex flex-col items-center gap-3">
 								<label
 									htmlFor="partner-image"
 									className="relative flex flex-col items-center justify-center size-40 rounded-full border-shadow-gray bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors"
@@ -227,6 +300,16 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 										className="sr-only"
 									/>
 								</label>
+								{imagePreview && (
+									<Button
+										type="button"
+										variant="destructive"
+										size="sm"
+										onClick={handleRemoveImage}
+									>
+										Remove image
+									</Button>
+								)}
 							</div>
 							{imageError && (
 								<p className="text-sm text-red-600 text-center">{imageError}</p>
@@ -238,10 +321,11 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 								<RadioGroup
 									value={formData.partnerType}
 									onValueChange={(value) =>
-										setFormData({ ...formData, partnerType: value as PartnerType })
+										setFormData((prev) => ({ ...prev, partnerType: value as PartnerType }))
 									}
 									name="partner-type"
 									className="overflow-x-auto"
+									disabled={!!partnerToEdit}
 								>
 									<RadioGroupItem value="customer">Customer</RadioGroupItem>
 									<RadioGroupItem value="supplier">Supplier</RadioGroupItem>
@@ -256,14 +340,14 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 									placeholder="First name"
 									value={formData.firstName}
 									onChange={(e) =>
-										setFormData({ ...formData, firstName: e.target.value })
+										setFormData((prev) => ({ ...prev, firstName: e.target.value }))
 									}
 									required
 								/>
 								<Input
 									placeholder="Last name"
 									value={formData.lastName}
-									onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+									onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
 									required
 								/>
 							</div>
@@ -276,7 +360,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 									placeholder="Phone number"
 									value={formData.phoneNumber}
 									onChange={(e) =>
-										setFormData({ ...formData, phoneNumber: e.target.value })
+										setFormData((prev) => ({ ...prev, phoneNumber: e.target.value }))
 									}
 									className="pl-12"
 								/>
@@ -304,7 +388,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 											placeholder="Business type"
 											value={formData.businessType}
 											onChange={(e) =>
-												setFormData({ ...formData, businessType: e.target.value })
+												setFormData((prev) => ({ ...prev, businessType: e.target.value }))
 											}
 											className="pl-12"
 										/>
@@ -315,7 +399,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 											placeholder="Company name"
 											value={formData.companyName}
 											onChange={(e) =>
-												setFormData({ ...formData, companyName: e.target.value })
+												setFormData((prev) => ({ ...prev, companyName: e.target.value }))
 											}
 											className="pl-12"
 										/>
@@ -343,26 +427,26 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 										placeholder="Address line 1"
 										value={formData.addressLine1}
 										onChange={(e) =>
-											setFormData({ ...formData, addressLine1: e.target.value })
+											setFormData((prev) => ({ ...prev, addressLine1: e.target.value }))
 										}
 									/>
 									<Input
 										placeholder="Address line 2"
 										value={formData.addressLine2}
 										onChange={(e) =>
-											setFormData({ ...formData, addressLine2: e.target.value })
+											setFormData((prev) => ({ ...prev, addressLine2: e.target.value }))
 										}
 									/>
 									<div className="flex gap-4">
 										<Input
 											placeholder="City"
 											value={formData.city}
-											onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+											onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))}
 										/>
 										<Input
 											placeholder="State"
 											value={formData.state}
-											onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+											onChange={(e) => setFormData((prev) => ({ ...prev, state: e.target.value }))}
 										/>
 									</div>
 									<div className="flex gap-4">
@@ -370,14 +454,14 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 											placeholder="Country"
 											value={formData.country}
 											onChange={(e) =>
-												setFormData({ ...formData, country: e.target.value })
+												setFormData((prev) => ({ ...prev, country: e.target.value }))
 											}
 										/>
 										<Input
 											placeholder="Pin code"
 											value={formData.pinCode}
 											onChange={(e) =>
-												setFormData({ ...formData, pinCode: e.target.value })
+												setFormData((prev) => ({ ...prev, pinCode: e.target.value }))
 											}
 										/>
 									</div>
@@ -406,7 +490,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 											placeholder="GST number"
 											value={formData.gstNumber}
 											onChange={(e) =>
-												setFormData({ ...formData, gstNumber: e.target.value })
+												setFormData((prev) => ({ ...prev, gstNumber: e.target.value }))
 											}
 											className="pl-12"
 										/>
@@ -417,7 +501,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 											placeholder="PAN number"
 											value={formData.panNumber}
 											onChange={(e) =>
-												setFormData({ ...formData, panNumber: e.target.value })
+												setFormData((prev) => ({ ...prev, panNumber: e.target.value }))
 											}
 											className="pl-12"
 										/>
@@ -443,7 +527,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 								<Textarea
 									placeholder="Enter a note..."
 									value={formData.notes}
-									onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+									onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
 									className="min-h-32"
 								/>
 							</CollapsibleContent>
@@ -462,7 +546,7 @@ export function AddPartnerSheet({ open, onOpenChange, onPartnerAdded, partnerTyp
 								Cancel
 							</Button>
 							<Button type="submit" disabled={saving} className="flex-1">
-								{saving ? 'Saving...' : 'Save'}
+								{saving ? (partnerToEdit ? 'Updating...' : 'Saving...') : (partnerToEdit ? 'Update' : 'Save')}
 							</Button>
 						</div>
 					</SheetFooter>

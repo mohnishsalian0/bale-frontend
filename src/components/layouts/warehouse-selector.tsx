@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client';
 import { AddWarehouseSheet } from '@/app/(protected)/warehouse/AddWarehouseSheet';
 import { useSession } from '@/contexts/session-context';
 import type { Tables } from '@/types/database/supabase';
+import { getWarehouseFormattedAddress } from '@/lib/utils/warehouse';
 
 type Warehouse = Tables<'warehouses'>;
 
@@ -174,15 +175,8 @@ export default function WarehouseSelector({
 								<div className="flex flex-col gap-3 pb-24 overflow-y-auto">
 									{warehouses.map((warehouse) => {
 										const isSelected = warehouse.id === currentWarehouse;
+										const formattedAddress = getWarehouseFormattedAddress(warehouse);
 
-										// Build address string
-										const addressParts = [
-											warehouse.address_line1,
-											warehouse.address_line2,
-											warehouse.city && warehouse.state ? `${warehouse.city}, ${warehouse.state}` : warehouse.city || warehouse.state,
-											warehouse.pin_code,
-										].filter(Boolean);
-										const addressString = addressParts.join(', ') || 'No address';
 
 										return (
 											<div
@@ -206,8 +200,8 @@ export default function WarehouseSelector({
 													<div className="text-base font-medium text-gray-900 truncate" title={warehouse.name}>
 														{warehouse.name}
 													</div>
-													<div className="text-sm text-gray-500 truncate" title={addressString}>
-														{addressString}
+													<div className="text-sm text-gray-500 line-clamp-2" title={formattedAddress}>
+														{formattedAddress}
 													</div>
 
 													{/* Action buttons - Only show for admins */}

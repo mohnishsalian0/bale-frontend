@@ -314,3 +314,56 @@ export async function getProductImageUrls(
 		})
 		.map((file) => getPublicUrl(STORAGE_BUCKETS.PRODUCT_IMAGES, `${folderPath}/${file.name}`));
 }
+
+/**
+ * Extract storage path from public URL
+ * Example: https://...storage.../product-images/{companyId}/{productId}/0.jpg
+ * Returns: {companyId}/{productId}/0.jpg
+ */
+export function extractStoragePathFromUrl(url: string, bucket: string): string | null {
+	try {
+		const urlObj = new URL(url);
+		const pathParts = urlObj.pathname.split('/');
+		const bucketIndex = pathParts.indexOf(bucket);
+
+		if (bucketIndex === -1) {
+			return null;
+		}
+
+		// Get everything after the bucket name
+		const path = pathParts.slice(bucketIndex + 1).join('/');
+		return path;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Delete product images by their URLs
+ */
+export async function deleteProductImagesByUrls(urls: string[]): Promise<void> {
+	if (urls.length === 0) return;
+
+	const supabase = createClient();
+	const paths: string[] = [];
+
+	// Extract paths from URLs
+	for (const url of urls) {
+		const path = extractStoragePathFromUrl(url, STORAGE_BUCKETS.PRODUCT_IMAGES);
+		if (path) {
+			paths.push(path);
+		}
+	}
+
+	if (paths.length === 0) return;
+
+	// Delete files from storage
+	const { error } = await supabase.storage
+		.from(STORAGE_BUCKETS.PRODUCT_IMAGES)
+		.remove(paths);
+
+	if (error) {
+		console.error('Error deleting product images:', error);
+		// Don't throw - we don't want to fail the operation if image deletion fails
+	}
+}

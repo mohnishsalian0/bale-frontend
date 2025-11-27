@@ -341,11 +341,12 @@ export default function ProductDetailPage({ params }: PageParams) {
 				</div>
 
 				{/* Edit Product Sheet */}
-				{showEditProduct && (
+				{showEditProduct && product && (
 					<AddProductSheet
 						open={showEditProduct}
 						onOpenChange={setShowEditProduct}
 						onProductAdded={fetchProduct}
+						productToEdit={product}
 					/>
 				)}
 			</div>

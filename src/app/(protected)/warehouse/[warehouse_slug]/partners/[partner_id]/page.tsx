@@ -432,11 +432,12 @@ export default function PartnerDetailPage({ params }: PageParams) {
 				</div>
 
 				{/* Edit Partner Sheet */}
-				{showEditPartner && (
+				{showEditPartner && partner && (
 					<AddPartnerSheet
 						open={showEditPartner}
 						onOpenChange={setShowEditPartner}
 						onPartnerAdded={fetchPartner}
+						partnerToEdit={partner}
 					/>
 				)}
 			</div>
