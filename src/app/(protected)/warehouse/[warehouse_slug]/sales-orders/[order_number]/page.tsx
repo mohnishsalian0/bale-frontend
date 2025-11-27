@@ -328,7 +328,6 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
               onOpenChange={setShowCustomerEdit}
               orderId={order.id}
               currentCustomerId={order.customer_id}
-              companyId={order.company_id}
               onSuccess={fetchOrder}
             />
 
@@ -337,7 +336,6 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
               onOpenChange={setShowAgentEdit}
               orderId={order.id}
               currentAgentId={order.agent_id}
-              companyId={order.company_id}
               onSuccess={fetchOrder}
             />
 
@@ -357,7 +355,6 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
               onOpenChange={setShowWarehouseEdit}
               orderId={order.id}
               currentWarehouseId={order.warehouse_id || ""}
-              companyId={order.company_id}
               hasOutward={order.has_outward || false}
               onSuccess={fetchOrder}
             />

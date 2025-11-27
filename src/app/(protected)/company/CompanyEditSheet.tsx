@@ -28,7 +28,6 @@ interface CompanyEditSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   company: Company;
-  onSuccess: () => void;
 }
 
 interface CompanyFormData {
@@ -52,7 +51,6 @@ export function CompanyEditSheet({
   open,
   onOpenChange,
   company,
-  onSuccess,
 }: CompanyEditSheetProps) {
   const [formData, setFormData] = useState<CompanyFormData>({
     name: "",
@@ -162,7 +160,6 @@ export function CompanyEditSheet({
 
       toast.success("Company updated successfully");
       handleCancel();
-      onSuccess();
     } catch (error) {
       console.error("Error updating company:", error);
       const errorMessage =

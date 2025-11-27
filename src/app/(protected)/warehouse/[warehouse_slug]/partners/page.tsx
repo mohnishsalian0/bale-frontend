@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -18,7 +18,7 @@ import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { AddPartnerSheet } from "./AddPartnerSheet";
-import { createClient } from "@/lib/supabase/client";
+import { usePartners } from "@/lib/query/hooks/partners";
 import { useSession } from "@/contexts/session-context";
 import { getInitials } from "@/lib/utils/initials";
 import type { Tables } from "@/types/database/supabase";
@@ -59,66 +59,42 @@ function getActionLabel(type: PartnerType): string {
 
 export default function PartnersPage() {
   const router = useRouter();
-  const { warehouse } = useSession();
+  const { warehouse, user } = useSession();
   const [selectedType, setSelectedType] = useState<PartnerType | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [partners, setPartners] = useState<Partner[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showAddPartner, setShowAddPartner] = useState(false);
 
-  const supabase = createClient();
+  // Fetch all partners using TanStack Query
+  const { data: allPartners = [], isLoading: loading, isError: error, refetch } = usePartners();
 
-  const fetchPartners = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  // Transform and filter partners
+  const partners: Partner[] = useMemo(() => {
+    let filtered = allPartners;
 
-      let query = supabase.from("partners").select("*");
-
-      if (selectedType !== "all") {
-        query = query.eq("partner_type", selectedType);
-      }
-
-      const { data, error: fetchError } = await query.order("first_name", {
-        ascending: true,
-      });
-
-      if (fetchError) throw fetchError;
-
-      // Transform data to match Partner interface
-      const transformedPartners: Partner[] = (data || []).map(
-        (p: PartnerRow) => ({
-          id: p.id,
-          name: getPartnerName(p),
-          type: p.partner_type as PartnerType,
-          address: getFormattedAddress(p).join(", "),
-          phone: p.phone_number || undefined,
-          // TODO: Fetch transaction amounts from orders/inwards
-          amount: undefined,
-          transactionType: undefined,
-        }),
-      );
-
-      setPartners(transformedPartners);
-    } catch (err) {
-      console.error("Error fetching partners:", err);
-      setError(err instanceof Error ? err.message : "Failed to load partners");
-    } finally {
-      setLoading(false);
+    // Filter by type
+    if (selectedType !== "all") {
+      filtered = filtered.filter((p) => p.partner_type === selectedType);
     }
-  };
 
-  useEffect(() => {
-    fetchPartners();
-  }, [selectedType]);
+    // Transform data to match Partner interface
+    return filtered.map((p: PartnerRow) => ({
+      id: p.id,
+      name: getPartnerName(p),
+      type: p.partner_type as PartnerType,
+      address: getFormattedAddress(p).join(", "),
+      phone: p.phone_number || undefined,
+      // TODO: Fetch transaction amounts from orders/inwards
+      amount: undefined,
+      transactionType: undefined,
+    }));
+  }, [allPartners, selectedType]);
 
-  const filteredPartners = partners.filter((partner) => {
-    const matchesSearch = partner.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+  // Filter partners by search query
+  const filteredPartners = useMemo(() => {
+    return partners.filter((partner) =>
+      partner.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [partners, searchQuery]);
 
   // Loading state
   if (loading) {
@@ -130,8 +106,8 @@ export default function PartnersPage() {
     return (
       <ErrorState
         title="Failed to load partners"
-        message={error}
-        onRetry={() => window.location.reload()}
+        message="Unable to fetch partners"
+        onRetry={() => refetch()}
       />
     );
   }
@@ -306,7 +282,6 @@ export default function PartnersPage() {
         <AddPartnerSheet
           open={showAddPartner}
           onOpenChange={setShowAddPartner}
-          onPartnerAdded={fetchPartners}
         />
       )}
     </div>

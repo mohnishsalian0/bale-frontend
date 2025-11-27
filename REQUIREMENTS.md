@@ -8,6 +8,7 @@
 - **Database**: Supabase (PostgreSQL with Row Level Security)
 - **Authentication**: Supabase Auth (JWT-based)
 - **File Storage**: Supabase Storage
+- **Data Fetching**: TanStack Query (React Query) for caching and state management
 - **Deployment**: Hostinger
 - **Backend**: Direct Supabase client integration (no custom backend for MVP)
 

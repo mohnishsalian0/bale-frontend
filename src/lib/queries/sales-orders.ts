@@ -20,11 +20,11 @@ export interface SalesOrderWithDetails extends SalesOrder {
  * Fetch all sales orders for a warehouse
  */
 export async function getSalesOrders(
-  warehouseId: string,
+  warehouseId: string | null,
 ): Promise<SalesOrderWithDetails[]> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("sales_orders")
     .select(
       `
@@ -44,9 +44,15 @@ export async function getSalesOrders(
 			)
 		`,
     )
-    .or(`warehouse_id.eq.${warehouseId},warehouse_id.is.null`)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
+
+  // Filter by warehouse if provided
+  if (warehouseId) {
+    query = query.or(`warehouse_id.eq.${warehouseId},warehouse_id.is.null`);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   if (!data) throw new Error("No data returned");

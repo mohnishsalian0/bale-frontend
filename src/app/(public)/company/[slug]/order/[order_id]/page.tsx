@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   IconCheck,
@@ -12,12 +12,9 @@ import {
   IconNote,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { getCompanyBySlug } from "@/lib/queries/catalog";
-import { getSalesOrderBySequenceNumber } from "@/lib/queries/catalog-orders";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { OrderConfirmationPDF } from "@/components/pdf/OrderConfirmationPDF";
 import { pdf } from "@react-pdf/renderer";
-import type { Tables } from "@/types/database/supabase";
 import { toast } from "sonner";
 import { Section } from "@/components/layouts/section";
 import ImageWrapper from "@/components/ui/image-wrapper";
@@ -27,9 +24,7 @@ import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getFormattedAddress, getPartnerName } from "@/lib/utils/partner";
 import { DisplayStatus, getOrderDisplayStatus } from "@/lib/utils/sales-order";
 import { CatalogOrderStatusBadge } from "@/components/ui/catalog-order-status-badge";
-
-type Company = Tables<"companies">;
-type SalesOrder = Tables<"sales_orders">;
+import { useCatalogCompany, useCatalogOrder } from "@/lib/query/hooks/catalog";
 
 export default function OrderConfirmationPage() {
   const params = useParams();
@@ -37,39 +32,28 @@ export default function OrderConfirmationPage() {
   const slug = params.slug as string;
   const orderId = params.order_id as string;
 
-  const [company, setCompany] = useState<Company | null>(null);
-  const [order, setOrder] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const companyData = await getCompanyBySlug(slug);
-        if (!companyData) {
-          router.push("/");
-          return;
-        }
-        setCompany(companyData);
+  // Fetch data using TanStack Query
+  const { data: company, isLoading: companyLoading } = useCatalogCompany(slug);
+  const { data: order, isLoading: orderLoading } = useCatalogOrder(
+    company?.id || "",
+    orderId,
+  );
 
-        const orderData: SalesOrder | null =
-          await getSalesOrderBySequenceNumber(companyData.id, orderId);
-        if (!orderData) {
-          toast.error("Order not found");
-          router.push(`/company/${slug}/store/products`);
-          return;
-        }
-        setOrder(orderData);
-      } catch (error) {
-        console.error("Error fetching order:", error);
-        toast.error("Failed to load order details");
-      } finally {
-        setLoading(false);
-      }
-    }
+  const loading = companyLoading || orderLoading;
 
-    fetchData();
-  }, []);
+  // Handle redirects
+  if (!companyLoading && !company) {
+    router.push("/");
+    return null;
+  }
+
+  if (!orderLoading && company && !order) {
+    toast.error("Order not found");
+    router.push(`/company/${slug}/store/products`);
+    return null;
+  }
 
   const handleDownloadPDF = async () => {
     if (!company || !order) return;
@@ -178,7 +162,7 @@ export default function OrderConfirmationPage() {
         {/* Customer Information */}
         <Section
           title="Contact Details"
-          subtitle={getPartnerName(order.customer)}
+          subtitle={order.customer ? getPartnerName(order.customer) : "-"}
           icon={IconUser}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -203,7 +187,7 @@ export default function OrderConfirmationPage() {
             <div>
               <p className="text-gray-500">GSTIN</p>
               <p className="text-gray-700 font-medium">
-                {order.customer.gst_number || "-"}
+                {order.customer?.gst_number || "-"}
               </p>
             </div>
           </div>
@@ -216,9 +200,10 @@ export default function OrderConfirmationPage() {
           icon={IconMapPin}
         >
           <div className="text-sm text-gray-700">
-            {getFormattedAddress(order.customer).map((addrLine, index) => (
-              <p key={index}>{addrLine}</p>
-            ))}
+            {order.customer &&
+              getFormattedAddress(order.customer).map((addrLine, index) => (
+                <p key={index}>{addrLine}</p>
+              ))}
           </div>
         </Section>
 

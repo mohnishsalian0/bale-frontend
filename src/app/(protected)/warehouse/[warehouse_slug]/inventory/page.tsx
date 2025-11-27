@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { IconSearch, IconAlertTriangle } from "@tabler/icons-react";
@@ -18,16 +18,13 @@ import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { AddProductSheet } from "./AddProductSheet";
-import { createClient } from "@/lib/supabase/client";
+import { useProductsWithInventory, useProductAttributes } from "@/lib/query/hooks/products";
 import { useSession } from "@/contexts/session-context";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import { Button } from "@/components/ui/button";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import {
-  PRODUCT_WITH_ATTRIBUTES_SELECT,
-  transformProductWithAttributes,
-  getProductAttributeLists,
   type ProductWithAttributes,
   type ProductMaterial,
   type ProductColor,
@@ -42,74 +39,33 @@ interface Product extends ProductWithAttributes {
 
 export default function InventoryPage() {
   const router = useRouter();
-  const { warehouse } = useSession();
+  const { warehouse, user } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
-  const [products, setProducts] = useState<Product[]>([]);
-  const [materials, setMaterials] = useState<ProductMaterial[]>([]);
-  const [colors, setColors] = useState<ProductColor[]>([]);
-  const [tags, setTags] = useState<ProductTag[]>([]);
   const [materialFilter, setMaterialFilter] = useState<string>("all");
   const [colorFilter, setColorFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
 
-  const supabase = createClient();
+  // Fetch products with inventory using TanStack Query
+  const { data: productsData = [], isLoading: productsLoading, isError: productsError, refetch: refetchProducts } = useProductsWithInventory(warehouse.id);
+  const { data: attributeLists, isLoading: attributesLoading, isError: attributesError } = useProductAttributes();
 
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const loading = productsLoading || attributesLoading;
+  const error = productsError || attributesError;
 
-      // Fetch products with attributes and attribute lists in parallel
-      const [productsResult, attributeLists] = await Promise.all([
-        supabase
-          .from("products")
-          .select(
-            `
-						${PRODUCT_WITH_ATTRIBUTES_SELECT},
-						inventory_agg:product_inventory_aggregates!product_id(
-							in_stock_quantity
-						)
-					`,
-          )
-          .eq("product_inventory_aggregates.warehouse_id", warehouse.id)
-          .is("deleted_at", null)
-          .order("name", { ascending: true }),
-        getProductAttributeLists(),
-      ]);
+  const materials = attributeLists?.materials || [];
+  const colors = attributeLists?.colors || [];
+  const tags = attributeLists?.tags || [];
 
-      if (productsResult.error) throw productsResult.error;
-
-      // Transform data to match Product interface
-      const transformedProducts: Product[] = (productsResult.data || []).map(
-        (p: any) => {
-          const productWithAttrs = transformProductWithAttributes(p);
-          return {
-            ...productWithAttrs,
-            productNumber: p.sequence_number?.toString() || "",
-            totalQuantity: p.inventory_agg?.[0]?.in_stock_quantity || 0,
-            imageUrl: p.product_images?.[0] || undefined,
-          };
-        },
-      );
-
-      setProducts(transformedProducts);
-      setMaterials(attributeLists.materials);
-      setColors(attributeLists.colors);
-      setTags(attributeLists.tags);
-    } catch (err) {
-      console.error("Error fetching products:", err);
-      setError(err instanceof Error ? err.message : "Failed to load products");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  // Transform products data
+  const products: Product[] = useMemo(() => {
+    return (productsData as any[]).map((p: any) => ({
+      ...p,
+      productNumber: `PROD-${p.sequence_number}`,
+      totalQuantity: p.inventory_agg?.[0]?.in_stock_quantity || 0,
+      imageUrl: p.product_images?.[0],
+    }));
+  }, [productsData]);
 
   const filteredProducts = products.filter((product) => {
     // Search filter
@@ -152,8 +108,10 @@ export default function InventoryPage() {
     return (
       <ErrorState
         title="Failed to load inventory"
-        message={error}
-        onRetry={() => window.location.reload()}
+        message="Unable to fetch inventory"
+        onRetry={() => {
+          refetchProducts();
+        }}
       />
     );
   }
@@ -323,7 +281,6 @@ export default function InventoryPage() {
         <AddProductSheet
           open={showAddProduct}
           onOpenChange={setShowAddProduct}
-          onProductAdded={fetchProducts}
         />
       )}
     </div>

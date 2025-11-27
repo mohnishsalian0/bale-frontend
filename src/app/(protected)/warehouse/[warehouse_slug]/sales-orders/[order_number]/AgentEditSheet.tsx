@@ -26,6 +26,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { useAgents } from "@/lib/query/hooks/partners";
 import type { Tables } from "@/types/database/supabase";
 
 type Partner = Tables<"partners">;
@@ -35,7 +36,6 @@ interface AgentEditSheetProps {
   onOpenChange: (open: boolean) => void;
   orderId: string;
   currentAgentId: string | null;
-  companyId: string;
   onSuccess: () => void;
 }
 
@@ -44,46 +44,22 @@ export function AgentEditSheet({
   onOpenChange,
   orderId,
   currentAgentId,
-  companyId,
   onSuccess,
 }: AgentEditSheetProps) {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(
     currentAgentId,
   );
-  const [agents, setAgents] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(false);
-  const [fetchingAgents, setFetchingAgents] = useState(false);
   const isMobile = useIsMobile();
+
+  // Fetch agents using TanStack Query
+  const { data: agents = [], isLoading: fetchingAgents } = useAgents();
 
   useEffect(() => {
     if (open) {
       setSelectedAgentId(currentAgentId);
-      fetchAgents();
     }
   }, [open, currentAgentId]);
-
-  const fetchAgents = async () => {
-    try {
-      setFetchingAgents(true);
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from("partners")
-        .select("*")
-        .eq("company_id", companyId)
-        .eq("partner_type", "agent")
-        .order("first_name", { ascending: true });
-
-      if (error) throw error;
-
-      setAgents(data || []);
-    } catch (error) {
-      console.error("Error fetching agents:", error);
-      toast.error("Failed to load agents");
-    } finally {
-      setFetchingAgents(false);
-    }
-  };
 
   const handleCancel = () => {
     onOpenChange(false);

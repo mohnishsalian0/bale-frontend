@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Fragment } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { IconChevronDown } from "@tabler/icons-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useSession } from "@/contexts/session-context";
+import { useStockUnitsByProduct } from "@/lib/query/hooks/stock-units";
 
 interface StockUnit extends Tables<"stock_units"> {
   product?: Tables<"products">;
@@ -36,88 +37,61 @@ export function QRStockUnitSelectionStep({
   onSelectionChange,
 }: QRStockUnitSelectionStepProps) {
   const { warehouse } = useSession();
-  const [loading, setLoading] = useState(true);
-  const [goodsInwards, setGoodsInwards] = useState<GoodsInward[]>([]);
-  const [expandedInwards, setExpandedInwards] = useState<Set<string>>(
-    new Set(),
-  );
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchStockUnits();
-  }, [productId]);
+  // Fetch stock units using TanStack Query
+  const { data: stockUnitsData = [], isLoading: loading } = useStockUnitsByProduct(warehouse.id, productId);
 
-  const fetchStockUnits = async () => {
-    setLoading(true);
-    try {
-      // Fetch all stock units for this product, grouped by goods inward
-      const { data: stockUnits, error } = await supabase
-        .from("stock_units")
-        .select(
-          `
-					*,
-					product:products(*)
-				`,
-        )
-        .eq("product_id", productId)
-        .eq("warehouse_id", warehouse.id)
-        .eq("status", "in_stock")
-        .order("created_at", { ascending: false });
+  // Group stock units by goods inward
+  const goodsInwards: GoodsInward[] = useMemo(() => {
+    // Group stock units by goods inward
+    const inwardMap = new Map<string | null, StockUnit[]>();
+    (stockUnitsData as any[]).forEach((unit) => {
+      const inwardId = unit.created_from_inward_id;
+      if (!inwardMap.has(inwardId)) {
+        inwardMap.set(inwardId, []);
+      }
+      inwardMap.get(inwardId)!.push(unit);
+    });
 
-      if (error) throw error;
+    // Get unique inward data from stock units
+    const inwardDataMap = new Map<string, any>();
+    (stockUnitsData as any[]).forEach((unit) => {
+      if (unit.created_from_inward_id && unit.goods_inward) {
+        inwardDataMap.set(unit.created_from_inward_id, unit.goods_inward);
+      }
+    });
 
-      // Group stock units by goods inward
-      const inwardMap = new Map<string | null, StockUnit[]>();
-      (stockUnits || []).forEach((unit) => {
-        const inwardId = unit.created_from_inward_id;
-        if (!inwardMap.has(inwardId)) {
-          inwardMap.set(inwardId, []);
-        }
-        inwardMap.get(inwardId)!.push(unit);
-      });
-
-      // Fetch goods inward details
-      const inwardIds = Array.from(inwardMap.keys()).filter(
-        (id) => id !== null,
-      ) as string[];
-      const { data: inwardsData, error: inwardsError } = await supabase
-        .from("goods_inwards")
-        .select("*")
-        .eq("warehouse_id", warehouse.id)
-        .in("id", inwardIds);
-
-      if (inwardsError) throw inwardsError;
-
-      // Combine goods inwards with their stock units
-      const groupedInwards: GoodsInward[] = (inwardsData || []).map(
-        (inward) => ({
-          ...inward,
-          stock_units: inwardMap.get(inward.id) || [],
-        }),
-      );
-
-      // Handle units without goods inward (if any)
-      const orphanedUnits = inwardMap.get(null) || [];
-      if (orphanedUnits.length > 0) {
+    // Combine goods inwards with their stock units
+    const groupedInwards: GoodsInward[] = [];
+    Array.from(inwardMap.keys()).forEach((inwardId) => {
+      if (inwardId === null) return; // Handle orphans separately
+      const inwardData = inwardDataMap.get(inwardId);
+      if (inwardData) {
         groupedInwards.push({
-          id: "orphaned",
-          sequence_number: 0,
-          stock_units: orphanedUnits,
-        } as any);
+          ...inwardData,
+          stock_units: inwardMap.get(inwardId) || [],
+        });
       }
+    });
 
-      setGoodsInwards(groupedInwards);
-
-      // Auto-expand first inward
-      if (groupedInwards.length > 0) {
-        setExpandedInwards(new Set([groupedInwards[0].id]));
-      }
-    } catch (err) {
-      console.error("Error fetching stock units:", err);
-    } finally {
-      setLoading(false);
+    // Handle units without goods inward (if any)
+    const orphanedUnits = inwardMap.get(null) || [];
+    if (orphanedUnits.length > 0) {
+      groupedInwards.push({
+        id: "orphaned",
+        sequence_number: 0,
+        stock_units: orphanedUnits,
+      } as any);
     }
-  };
+
+    return groupedInwards;
+  }, [stockUnitsData]);
+
+  // Auto-expand first inward
+  const [expandedInwards, setExpandedInwards] = useState<Set<string>>(() =>
+    goodsInwards.length > 0 ? new Set([goodsInwards[0].id]) : new Set()
+  );
 
   const toggleInward = (inwardId: string) => {
     setExpandedInwards((prev) => {

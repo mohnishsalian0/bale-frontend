@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import { useParams, useRouter, notFound } from "next/navigation";
 import {
   IconShoppingCart,
   IconArrowRight,
   IconSearch,
-  IconTrash,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,24 +18,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCart } from "@/contexts/cart-context";
-import { getCompanyBySlug, getPublicProducts } from "@/lib/queries/catalog";
 import { ProductCard } from "./ProductCard";
 import { ProductQuantitySheet } from "../ProductQuantitySheet";
 import { LoadingState } from "@/components/layouts/loading-state";
 import type { PublicProduct } from "@/lib/queries/catalog";
-import type { Tables } from "@/types/database/supabase";
-
-type Company = Tables<"companies">;
+import {
+  useCatalogCompany,
+  usePublicProducts,
+} from "@/lib/query/hooks/catalog";
 
 export default function StorePage() {
   const params = useParams();
   const router = useRouter();
-  const { totalItems, items: cartItems, addItem, removeItem } = useCart();
+  const { items: cartItems, addItem, removeItem } = useCart();
   const slug = params.slug as string;
 
-  const [company, setCompany] = useState<Company | null>(null);
-  const [products, setProducts] = useState<PublicProduct[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Fetch data using TanStack Query
+  const { data: company, isLoading: companyLoading } = useCatalogCompany(slug);
+  const { data: products = [], isLoading: productsLoading } = usePublicProducts(
+    company?.id || "",
+  );
+
+  const loading = companyLoading || productsLoading;
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,29 +51,6 @@ export default function StorePage() {
   const [selectedProduct, setSelectedProduct] = useState<PublicProduct | null>(
     null,
   );
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-        const companyData = await getCompanyBySlug(slug);
-
-        if (!companyData) {
-          notFound();
-        }
-
-        setCompany(companyData);
-        const productsData = await getPublicProducts(companyData.id);
-        setProducts(productsData);
-      } catch (error) {
-        console.error("Error fetching store data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [slug]);
 
   // Extract filter options from products
   const { materials, colors } = useMemo(() => {

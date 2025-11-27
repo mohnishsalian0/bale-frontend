@@ -107,7 +107,6 @@ export async function getProductByIdWithAttributes(
  * Get a single product by sequence number with attributes
  */
 export async function getProductBySequenceNumberWithAttributes(
-  companyId: string,
   sequenceNumber: number,
 ): Promise<ProductWithAttributes | null> {
   const supabase = createClient();
@@ -115,7 +114,6 @@ export async function getProductBySequenceNumberWithAttributes(
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_WITH_ATTRIBUTES_SELECT)
-    .eq("company_id", companyId)
     .eq("sequence_number", sequenceNumber)
     .is("deleted_at", null)
     .single();

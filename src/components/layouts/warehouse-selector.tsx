@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
@@ -11,9 +11,10 @@ import {
 import { Fab } from "../ui/fab";
 import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
-import { createClient } from "@/lib/supabase/client";
 import { AddWarehouseSheet } from "@/app/(protected)/warehouse/AddWarehouseSheet";
 import { useSession } from "@/contexts/session-context";
+import { useWarehouses } from "@/lib/query/hooks/warehouses";
+import { useUserMutations } from "@/lib/query/hooks/users";
 import type { Tables } from "@/types/database/supabase";
 import { getWarehouseFormattedAddress } from "@/lib/utils/warehouse";
 
@@ -31,41 +32,19 @@ export default function WarehouseSelector({
   onOpenChange,
 }: WarehouseSelectorProps) {
   const { user } = useSession();
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(
     null,
   );
   const pathname = usePathname();
 
-  const supabase = createClient();
   const isAdmin = user.role === "admin";
 
-  useEffect(() => {
-    if (open) {
-      fetchWarehouses();
-    }
-  }, [open]);
+  // Fetch warehouses using TanStack Query
+  const { data: warehouses = [], isLoading: loading } = useWarehouses();
 
-  const fetchWarehouses = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch warehouses - RLS automatically filters based on user's warehouse access
-      const { data, error } = await supabase
-        .from("warehouses")
-        .select("*")
-        .order("created_at");
-
-      if (error) throw error;
-      setWarehouses(data || []);
-    } catch (error) {
-      console.error("Error fetching warehouses:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // User mutations hook
+  const { updateWarehouse: updateUserWarehouse } = useUserMutations(user?.auth_user_id || "");
 
   const handleSelect = async (warehouseId: string) => {
     try {
@@ -82,16 +61,11 @@ export default function WarehouseSelector({
         return;
       }
 
-      // Update user's selected warehouse
-      const { error } = await supabase
-        .from("users")
-        .update({ warehouse_id: warehouseId })
-        .eq("id", user.id);
-
-      if (error) {
-        console.error("Error updating warehouse:", error);
-        return;
-      }
+      // Update user's selected warehouse using mutation
+      await updateUserWarehouse.mutateAsync({
+        userId: user.id,
+        warehouseId: warehouseId,
+      });
 
       // Determine redirect path - preserve current page if within warehouse context
       let redirectPath = `/warehouse/${selectedWarehouse.slug}/dashboard`;
@@ -135,11 +109,6 @@ export default function WarehouseSelector({
     const message = `📍 Warehouse Location\n\n${addressParts.join("\n")}`;
     const encodedMessage = encodeURIComponent(message);
     window.open(`https://wa.me/?text=${encodedMessage}`, "_blank");
-  };
-
-  const handleWarehouseAdded = () => {
-    fetchWarehouses();
-    setEditingWarehouse(null);
   };
 
   const handleFabClick = () => {
@@ -271,7 +240,6 @@ export default function WarehouseSelector({
         <AddWarehouseSheet
           open={isCreateSheetOpen}
           onOpenChange={handleSheetClose}
-          onWarehouseAdded={handleWarehouseAdded}
           warehouse={editingWarehouse}
         />
       )}

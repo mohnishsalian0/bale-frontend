@@ -8,6 +8,7 @@
 - [x] Configure Supabase client and environment
 - [x] Create design system theme from Figma
 - [x] Configure Tailwind CSS with theme
+- [x] Migrate to TanStack Query for data fetching (centralized query keys, custom hooks, cache management)
 
 ## Phase 2: Database & Security
 

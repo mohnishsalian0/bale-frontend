@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { IconSearch } from "@tabler/icons-react";
@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/select";
 import { TabPills } from "@/components/ui/tab-pills";
 import { Fab } from "@/components/ui/fab";
-import { createClient } from "@/lib/supabase/client";
 import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
 import {
   DropdownMenuContent,
@@ -30,8 +29,9 @@ import {
   aggregateQuantitiesByUnit,
   formatQuantitiesByUnit,
 } from "@/lib/utils/measuring-units";
-import { getPartners } from "@/lib/queries/partners";
 import { getPartnerName } from "@/lib/utils/partner";
+import { useGoodsInwards, useGoodsOutwards } from "@/lib/query/hooks/stock-flow";
+import { usePartners } from "@/lib/query/hooks/partners";
 
 interface StockFlowItem {
   id: string;
@@ -56,239 +56,178 @@ interface MonthGroup {
 
 export default function StockFlowPage() {
   const router = useRouter();
-  const { warehouse } = useSession();
+  const { warehouse, user } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<
     "all" | "outward" | "inward"
   >("all");
   const [selectedPartner, setSelectedPartner] = useState("all");
-  const [monthGroups, setMonthGroups] = useState<MonthGroup[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [totalReceived, setTotalReceived] = useState<Map<string, number>>(
-    new Map(),
-  );
-  const [totalOutwarded, setTotalOutwarded] = useState<Map<string, number>>(
-    new Map(),
-  );
-  const [availablePartners, setAvailablePartners] = useState<
-    Array<{ id: string; name: string }>
-  >([]);
 
-  const fetchStockFlow = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  // Fetch data using TanStack Query
+  const { data: inwards = [], isLoading: inwardsLoading, isError: inwardsError, refetch: refetchInwards } = useGoodsInwards(warehouse.id);
+  const { data: outwards = [], isLoading: outwardsLoading, isError: outwardsError, refetch: refetchOutwards } = useGoodsOutwards(warehouse.id);
+  const { data: partners = [], isLoading: partnersLoading } = usePartners();
 
-      const supabase = createClient();
+  const loading = inwardsLoading || outwardsLoading || partnersLoading;
+  const error = inwardsError || outwardsError;
 
-      // Fetch partners and stock flow data in parallel
-      const [partners, inwardsResult, outwardsResult] = await Promise.all([
-        getPartners(),
-        supabase
-          .from("goods_inwards")
-          .select(
-            `
-						*,
-						partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, company_name),
-						stock_units(
-							product:products(id, name, measuring_unit),
-							initial_quantity
-						)
-					`,
-          )
-          .eq("warehouse_id", warehouse.id)
-          .order("inward_date", { ascending: false }),
-        supabase
-          .from("goods_outwards")
-          .select(
-            `
-						*,
-						partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name),
-						goods_outward_items(
-							quantity_dispatched,
-							stock_unit:stock_units(
-								product:products(id, name, measuring_unit)
-							)
-						)
-					`,
-          )
-          .eq("warehouse_id", warehouse.id)
-          .order("outward_date", { ascending: false }),
-      ]);
+  // Transform partners for filter dropdown
+  const availablePartners = useMemo(() => {
+    return partners.map((partner) => ({
+      id: partner.id,
+      name: getPartnerName(partner),
+    }));
+  }, [partners]);
 
-      const { data: inwards, error: inwardError } = inwardsResult;
-      const { data: outwards, error: outwardError } = outwardsResult;
+  // Transform and group data
+  const { monthGroups, totalReceived, totalOutwarded } = useMemo(() => {
+    // Transform inwards
+    const inwardItems: StockFlowItem[] = (inwards as any[]).map((r) => {
+      const partnerName = r.partner
+        ? r.partner.company_name ||
+          `${r.partner.first_name} ${r.partner.last_name}`
+        : "Unknown Partner";
 
-      if (inwardError) throw inwardError;
-      if (outwardError) throw outwardError;
+      const stockUnits = r.stock_units || [];
+      const firstProduct = stockUnits[0]?.product;
 
-      // Set available partners for filter
-      setAvailablePartners(
-        partners.map((partner) => ({
-          id: partner.id,
-          name: getPartnerName(partner),
-        })),
+      // Get unique products
+      const uniqueProducts = new Set(
+        stockUnits.map((unit: any) => unit.product?.id).filter(Boolean),
       );
+      const productCount = uniqueProducts.size;
+      const productName =
+        productCount > 1
+          ? `${firstProduct?.name || "Unknown Product"}, ${productCount - 1} more`
+          : firstProduct?.name || "Unknown Product";
 
-      // Transform inwards
-      const inwardItems: StockFlowItem[] = (inwards || []).map((r) => {
-        const partnerName = r.partner
-          ? r.partner.company_name ||
-            `${r.partner.first_name} ${r.partner.last_name}`
-          : "Unknown Partner";
+      const totalQty = stockUnits.reduce(
+        (sum: number, unit: any) =>
+          sum + (Number(unit.initial_quantity) || 0),
+        0,
+      );
+      const unit = firstProduct?.measuring_unit || "m";
 
-        const stockUnits = r.stock_units || [];
-        const firstProduct = stockUnits[0]?.product;
+      return {
+        id: r.id,
+        type: "inward" as const,
+        productName,
+        partnerId: r.partner_id,
+        partnerName,
+        date: r.inward_date,
+        quantity: totalQty,
+        unit,
+        billNumber: `GI-${r.sequence_number}`,
+        sequence_number: r.sequence_number,
+      };
+    });
 
-        // Get unique products
-        const uniqueProducts = new Set(
-          stockUnits.map((unit: any) => unit.product?.id).filter(Boolean),
-        );
-        const productCount = uniqueProducts.size;
-        const productName =
-          productCount > 1
-            ? `${firstProduct?.name || "Unknown Product"}, ${productCount - 1} more`
-            : firstProduct?.name || "Unknown Product";
+    // Transform outwards
+    const outwardItems: StockFlowItem[] = (outwards as any[]).map((d) => {
+      const partnerName = d.partner
+        ? d.partner.company_name ||
+          `${d.partner.first_name} ${d.partner.last_name}`
+        : "Unknown Partner";
 
-        const totalQty = stockUnits.reduce(
-          (sum: number, unit: any) =>
-            sum + (Number(unit.initial_quantity) || 0),
-          0,
-        );
-        const unit = firstProduct?.measuring_unit || "m";
+      const items = d.goods_outward_items || [];
+      const firstProduct = items[0]?.stock_unit?.product;
 
-        return {
-          id: r.id,
-          type: "inward",
-          productName,
-          partnerId: r.partner_id,
-          partnerName,
-          date: r.inward_date,
-          quantity: totalQty,
-          unit,
-          billNumber: `GI-${r.sequence_number}`,
-          sequence_number: r.sequence_number,
+      // Get unique products
+      const uniqueProducts = new Set(
+        items
+          .map((item: any) => item.stock_unit?.product?.id)
+          .filter(Boolean),
+      );
+      const productCount = uniqueProducts.size;
+      const productName =
+        productCount > 1
+          ? `${firstProduct?.name || "Unknown Product"}, ${productCount - 1} more`
+          : firstProduct?.name || "Unknown Product";
+
+      const totalQty = items.reduce(
+        (sum: number, item: any) =>
+          sum + (Number(item.quantity_dispatched) || 0),
+        0,
+      );
+      const unit = firstProduct?.measuring_unit || "m";
+
+      return {
+        id: d.id,
+        type: "outward" as const,
+        productName,
+        partnerId: d.partner_id,
+        partnerName,
+        date: d.outward_date,
+        quantity: totalQty,
+        unit,
+        billNumber: `GO-${d.sequence_number}`,
+        sequence_number: d.sequence_number,
+      };
+    });
+
+    // Combine and sort by date
+    const allItems = [...outwardItems, ...inwardItems].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+
+    // Group by month
+    const groups: { [key: string]: MonthGroup } = {};
+
+    allItems.forEach((item) => {
+      const date = new Date(item.date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const monthName = date.toLocaleString("en-US", { month: "long" });
+      const year = date.getFullYear();
+
+      if (!groups[monthKey]) {
+        groups[monthKey] = {
+          month: monthName,
+          monthYear: `${monthName} ${year}`,
+          inCount: new Map<string, number>(),
+          outCount: new Map<string, number>(),
+          items: [],
         };
-      });
+      }
 
-      // Transform outwards
-      const outwardItems: StockFlowItem[] = (outwards || []).map((d) => {
-        const partnerName = d.partner
-          ? d.partner.company_name ||
-            `${d.partner.first_name} ${d.partner.last_name}`
-          : "Unknown Partner";
+      groups[monthKey].items.push(item);
 
-        const items = d.goods_outward_items || [];
-        const firstProduct = items[0]?.stock_unit?.product;
+      if (item.type === "inward") {
+        const currentIn = groups[monthKey].inCount.get(item.unit) || 0;
+        groups[monthKey].inCount.set(item.unit, currentIn + item.quantity);
+      } else {
+        const currentOut = groups[monthKey].outCount.get(item.unit) || 0;
+        groups[monthKey].outCount.set(item.unit, currentOut + item.quantity);
+      }
+    });
 
-        // Get unique products
-        const uniqueProducts = new Set(
-          items
-            .map((item: any) => item.stock_unit?.product?.id)
-            .filter(Boolean),
-        );
-        const productCount = uniqueProducts.size;
-        const productName =
-          productCount > 1
-            ? `${firstProduct?.name || "Unknown Product"}, ${productCount - 1} more`
-            : firstProduct?.name || "Unknown Product";
+    const sortedGroups = Object.values(groups).sort((a, b) => {
+      const [yearA, monthA] = a.monthYear.split(" ");
+      const [yearB, monthB] = b.monthYear.split(" ");
+      const dateA = new Date(`${monthA} 1, ${yearA}`);
+      const dateB = new Date(`${monthB} 1, ${yearB}`);
+      return dateB.getTime() - dateA.getTime();
+    });
 
-        const totalQty = items.reduce(
-          (sum: number, item: any) =>
-            sum + (Number(item.quantity_dispatched) || 0),
-          0,
-        );
-        const unit = firstProduct?.measuring_unit || "m";
+    // Calculate totals for past month, aggregated by unit
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-        return {
-          id: d.id,
-          type: "outward",
-          productName,
-          partnerId: d.partner_id,
-          partnerName,
-          date: d.outward_date,
-          quantity: totalQty,
-          unit,
-          billNumber: `GO-${d.sequence_number}`,
-          sequence_number: d.sequence_number,
-        };
-      });
+    const recentInwardItems = inwardItems.filter(
+      (item) => new Date(item.date) >= oneMonthAgo,
+    );
+    const recentOutwardItems = outwardItems.filter(
+      (item) => new Date(item.date) >= oneMonthAgo,
+    );
 
-      // Combine and sort by date
-      const allItems = [...outwardItems, ...inwardItems].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      );
+    const inwardByUnit = aggregateQuantitiesByUnit(recentInwardItems);
+    const outwardByUnit = aggregateQuantitiesByUnit(recentOutwardItems);
 
-      // Group by month
-      const groups: { [key: string]: MonthGroup } = {};
-
-      allItems.forEach((item) => {
-        const date = new Date(item.date);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-        const monthName = date.toLocaleString("en-US", { month: "long" });
-        const year = date.getFullYear();
-
-        if (!groups[monthKey]) {
-          groups[monthKey] = {
-            month: monthName,
-            monthYear: `${monthName} ${year}`,
-            inCount: new Map<string, number>(),
-            outCount: new Map<string, number>(),
-            items: [],
-          };
-        }
-
-        groups[monthKey].items.push(item);
-
-        if (item.type === "inward") {
-          const currentIn = groups[monthKey].inCount.get(item.unit) || 0;
-          groups[monthKey].inCount.set(item.unit, currentIn + item.quantity);
-        } else {
-          const currentOut = groups[monthKey].outCount.get(item.unit) || 0;
-          groups[monthKey].outCount.set(item.unit, currentOut + item.quantity);
-        }
-      });
-
-      const sortedGroups = Object.values(groups).sort((a, b) => {
-        const [yearA, monthA] = a.monthYear.split(" ");
-        const [yearB, monthB] = b.monthYear.split(" ");
-        const dateA = new Date(`${monthA} 1, ${yearA}`);
-        const dateB = new Date(`${monthB} 1, ${yearB}`);
-        return dateB.getTime() - dateA.getTime();
-      });
-
-      setMonthGroups(sortedGroups);
-
-      // Calculate totals for past month, aggregated by unit
-      const oneMonthAgo = new Date();
-      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-      const recentInwardItems = inwardItems.filter(
-        (item) => new Date(item.date) >= oneMonthAgo,
-      );
-      const recentOutwardItems = outwardItems.filter(
-        (item) => new Date(item.date) >= oneMonthAgo,
-      );
-
-      const inwardByUnit = aggregateQuantitiesByUnit(recentInwardItems);
-      const outwardByUnit = aggregateQuantitiesByUnit(recentOutwardItems);
-
-      setTotalReceived(inwardByUnit);
-      setTotalOutwarded(outwardByUnit);
-    } catch (err) {
-      console.error("Error fetching stock flow:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load stock flow",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStockFlow();
-  }, []);
+    return {
+      monthGroups: sortedGroups,
+      totalReceived: inwardByUnit,
+      totalOutwarded: outwardByUnit,
+    };
+  }, [inwards, outwards]);
 
   const filteredGroups = monthGroups
     .map((group) => ({
@@ -337,8 +276,11 @@ export default function StockFlowPage() {
     return (
       <ErrorState
         title="Failed to load stock flow"
-        message={error}
-        onRetry={() => window.location.reload()}
+        message="Unable to fetch stock flow"
+        onRetry={() => {
+          refetchInwards();
+          refetchOutwards();
+        }}
       />
     );
   }

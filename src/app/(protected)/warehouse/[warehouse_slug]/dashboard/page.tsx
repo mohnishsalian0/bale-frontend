@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -8,18 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
-import {
-  getDashboardSalesOrders,
-  getLowStockProducts,
-  getPendingQRProducts,
-  getRecentPartners,
-} from "@/lib/queries/dashboard";
-import type {
-  DashboardSalesOrder,
-  LowStockProduct,
-  PendingQRProduct,
-  RecentPartner,
-} from "@/lib/queries/dashboard";
 import {
   QuickActionButton,
   type QuickAction,
@@ -29,6 +17,7 @@ import IconGoodsInward from "@/components/icons/IconGoodsInward";
 import IconGoodsOutward from "@/components/icons/IconGoodsOutward";
 import { Fab } from "@/components/ui/fab";
 import { DashboardScannerModal } from "./DashboardScannerModal";
+import { useDashboardData } from "@/lib/query/hooks/dashboard";
 
 // Dynamic imports for below-the-fold sections
 const PartnersSection = dynamic(
@@ -94,17 +83,15 @@ function SectionSkeleton() {
 export default function DashboardPage() {
   const router = useRouter();
   const { user, warehouse } = useSession();
-  const [salesOrders, setSalesOrders] = useState<DashboardSalesOrder[]>([]);
-  const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>(
-    [],
-  );
-  const [pendingQRProducts, setPendingQRProducts] = useState<
-    PendingQRProduct[]
-  >([]);
-  const [recentCustomers, setRecentCustomers] = useState<RecentPartner[]>([]);
-  const [recentSuppliers, setRecentSuppliers] = useState<RecentPartner[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  // Fetch dashboard data using TanStack Query
+  const { data, isLoading: loading, isError: error, refetch } = useDashboardData(warehouse.id);
+
+  const salesOrders = data.salesOrders;
+  const lowStockProducts = data.lowStockProducts;
+  const pendingQRProducts = data.pendingQRProducts;
+  const recentCustomers = data.recentCustomers;
+  const recentSuppliers = data.recentSuppliers;
 
   // Sheet states
   const [showAddProductSheet, setShowAddProductSheet] = useState(false);
@@ -134,35 +121,6 @@ export default function DashboardPage() {
     },
   ];
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const [orders, lowStock, pendingQR, partnersData] = await Promise.all([
-        getDashboardSalesOrders(warehouse.id),
-        getLowStockProducts(warehouse.id),
-        getPendingQRProducts(warehouse.id),
-        getRecentPartners(),
-      ]);
-
-      setSalesOrders(orders);
-      setLowStockProducts(lowStock);
-      setPendingQRProducts(pendingQR);
-      setRecentCustomers(partnersData.customers);
-      setRecentSuppliers(partnersData.suppliers);
-    } catch (err) {
-      console.error("Error fetching dashboard data:", err);
-      setError(err instanceof Error ? err.message : "Failed to load dashboard");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, [warehouse.id]);
-
   // Loading state
   if (loading) {
     return <LoadingState message="Loading dashboard..." />;
@@ -173,8 +131,8 @@ export default function DashboardPage() {
     return (
       <ErrorState
         title="Failed to load dashboard"
-        message={error}
-        onRetry={() => window.location.reload()}
+        message="Unable to fetch dashboard data"
+        onRetry={() => refetch()}
       />
     );
   }
@@ -236,7 +194,6 @@ export default function DashboardPage() {
           newButtonLabel="New customer"
           partnerType="customer"
           partners={recentCustomers}
-          onPartnerAdded={fetchDashboardData}
         />
       </div>
 
@@ -247,7 +204,6 @@ export default function DashboardPage() {
           newButtonLabel="New supplier"
           partnerType="supplier"
           partners={recentSuppliers}
-          onPartnerAdded={fetchDashboardData}
         />
       </div>
 
@@ -276,7 +232,6 @@ export default function DashboardPage() {
       <AddProductSheet
         open={showAddProductSheet}
         onOpenChange={setShowAddProductSheet}
-        onProductAdded={fetchDashboardData}
       />
 
       {/* Scanner Modal */}

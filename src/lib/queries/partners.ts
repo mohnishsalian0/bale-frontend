@@ -54,6 +54,23 @@ export async function getSuppliers(): Promise<Partner[]> {
 }
 
 /**
+ * Fetch agents (for filters, dropdowns, etc.)
+ */
+export async function getAgents(): Promise<Partner[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("partners")
+    .select("*")
+    .eq("partner_type", "agent")
+    .is("deleted_at", null)
+    .order("first_name", { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+/**
  * Fetch a single partner by ID
  */
 export async function getPartnerById(

@@ -14,6 +14,8 @@ import { AppSidebar } from "@/components/layouts/app-sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { toast } from "sonner";
 import type { Tables } from "@/types/database/supabase";
+import { useWarehouseBySlug } from "@/lib/query/hooks/warehouses";
+import { useUserMutations } from "@/lib/query/hooks/users";
 
 type Warehouse = Tables<"warehouses">;
 type User = Tables<"users">;
@@ -98,20 +100,25 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const warehouseSlug = params.warehouse_slug as string | undefined;
 
-  const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const supabase = createClient();
 
+  // Fetch warehouse using TanStack Query if slug exists
+  const { data: warehouse, isLoading: warehouseLoading } = useWarehouseBySlug(warehouseSlug || "");
+  const { updateWarehouse: updateUserWarehouse } = useUserMutations(user?.auth_user_id || "");
+
+  const loading = authLoading || (warehouseSlug ? warehouseLoading : false);
+
   useEffect(() => {
     validateAccess();
-  }, [warehouseSlug, pathname]);
+  }, [warehouseSlug, pathname, warehouse]);
 
   const validateAccess = async () => {
     try {
-      setLoading(true);
+      setAuthLoading(true);
 
       // Get current user - required for all protected routes
       const currentUser = await getCurrentUser();
@@ -123,42 +130,20 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       setUser(currentUser);
 
       // If this is a warehouse route, validate warehouse access
-      if (warehouseSlug) {
-        // Fetch warehouse by slug
-        const { data: warehouseData, error: warehouseError } = await supabase
-          .from("warehouses")
-          .select("*")
-          .eq("slug", warehouseSlug)
-          .single();
-
-        if (warehouseError || !warehouseData) {
-          console.error("Warehouse not found:", warehouseError);
-          router.push("/warehouse");
-          return;
-        }
-
-        // Validate user has access to this warehouse via RLS
-        const { data: accessCheck, error: accessError } = await supabase
-          .from("warehouses")
-          .select("id")
-          .eq("id", warehouseData.id)
-          .single();
-
-        if (accessError || !accessCheck) {
-          console.error("Access denied to warehouse:", accessError);
+      if (warehouseSlug && !warehouseLoading) {
+        if (!warehouse) {
+          console.error("Warehouse not found");
           router.push("/warehouse");
           return;
         }
 
         // Sync user's selected warehouse with URL
-        if (currentUser.warehouse_id !== warehouseData.id) {
-          await supabase
-            .from("users")
-            .update({ warehouse_id: warehouseData.id })
-            .eq("id", currentUser.id);
+        if (currentUser.warehouse_id !== warehouse.id) {
+          await updateUserWarehouse.mutateAsync({
+            userId: currentUser.id,
+            warehouseId: warehouse.id,
+          });
         }
-
-        setWarehouse(warehouseData);
 
         // Load user permissions from database
         const { data: roleData } = await supabase
@@ -184,7 +169,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       console.error("Error validating access:", error);
       router.push("/auth/login");
     } finally {
-      setLoading(false);
+      setAuthLoading(false);
     }
   };
 

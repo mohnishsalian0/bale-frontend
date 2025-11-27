@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { IconQrcode, IconShare, IconDownload } from "@tabler/icons-react";
@@ -15,12 +15,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ImageWrapper from "@/components/ui/image-wrapper";
-import { createClient } from "@/lib/supabase/client";
 import { formatCreatedAt, formatAbsoluteDate } from "@/lib/utils/date";
 import { toast } from "sonner";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
+import { useQRBatches } from "@/lib/query/hooks/qr-batches";
+import { useProducts } from "@/lib/query/hooks/products";
 
 interface QRBatch {
   id: string;
@@ -37,103 +38,48 @@ interface Product {
 
 export default function QRCodesPage() {
   const router = useRouter();
-  const { warehouse } = useSession();
-  const [batches, setBatches] = useState<QRBatch[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const { warehouse, user } = useSession();
   const [selectedProduct, setSelectedProduct] = useState<string>("all");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  // Fetch data using TanStack Query
+  const { data: batchesData = [], isLoading: batchesLoading, isError: batchesError, refetch: refetchBatches } = useQRBatches(warehouse.id);
+  const { data: productsData = [], isLoading: productsLoading } = useProducts();
 
-  const fetchProducts = async () => {
-    try {
-      const { data, error: fetchError } = await supabase
-        .from("products")
-        .select("id, name")
-        .order("name", { ascending: true });
+  const loading = batchesLoading || productsLoading;
+  const error = batchesError;
 
-      if (fetchError) throw fetchError;
+  // Transform products for dropdown
+  const products: Product[] = useMemo(() => {
+    return productsData.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+    }));
+  }, [productsData]);
 
-      setProducts(data || []);
-    } catch (err) {
-      console.error("Error fetching products:", err);
-    }
-  };
+  // Transform and filter batches
+  const batches: QRBatch[] = useMemo(() => {
+    let transformedBatches = (batchesData as any[]).map((batch: any) => ({
+      id: batch.id,
+      batchName: batch.batch_name,
+      imageUrl: batch.image_url,
+      itemCount: batch.qr_batch_items?.length || 0,
+      createdAt: batch.created_at,
+      productIds: new Set(
+        (batch.qr_batch_items || [])
+          .map((item: any) => item.stock_unit?.product_id)
+          .filter(Boolean)
+      ),
+    }));
 
-  const fetchBatches = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Base query
-      let query = supabase
-        .from("qr_batches")
-        .select(
-          `
-					id,
-					batch_name,
-					image_url,
-					created_at,
-					qr_batch_items (
-						id,
-						stock_unit_id
-					)
-				`,
-        )
-        .eq("warehouse_id", warehouse.id)
-        .order("created_at", { ascending: false });
-
-      const { data, error: fetchError } = await query;
-
-      if (fetchError) throw fetchError;
-
-      // Transform data
-      let transformedBatches: QRBatch[] = (data || []).map((batch: any) => ({
-        id: batch.id,
-        batchName: batch.batch_name,
-        imageUrl: batch.image_url,
-        itemCount: batch.qr_batch_items?.length || 0,
-        createdAt: batch.created_at,
-      }));
-
-      // Filter by product if selected
-      if (selectedProduct !== "all") {
-        const { data: batchItemsData } = await supabase
-          .from("qr_batch_items")
-          .select(
-            `
-						batch_id,
-						stock_units (
-							product_id
-						)
-					`,
-          )
-          .eq("stock_units.product_id", selectedProduct);
-
-        const batchIds = new Set(
-          batchItemsData?.map((item: any) => item.batch_id) || [],
-        );
-        transformedBatches = transformedBatches.filter((batch) =>
-          batchIds.has(batch.id),
-        );
-      }
-
-      setBatches(transformedBatches);
-    } catch (err) {
-      console.error("Error fetching batches:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load QR batches",
+    // Filter by product if selected
+    if (selectedProduct !== "all") {
+      transformedBatches = transformedBatches.filter((batch: any) =>
+        batch.productIds.has(selectedProduct)
       );
-    } finally {
-      setLoading(false);
     }
-  };
 
-  useEffect(() => {
-    fetchProducts();
-    fetchBatches();
-  }, [selectedProduct]);
+    return transformedBatches;
+  }, [batchesData, selectedProduct]);
 
   const handleShare = async (batch: QRBatch) => {
     try {
@@ -210,8 +156,8 @@ export default function QRCodesPage() {
     return (
       <ErrorState
         title="Failed to load QR batches"
-        message={error}
-        onRetry={() => window.location.reload()}
+        message="Unable to fetch QR batches"
+        onRetry={() => refetchBatches()}
       />
     );
   }

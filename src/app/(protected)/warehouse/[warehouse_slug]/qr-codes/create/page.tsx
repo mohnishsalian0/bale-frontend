@@ -17,27 +17,16 @@ import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import { generatePDFBlob, downloadPDF } from "@/lib/pdf/batch-pdf-generator";
 import type { LabelData } from "@/lib/pdf/qr-label-generator";
-import {
-  getProductsWithAttributes,
-  getProductAttributeLists,
-  type ProductWithAttributes,
-  type ProductMaterial,
-  type ProductColor,
-  type ProductTag,
-} from "@/lib/queries/products";
+import type { ProductWithAttributes } from "@/lib/queries/products";
+import { useProducts, useProductAttributes } from "@/lib/query/hooks/products";
 
 type FormStep = "product" | "stock-units" | "template";
 
 export default function CreateQRBatchPage() {
   const router = useRouter();
-  const { warehouse } = useSession();
+  const { warehouse, user } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
   const [currentStep, setCurrentStep] = useState<FormStep>("product");
-  const [products, setProducts] = useState<ProductWithAttributes[]>([]);
-  const [materials, setMaterials] = useState<ProductMaterial[]>([]);
-  const [colors, setColors] = useState<ProductColor[]>([]);
-  const [tags, setTags] = useState<ProductTag[]>([]);
-  const [productsLoading, setProductsLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] =
     useState<ProductWithAttributes | null>(null);
   const [selectedStockUnitIds, setSelectedStockUnitIds] = useState<string[]>(
@@ -50,37 +39,19 @@ export default function CreateQRBatchPage() {
 
   const supabase = createClient();
 
+  // Fetch data using TanStack Query
+  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const { data: attributeLists } = useProductAttributes();
+
+  const materials = attributeLists?.materials || [];
+  const colors = attributeLists?.colors || [];
+  const tags = attributeLists?.tags || [];
+
   // Hide chrome for immersive flow experience
   useEffect(() => {
     hideChrome();
     return () => showChromeUI(); // Restore chrome on unmount
   }, [hideChrome, showChromeUI]);
-
-  // Load products on mount
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setProductsLoading(true);
-    try {
-      // Fetch products and attributes in parallel
-      const [productsData, attributeLists] = await Promise.all([
-        getProductsWithAttributes(),
-        getProductAttributeLists(),
-      ]);
-
-      setProducts(productsData);
-      setMaterials(attributeLists.materials);
-      setColors(attributeLists.colors);
-      setTags(attributeLists.tags);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      toast.error("Failed to load products");
-    } finally {
-      setProductsLoading(false);
-    }
-  };
 
   const handleProductSelect = (product: ProductWithAttributes) => {
     setSelectedProduct(product);

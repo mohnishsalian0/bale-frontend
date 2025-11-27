@@ -26,16 +26,13 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import type { Tables } from "@/types/database/supabase";
-
-type Warehouse = Tables<"warehouses">;
+import { useWarehouses } from "@/lib/query/hooks/warehouses";
 
 interface WarehouseEditSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   orderId: string;
   currentWarehouseId: string;
-  companyId: string;
   hasOutward: boolean;
   onSuccess: () => void;
 }
@@ -45,47 +42,22 @@ export function WarehouseEditSheet({
   onOpenChange,
   orderId,
   currentWarehouseId,
-  companyId,
   hasOutward,
   onSuccess,
 }: WarehouseEditSheetProps) {
   const [selectedWarehouseId, setSelectedWarehouseId] =
     useState(currentWarehouseId);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(false);
-  const [fetchingWarehouses, setFetchingWarehouses] = useState(false);
   const isMobile = useIsMobile();
+
+  // Fetch warehouses using TanStack Query
+  const { data: warehouses = [], isLoading: fetchingWarehouses } = useWarehouses();
 
   useEffect(() => {
     if (open) {
       setSelectedWarehouseId(currentWarehouseId);
-      if (!hasOutward) {
-        fetchWarehouses();
-      }
     }
-  }, [open, currentWarehouseId, hasOutward]);
-
-  const fetchWarehouses = async () => {
-    try {
-      setFetchingWarehouses(true);
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from("warehouses")
-        .select("*")
-        .eq("company_id", companyId)
-        .order("name", { ascending: true });
-
-      if (error) throw error;
-
-      setWarehouses(data || []);
-    } catch (error) {
-      console.error("Error fetching warehouses:", error);
-      toast.error("Failed to load warehouses");
-    } finally {
-      setFetchingWarehouses(false);
-    }
-  };
+  }, [open, currentWarehouseId]);
 
   const handleCancel = () => {
     onOpenChange(false);

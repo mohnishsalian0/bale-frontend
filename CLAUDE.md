@@ -131,3 +131,13 @@ npm run build
 - Use utility functions from `@/lib/utils/date` for date formats
 
 - Add title attr wherever text is truncated
+
+### Data Fetching with TanStack Query
+
+- **Always use TanStack Query hooks** from `@/lib/query/hooks/` for data fetching
+- **Never use direct Supabase queries** in components - create hooks instead
+- **RLS handles filtering** - hooks don't need `companyId` parameter (users are single-company)
+- **Query keys** are centralized in `@/lib/query/keys.ts` for cache management
+- **Custom hooks pattern**: `useProducts()`, `usePartners()`, `useWarehouses()`, etc.
+- **Mutations**: Use hook mutations for automatic cache invalidation (e.g., `useProductMutations()`)
+- **New queries**: Add to `@/lib/queries/`, create hook in `@/lib/query/hooks/`, add key to `keys.ts`

@@ -21,7 +21,9 @@ import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { AddWarehouseSheet } from "@/app/(protected)/warehouse/AddWarehouseSheet";
 import { CompanyEditSheet } from "@/app/(protected)/company/CompanyEditSheet";
-import { getCompanyDetails, getCompanyWarehouses } from "@/lib/queries/company";
+import { useCompany } from "@/lib/query/hooks/company";
+import { useWarehouses } from "@/lib/query/hooks/warehouses";
+import { useSession } from "@/contexts/session-context";
 import {
   formatWebsiteUrl,
   getFormattedCompanyAddress,
@@ -33,38 +35,16 @@ type Warehouse = Tables<"warehouses">;
 
 export default function CompanyPage() {
   const router = useRouter();
-  const [company, setCompany] = useState<Company | null>(null);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user } = useSession();
   const [showEditSheet, setShowEditSheet] = useState(false);
   const [showAddWarehouseSheet, setShowAddWarehouseSheet] = useState(false);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  // Fetch company and warehouses using TanStack Query hooks
+  const { data: company, isLoading: companyLoading, isError: companyError, refetch: refetchCompany } = useCompany(user?.auth_user_id || null);
+  const { data: warehouses = [], isLoading: warehousesLoading, isError: warehousesError, refetch: refetchWarehouses } = useWarehouses();
 
-      const [companyData, warehousesData] = await Promise.all([
-        getCompanyDetails(),
-        getCompanyWarehouses(),
-      ]);
-
-      setCompany(companyData);
-      setWarehouses(warehousesData);
-    } catch (err) {
-      console.error("Error fetching company data:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load company data",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const loading = companyLoading || warehousesLoading;
+  const error = companyError || warehousesError;
 
   if (loading) {
     return <LoadingState message="Loading company details..." />;
@@ -74,8 +54,11 @@ export default function CompanyPage() {
     return (
       <ErrorState
         title="Failed to load company"
-        message={error || "Company not found"}
-        onRetry={fetchData}
+        message="Company not found"
+        onRetry={() => {
+          refetchCompany();
+          refetchWarehouses();
+        }}
       />
     );
   }
@@ -285,7 +268,6 @@ export default function CompanyPage() {
       <AddWarehouseSheet
         open={showAddWarehouseSheet}
         onOpenChange={setShowAddWarehouseSheet}
-        onWarehouseAdded={fetchData}
       />
 
       {/* Company Edit Sheet */}
@@ -293,7 +275,6 @@ export default function CompanyPage() {
         open={showEditSheet}
         onOpenChange={setShowEditSheet}
         company={company}
-        onSuccess={fetchData}
       />
     </div>
   );
