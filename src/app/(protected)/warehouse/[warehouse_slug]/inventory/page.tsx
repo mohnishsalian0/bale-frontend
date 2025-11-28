@@ -17,19 +17,17 @@ import {
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import ImageWrapper from "@/components/ui/image-wrapper";
-import { AddProductSheet } from "./AddProductSheet";
-import { useProductsWithInventory, useProductAttributes } from "@/lib/query/hooks/products";
+import { ProductFormSheet } from "./ProductFormSheet";
+import {
+  useProductsWithInventory,
+  useProductAttributes,
+} from "@/lib/query/hooks/products";
 import { useSession } from "@/contexts/session-context";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import { Button } from "@/components/ui/button";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
-import {
-  type ProductWithAttributes,
-  type ProductMaterial,
-  type ProductColor,
-  type ProductTag,
-} from "@/lib/queries/products";
+import { type ProductWithAttributes } from "@/lib/queries/products";
 
 interface Product extends ProductWithAttributes {
   productNumber: string;
@@ -39,16 +37,25 @@ interface Product extends ProductWithAttributes {
 
 export default function InventoryPage() {
   const router = useRouter();
-  const { warehouse, user } = useSession();
+  const { warehouse } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
   const [materialFilter, setMaterialFilter] = useState<string>("all");
   const [colorFilter, setColorFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
-  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [showCreateProduct, setShowCreateProduct] = useState(false);
 
   // Fetch products with inventory using TanStack Query
-  const { data: productsData = [], isLoading: productsLoading, isError: productsError, refetch: refetchProducts } = useProductsWithInventory(warehouse.id);
-  const { data: attributeLists, isLoading: attributesLoading, isError: attributesError } = useProductAttributes();
+  const {
+    data: productsData = [],
+    isLoading: productsLoading,
+    isError: productsError,
+    refetch: refetchProducts,
+  } = useProductsWithInventory(warehouse.id);
+  const {
+    data: attributeLists,
+    isLoading: attributesLoading,
+    isError: attributesError,
+  } = useProductAttributes();
 
   const loading = productsLoading || attributesLoading;
   const error = productsError || attributesError;
@@ -161,7 +168,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 p-4 overflow-x-auto shrink-0 border-b border-border">
+      <div className="flex gap-3 p-4 overflow-x-auto shrink-0">
         <Button variant="outline" size="icon" className="shrink-0 size-10">
           <IconAlertTriangle className="size-5" />
         </Button>
@@ -207,7 +214,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Product List */}
-      <div className="flex flex-col gap-3 p-4">
+      <div className="flex flex-col gap-3 p-4 pt-0">
         {filteredProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-gray-600 mb-2">No products found</p>
@@ -272,15 +279,15 @@ export default function InventoryPage() {
 
       {/* Floating Action Button */}
       <Fab
-        onClick={() => setShowAddProduct(true)}
+        onClick={() => setShowCreateProduct(true)}
         className="fixed bottom-20 right-4"
       />
 
       {/* Add Product Sheet */}
-      {showAddProduct && (
-        <AddProductSheet
-          open={showAddProduct}
-          onOpenChange={setShowAddProduct}
+      {showCreateProduct && (
+        <ProductFormSheet
+          open={showCreateProduct}
+          onOpenChange={setShowCreateProduct}
         />
       )}
     </div>

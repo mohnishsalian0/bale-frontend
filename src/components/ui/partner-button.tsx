@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { getPartnerName } from "@/lib/utils/partner";
 import { getInitials } from "@/lib/utils/initials";
 import type { RecentPartner } from "@/lib/queries/dashboard";

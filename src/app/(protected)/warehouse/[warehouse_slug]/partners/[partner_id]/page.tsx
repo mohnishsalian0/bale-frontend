@@ -33,7 +33,7 @@ import {
 } from "@/lib/utils/sales-order";
 import { SummaryTab } from "./SummaryTab";
 import { OrdersTab } from "./OrdersTab";
-import { AddPartnerSheet } from "../AddPartnerSheet";
+import { PartnerFormSheet } from "../PartnerFormSheet";
 import type { Tables } from "@/types/database/supabase";
 import type { PartnerType, SalesOrderStatus } from "@/types/database/enums";
 
@@ -472,10 +472,10 @@ export default function PartnerDetailPage({ params }: PageParams) {
 
         {/* Edit Partner Sheet */}
         {showEditPartner && partner && (
-          <AddPartnerSheet
+          <PartnerFormSheet
+            key={partner.id}
             open={showEditPartner}
             onOpenChange={setShowEditPartner}
-            onPartnerAdded={fetchPartner}
             partnerToEdit={partner}
           />
         )}

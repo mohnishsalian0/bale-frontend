@@ -15,7 +15,7 @@ import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import type { PublicProduct } from "@/lib/queries/catalog";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
-import { ProductStockStatus } from "@/components/ui/product-stock-badge";
+import { ProductStockStatusBadge } from "@/components/ui/product-stock-badge";
 
 interface ProductCardProps {
   product: PublicProduct;
@@ -41,6 +41,7 @@ export function ProductCard({
       return;
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrent(api.selectedScrollSnap());
 
     api.on("select", () => {
@@ -127,7 +128,7 @@ export function ProductCard({
                 </p>
               )}
             </div>
-            <ProductStockStatus status={product.stock_status} />
+            <ProductStockStatusBadge status={product.stock_status} />
           </div>
 
           {/* Add to Cart / Quantity Button */}

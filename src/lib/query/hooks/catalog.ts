@@ -9,7 +9,6 @@ import {
   getPublicProducts,
 } from "@/lib/queries/catalog";
 import {
-  findOrCreateCustomer,
   createCatalogOrder,
   getSalesOrderById,
 } from "@/lib/queries/catalog-orders";

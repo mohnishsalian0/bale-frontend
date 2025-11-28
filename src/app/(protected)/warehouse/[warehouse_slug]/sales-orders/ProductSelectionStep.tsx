@@ -13,8 +13,11 @@ import {
 } from "@/components/ui/select";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
-import { getProductIcon, getProductInfo } from "@/lib/utils/product";
-import { pluralizeStockType } from "@/lib/utils/pluralize";
+import {
+  getAvailableStockText,
+  getProductIcon,
+  getProductInfo,
+} from "@/lib/utils/product";
 import type {
   ProductWithInventory,
   ProductMaterial,
@@ -53,24 +56,6 @@ export function ProductSelectionStep({
   const [materialFilter, setMaterialFilter] = useState<string>("all");
   const [colorFilter, setColorFilter] = useState<string>("all");
   const [tagsFilter, setTagsFilter] = useState<string>("all");
-
-  // Helper function to format available stock text
-  const getAvailableStockText = (product: ProductWithSelection): string => {
-    const stockType = product.stock_type as StockType;
-    const units = product.in_stock_units;
-    const quantity = product.in_stock_quantity;
-    const unitAbbreviation = getMeasuringUnitAbbreviation(
-      product.measuring_unit as MeasuringUnit | null,
-    );
-
-    if (stockType === "roll") {
-      return `${quantity.toFixed(0)} ${unitAbbreviation} avail.`;
-    } else if (stockType === "batch") {
-      return `${quantity.toFixed(0)} units avail.`;
-    } else {
-      return `${pluralizeStockType(units, stockType)} avail.`;
-    }
-  };
 
   // Filter and sort products using useMemo
   const filteredProducts = useMemo(() => {

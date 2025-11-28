@@ -112,9 +112,6 @@ The app uses Next.js App Router with two main route groups for clean separation 
 
 **Functions**:
 
-- `isPublicRoute(pathname)` - Checks if a path is public
-- `getAuthRedirectUrl(pathname)` - Gets login redirect URL
-
 **Used by**: Middleware for auth checks and route protection
 
 ---

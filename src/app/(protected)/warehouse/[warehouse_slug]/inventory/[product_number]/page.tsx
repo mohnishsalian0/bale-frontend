@@ -24,7 +24,7 @@ import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { SummaryTab } from "./SummaryTab";
 import { StockUnitsTab } from "./StockUnitsTab";
 import { StockFlowTab } from "./StockFlowTab";
-import { AddProductSheet } from "../AddProductSheet";
+import { ProductFormSheet } from "../ProductFormSheet";
 import type { Tables } from "@/types/database/supabase";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import IconStore from "@/components/icons/IconStore";
@@ -376,7 +376,7 @@ export default function ProductDetailPage({ params }: PageParams) {
 
         {/* Edit Product Sheet */}
         {showEditProduct && product && (
-          <AddProductSheet
+          <ProductFormSheet
             open={showEditProduct}
             onOpenChange={setShowEditProduct}
             onProductAdded={fetchProduct}

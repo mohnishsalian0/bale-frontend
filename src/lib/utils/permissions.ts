@@ -1,3 +1,5 @@
+import { getRouteConfig } from "@/lib/permissions/route-config";
+
 /**
  * Wildcard matcher using backtracking algorithm
  * Matches required permission against granted permission pattern
@@ -86,8 +88,6 @@ export function checkRoutePermission(
   warehouseSlug: string,
   userPermissions: string[],
 ): { allowed: boolean; redirectTo?: string } {
-  const { getRouteConfig } = require("@/lib/permissions/route-config");
-
   // Extract route path relative to /warehouse/[warehouse_slug]/
   const pathAfterWarehouse = pathname.split(`/warehouse/${warehouseSlug}/`)[1];
 

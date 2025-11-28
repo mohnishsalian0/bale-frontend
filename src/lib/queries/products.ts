@@ -45,9 +45,9 @@ export function transformProductWithAttributes(
 
   // Remove the nested assignment fields
   const {
-    product_material_assignments,
-    product_color_assignments,
-    product_tag_assignments,
+    product_material_assignments: _materials,
+    product_color_assignments: _colors,
+    product_tag_assignments: _tags,
     ...rest
   } = product;
 

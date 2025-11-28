@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   IconBuildingWarehouse,
   IconPencil,
@@ -11,7 +11,7 @@ import {
 import { Fab } from "../ui/fab";
 import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
-import { AddWarehouseSheet } from "@/app/(protected)/warehouse/AddWarehouseSheet";
+import { WarehouseFormSheet } from "@/app/(protected)/warehouse/WarehouseFormSheet";
 import { useSession } from "@/contexts/session-context";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
 import { useUserMutations } from "@/lib/query/hooks/users";
@@ -32,11 +32,12 @@ export default function WarehouseSelector({
   onOpenChange,
 }: WarehouseSelectorProps) {
   const { user } = useSession();
-  const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
+  const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(
     null,
   );
   const pathname = usePathname();
+  const router = useRouter();
 
   const isAdmin = user.role === "admin";
 
@@ -44,7 +45,9 @@ export default function WarehouseSelector({
   const { data: warehouses = [], isLoading: loading } = useWarehouses();
 
   // User mutations hook
-  const { updateWarehouse: updateUserWarehouse } = useUserMutations(user?.auth_user_id || "");
+  const { updateWarehouse: updateUserWarehouse } = useUserMutations(
+    user?.auth_user_id || "",
+  );
 
   const handleSelect = async (warehouseId: string) => {
     try {
@@ -71,7 +74,7 @@ export default function WarehouseSelector({
       let redirectPath = `/warehouse/${selectedWarehouse.slug}/dashboard`;
 
       // Match pattern: /warehouse/[warehouse_slug]/[...rest]
-      const warehouseRouteMatch = pathname.match(/^\/warehouse\/[^\/]+\/(.+)$/);
+      const warehouseRouteMatch = pathname.match(/^\/warehouse\/[^/]+\/(.+)$/);
       if (warehouseRouteMatch) {
         // Preserve the page path after the warehouse slug
         const pagePath = warehouseRouteMatch[1];
@@ -79,7 +82,7 @@ export default function WarehouseSelector({
       }
 
       // Redirect to warehouse
-      window.location.href = redirectPath;
+      router.push(redirectPath);
     } catch (error) {
       console.error("Error selecting warehouse:", error);
     }
@@ -88,7 +91,7 @@ export default function WarehouseSelector({
   const handleEdit = (warehouse: Warehouse, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingWarehouse(warehouse);
-    setIsCreateSheetOpen(true);
+    setShowCreateWarehouse(true);
   };
 
   const handleShare = (warehouse: Warehouse, e: React.MouseEvent) => {
@@ -113,11 +116,11 @@ export default function WarehouseSelector({
 
   const handleFabClick = () => {
     setEditingWarehouse(null);
-    setIsCreateSheetOpen(true);
+    setShowCreateWarehouse(true);
   };
 
   const handleSheetClose = (open: boolean) => {
-    setIsCreateSheetOpen(open);
+    setShowCreateWarehouse(open);
     if (!open) {
       setEditingWarehouse(null);
     }
@@ -236,9 +239,10 @@ export default function WarehouseSelector({
       </Sheet>
 
       {/* Add/Edit Warehouse Sheet */}
-      {isCreateSheetOpen && (
-        <AddWarehouseSheet
-          open={isCreateSheetOpen}
+      {showCreateWarehouse && (
+        <WarehouseFormSheet
+          key={editingWarehouse ? editingWarehouse.id : "new"}
+          open={showCreateWarehouse}
           onOpenChange={handleSheetClose}
           warehouse={editingWarehouse}
         />

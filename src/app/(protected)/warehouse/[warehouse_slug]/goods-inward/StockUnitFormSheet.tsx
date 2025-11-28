@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   IconMinus,
   IconPlus,
@@ -41,7 +41,7 @@ import type { StockUnitSpec } from "./ProductSelectionStep";
 import { Input } from "@/components/ui/input";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 
-interface StockUnitEntrySheetProps {
+interface StockUnitFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product: ProductWithAttributes | null;
@@ -49,64 +49,75 @@ interface StockUnitEntrySheetProps {
   onConfirm: (unit: Omit<StockUnitSpec, "id">) => void;
 }
 
-export function StockUnitEntrySheet({
+interface StockUnitFormData {
+  quantity: number;
+  manufacturedOn: Date | undefined;
+  quality: string;
+  supplierNumber: string;
+  location: string;
+  notes: string;
+}
+
+export function StockUnitFormSheet({
   open,
   onOpenChange,
   product,
   initialUnit,
   onConfirm,
-}: StockUnitEntrySheetProps) {
-  const [quantity, setQuantity] = useState(0);
-  const [manufacturedOn, setManufacturedOn] = useState<Date | undefined>(
-    undefined,
-  );
-  const [quality, setQuality] = useState("");
-  const [supplierNumber, setSupplierNumber] = useState("");
-  const [location, setLocation] = useState("");
-  const [notes, setNotes] = useState("");
+}: StockUnitFormSheetProps) {
+  const [formData, setFormData] = useState<StockUnitFormData>({
+    quantity: initialUnit?.quantity || 0,
+    manufacturedOn: undefined,
+    quality: initialUnit?.grade || "",
+    supplierNumber: initialUnit?.supplier_number || "",
+    location: initialUnit?.location || "",
+    notes: initialUnit?.notes || "",
+  });
+
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
   const isMobile = useIsMobile();
 
-  useEffect(() => {
-    if (open) {
-      setQuantity(initialUnit?.quantity || 0);
-      setManufacturedOn(undefined);
-      setQuality(initialUnit?.grade || "");
-      setSupplierNumber(initialUnit?.supplier_number || "");
-      setLocation(initialUnit?.location || "");
-      setNotes(initialUnit?.notes || "");
-      setShowAdditionalDetails(false);
-    }
-  }, [open, initialUnit]);
-
   const handleCancel = () => {
+    // Reset form
+    setFormData({
+      quantity: 0,
+      manufacturedOn: undefined,
+      quality: "",
+      supplierNumber: "",
+      location: "",
+      notes: "",
+    });
+    setShowAdditionalDetails(false);
     onOpenChange(false);
   };
 
   const handleConfirm = () => {
-    if (quantity > 0) {
+    if (formData.quantity > 0) {
       onConfirm({
-        quantity,
-        grade: quality,
-        supplier_number: supplierNumber || undefined,
-        location: location || undefined,
-        notes: notes || undefined,
+        quantity: formData.quantity,
+        grade: formData.quality,
+        supplier_number: formData.supplierNumber || undefined,
+        location: formData.location || undefined,
+        notes: formData.notes || undefined,
         count: initialUnit?.count || 1,
       });
-      onOpenChange(false);
+      handleCancel();
     }
   };
 
   const handleIncrement = () => {
-    setQuantity((prev) => prev + 1);
+    setFormData((prev) => ({ ...prev, quantity: prev.quantity + 1 }));
   };
 
   const handleDecrement = () => {
-    setQuantity((prev) => Math.max(0, prev - 1));
+    setFormData((prev) => ({
+      ...prev,
+      quantity: Math.max(0, prev.quantity - 1),
+    }));
   };
 
   const handlePresetAdd = (amount: number) => {
-    setQuantity((prev) => prev + amount);
+    setFormData((prev) => ({ ...prev, quantity: prev.quantity + amount }));
   };
 
   const presetAmounts = [5, 10, 25, 50, 100, 250];
@@ -161,9 +172,12 @@ export function StockUnitEntrySheet({
             <div className="relative">
               <Input
                 type="number"
-                value={quantity}
+                value={formData.quantity}
                 onChange={(e) =>
-                  setQuantity(Math.max(0, parseFloat(e.target.value) || 0))
+                  setFormData((prev) => ({
+                    ...prev,
+                    quantity: Math.max(0, parseFloat(e.target.value) || 0),
+                  }))
                 }
                 className="text-center text-lg font-medium max-w-25 pr-10"
                 min="0"
@@ -208,18 +222,25 @@ export function StockUnitEntrySheet({
           <InputWithIcon
             type="text"
             placeholder="Supplier number"
-            value={supplierNumber}
+            value={formData.supplierNumber}
             className="flex-1"
-            onChange={(e) => setSupplierNumber(e.target.value)}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                supplierNumber: e.target.value,
+              }))
+            }
             icon={<IconHash />}
           />
 
           {/* Manufactured On - DatePicker */}
           <DatePicker
             placeholder="Manufactured on"
-            value={manufacturedOn}
+            value={formData.manufacturedOn}
             className="flex-1"
-            onChange={(date) => setManufacturedOn(date)}
+            onChange={(date) =>
+              setFormData((prev) => ({ ...prev, manufacturedOn: date }))
+            }
           />
         </div>
 
@@ -228,9 +249,11 @@ export function StockUnitEntrySheet({
           <InputWithIcon
             type="text"
             placeholder="Quality"
-            value={quality}
+            value={formData.quality}
             className="flex-1"
-            onChange={(e) => setQuality(e.target.value)}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, quality: e.target.value }))
+            }
             icon={<IconRubberStamp />}
           />
 
@@ -238,9 +261,11 @@ export function StockUnitEntrySheet({
           <InputWithIcon
             type="text"
             placeholder="Location"
-            value={location}
+            value={formData.location}
             className="flex-1"
-            onChange={(e) => setLocation(e.target.value)}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, location: e.target.value }))
+            }
             icon={<IconTruckLoading />}
           />
         </div>
@@ -263,8 +288,10 @@ export function StockUnitEntrySheet({
         <CollapsibleContent>
           <Textarea
             placeholder="Enter a note..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            value={formData.notes}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, notes: e.target.value }))
+            }
             className="min-h-32"
           />
         </CollapsibleContent>
@@ -285,7 +312,7 @@ export function StockUnitEntrySheet({
       <Button
         type="button"
         onClick={handleConfirm}
-        disabled={quantity <= 0}
+        disabled={formData.quantity <= 0}
         className="flex-1"
       >
         Add

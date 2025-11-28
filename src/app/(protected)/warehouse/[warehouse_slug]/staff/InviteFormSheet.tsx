@@ -20,7 +20,7 @@ import type { Tables } from "@/types/database/supabase";
 import type { UserRole } from "@/types/database/enums";
 import { useSession } from "@/contexts/session-context";
 
-interface AddStaffSheetProps {
+interface InviteFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onStaffAdded?: () => void;
@@ -33,11 +33,11 @@ interface InviteFormData {
 
 type WarehouseRow = Tables<"warehouses">;
 
-export function AddStaffSheet({
+export function InviteFormSheet({
   open,
   onOpenChange,
   onStaffAdded,
-}: AddStaffSheetProps) {
+}: InviteFormSheetProps) {
   const { user } = useSession();
   const [formData, setFormData] = useState<InviteFormData>({
     role: "staff",

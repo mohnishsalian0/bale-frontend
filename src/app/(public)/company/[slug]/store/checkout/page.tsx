@@ -518,13 +518,15 @@ export default function CheckoutPage() {
       </form>
 
       {/* Quantity Sheet */}
-      <ProductQuantitySheet
-        open={showQuantitySheet}
-        onOpenChange={setShowQuantitySheet}
-        product={selectedItem?.product || null}
-        initialQuantity={selectedItem?.quantity}
-        onConfirm={handleConfirmQuantity}
-      />
+      {showQuantitySheet && (
+        <ProductQuantitySheet
+          open={showQuantitySheet}
+          onOpenChange={setShowQuantitySheet}
+          product={selectedItem?.product || null}
+          initialQuantity={selectedItem?.quantity}
+          onConfirm={handleConfirmQuantity}
+        />
+      )}
     </div>
   );
 }

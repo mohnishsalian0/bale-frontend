@@ -49,12 +49,17 @@ export function usePendingQRStockUnits(warehouseId: string) {
 /**
  * Stock unit mutations (update)
  */
-export function useStockUnitMutations(warehouseId: string) {
+export function useStockUnitMutations(_warehouseId: string) {
   const queryClient = useQueryClient();
 
   const update = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: TablesUpdate<"stock_units"> }) =>
-      updateStockUnit(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: TablesUpdate<"stock_units">;
+    }) => updateStockUnit(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stock-units"] });
       queryClient.invalidateQueries({ queryKey: ["products"] }); // Inventory counts may change
@@ -63,8 +68,9 @@ export function useStockUnitMutations(warehouseId: string) {
   });
 
   const batchUpdate = useMutation({
-    mutationFn: (updates: Array<{ id: string; data: TablesUpdate<"stock_units"> }>) =>
-      updateStockUnits(updates),
+    mutationFn: (
+      updates: Array<{ id: string; data: TablesUpdate<"stock_units"> }>,
+    ) => updateStockUnits(updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stock-units"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });

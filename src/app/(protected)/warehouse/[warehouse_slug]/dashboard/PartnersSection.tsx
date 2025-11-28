@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PartnerButton } from "@/components/ui/partner-button";
 import { IconPlus, IconUsers } from "@tabler/icons-react";
 import type { RecentPartner } from "@/lib/queries/dashboard";
-import { AddPartnerSheet } from "../partners/AddPartnerSheet";
+import { PartnerFormSheet } from "../partners/PartnerFormSheet";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/contexts/session-context";
 import { PartnerType } from "@/types/database/enums";
@@ -15,7 +15,6 @@ interface PartnersSectionProps {
   newButtonLabel: string;
   partnerType: PartnerType;
   partners: RecentPartner[];
-  onPartnerAdded?: () => void;
 }
 
 export function PartnersSection({
@@ -23,11 +22,10 @@ export function PartnersSection({
   newButtonLabel,
   partnerType,
   partners,
-  onPartnerAdded,
 }: PartnersSectionProps) {
   const router = useRouter();
   const { warehouse } = useSession();
-  const [showAddPartnerSheet, setShowAddPartnerSheet] = useState(false);
+  const [showCreatePartnerSheet, setShowCreatePartnerSheet] = useState(false);
 
   if (partners.length === 0) {
     return (
@@ -37,7 +35,7 @@ export function PartnersSection({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowAddPartnerSheet(true)}
+            onClick={() => setShowCreatePartnerSheet(true)}
           >
             <IconPlus />
             {newButtonLabel}
@@ -61,7 +59,7 @@ export function PartnersSection({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowAddPartnerSheet(true)}
+            onClick={() => setShowCreatePartnerSheet(true)}
           >
             <IconPlus />
             {newButtonLabel}
@@ -103,12 +101,14 @@ export function PartnersSection({
       </div>
 
       {/* Add Partner Sheet */}
-      <AddPartnerSheet
-        open={showAddPartnerSheet}
-        onOpenChange={setShowAddPartnerSheet}
-        onPartnerAdded={onPartnerAdded}
-        partnerType={partnerType}
-      />
+      {showCreatePartnerSheet && (
+        <PartnerFormSheet
+          key="new-partner"
+          open={showCreatePartnerSheet}
+          onOpenChange={setShowCreatePartnerSheet}
+          partnerType={partnerType}
+        />
+      )}
     </>
   );
 }

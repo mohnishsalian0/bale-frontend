@@ -118,7 +118,7 @@ const CommandEmpty = forwardRef<
     <div
       ref={forwardedRef}
       className={cn("py-6 text-center text-sm", className)}
-      cmdk-empty=""
+      data-cmdk-empty=""
       role="presentation"
       {...props}
     />
@@ -238,6 +238,7 @@ const MultipleSelector = React.forwardRef<
     }, [open]);
 
     useEffect(() => {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (value) setSelected(value);
     }, [value]);
 
@@ -245,6 +246,7 @@ const MultipleSelector = React.forwardRef<
       if (!arrayOptions || onSearch) return;
       const newOption = transToGroupOption(arrayOptions || [], groupBy);
       if (JSON.stringify(newOption) !== JSON.stringify(options)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setOptions(newOption);
       }
     }, [arrayDefaultOptions, arrayOptions, groupBy, onSearch, options]);
@@ -349,7 +351,7 @@ const MultipleSelector = React.forwardRef<
         };
       }
       return undefined;
-    }, [creatable, commandProps?.filter]);
+    }, [creatable, commandProps]);
 
     return (
       <Command

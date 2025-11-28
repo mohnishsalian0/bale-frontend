@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { IconChevronDown, IconLogout, IconBuilding } from "@tabler/icons-react";
-import { SidebarTrigger, useSidebar } from "../ui/sidebar";
 import { Button } from "../ui/button";
 import {
   DropdownMenu,
@@ -29,7 +28,6 @@ export default function TopBar({
   isWarehouseSelectorOpen = false,
 }: TopBarProps) {
   const router = useRouter();
-  const { isMobile } = useSidebar();
   const { user, warehouse } = useSession();
 
   const handleCompanySettingsClick = () => {

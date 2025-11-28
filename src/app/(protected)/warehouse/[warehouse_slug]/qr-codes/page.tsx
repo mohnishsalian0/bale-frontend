@@ -38,7 +38,7 @@ interface Product {
 
 export default function QRCodesPage() {
   const router = useRouter();
-  const { warehouse, user } = useSession();
+  const { warehouse } = useSession();
   const [selectedProduct, setSelectedProduct] = useState<string>("all");
 
   // Fetch data using TanStack Query

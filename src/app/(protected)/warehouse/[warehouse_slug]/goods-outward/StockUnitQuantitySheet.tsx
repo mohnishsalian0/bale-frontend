@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { IconMinus, IconPlus, IconPhoto } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,13 +44,6 @@ export function StockUnitQuantitySheet({
 }: StockUnitQuantitySheetProps) {
   const [quantity, setQuantity] = useState(initialQuantity);
   const isMobile = useIsMobile();
-
-  useEffect(() => {
-    if (open && stockUnit) {
-      // Default to 0 for roll and batch, or initial quantity if provided
-      setQuantity(initialQuantity || 0);
-    }
-  }, [open, initialQuantity, stockUnit]);
 
   if (!stockUnit || !product) return null;
 

@@ -24,7 +24,7 @@ type FormStep = "product" | "stock-units" | "template";
 
 export default function CreateQRBatchPage() {
   const router = useRouter();
-  const { warehouse, user } = useSession();
+  const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
   const [currentStep, setCurrentStep] = useState<FormStep>("product");
   const [selectedProduct, setSelectedProduct] =

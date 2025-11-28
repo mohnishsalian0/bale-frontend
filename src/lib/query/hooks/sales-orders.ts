@@ -1,12 +1,9 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
-import {
-  getSalesOrders,
-  getSalesOrder,
-} from "@/lib/queries/sales-orders";
+import { getSalesOrders, getSalesOrder } from "@/lib/queries/sales-orders";
 
 /**
  * Fetch all sales orders for a warehouse
@@ -34,8 +31,8 @@ export function useSalesOrder(sequenceNumber: string | null) {
 /**
  * Sales order mutations (create, update, delete)
  */
-export function useSalesOrderMutations(warehouseId: string | null) {
-  const queryClient = useQueryClient();
+export function useSalesOrderMutations(_warehouseId: string | null) {
+  // const queryClient = useQueryClient();
 
   return {
     // Placeholder for mutations

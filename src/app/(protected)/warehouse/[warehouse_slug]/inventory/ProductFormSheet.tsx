@@ -40,7 +40,7 @@ import type { TablesInsert } from "@/types/database/supabase";
 import type { StockType, MeasuringUnit } from "@/types/database/enums";
 import { useSession } from "@/contexts/session-context";
 
-interface AddProductSheetProps {
+interface ProductFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onProductAdded?: () => void;
@@ -67,12 +67,12 @@ interface ProductFormData {
   images: File[];
 }
 
-export function AddProductSheet({
+export function ProductFormSheet({
   open,
   onOpenChange,
   onProductAdded,
   productToEdit,
-}: AddProductSheetProps) {
+}: ProductFormSheetProps) {
   const { user } = useSession();
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",

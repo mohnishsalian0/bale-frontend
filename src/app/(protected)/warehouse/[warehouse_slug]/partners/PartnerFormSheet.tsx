@@ -11,6 +11,7 @@ import {
   IconId,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { usePartnerMutations } from "@/lib/query/hooks/partners";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,18 +29,17 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { validateImageFile, uploadPartnerImage } from "@/lib/storage";
-import { createClient } from "@/lib/supabase/client";
-import type { TablesInsert, Tables } from "@/types/database/supabase";
+import { validateImageFile } from "@/lib/storage";
+import type { Tables } from "@/types/database/supabase";
 import type { PartnerType } from "@/types/database/enums";
+import type { PartnerInsert, PartnerUpdate } from "@/lib/queries/partners";
 import { useSession } from "@/contexts/session-context";
 
 type Partner = Tables<"partners">;
 
-interface AddPartnerSheetProps {
+interface PartnerFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPartnerAdded?: () => void;
   partnerType?: PartnerType;
   partnerToEdit?: Partner;
 }
@@ -63,70 +63,46 @@ interface PartnerFormData {
   image: File | null;
 }
 
-export function AddPartnerSheet({
+export function PartnerFormSheet({
   open,
   onOpenChange,
-  onPartnerAdded,
   partnerType,
   partnerToEdit,
-}: AddPartnerSheetProps) {
+}: PartnerFormSheetProps) {
   const { user } = useSession();
+  const { createPartner, updatePartner } = usePartnerMutations();
+
   const [formData, setFormData] = useState<PartnerFormData>({
-    partnerType: partnerType || "customer",
-    firstName: "",
-    lastName: "",
-    phoneNumber: "",
+    partnerType:
+      (partnerToEdit?.partner_type as PartnerType) || partnerType || "customer",
+    firstName: partnerToEdit?.first_name || "",
+    lastName: partnerToEdit?.last_name || "",
+    phoneNumber: partnerToEdit?.phone_number || "",
     businessType: "",
-    companyName: "",
-    addressLine1: "",
-    addressLine2: "",
-    city: "",
-    state: "",
-    country: "India",
-    pinCode: "",
-    gstNumber: "",
-    panNumber: "",
-    notes: "",
+    companyName: partnerToEdit?.company_name || "",
+    addressLine1: partnerToEdit?.address_line1 || "",
+    addressLine2: partnerToEdit?.address_line2 || "",
+    city: partnerToEdit?.city || "",
+    state: partnerToEdit?.state || "",
+    country: partnerToEdit?.country || "India",
+    pinCode: partnerToEdit?.pin_code || "",
+    gstNumber: partnerToEdit?.gst_number || "",
+    panNumber: partnerToEdit?.pan_number || "",
+    notes: partnerToEdit?.notes || "",
     image: null,
   });
 
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    partnerToEdit?.image_url || null,
+  );
   const [imageError, setImageError] = useState<string | null>(null);
   const [showBusinessDetails, setShowBusinessDetails] = useState(false);
   const [showAddress, setShowAddress] = useState(false);
   const [showTaxDetails, setShowTaxDetails] = useState(false);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
-
-  // Populate form data when editing
-  useEffect(() => {
-    if (partnerToEdit && open) {
-      setFormData({
-        partnerType: partnerToEdit.partner_type as PartnerType,
-        firstName: partnerToEdit.first_name,
-        lastName: partnerToEdit.last_name,
-        phoneNumber: partnerToEdit.phone_number,
-        businessType: "",
-        companyName: partnerToEdit.company_name || "",
-        addressLine1: partnerToEdit.address_line1 || "",
-        addressLine2: partnerToEdit.address_line2 || "",
-        city: partnerToEdit.city || "",
-        state: partnerToEdit.state || "",
-        country: partnerToEdit.country || "India",
-        pinCode: partnerToEdit.pin_code || "",
-        gstNumber: partnerToEdit.gst_number || "",
-        panNumber: partnerToEdit.pan_number || "",
-        notes: partnerToEdit.notes || "",
-        image: null,
-      });
-      // Set existing image
-      if (partnerToEdit.image_url) {
-        setExistingImageUrl(partnerToEdit.image_url);
-        setImagePreview(partnerToEdit.image_url);
-      }
-    }
-  }, [partnerToEdit, open]);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(
+    partnerToEdit?.image_url || null,
+  );
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -168,16 +144,50 @@ export function AddPartnerSheet({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
 
-    try {
-      const supabase = createClient();
+    const mutationOptions = {
+      onSuccess: () => {
+        toast.success(
+          partnerToEdit
+            ? "Partner updated successfully"
+            : "Partner created successfully",
+        );
+        handleCancel();
+      },
+      onError: (error: Error) => {
+        toast.error(error.message);
+      },
+    };
 
-      // Prepare partner data (without new image URL initially)
-      const partnerData: Omit<
-        TablesInsert<"partners">,
-        "created_by" | "modified_by"
-      > = {
+    if (partnerToEdit) {
+      const updates: PartnerUpdate = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        phone_number: formData.phoneNumber,
+        company_name: formData.companyName || null,
+        address_line1: formData.addressLine1 || null,
+        address_line2: formData.addressLine2 || null,
+        city: formData.city || null,
+        state: formData.state || null,
+        country: formData.country || null,
+        pin_code: formData.pinCode || null,
+        gst_number: formData.gstNumber || null,
+        pan_number: formData.panNumber || null,
+        notes: formData.notes || null,
+        image_url: existingImageUrl,
+      };
+
+      updatePartner.mutate(
+        {
+          partnerId: partnerToEdit.id,
+          updates,
+          image: formData.image,
+          companyId: user.company_id,
+        },
+        mutationOptions,
+      );
+    } else {
+      const newPartner: Omit<PartnerInsert, "image_url"> = {
         partner_type: formData.partnerType,
         first_name: formData.firstName,
         last_name: formData.lastName,
@@ -193,78 +203,16 @@ export function AddPartnerSheet({
         gst_number: formData.gstNumber || null,
         pan_number: formData.panNumber || null,
         notes: formData.notes || null,
-        image_url: existingImageUrl, // Keep existing image URL for now
       };
 
-      let partnerId: string;
-
-      if (partnerToEdit) {
-        // UPDATE existing partner
-        const { error: updateError } = await supabase
-          .from("partners")
-          .update(partnerData)
-          .eq("id", partnerToEdit.id);
-
-        if (updateError) throw updateError;
-        partnerId = partnerToEdit.id;
-      } else {
-        // INSERT new partner
-        const { data: newPartner, error: insertError } = await supabase
-          .from("partners")
-          .insert(partnerData)
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        if (!newPartner) throw new Error("Failed to create partner");
-        partnerId = newPartner.id;
-      }
-
-      // Handle image upload if new image provided
-      if (formData.image) {
-        try {
-          const { publicUrl } = await uploadPartnerImage(
-            user.company_id,
-            partnerId,
-            formData.image,
-          );
-
-          // Update partner with new image URL
-          const { error: imageUpdateError } = await supabase
-            .from("partners")
-            .update({ image_url: publicUrl })
-            .eq("id", partnerId);
-
-          if (imageUpdateError) {
-            console.error(
-              "Failed to update partner with image URL:",
-              imageUpdateError,
-            );
-            // Don't throw - partner is created, just image update failed
-          }
-        } catch (uploadError) {
-          console.error("Image upload failed:", uploadError);
-          // Don't throw - partner is created, just image upload failed
-        }
-      }
-
-      // Success! Close sheet and notify parent
-      toast.success(
-        partnerToEdit
-          ? "Partner updated successfully"
-          : "Partner created successfully",
+      createPartner.mutate(
+        {
+          partner: newPartner,
+          image: formData.image,
+          companyId: user.company_id,
+        },
+        mutationOptions,
       );
-      handleCancel();
-      if (onPartnerAdded) {
-        onPartnerAdded();
-      }
-    } catch (error) {
-      console.error("Error saving partner:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to save partner";
-      toast.error(errorMessage);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -293,6 +241,8 @@ export function AddPartnerSheet({
     setExistingImageUrl(null);
     onOpenChange(false);
   };
+
+  const isPending = createPartner.isPending || updatePartner.isPending;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -643,13 +593,13 @@ export function AddPartnerSheet({
                 type="button"
                 variant="outline"
                 onClick={handleCancel}
-                disabled={saving}
+                disabled={isPending}
                 className="flex-1"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving} className="flex-1">
-                {saving
+              <Button type="submit" disabled={isPending} className="flex-1">
+                {isPending
                   ? partnerToEdit
                     ? "Updating..."
                     : "Saving..."

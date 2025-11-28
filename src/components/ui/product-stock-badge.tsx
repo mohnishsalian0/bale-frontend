@@ -26,7 +26,7 @@ function getProductStatusConfig(
   }
 }
 
-export function ProductStockStatus({
+export function ProductStockStatusBadge({
   status,
   className,
 }: ProductStatusBadgeProps) {

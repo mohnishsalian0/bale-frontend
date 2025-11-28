@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
 import "./globals.css";
-import { Suspense } from "react";
 import { QueryProvider } from "@/lib/query/provider";
 
 export const metadata: Metadata = {

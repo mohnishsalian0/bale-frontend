@@ -411,6 +411,7 @@ export function QRScannerStep({
       {/* Quantity Selection Sheet */}
       {showQuantitySheet && (
         <StockUnitQuantitySheet
+          key={pendingStockUnit?.stockUnit.id}
           open={showQuantitySheet}
           onOpenChange={handleQuantitySheetClose}
           stockUnit={pendingStockUnit?.stockUnit || null}

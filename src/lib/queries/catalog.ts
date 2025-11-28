@@ -151,10 +151,10 @@ export async function getPublicProducts(
 
       // Remove the nested assignment fields from the product
       const {
-        product_material_assignments,
-        product_color_assignments,
-        product_tag_assignments,
-        inventory_agg,
+        product_material_assignments: _materials,
+        product_color_assignments: _colors,
+        product_tag_assignments: _tags,
+        inventory_agg: _agg,
         ...rest
       } = product;
 

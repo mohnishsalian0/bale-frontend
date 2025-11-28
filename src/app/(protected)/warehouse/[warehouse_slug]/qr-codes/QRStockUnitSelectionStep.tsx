@@ -4,7 +4,6 @@ import { useState, useMemo, Fragment } from "react";
 import { IconChevronDown } from "@tabler/icons-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { createClient } from "@/lib/supabase/client";
 import { formatRelativeDate } from "@/lib/utils/date";
 import { formatStockUnitNumber } from "@/lib/utils/stock-unit";
 import type { Tables } from "@/types/database/supabase";
@@ -37,10 +36,10 @@ export function QRStockUnitSelectionStep({
   onSelectionChange,
 }: QRStockUnitSelectionStepProps) {
   const { warehouse } = useSession();
-  const supabase = createClient();
 
   // Fetch stock units using TanStack Query
-  const { data: stockUnitsData = [], isLoading: loading } = useStockUnitsByProduct(warehouse.id, productId);
+  const { data: stockUnitsData = [], isLoading: loading } =
+    useStockUnitsByProduct(warehouse.id, productId);
 
   // Group stock units by goods inward
   const goodsInwards: GoodsInward[] = useMemo(() => {
@@ -90,7 +89,7 @@ export function QRStockUnitSelectionStep({
 
   // Auto-expand first inward
   const [expandedInwards, setExpandedInwards] = useState<Set<string>>(() =>
-    goodsInwards.length > 0 ? new Set([goodsInwards[0].id]) : new Set()
+    goodsInwards.length > 0 ? new Set([goodsInwards[0].id]) : new Set(),
   );
 
   const toggleInward = (inwardId: string) => {

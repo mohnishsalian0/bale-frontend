@@ -9,7 +9,6 @@ import {
 type SalesOrder = Tables<"sales_orders">;
 type Partner = Tables<"partners">;
 type StockUnit = Tables<"stock_units">;
-type Product = Tables<"products">;
 type SalesOrderItem = Tables<"sales_order_items">;
 type Warehouse = Tables<"warehouses">;
 
@@ -17,15 +16,13 @@ export interface StockUnitWithProduct extends StockUnit {
   product: ProductWithAttributes | null;
 }
 
-export interface DashboardSalesOrderProduct extends ProductWithAttributes {}
-
 export interface DashboardSalesOrder extends SalesOrder {
   customer: Partner | null;
   agent: Partner | null;
   warehouse: Warehouse | null;
   sales_order_items: Array<
     SalesOrderItem & {
-      product: DashboardSalesOrderProduct[] | null;
+      product: ProductWithAttributes[] | null;
     }
   >;
 }

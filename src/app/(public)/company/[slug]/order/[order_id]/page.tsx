@@ -107,7 +107,7 @@ export default function OrderConfirmationPage() {
           Order Confirmed!
         </h1>
         <p className="text-gray-500">
-          Thank you for your order. We'll get back to you soon.
+          Thank you for your order. We&apos;ll get back to you soon.
         </p>
         <div className="flex items-center justify-center gap-3 mt-4">
           <h2 className="text-lg font-semibold text-gray-900">

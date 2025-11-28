@@ -16,10 +16,7 @@ export default function TestPage() {
         const supabase = createClient();
 
         // Test connection by querying companies table
-        const { data, error } = await supabase
-          .from("companies")
-          .select("*")
-          .limit(1);
+        const { error } = await supabase.from("companies").select("*").limit(1);
 
         if (error) {
           throw error;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   IconPhone,
@@ -19,7 +19,7 @@ import { Section } from "@/components/layouts/section";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
-import { AddWarehouseSheet } from "@/app/(protected)/warehouse/AddWarehouseSheet";
+import { WarehouseFormSheet } from "@/app/(protected)/warehouse/WarehouseFormSheet";
 import { CompanyEditSheet } from "@/app/(protected)/company/CompanyEditSheet";
 import { useCompany } from "@/lib/query/hooks/company";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
@@ -28,20 +28,26 @@ import {
   formatWebsiteUrl,
   getFormattedCompanyAddress,
 } from "@/lib/utils/company";
-import type { Tables } from "@/types/database/supabase";
-
-type Company = Tables<"companies">;
-type Warehouse = Tables<"warehouses">;
 
 export default function CompanyPage() {
   const router = useRouter();
   const { user } = useSession();
-  const [showEditSheet, setShowEditSheet] = useState(false);
-  const [showAddWarehouseSheet, setShowAddWarehouseSheet] = useState(false);
+  const [showEditCompany, setShowEditCompany] = useState(false);
+  const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
 
   // Fetch company and warehouses using TanStack Query hooks
-  const { data: company, isLoading: companyLoading, isError: companyError, refetch: refetchCompany } = useCompany(user?.auth_user_id || null);
-  const { data: warehouses = [], isLoading: warehousesLoading, isError: warehousesError, refetch: refetchWarehouses } = useWarehouses();
+  const {
+    data: company,
+    isLoading: companyLoading,
+    isError: companyError,
+    refetch: refetchCompany,
+  } = useCompany(user?.auth_user_id || null);
+  const {
+    data: warehouses = [],
+    isLoading: warehousesLoading,
+    isError: warehousesError,
+    refetch: refetchWarehouses,
+  } = useWarehouses();
 
   const loading = companyLoading || warehousesLoading;
   const error = companyError || warehousesError;
@@ -144,7 +150,7 @@ export default function CompanyPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setShowEditSheet(true)}
+            onClick={() => setShowEditCompany(true)}
             className="shrink-0"
           >
             <IconPencil className="size-5" />
@@ -209,7 +215,7 @@ export default function CompanyPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowAddWarehouseSheet(true)}
+                onClick={() => setShowCreateWarehouse(true)}
               >
                 <IconPlus className="size-4 mr-1" />
                 New warehouse
@@ -265,15 +271,18 @@ export default function CompanyPage() {
       </div>
 
       {/* Add Warehouse Sheet */}
-      <AddWarehouseSheet
-        open={showAddWarehouseSheet}
-        onOpenChange={setShowAddWarehouseSheet}
-      />
+      {showCreateWarehouse && (
+        <WarehouseFormSheet
+          key="new-warehouse"
+          open={showCreateWarehouse}
+          onOpenChange={setShowCreateWarehouse}
+        />
+      )}
 
       {/* Company Edit Sheet */}
       <CompanyEditSheet
-        open={showEditSheet}
-        onOpenChange={setShowEditSheet}
+        open={showEditCompany}
+        onOpenChange={setShowEditCompany}
         company={company}
       />
     </div>

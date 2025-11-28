@@ -65,7 +65,6 @@ async function createTestPartners() {
   let companyName: string;
   let companySlug: string;
   let warehouseId: string;
-  let warehouseName: string;
   let userId: string;
 
   const { data: companies, error: companyError } = await supabase
@@ -128,7 +127,6 @@ async function createTestPartners() {
     }
 
     warehouseId = warehouse.id;
-    warehouseName = warehouse.name;
     console.log(`✅ Created warehouse: ${warehouseId}\n`);
 
     // Create catalog configuration
@@ -210,7 +208,6 @@ async function createTestPartners() {
     }
 
     warehouseId = warehouses[0].id;
-    warehouseName = warehouses[0].name;
 
     // Get existing user
     const { data: existingUsers, error: userError } = await supabase

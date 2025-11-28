@@ -56,7 +56,7 @@ interface MonthGroup {
 
 export default function StockFlowPage() {
   const router = useRouter();
-  const { warehouse, user } = useSession();
+  const { warehouse } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<
     "all" | "outward" | "inward"

@@ -6,7 +6,7 @@ import { Fab } from "@/components/ui/fab";
 import { TabPills } from "@/components/ui/tab-pills";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
-import { AddStaffSheet } from "./AddStaffSheet";
+import { InviteFormSheet } from "./InviteFormSheet";
 import { StaffMembersTab } from "./StaffMembersTab";
 import { ActiveInvitesTab } from "./ActiveInvitesTab";
 import { createClient } from "@/lib/supabase/client";
@@ -37,7 +37,7 @@ export default function StaffPage() {
   const [invites, setInvites] = useState<ActiveInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAddStaff, setShowAddStaff] = useState(false);
+  const [showCreateInvite, setShowCreateInvite] = useState(false);
 
   const supabase = createClient();
 
@@ -215,15 +215,15 @@ export default function StaffPage() {
 
       {/* Floating Action Button */}
       <Fab
-        onClick={() => setShowAddStaff(true)}
+        onClick={() => setShowCreateInvite(true)}
         className="fixed bottom-20 right-4"
       />
 
       {/* Add Staff Sheet */}
-      {showAddStaff && (
-        <AddStaffSheet
-          open={showAddStaff}
-          onOpenChange={setShowAddStaff}
+      {showCreateInvite && (
+        <InviteFormSheet
+          open={showCreateInvite}
+          onOpenChange={setShowCreateInvite}
           onStaffAdded={() => {
             // Refresh invites when a new invite is created
             if (activeTab === "invites") {

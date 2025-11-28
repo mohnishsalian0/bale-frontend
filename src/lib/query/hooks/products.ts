@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
@@ -16,7 +16,6 @@ import {
 
 /**
  * Fetch all products with attributes
- * Filtered by company via RLS (user in single company)
  */
 export function useProducts() {
   return useQuery({
@@ -40,7 +39,6 @@ export function useProduct(productId: string | null) {
 
 /**
  * Fetch single product by sequence number with attributes
- * Filtered by company via RLS (user in single company)
  */
 export function useProductBySequence(sequenceNumber: string | null) {
   return useQuery({
@@ -65,7 +63,6 @@ export function useProductsWithInventory(warehouseId: string) {
 
 /**
  * Fetch product materials
- * Filtered by company via RLS (user in single company)
  */
 export function useProductMaterials() {
   return useQuery({
@@ -77,7 +74,6 @@ export function useProductMaterials() {
 
 /**
  * Fetch product colors
- * Filtered by company via RLS (user in single company)
  */
 export function useProductColors() {
   return useQuery({
@@ -89,7 +85,6 @@ export function useProductColors() {
 
 /**
  * Fetch product tags
- * Filtered by company via RLS (user in single company)
  */
 export function useProductTags() {
   return useQuery({
@@ -101,7 +96,6 @@ export function useProductTags() {
 
 /**
  * Fetch all product attributes (materials, colors, tags)
- * Filtered by company via RLS (user in single company)
  */
 export function useProductAttributes() {
   return useQuery({
@@ -116,7 +110,7 @@ export function useProductAttributes() {
  * Note: Actual mutation functions need to be implemented in queries/products.ts
  */
 export function useProductMutations() {
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
 
   // These would need corresponding functions in queries/products.ts
   // For now, returning placeholder structure

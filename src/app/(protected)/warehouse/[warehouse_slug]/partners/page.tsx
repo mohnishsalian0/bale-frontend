@@ -17,7 +17,7 @@ import { TabPills } from "@/components/ui/tab-pills";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import ImageWrapper from "@/components/ui/image-wrapper";
-import { AddPartnerSheet } from "./AddPartnerSheet";
+import { PartnerFormSheet } from "./PartnerFormSheet";
 import { usePartners } from "@/lib/query/hooks/partners";
 import { useSession } from "@/contexts/session-context";
 import { getInitials } from "@/lib/utils/initials";
@@ -59,13 +59,18 @@ function getActionLabel(type: PartnerType): string {
 
 export default function PartnersPage() {
   const router = useRouter();
-  const { warehouse, user } = useSession();
+  const { warehouse } = useSession();
   const [selectedType, setSelectedType] = useState<PartnerType | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showAddPartner, setShowAddPartner] = useState(false);
+  const [showCreatePartner, setShowCreatePartner] = useState(false);
 
   // Fetch all partners using TanStack Query
-  const { data: allPartners = [], isLoading: loading, isError: error, refetch } = usePartners();
+  const {
+    data: allPartners = [],
+    isLoading: loading,
+    isError: error,
+    refetch,
+  } = usePartners();
 
   // Transform and filter partners
   const partners: Partner[] = useMemo(() => {
@@ -92,7 +97,7 @@ export default function PartnersPage() {
   // Filter partners by search query
   const filteredPartners = useMemo(() => {
     return partners.filter((partner) =>
-      partner.name.toLowerCase().includes(searchQuery.toLowerCase())
+      partner.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [partners, searchQuery]);
 
@@ -273,15 +278,16 @@ export default function PartnersPage() {
 
       {/* Floating Action Button */}
       <Fab
-        onClick={() => setShowAddPartner(true)}
+        onClick={() => setShowCreatePartner(true)}
         className="fixed bottom-20 right-4"
       />
 
       {/* Add Partner Sheet */}
-      {showAddPartner && (
-        <AddPartnerSheet
-          open={showAddPartner}
-          onOpenChange={setShowAddPartner}
+      {showCreatePartner && (
+        <PartnerFormSheet
+          key="new-partner"
+          open={showCreatePartner}
+          onOpenChange={setShowCreatePartner}
         />
       )}
     </div>

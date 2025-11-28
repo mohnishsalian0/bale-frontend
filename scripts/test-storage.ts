@@ -59,7 +59,7 @@ async function testStorage() {
 
   // Test 3: Check storage policies
   console.log("\n3️⃣ Checking storage policies...");
-  const { data: policies, error: policiesError } = await supabase.rpc(
+  const { data: _policies, error: _policiesError } = await supabase.rpc(
     "get_storage_policies" as any,
   );
 

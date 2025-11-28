@@ -22,7 +22,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { createClient } from "@/lib/supabase/client";
-import { useSession } from "@/contexts/session-context";
 import type { Tables } from "@/types/database/supabase";
 import { DatePicker } from "@/components/ui/date-picker";
 import { dateToISOString } from "@/lib/utils/date";
@@ -48,7 +47,6 @@ export function OrderDetailsStep({
   formData,
   setFormData,
 }: OrderDetailsStepProps) {
-  const { user } = useSession();
   const [warehouses, setWarehouses] = useState<Tables<"warehouses">[]>([]);
   const [customers, setCustomers] = useState<Tables<"partners">[]>([]);
   const [agents, setAgents] = useState<Tables<"partners">[]>([]);

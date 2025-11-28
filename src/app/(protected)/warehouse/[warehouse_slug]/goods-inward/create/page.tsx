@@ -9,11 +9,11 @@ import {
   ProductWithUnits,
   StockUnitSpec,
 } from "../ProductSelectionStep";
-import { StockUnitEntrySheet } from "../StockUnitEntrySheet";
+import { StockUnitFormSheet } from "../StockUnitFormSheet";
 import { AllSpecificationsSheet } from "../AllSpecificationsSheet";
 import { PieceQuantitySheet } from "../PieceQuantitySheet";
 import { InwardDetailsStep } from "../InwardDetailsStep";
-import { AddProductSheet } from "../../inventory/AddProductSheet";
+import { ProductFormSheet } from "../../inventory/ProductFormSheet";
 import { createClient } from "@/lib/supabase/client";
 import {
   getProductsWithAttributes,
@@ -65,7 +65,7 @@ export default function CreateGoodsInwardPage() {
   const [showUnitEntrySheet, setShowUnitEntrySheet] = useState(false);
   const [showAllSpecsSheet, setShowAllSpecsSheet] = useState(false);
   const [showPieceQuantitySheet, setShowPieceQuantitySheet] = useState(false);
-  const [showAddProductSheet, setShowAddProductSheet] = useState(false);
+  const [showCreateProduct, setShowCreateProduct] = useState(false);
   const [selectedProduct, setSelectedProduct] =
     useState<ProductWithAttributes | null>(null);
 
@@ -465,7 +465,7 @@ export default function CreateGoodsInwardPage() {
               tags={tags}
               loading={loading}
               onOpenUnitSheet={handleOpenUnitSheet}
-              onAddNewProduct={() => setShowAddProductSheet(true)}
+              onAddNewProduct={() => setShowCreateProduct(true)}
             />
           ) : (
             <InwardDetailsStep
@@ -522,7 +522,7 @@ export default function CreateGoodsInwardPage() {
 
         {/* Stock Unit Entry Sheet */}
         {showUnitEntrySheet && (
-          <StockUnitEntrySheet
+          <StockUnitFormSheet
             open={showUnitEntrySheet}
             onOpenChange={setShowUnitEntrySheet}
             product={selectedProduct}
@@ -548,6 +548,7 @@ export default function CreateGoodsInwardPage() {
         {/* Piece Quantity Sheet */}
         {showPieceQuantitySheet && selectedProduct && (
           <PieceQuantitySheet
+            key={selectedProduct.id}
             open={showPieceQuantitySheet}
             onOpenChange={setShowPieceQuantitySheet}
             product={selectedProduct}
@@ -557,11 +558,13 @@ export default function CreateGoodsInwardPage() {
         )}
 
         {/* Add Product Sheet */}
-        <AddProductSheet
-          open={showAddProductSheet}
-          onOpenChange={setShowAddProductSheet}
-          onProductAdded={loadData}
-        />
+        {showCreateProduct && (
+          <ProductFormSheet
+            open={showCreateProduct}
+            onOpenChange={setShowCreateProduct}
+            onProductAdded={loadData}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { IconMinus, IconPlus } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,12 +47,6 @@ export function PieceQuantitySheet({
 }: PieceQuantitySheetProps) {
   const [quantity, setQuantity] = useState(initialQuantity);
   const isMobile = useIsMobile();
-
-  useEffect(() => {
-    if (open) {
-      setQuantity(initialQuantity);
-    }
-  }, [open, initialQuantity]);
 
   const handleCancel = (e: React.MouseEvent) => {
     e.preventDefault();

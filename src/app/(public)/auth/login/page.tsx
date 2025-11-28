@@ -64,7 +64,7 @@ function LoginForm() {
             Welcome fabric trader!
           </h1>
           <p className="text-base italic text-gray-500">
-            I'm here to help you experience a smarter, newer & next generation
+            I&apos;m here to help you experience a smarter, newer & next generation
             inventory solution.
           </p>
         </div>

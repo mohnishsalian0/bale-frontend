@@ -261,15 +261,17 @@ export default function StorePage() {
       <div className="h-20" />
 
       {/* Quantity Sheet */}
-      <ProductQuantitySheet
-        open={showQuantitySheet}
-        onOpenChange={setShowQuantitySheet}
-        product={selectedProduct}
-        initialQuantity={
-          selectedProduct ? getProductQuantity(selectedProduct.id) : 0
-        }
-        onConfirm={handleConfirmQuantity}
-      />
+      {showQuantitySheet && (
+        <ProductQuantitySheet
+          open={showQuantitySheet}
+          onOpenChange={setShowQuantitySheet}
+          product={selectedProduct}
+          initialQuantity={
+            selectedProduct ? getProductQuantity(selectedProduct.id) : 0
+          }
+          onConfirm={handleConfirmQuantity}
+        />
+      )}
     </div>
   );
 }

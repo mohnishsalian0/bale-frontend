@@ -9,11 +9,13 @@ import {
   getSuppliers,
   getAgents,
   getPartnerById,
+  createPartner,
+  updatePartner,
+  deletePartner,
 } from "@/lib/queries/partners";
 
 /**
  * Fetch all partners with optional filters
- * Filtered by company via RLS (user in single company)
  * @param filters - Currently unused, reserved for future client-side filtering
  */
 export function usePartners(filters?: Record<string, unknown>) {
@@ -38,7 +40,6 @@ export function usePartner(partnerId: string | null) {
 
 /**
  * Fetch only customer partners
- * Filtered by company via RLS (user in single company)
  */
 export function useCustomers() {
   return useQuery({
@@ -50,7 +51,6 @@ export function useCustomers() {
 
 /**
  * Fetch only supplier/vendor partners
- * Filtered by company via RLS (user in single company)
  */
 export function useSuppliers() {
   return useQuery({
@@ -62,7 +62,6 @@ export function useSuppliers() {
 
 /**
  * Fetch only agent partners
- * Filtered by company via RLS (user in single company)
  */
 export function useAgents() {
   return useQuery({
@@ -78,13 +77,36 @@ export function useAgents() {
 export function usePartnerMutations() {
   const queryClient = useQueryClient();
 
-  // Placeholder for mutations - would need corresponding functions in queries/partners.ts
+  const createPartnerMutation = useMutation({
+    mutationFn: createPartner,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.partners.all() });
+    },
+  });
+
+  const updatePartnerMutation = useMutation({
+    mutationFn: updatePartner,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.partners.all() });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.partners.detail(data.id),
+      });
+    },
+  });
+
+  const deletePartnerMutation = useMutation({
+    mutationFn: deletePartner,
+    onSuccess: (_, partnerId) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.partners.all() });
+      queryClient.removeQueries({
+        queryKey: queryKeys.partners.detail(partnerId),
+      });
+    },
+  });
+
   return {
-    // createPartner: useMutation({
-    //   mutationFn: (data) => createPartner(data),
-    //   onSuccess: () => {
-    //     queryClient.invalidateQueries({ queryKey: ['partners'] });
-    //   },
-    // }),
+    createPartner: createPartnerMutation,
+    updatePartner: updatePartnerMutation,
+    deletePartner: deletePartnerMutation,
   };
 }

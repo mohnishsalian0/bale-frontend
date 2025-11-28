@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ProductQuantitySheet } from "../ProductQuantitySheet";
 import { ProductSelectionStep } from "../ProductSelectionStep";
 import { OrderDetailsStep } from "../OrderDetailsStep";
-import { AddProductSheet } from "../../inventory/AddProductSheet";
+import { ProductFormSheet } from "../../inventory/ProductFormSheet";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
@@ -59,7 +59,7 @@ export default function CreateSalesOrderPage() {
   const [selectedProduct, setSelectedProduct] =
     useState<ProductWithInventory | null>(null);
   const [showQuantitySheet, setShowQuantitySheet] = useState(false);
-  const [showAddProductSheet, setShowAddProductSheet] = useState(false);
+  const [showCreateProduct, setShowCreateProduct] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const supabase = createClient();
@@ -264,7 +264,7 @@ export default function CreateSalesOrderPage() {
               tags={tags}
               loading={loading}
               onOpenQuantitySheet={handleOpenQuantitySheet}
-              onAddNewProduct={() => setShowAddProductSheet(true)}
+              onAddNewProduct={() => setShowCreateProduct(true)}
               onRemoveProduct={handleRemoveProduct}
             />
           ) : (
@@ -334,11 +334,13 @@ export default function CreateSalesOrderPage() {
         )}
 
         {/* Add Product Sheet */}
-        <AddProductSheet
-          open={showAddProductSheet}
-          onOpenChange={setShowAddProductSheet}
-          onProductAdded={loadData}
-        />
+        {showCreateProduct && (
+          <ProductFormSheet
+            open={showCreateProduct}
+            onOpenChange={setShowCreateProduct}
+            onProductAdded={loadData}
+          />
+        )}
       </div>
     </div>
   );

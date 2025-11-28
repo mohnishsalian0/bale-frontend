@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoadingState } from "@/components/layouts/loading-state";
@@ -18,74 +17,23 @@ import IconGoodsOutward from "@/components/icons/IconGoodsOutward";
 import { Fab } from "@/components/ui/fab";
 import { DashboardScannerModal } from "./DashboardScannerModal";
 import { useDashboardData } from "@/lib/query/hooks/dashboard";
-
-// Dynamic imports for below-the-fold sections
-const PartnersSection = dynamic(
-  () =>
-    import("./PartnersSection").then((mod) => ({
-      default: mod.PartnersSection,
-    })),
-  {
-    loading: () => <SectionSkeleton />,
-  },
-);
-
-const ActiveSalesOrdersSection = dynamic(
-  () =>
-    import("./ActiveSalesOrdersSection").then((mod) => ({
-      default: mod.ActiveSalesOrdersSection,
-    })),
-  {
-    loading: () => <SectionSkeleton />,
-  },
-);
-
-const LowStockProductsSection = dynamic(
-  () =>
-    import("./LowStockProductsSection").then((mod) => ({
-      default: mod.LowStockProductsSection,
-    })),
-  {
-    loading: () => <SectionSkeleton />,
-  },
-);
-
-const PendingQRCodesSection = dynamic(
-  () =>
-    import("./PendingQRCodesSection").then((mod) => ({
-      default: mod.PendingQRCodesSection,
-    })),
-  {
-    loading: () => <SectionSkeleton />,
-  },
-);
-
-const AddProductSheet = dynamic(
-  () =>
-    import("../inventory/AddProductSheet").then((mod) => ({
-      default: mod.AddProductSheet,
-    })),
-  {
-    ssr: false, // Modal doesn't need SSR
-  },
-);
-
-// Loading skeleton for sections
-function SectionSkeleton() {
-  return (
-    <div className="mt-6 px-4 animate-pulse">
-      <div className="h-6 w-32 bg-gray-200 rounded mb-3" />
-      <div className="h-32 bg-gray-100 rounded" />
-    </div>
-  );
-}
+import { PartnersSection } from "./PartnersSection";
+import { ActiveSalesOrdersSection } from "./ActiveSalesOrdersSection";
+import { LowStockProductsSection } from "./LowStockProductsSection";
+import { PendingQRCodesSection } from "./PendingQRCodesSection";
+import { ProductFormSheet } from "../inventory/ProductFormSheet";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, warehouse } = useSession();
 
   // Fetch dashboard data using TanStack Query
-  const { data, isLoading: loading, isError: error, refetch } = useDashboardData(warehouse.id);
+  const {
+    data,
+    isLoading: loading,
+    isError: error,
+    refetch,
+  } = useDashboardData(warehouse.id);
 
   const salesOrders = data.salesOrders;
   const lowStockProducts = data.lowStockProducts;
@@ -94,7 +42,7 @@ export default function DashboardPage() {
   const recentSuppliers = data.recentSuppliers;
 
   // Sheet states
-  const [showAddProductSheet, setShowAddProductSheet] = useState(false);
+  const [showCreateProduct, setShowCreateProduct] = useState(false);
   const [showScannerModal, setShowScannerModal] = useState(false);
 
   // Quick actions array
@@ -178,7 +126,7 @@ export default function DashboardPage() {
             action={action}
             onClick={() => {
               if (action.label === "Create product") {
-                setShowAddProductSheet(true);
+                setShowCreateProduct(true);
               } else {
                 router.push(action.href);
               }
@@ -229,9 +177,9 @@ export default function DashboardPage() {
       />
 
       {/* Add Product Sheet */}
-      <AddProductSheet
-        open={showAddProductSheet}
-        onOpenChange={setShowAddProductSheet}
+      <ProductFormSheet
+        open={showCreateProduct}
+        onOpenChange={setShowCreateProduct}
       />
 
       {/* Scanner Modal */}

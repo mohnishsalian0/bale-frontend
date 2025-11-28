@@ -1,6 +1,9 @@
 import { ComponentType } from "react";
-import { StockType } from "@/types/database/enums";
+import { MeasuringUnit, StockType } from "@/types/database/enums";
 import { IconCylinder, IconPackage, IconShirt } from "@tabler/icons-react";
+import { ProductWithInventory } from "../queries/products";
+import { getMeasuringUnitAbbreviation } from "./measuring-units";
+import { pluralizeStockType } from "./pluralize";
 
 // Type for attribute objects (materials, colors, tags)
 interface ProductAttribute {
@@ -116,5 +119,27 @@ export function getStockTypeDisplay(
       return "Piece";
     default:
       return stockType.charAt(0).toUpperCase() + stockType.slice(1);
+  }
+}
+
+/**
+ * Helper function to format available stock text
+ */
+export function getAvailableStockText(product: ProductWithInventory): string {
+  const stockType = product.stock_type as StockType;
+  const units = product.in_stock_units;
+  const quantity = product.in_stock_quantity;
+  const unitAbbreviation = getMeasuringUnitAbbreviation(
+    product.measuring_unit as MeasuringUnit | null,
+  );
+
+  if (stockType === "roll") {
+    return `${quantity.toFixed(0)} ${unitAbbreviation} avail.`;
+  } else if (stockType === "batch") {
+    return `${quantity.toFixed(0)} units avail.`;
+  } else if (stockType === "piece") {
+    return `${pluralizeStockType(units, stockType)} avail.`;
+  } else {
+    return "";
   }
 }

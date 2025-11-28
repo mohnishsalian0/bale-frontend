@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { IconUser, IconPhone, IconChevronDown } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,10 +18,9 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useWarehouseMutations } from "@/lib/query/hooks/warehouses";
-import { useSession } from "@/contexts/session-context";
 import type { TablesInsert, Tables } from "@/types/database/supabase";
 
-interface AddWarehouseSheetProps {
+interface WarehouseFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   warehouse?: Tables<"warehouses"> | null; // For edit mode
@@ -39,47 +38,29 @@ interface WarehouseFormData {
   pinCode: string;
 }
 
-export function AddWarehouseSheet({
+export function WarehouseFormSheet({
   open,
   onOpenChange,
   warehouse,
-}: AddWarehouseSheetProps) {
-  const { user } = useSession();
+}: WarehouseFormSheetProps) {
   const { create, update } = useWarehouseMutations();
 
   const [formData, setFormData] = useState<WarehouseFormData>({
-    name: "",
-    contactName: "",
-    contactNumber: "",
-    addressLine1: "",
-    addressLine2: "",
-    city: "",
-    state: "",
-    country: "India",
-    pinCode: "",
+    name: warehouse?.name || "",
+    contactName: warehouse?.contact_name || "",
+    contactNumber: warehouse?.contact_number || "",
+    addressLine1: warehouse?.address_line1 || "",
+    addressLine2: warehouse?.address_line2 || "",
+    city: warehouse?.city || "",
+    state: warehouse?.state || "",
+    country: warehouse?.country || "India",
+    pinCode: warehouse?.pin_code || "",
   });
 
   const [showAddress, setShowAddress] = useState(false);
 
   const isEditMode = !!warehouse;
   const saving = create.isPending || update.isPending;
-
-  // Pre-populate form data when editing
-  useEffect(() => {
-    if (warehouse && open) {
-      setFormData({
-        name: warehouse.name || "",
-        contactName: warehouse.contact_name || "",
-        contactNumber: warehouse.contact_number || "",
-        addressLine1: warehouse.address_line1 || "",
-        addressLine2: warehouse.address_line2 || "",
-        city: warehouse.city || "",
-        state: warehouse.state || "",
-        country: warehouse.country || "India",
-        pinCode: warehouse.pin_code || "",
-      });
-    }
-  }, [warehouse, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
