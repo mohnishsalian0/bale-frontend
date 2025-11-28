@@ -112,8 +112,8 @@ export function ProductSelectionStep({
 
   return (
     <>
-      {/* Filters Section */}
-      <div className="flex flex-col gap-3 p-4 shrink-0">
+      {/* Header Section */}
+      <div className="flex flex-col gap-3 p-4 shrink-0 border-b border-border">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">
             Select products

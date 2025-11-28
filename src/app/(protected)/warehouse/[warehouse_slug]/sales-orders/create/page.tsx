@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { ProductQuantitySheet } from "../ProductQuantitySheet";
 import { ProductSelectionStep } from "../ProductSelectionStep";
+import { CustomerSelectionStep } from "../CustomerSelectionStep";
 import { OrderDetailsStep } from "../OrderDetailsStep";
 import { ProductFormSheet } from "../../inventory/ProductFormSheet";
+import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
@@ -38,7 +40,7 @@ interface OrderFormData {
   files: File[];
 }
 
-type FormStep = "products" | "details";
+type FormStep = "products" | "customer" | "details";
 
 export default function CreateSalesOrderPage() {
   const router = useRouter();
@@ -60,6 +62,10 @@ export default function CreateSalesOrderPage() {
     useState<ProductWithInventory | null>(null);
   const [showQuantitySheet, setShowQuantitySheet] = useState(false);
   const [showCreateProduct, setShowCreateProduct] = useState(false);
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    null,
+  );
   const [saving, setSaving] = useState(false);
 
   const supabase = createClient();
@@ -153,11 +159,32 @@ export default function CreateSalesOrderPage() {
   );
 
   const handleNext = () => {
-    setCurrentStep("details");
+    if (currentStep === "products") {
+      setCurrentStep("customer");
+    } else if (currentStep === "customer") {
+      // Transfer selected customer to formData
+      if (selectedCustomerId) {
+        setFormData((prev) => ({ ...prev, customerId: selectedCustomerId }));
+      }
+      setCurrentStep("details");
+    }
   };
 
   const handleBack = () => {
-    setCurrentStep("products");
+    if (currentStep === "details") {
+      setCurrentStep("customer");
+    } else if (currentStep === "customer") {
+      setCurrentStep("products");
+    }
+  };
+
+  const handleSelectCustomer = (customerId: string) => {
+    setSelectedCustomerId(customerId);
+    // Auto-advance to next step
+    setTimeout(() => {
+      setFormData((prev) => ({ ...prev, customerId }));
+      setCurrentStep("details");
+    }, 300); // Small delay for visual feedback
   };
 
   const handleCancel = () => {
@@ -240,7 +267,13 @@ export default function CreateSalesOrderPage() {
                 Create sales order
               </h1>
               <p className="text-sm text-gray-500">
-                Step {currentStep === "products" ? "1" : "2"} of 2
+                Step{" "}
+                {currentStep === "products"
+                  ? "1"
+                  : currentStep === "customer"
+                    ? "2"
+                    : "3"}{" "}
+                of 3
               </p>
             </div>
           </div>
@@ -249,7 +282,14 @@ export default function CreateSalesOrderPage() {
           <div className="h-1 bg-gray-200">
             <div
               className="h-full bg-primary-500 transition-all duration-300"
-              style={{ width: currentStep === "products" ? "50%" : "100%" }}
+              style={{
+                width:
+                  currentStep === "products"
+                    ? "33%"
+                    : currentStep === "customer"
+                      ? "66%"
+                      : "100%",
+              }}
             />
           </div>
         </div>
@@ -266,6 +306,12 @@ export default function CreateSalesOrderPage() {
               onOpenQuantitySheet={handleOpenQuantitySheet}
               onAddNewProduct={() => setShowCreateProduct(true)}
               onRemoveProduct={handleRemoveProduct}
+            />
+          ) : currentStep === "customer" ? (
+            <CustomerSelectionStep
+              selectedCustomerId={selectedCustomerId}
+              onSelectCustomer={handleSelectCustomer}
+              onAddNewCustomer={() => setShowAddCustomer(true)}
             />
           ) : (
             <OrderDetailsStep
@@ -293,6 +339,24 @@ export default function CreateSalesOrderPage() {
                 <Button
                   onClick={handleNext}
                   disabled={!canProceed || saving}
+                  className="flex-1"
+                >
+                  Next
+                </Button>
+              </>
+            ) : currentStep === "customer" ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleBack}
+                  disabled={saving}
+                  className="flex-1"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={handleNext}
+                  disabled={!selectedCustomerId || saving}
                   className="flex-1"
                 >
                   Next
@@ -339,6 +403,15 @@ export default function CreateSalesOrderPage() {
             open={showCreateProduct}
             onOpenChange={setShowCreateProduct}
             onProductAdded={loadData}
+          />
+        )}
+
+        {/* Add Customer Sheet */}
+        {showAddCustomer && (
+          <PartnerFormSheet
+            open={showAddCustomer}
+            onOpenChange={setShowAddCustomer}
+            partnerType="customer"
           />
         )}
       </div>

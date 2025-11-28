@@ -18,6 +18,41 @@ export function getPartnerName(partner: PartnerNameFields | null): string {
   if (!partner) return "Unknown Partner";
   return partner.company_name || `${partner.first_name} ${partner.last_name}`;
 }
+/**
+ * Partial partner with only the fields needed for info
+ */
+type PartnerInfoFields = Pick<
+  Partner,
+  "first_name" | "last_name" | "phone_number"
+>;
+
+/**
+ * Get formatted name for a partner (customer/vendor/agent)
+ * Returns company name if available, otherwise first name + last name
+ */
+export function getPartnerInfo(partner: PartnerInfoFields | null): string {
+  let partnerInfo: string = "";
+
+  if (partner?.first_name) {
+    partnerInfo += `${partner.first_name}`;
+  }
+
+  if (partner?.last_name) {
+    if (partnerInfo) {
+      partnerInfo += " ";
+    }
+    partnerInfo += `${partner.last_name}`;
+  }
+
+  if (partner?.phone_number) {
+    if (partnerInfo) {
+      partnerInfo += " · ";
+    }
+    partnerInfo += `${partner.phone_number}`;
+  }
+
+  return partnerInfo;
+}
 
 /**
  * Address fields interface for flexible address formatting

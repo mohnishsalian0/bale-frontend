@@ -48,14 +48,13 @@ export function OrderDetailsStep({
   setFormData,
 }: OrderDetailsStepProps) {
   const [warehouses, setWarehouses] = useState<Tables<"warehouses">[]>([]);
-  const [customers, setCustomers] = useState<Tables<"partners">[]>([]);
   const [agents, setAgents] = useState<Tables<"partners">[]>([]);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 
-  // Load warehouses, customers and agents on mount
+  // Load warehouses and agents on mount
   useEffect(() => {
     loadWarehouses();
-    loadPartners();
+    loadAgents();
   }, []);
 
   const loadWarehouses = async () => {
@@ -76,19 +75,9 @@ export function OrderDetailsStep({
     }
   };
 
-  const loadPartners = async () => {
+  const loadAgents = async () => {
     try {
       const supabase = createClient();
-
-      // Load customers
-      const { data: customersData, error: customersError } = await supabase
-        .from("partners")
-        .select("*")
-        .eq("partner_type", "customer")
-        .order("first_name", { ascending: true });
-
-      if (customersError) throw customersError;
-      setCustomers(customersData || []);
 
       // Load agents
       const { data: agentsData, error: agentsError } = await supabase
@@ -100,7 +89,7 @@ export function OrderDetailsStep({
       if (agentsError) throw agentsError;
       setAgents(agentsData || []);
     } catch (error) {
-      console.error("Error loading partners:", error);
+      console.error("Error loading agents:", error);
     }
   };
 
@@ -134,27 +123,6 @@ export function OrderDetailsStep({
             {warehouses.map((warehouse) => (
               <SelectItem key={warehouse.id} value={warehouse.id}>
                 {warehouse.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Customer Dropdown */}
-        <Select
-          value={formData.customerId}
-          onValueChange={(value) =>
-            setFormData({ ...formData, customerId: value })
-          }
-          required
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Customer" />
-          </SelectTrigger>
-          <SelectContent>
-            {customers.map((customer) => (
-              <SelectItem key={customer.id} value={customer.id}>
-                {customer.first_name} {customer.last_name}
-                {customer.company_name && ` - ${customer.company_name}`}
               </SelectItem>
             ))}
           </SelectContent>
