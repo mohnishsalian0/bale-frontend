@@ -42,7 +42,12 @@ export default function QRCodesPage() {
   const [selectedProduct, setSelectedProduct] = useState<string>("all");
 
   // Fetch data using TanStack Query
-  const { data: batchesData = [], isLoading: batchesLoading, isError: batchesError, refetch: refetchBatches } = useQRBatches(warehouse.id);
+  const {
+    data: batchesData = [],
+    isLoading: batchesLoading,
+    isError: batchesError,
+    refetch: refetchBatches,
+  } = useQRBatches(warehouse.id);
   const { data: productsData = [], isLoading: productsLoading } = useProducts();
 
   const loading = batchesLoading || productsLoading;
@@ -67,14 +72,14 @@ export default function QRCodesPage() {
       productIds: new Set(
         (batch.qr_batch_items || [])
           .map((item: any) => item.stock_unit?.product_id)
-          .filter(Boolean)
+          .filter(Boolean),
       ),
     }));
 
     // Filter by product if selected
     if (selectedProduct !== "all") {
       transformedBatches = transformedBatches.filter((batch: any) =>
-        batch.productIds.has(selectedProduct)
+        batch.productIds.has(selectedProduct),
       );
     }
 

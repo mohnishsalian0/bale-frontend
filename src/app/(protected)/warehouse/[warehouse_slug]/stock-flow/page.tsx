@@ -30,7 +30,10 @@ import {
   formatQuantitiesByUnit,
 } from "@/lib/utils/measuring-units";
 import { getPartnerName } from "@/lib/utils/partner";
-import { useGoodsInwards, useGoodsOutwards } from "@/lib/query/hooks/stock-flow";
+import {
+  useGoodsInwards,
+  useGoodsOutwards,
+} from "@/lib/query/hooks/stock-flow";
 import { usePartners } from "@/lib/query/hooks/partners";
 
 interface StockFlowItem {
@@ -64,8 +67,18 @@ export default function StockFlowPage() {
   const [selectedPartner, setSelectedPartner] = useState("all");
 
   // Fetch data using TanStack Query
-  const { data: inwards = [], isLoading: inwardsLoading, isError: inwardsError, refetch: refetchInwards } = useGoodsInwards(warehouse.id);
-  const { data: outwards = [], isLoading: outwardsLoading, isError: outwardsError, refetch: refetchOutwards } = useGoodsOutwards(warehouse.id);
+  const {
+    data: inwards = [],
+    isLoading: inwardsLoading,
+    isError: inwardsError,
+    refetch: refetchInwards,
+  } = useGoodsInwards(warehouse.id);
+  const {
+    data: outwards = [],
+    isLoading: outwardsLoading,
+    isError: outwardsError,
+    refetch: refetchOutwards,
+  } = useGoodsOutwards(warehouse.id);
   const { data: partners = [], isLoading: partnersLoading } = usePartners();
 
   const loading = inwardsLoading || outwardsLoading || partnersLoading;
@@ -102,8 +115,7 @@ export default function StockFlowPage() {
           : firstProduct?.name || "Unknown Product";
 
       const totalQty = stockUnits.reduce(
-        (sum: number, unit: any) =>
-          sum + (Number(unit.initial_quantity) || 0),
+        (sum: number, unit: any) => sum + (Number(unit.initial_quantity) || 0),
         0,
       );
       const unit = firstProduct?.measuring_unit || "m";
@@ -134,9 +146,7 @@ export default function StockFlowPage() {
 
       // Get unique products
       const uniqueProducts = new Set(
-        items
-          .map((item: any) => item.stock_unit?.product?.id)
-          .filter(Boolean),
+        items.map((item: any) => item.stock_unit?.product?.id).filter(Boolean),
       );
       const productCount = uniqueProducts.size;
       const productName =

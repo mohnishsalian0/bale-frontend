@@ -42,18 +42,32 @@ export function useUserMutations(authUserId: string) {
   const queryClient = useQueryClient();
 
   const updateWarehouse = useMutation({
-    mutationFn: ({ userId, warehouseId }: { userId: string; warehouseId: string }) =>
-      updateUserWarehouse(userId, warehouseId),
+    mutationFn: ({
+      userId,
+      warehouseId,
+    }: {
+      userId: string;
+      warehouseId: string;
+    }) => updateUserWarehouse(userId, warehouseId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.current(authUserId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.users.current(authUserId),
+      });
     },
   });
 
   const updateProfile = useMutation({
-    mutationFn: ({ userId, data }: { userId: string; data: TablesUpdate<"users"> }) =>
-      updateUser(userId, data),
+    mutationFn: ({
+      userId,
+      data,
+    }: {
+      userId: string;
+      data: TablesUpdate<"users">;
+    }) => updateUser(userId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.current(authUserId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.users.current(authUserId),
+      });
     },
   });
 

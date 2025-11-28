@@ -13,7 +13,9 @@ export interface UserWithRole extends User {
  * Fetch user by auth user ID
  * This is the primary way to get the current logged-in user
  */
-export async function getUserByAuthId(authUserId: string): Promise<User | null> {
+export async function getUserByAuthId(
+  authUserId: string,
+): Promise<User | null> {
   const supabase = createClient();
 
   const { data, error } = await supabase

@@ -28,10 +28,17 @@ export function useCompanyMutations(authUserId: string) {
   const queryClient = useQueryClient();
 
   const update = useMutation({
-    mutationFn: ({ companyId, data }: { companyId: string; data: TablesUpdate<"companies"> }) =>
-      updateCompanyDetails(companyId, data),
+    mutationFn: ({
+      companyId,
+      data,
+    }: {
+      companyId: string;
+      data: TablesUpdate<"companies">;
+    }) => updateCompanyDetails(companyId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.company.detail(authUserId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.company.detail(authUserId),
+      });
     },
   });
 

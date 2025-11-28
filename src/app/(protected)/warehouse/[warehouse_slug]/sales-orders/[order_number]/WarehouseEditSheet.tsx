@@ -51,7 +51,8 @@ export function WarehouseEditSheet({
   const isMobile = useIsMobile();
 
   // Fetch warehouses using TanStack Query
-  const { data: warehouses = [], isLoading: fetchingWarehouses } = useWarehouses();
+  const { data: warehouses = [], isLoading: fetchingWarehouses } =
+    useWarehouses();
 
   useEffect(() => {
     if (open) {

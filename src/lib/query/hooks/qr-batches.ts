@@ -56,9 +56,15 @@ export function useQRBatchMutations(warehouseId: string) {
   const create = useMutation({
     mutationFn: (params: CreateQRBatchParams) => createQRBatch(params),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.qrBatches.all(warehouseId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.stockUnits.all(warehouseId) }); // QR status changed
-      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all(warehouseId) }); // Dashboard stats changed
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.qrBatches.all(warehouseId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.stockUnits.all(warehouseId),
+      }); // QR status changed
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.dashboard.all(warehouseId),
+      }); // Dashboard stats changed
     },
   });
 

@@ -43,8 +43,7 @@ export const queryKeys = {
 
   // Sales Orders
   salesOrders: {
-    all: (warehouseId: string | null) =>
-      ["sales-orders", warehouseId] as const,
+    all: (warehouseId: string | null) => ["sales-orders", warehouseId] as const,
     detail: (sequenceNumber: string) =>
       ["sales-orders", "detail", sequenceNumber] as const,
     dashboard: (warehouseId: string) =>
@@ -98,8 +97,7 @@ export const queryKeys = {
       ["dashboard", "low-stock", warehouseId] as const,
     pendingQR: (warehouseId: string) =>
       ["dashboard", "pending-qr", warehouseId] as const,
-    recentPartners: () =>
-      ["dashboard", "recent-partners"] as const,
+    recentPartners: () => ["dashboard", "recent-partners"] as const,
   },
 
   // Catalog (Public)

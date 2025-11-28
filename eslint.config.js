@@ -29,13 +29,11 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
-        React: true, // Explicitly declare React as a global
       },
     },
     settings: {
       react: {
-        version: "detect", // Automatically detect the React version
-        jsxRuntime: "automatic",
+        version: "detect",
       },
     },
     rules: {
@@ -45,7 +43,6 @@ export default [
       "react/react-in-jsx-scope": "off", // Not needed for React 17+ with new JSX transform
       "react/jsx-uses-react": "off", // Not needed for React 17+ with new JSX transform
       "react/prop-types": "off", // Not needed in TypeScript projects
-      // Add any custom React rules here
     },
   },
 

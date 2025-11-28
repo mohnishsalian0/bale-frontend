@@ -107,8 +107,12 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const supabase = createClient();
 
   // Fetch warehouse using TanStack Query if slug exists
-  const { data: warehouse, isLoading: warehouseLoading } = useWarehouseBySlug(warehouseSlug || "");
-  const { updateWarehouse: updateUserWarehouse } = useUserMutations(user?.auth_user_id || "");
+  const { data: warehouse, isLoading: warehouseLoading } = useWarehouseBySlug(
+    warehouseSlug || "",
+  );
+  const { updateWarehouse: updateUserWarehouse } = useUserMutations(
+    user?.auth_user_id || "",
+  );
 
   const loading = authLoading || (warehouseSlug ? warehouseLoading : false);
 

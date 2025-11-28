@@ -30,8 +30,12 @@ export function useInviteMutations() {
   const accept = useMutation({
     mutationFn: (params: AcceptInviteParams) => acceptInvite(params),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.invites.byCode(variables.inviteToken) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.current(variables.authUserId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.invites.byCode(variables.inviteToken),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.users.current(variables.authUserId),
+      });
     },
   });
 

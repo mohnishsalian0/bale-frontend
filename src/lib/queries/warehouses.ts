@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/client";
-import type { Tables, TablesInsert, TablesUpdate } from "@/types/database/supabase";
+import type {
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+} from "@/types/database/supabase";
 
 type Warehouse = Tables<"warehouses">;
 
@@ -27,7 +31,9 @@ export async function getWarehouses(): Promise<Warehouse[]> {
 /**
  * Fetch a single warehouse by slug
  */
-export async function getWarehouseBySlug(slug: string): Promise<Warehouse | null> {
+export async function getWarehouseBySlug(
+  slug: string,
+): Promise<Warehouse | null> {
   const supabase = createClient();
 
   const { data, error } = await supabase

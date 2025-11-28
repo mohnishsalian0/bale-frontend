@@ -63,10 +63,17 @@ export function useWarehouseMutations() {
   });
 
   const update = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: TablesUpdate<"warehouses"> }) =>
-      updateWarehouse(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: TablesUpdate<"warehouses">;
+    }) => updateWarehouse(id, data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.warehouses.detail(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.warehouses.detail(variables.id),
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.warehouses.all() });
     },
   });

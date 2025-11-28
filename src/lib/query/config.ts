@@ -42,7 +42,7 @@ export const GC_TIME = {
  * Default query options applied to all queries
  */
 export const DEFAULT_QUERY_OPTIONS = {
-  refetchOnMount: 'always' as const,
+  refetchOnMount: "always" as const,
   refetchOnWindowFocus: true,
   refetchOnReconnect: true,
   retry: 1, // Retry failed queries once
@@ -55,7 +55,7 @@ export const DEFAULT_QUERY_OPTIONS = {
  */
 export function getQueryOptions(
   staleTime: number,
-  gcTime: number = GC_TIME.DEFAULT
+  gcTime: number = GC_TIME.DEFAULT,
 ) {
   return {
     ...DEFAULT_QUERY_OPTIONS,

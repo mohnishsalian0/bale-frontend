@@ -50,7 +50,10 @@ export async function getStockUnits(
     if (filters.created_from_inward_id === null) {
       query = query.is("created_from_inward_id", null);
     } else {
-      query = query.eq("created_from_inward_id", filters.created_from_inward_id);
+      query = query.eq(
+        "created_from_inward_id",
+        filters.created_from_inward_id,
+      );
     }
   }
 
