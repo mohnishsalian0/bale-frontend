@@ -26,7 +26,6 @@ interface NotesEditSheetProps {
   onOpenChange: (open: boolean) => void;
   orderId: string;
   initialNotes: string | null;
-  onSuccess: () => void;
 }
 
 export function NotesEditSheet({
@@ -34,7 +33,6 @@ export function NotesEditSheet({
   onOpenChange,
   orderId,
   initialNotes,
-  onSuccess,
 }: NotesEditSheetProps) {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
@@ -63,7 +61,6 @@ export function NotesEditSheet({
       if (error) throw error;
 
       toast.success("Notes updated");
-      onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating notes:", error);

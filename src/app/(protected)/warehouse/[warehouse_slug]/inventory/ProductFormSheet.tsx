@@ -43,7 +43,6 @@ import { useSession } from "@/contexts/session-context";
 interface ProductFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onProductAdded?: () => void;
   productToEdit?: ProductWithAttributes;
 }
 
@@ -70,7 +69,6 @@ interface ProductFormData {
 export function ProductFormSheet({
   open,
   onOpenChange,
-  onProductAdded,
   productToEdit,
 }: ProductFormSheetProps) {
   const { user } = useSession();
@@ -436,9 +434,6 @@ export function ProductFormSheet({
           : "Product created successfully",
       );
       handleCancel();
-      if (onProductAdded) {
-        onProductAdded();
-      }
     } catch (error) {
       console.error("Error saving product:", error);
       const errorMessage =

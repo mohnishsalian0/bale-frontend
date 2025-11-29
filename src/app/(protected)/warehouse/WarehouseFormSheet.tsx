@@ -65,39 +65,47 @@ export function WarehouseFormSheet({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      const warehouseData = {
-        name: formData.name,
-        contact_name: formData.contactName || null,
-        contact_number: formData.contactNumber || null,
-        address_line1: formData.addressLine1 || null,
-        address_line2: formData.addressLine2 || null,
-        city: formData.city || null,
-        state: formData.state || null,
-        country: formData.country || null,
-        pin_code: formData.pinCode || null,
-      };
+    const mutationOptions = {
+      onSuccess: () => {
+        toast.success(
+          warehouse
+            ? "Warehouse updated successfully"
+            : "Warehouse created successfully",
+        );
+        handleCancel();
+      },
+      onError: (error: Error) => {
+        toast.error(error.message);
+      },
+    };
 
-      if (isEditMode && warehouse) {
-        // Update existing warehouse using mutation
-        await update.mutateAsync({
+    const warehouseData = {
+      name: formData.name,
+      contact_name: formData.contactName || null,
+      contact_number: formData.contactNumber || null,
+      address_line1: formData.addressLine1 || null,
+      address_line2: formData.addressLine2 || null,
+      city: formData.city || null,
+      state: formData.state || null,
+      country: formData.country || null,
+      pin_code: formData.pinCode || null,
+    };
+
+    if (isEditMode && warehouse) {
+      // Update existing warehouse using mutation
+      update.mutate(
+        {
           id: warehouse.id,
           data: warehouseData,
-        });
-        toast.success("Warehouse updated successfully");
-      } else {
-        // Create new warehouse using mutation
-        await create.mutateAsync(warehouseData as TablesInsert<"warehouses">);
-        toast.success("Warehouse created successfully");
-      }
-
-      // Success! Close sheet (data auto-refreshes via cache invalidation)
-      handleCancel();
-    } catch (error) {
-      console.error("Error saving warehouse:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to save warehouse";
-      toast.error(errorMessage);
+        },
+        mutationOptions,
+      );
+    } else {
+      // Create new warehouse using mutation
+      create.mutate(
+        warehouseData as TablesInsert<"warehouses">,
+        mutationOptions,
+      );
     }
   };
 

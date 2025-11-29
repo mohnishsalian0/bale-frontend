@@ -7,8 +7,13 @@ import type {
 import { uploadPartnerImage } from "@/lib/storage";
 
 type Partner = Tables<"partners">;
+type PartnerOrderAggregate = Tables<"partner_order_aggregates">;
 export type PartnerInsert = TablesInsert<"partners">;
 export type PartnerUpdate = TablesUpdate<"partners">;
+
+export interface PartnerWithAggregates extends Partner {
+  partner_order_aggregates: PartnerOrderAggregate | null;
+}
 
 /**
  * Fetch all partners (for filters, dropdowns, etc.)
@@ -78,16 +83,21 @@ export async function getAgents(): Promise<Partner[]> {
 }
 
 /**
- * Fetch a single partner by ID
+ * Fetch a single partner by ID with order aggregates
  */
 export async function getPartnerById(
   partnerId: string,
-): Promise<Partner | null> {
+): Promise<PartnerWithAggregates | null> {
   const supabase = createClient();
 
   const { data, error } = await supabase
     .from("partners")
-    .select("*")
+    .select(
+      `
+      *,
+      partner_order_aggregates(*)
+    `,
+    )
     .eq("id", partnerId)
     .is("deleted_at", null)
     .single();
@@ -96,7 +106,8 @@ export async function getPartnerById(
     console.error("Error fetching partner:", error);
     return null;
   }
-  return data;
+
+  return data as PartnerWithAggregates;
 }
 
 /**

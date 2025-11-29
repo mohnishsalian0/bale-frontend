@@ -96,10 +96,7 @@ export default function StockFlowPage() {
   const { monthGroups, totalReceived, totalOutwarded } = useMemo(() => {
     // Transform inwards
     const inwardItems: StockFlowItem[] = (inwards as any[]).map((r) => {
-      const partnerName = r.partner
-        ? r.partner.company_name ||
-          `${r.partner.first_name} ${r.partner.last_name}`
-        : "Unknown Partner";
+      const partnerName = getPartnerName(r.partner);
 
       const stockUnits = r.stock_units || [];
       const firstProduct = stockUnits[0]?.product;

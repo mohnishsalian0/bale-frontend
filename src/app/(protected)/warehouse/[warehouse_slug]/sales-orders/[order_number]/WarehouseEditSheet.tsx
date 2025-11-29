@@ -34,7 +34,6 @@ interface WarehouseEditSheetProps {
   orderId: string;
   currentWarehouseId: string;
   hasOutward: boolean;
-  onSuccess: () => void;
 }
 
 export function WarehouseEditSheet({
@@ -43,7 +42,6 @@ export function WarehouseEditSheet({
   orderId,
   currentWarehouseId,
   hasOutward,
-  onSuccess,
 }: WarehouseEditSheetProps) {
   const [selectedWarehouseId, setSelectedWarehouseId] =
     useState(currentWarehouseId);
@@ -77,7 +75,6 @@ export function WarehouseEditSheet({
       if (error) throw error;
 
       toast.success("Warehouse updated");
-      onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating warehouse:", error);

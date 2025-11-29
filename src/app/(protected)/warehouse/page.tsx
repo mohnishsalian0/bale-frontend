@@ -7,25 +7,21 @@ import { IconBuildingWarehouse } from "@tabler/icons-react";
 import { createClient, getCurrentUser } from "@/lib/supabase/client";
 import type { Tables } from "@/types/database/supabase";
 import { LoadingState } from "@/components/layouts/loading-state";
+import { useWarehouses } from "@/lib/query/hooks/warehouses";
 
 type Warehouse = Tables<"warehouses">;
 type User = Tables<"users">;
 
 export default function WarehouseSelectionPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const supabase = createClient();
 
+  // Fetch warehouses using TanStack Query
+  const { data: warehouses = [], isLoading: loading } = useWarehouses();
+
   useEffect(() => {
-    fetchWarehousesAndUser();
-  }, []);
-
-  const fetchWarehousesAndUser = async () => {
-    try {
-      setLoading(true);
-
+    const fetchWarehousesAndUser = async () => {
       // Get current user
       const currentUser = await getCurrentUser();
       if (!currentUser) {
@@ -34,29 +30,9 @@ export default function WarehouseSelectionPage() {
       }
 
       setUser(currentUser);
-
-      // Fetch warehouses - RLS automatically filters based on user's warehouse access
-      const { data, error } = await supabase
-        .from("warehouses")
-        .select("*")
-        .order("created_at");
-
-      if (error) throw error;
-
-      const userWarehouses = data || [];
-      setWarehouses(userWarehouses);
-    } catch (error) {
-      console.error("Error fetching warehouses:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user && warehouses.length === 1) {
-      handleWarehouseSelect(warehouses[0]);
-    }
-  }, [user, warehouses]);
+    };
+    fetchWarehousesAndUser();
+  }, []);
 
   const handleWarehouseSelect = async (warehouse: Warehouse) => {
     try {
@@ -77,6 +53,12 @@ export default function WarehouseSelectionPage() {
       console.error("Error selecting warehouse:", error);
     }
   };
+
+  useEffect(() => {
+    if (user && warehouses.length === 1) {
+      handleWarehouseSelect(warehouses[0]);
+    }
+  }, [user, warehouses]);
 
   if (loading) {
     return <LoadingState />;

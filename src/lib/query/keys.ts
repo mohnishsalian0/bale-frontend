@@ -48,6 +48,8 @@ export const queryKeys = {
       ["sales-orders", "detail", sequenceNumber] as const,
     dashboard: (warehouseId: string) =>
       ["sales-orders", "dashboard", warehouseId] as const,
+    pendingByCustomer: (customerId: string) =>
+      ["sales-orders", "pending", "customer", customerId] as const,
   },
 
   // Warehouses (companyId removed - RLS handles scoping, user in single company)
@@ -64,6 +66,8 @@ export const queryKeys = {
       ["stock-units", warehouseId, filters] as const,
     byProduct: (productId: string, warehouseId: string) =>
       ["stock-units", "product", productId, warehouseId] as const,
+    withInwardDetails: (productId: string, warehouseId: string) =>
+      ["stock-units", "with-inward-details", productId, warehouseId] as const,
     pendingQR: (warehouseId: string) =>
       ["stock-units", "pending-qr", warehouseId] as const,
   },
@@ -78,6 +82,8 @@ export const queryKeys = {
       ["stock-flow", "inward", "detail", sequenceNumber] as const,
     outwardDetail: (sequenceNumber: string) =>
       ["stock-flow", "outward", "detail", sequenceNumber] as const,
+    outwardItemsByProduct: (productId: string) =>
+      ["stock-flow", "outward-items", "product", productId] as const,
   },
 
   // QR Batches

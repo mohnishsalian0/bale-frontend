@@ -69,7 +69,8 @@ export default function InventoryPage() {
     return (productsData as any[]).map((p: any) => ({
       ...p,
       productNumber: `PROD-${p.sequence_number}`,
-      totalQuantity: p.inventory_agg?.[0]?.in_stock_quantity || 0,
+      totalQuantity:
+        p.product_inventory_aggregates?.[0]?.in_stock_quantity || 0,
       imageUrl: p.product_images?.[0],
     }));
   }, [productsData]);
@@ -238,7 +239,7 @@ export default function InventoryPage() {
                 className="border border-border shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() =>
                   router.push(
-                    `/warehouse/${warehouse.slug}/inventory/${product.productNumber}`,
+                    `/warehouse/${warehouse.slug}/inventory/${product.sequence_number}`,
                   )
                 }
               >

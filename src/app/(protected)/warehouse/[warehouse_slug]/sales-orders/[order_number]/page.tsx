@@ -1,13 +1,12 @@
 "use client";
 
-import { use, useState, useEffect, useMemo } from "react";
+import { use, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SalesStatusBadge } from "@/components/ui/sales-status-badge";
 import { Progress } from "@/components/ui/progress";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
-import { createClient } from "@/lib/supabase/client";
 import { useSession } from "@/contexts/session-context";
 import { calculateOrderFinancials } from "@/lib/utils/financial";
 import { formatAbsoluteDate } from "@/lib/utils/date";
@@ -16,8 +15,8 @@ import {
   getOrderDisplayStatus,
   type DisplayStatus,
 } from "@/lib/utils/sales-order";
-import type { Tables } from "@/types/database/supabase";
 import type { DiscountType, SalesOrderStatus } from "@/types/database/enums";
+import type { Tables } from "@/types/database/supabase";
 import { NotesEditSheet } from "./NotesEditSheet";
 import { CustomerEditSheet } from "./CustomerEditSheet";
 import { AgentEditSheet } from "./AgentEditSheet";
@@ -35,26 +34,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { IconDotsVertical } from "@tabler/icons-react";
+import { useSalesOrder } from "@/lib/query/hooks/sales-orders";
 
-type SalesOrder = Tables<"sales_orders">;
-type Partner = Tables<"partners">;
-type Warehouse = Tables<"warehouses">;
-type Product = Tables<"products">;
-type SalesOrderItem = Tables<"sales_order_items">;
-
-interface OrderWithDetails extends SalesOrder {
-  status: SalesOrderStatus;
-  customer: Partner | null;
-  agent: Partner | null;
-  warehouse: Warehouse | null;
-  sales_order_items: Array<
-    SalesOrderItem & {
-      product: Product | null;
-    }
-  >;
-}
-
-interface PageParams {
+interface PageParams{
   params: Promise<{
     warehouse_slug: string;
     order_number: string;
@@ -65,9 +47,6 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
   const router = useRouter();
   const { order_number } = use(params);
   const { warehouse } = useSession();
-  const [order, setOrder] = useState<OrderWithDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"details" | "outwards">("details");
 
   // Edit sheet states
@@ -78,71 +57,20 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
   const [showTransportEdit, setShowTransportEdit] = useState(false);
   const [showNotesEdit, setShowNotesEdit] = useState(false);
 
-  const fetchOrder = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const supabase = createClient();
-
-      const { data, error: fetchError } = await supabase
-        .from("sales_orders")
-        .select(
-          `
-					*,
-					customer:partners!sales_orders_customer_id_fkey(
-						id, first_name, last_name, company_name,
-						phone_number, email, address_line1, address_line2,
-						city, state, pin_code
-					),
-					agent:partners!sales_orders_agent_id_fkey(
-						id, first_name, last_name, company_name
-					),
-					warehouse:warehouses(id, name, address_line1, address_line2, city, state, pin_code),
-					sales_order_items(
-						id, product_id, required_quantity, dispatched_quantity,
-						pending_quantity, unit_rate, line_total, notes,
-						product:products(
-							id, name, measuring_unit, product_images, sequence_number,
-							product_material_assignments(
-								material:product_materials(*)
-							),
-							product_color_assignments(
-								color:product_colors(*)
-							),
-							product_tag_assignments(
-								tag:product_tags(*)
-							)
-						)
-					)
-				`,
-        )
-        .eq("sequence_number", parseInt(order_number))
-        .is("deleted_at", null)
-        .single();
-
-      if (fetchError) throw fetchError;
-      if (!data) throw new Error("Order not found");
-
-      setOrder(data as OrderWithDetails);
-    } catch (err) {
-      console.error("Error fetching order:", err);
-      setError(err instanceof Error ? err.message : "Failed to load order");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchOrder();
-  }, [order_number]);
+  // Fetch sales order using TanStack Query
+  const {
+    data: order,
+    isLoading: loading,
+    isError: error,
+  } = useSalesOrder(order_number);
 
   // Calculate financials
   const financials = useMemo(() => {
     if (!order) return null;
 
     const itemTotal = order.sales_order_items.reduce(
-      (sum, item) => sum + (item.line_total || 0),
+      (sum: number, item: Tables<"sales_order_items">) =>
+        sum + (item.line_total || 0),
       0,
     );
 
@@ -209,7 +137,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
     return (
       <ErrorState
         title="Order not found"
-        message={error || "This order does not exist or has been deleted"}
+        message="This order does not exist or has been deleted"
         onRetry={() => router.back()}
         actionText="Go back"
       />
@@ -328,7 +256,6 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
               onOpenChange={setShowCustomerEdit}
               orderId={order.id}
               currentCustomerId={order.customer_id}
-              onSuccess={fetchOrder}
             />
 
             <AgentEditSheet
@@ -336,7 +263,6 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
               onOpenChange={setShowAgentEdit}
               orderId={order.id}
               currentAgentId={order.agent_id}
-              onSuccess={fetchOrder}
             />
 
             <PaymentTermsEditSheet
@@ -347,7 +273,6 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
               currentAdvanceAmount={order.advance_amount || 0}
               currentDiscountType={order.discount_type as DiscountType}
               currentDiscountValue={order.discount_value || 0}
-              onSuccess={fetchOrder}
             />
 
             <WarehouseEditSheet
@@ -356,7 +281,6 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
               orderId={order.id}
               currentWarehouseId={order.warehouse_id || ""}
               hasOutward={order.has_outward || false}
-              onSuccess={fetchOrder}
             />
 
             <TransportEditSheet
@@ -364,7 +288,6 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
               onOpenChange={setShowTransportEdit}
               orderId={order.id}
               currentExpectedDeliveryDate={order.expected_delivery_date}
-              onSuccess={fetchOrder}
             />
 
             <NotesEditSheet
@@ -372,7 +295,6 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
               onOpenChange={setShowNotesEdit}
               orderId={order.id}
               initialNotes={order.notes}
-              onSuccess={fetchOrder}
             />
           </>
         )}

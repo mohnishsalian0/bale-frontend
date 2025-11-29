@@ -36,7 +36,6 @@ interface AgentEditSheetProps {
   onOpenChange: (open: boolean) => void;
   orderId: string;
   currentAgentId: string | null;
-  onSuccess: () => void;
 }
 
 export function AgentEditSheet({
@@ -44,7 +43,6 @@ export function AgentEditSheet({
   onOpenChange,
   orderId,
   currentAgentId,
-  onSuccess,
 }: AgentEditSheetProps) {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(
     currentAgentId,
@@ -78,7 +76,6 @@ export function AgentEditSheet({
       if (error) throw error;
 
       toast.success(selectedAgentId ? "Agent updated" : "Agent removed");
-      onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating agent:", error);

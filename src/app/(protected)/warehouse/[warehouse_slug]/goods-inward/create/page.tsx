@@ -15,14 +15,8 @@ import { PieceQuantitySheet } from "../PieceQuantitySheet";
 import { InwardDetailsStep } from "../InwardDetailsStep";
 import { ProductFormSheet } from "../../inventory/ProductFormSheet";
 import { createClient } from "@/lib/supabase/client";
-import {
-  getProductsWithAttributes,
-  getProductAttributeLists,
-  type ProductWithAttributes,
-  type ProductMaterial,
-  type ProductColor,
-  type ProductTag,
-} from "@/lib/queries/products";
+import { useProducts, useProductAttributes } from "@/lib/query/hooks/products";
+import type { ProductWithAttributes } from "@/lib/queries/products";
 import type { TablesInsert } from "@/types/database/supabase";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
@@ -49,16 +43,42 @@ export default function CreateGoodsInwardPage() {
   const { hideChrome, showChromeUI } = useAppChrome();
   const [currentStep, setCurrentStep] = useState<FormStep>("products");
 
+  // Fetch products and attributes using TanStack Query
+  const {
+    data: productsData = [],
+    isLoading: productsLoading,
+  } = useProducts();
+  const {
+    data: attributesData,
+    isLoading: attributesLoading,
+  } = useProductAttributes();
+
+  // Track product units state locally
+  const [productUnits, setProductUnits] = useState<
+    Record<string, StockUnitSpec[]>
+  >({});
+
+  // Combine products data with units state
+  const products: ProductWithUnits[] = useMemo(
+    () =>
+      productsData.map((product) => ({
+        ...product,
+        units: productUnits[product.id] || [],
+      })),
+    [productsData, productUnits],
+  );
+
+  const materials = attributesData?.materials || [];
+  const colors = attributesData?.colors || [];
+  const tags = attributesData?.tags || [];
+  const loading = productsLoading || attributesLoading;
+
   // Hide chrome for immersive flow experience
   useEffect(() => {
     hideChrome();
     return () => showChromeUI(); // Restore chrome on unmount
   }, [hideChrome, showChromeUI]);
-  const [products, setProducts] = useState<ProductWithUnits[]>([]);
-  const [materials, setMaterials] = useState<ProductMaterial[]>([]);
-  const [colors, setColors] = useState<ProductColor[]>([]);
-  const [tags, setTags] = useState<ProductTag[]>([]);
-  const [loading, setLoading] = useState(false);
+
   const [saving, setSaving] = useState(false);
 
   // Unit entry sheet state
@@ -80,39 +100,6 @@ export default function CreateGoodsInwardPage() {
     notes: "",
     documentFile: null,
   });
-
-  // Load products and attributes on mount
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // Fetch products and attributes in parallel
-      const [productsData, attributeLists] = await Promise.all([
-        getProductsWithAttributes(),
-        getProductAttributeLists(),
-      ]);
-
-      const productsWithUnits: ProductWithUnits[] = productsData.map(
-        (product) => ({
-          ...product,
-          units: [],
-        }),
-      );
-
-      setProducts(productsWithUnits);
-      setMaterials(attributeLists.materials);
-      setColors(attributeLists.colors);
-      setTags(attributeLists.tags);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      toast.error("Failed to load products");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Handle opening unit sheet
   const handleOpenUnitSheet = (
@@ -140,82 +127,58 @@ export default function CreateGoodsInwardPage() {
       id: `temp-${Date.now()}-${Math.random()}`,
     };
 
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === selectedProduct.id
-          ? { ...p, units: [...p.units, newUnit] }
-          : p,
-      ),
-    );
+    setProductUnits((prev) => ({
+      ...prev,
+      [selectedProduct.id]: [...(prev[selectedProduct.id] || []), newUnit],
+    }));
   };
 
   // Handle incrementing unit count
   const handleIncrementUnit = (unitId: string) => {
     if (!selectedProduct) return;
 
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === selectedProduct.id
-          ? {
-              ...p,
-              units: p.units.map((u) =>
-                u.id === unitId ? { ...u, count: u.count + 1 } : u,
-              ),
-            }
-          : p,
+    setProductUnits((prev) => ({
+      ...prev,
+      [selectedProduct.id]: (prev[selectedProduct.id] || []).map((u) =>
+        u.id === unitId ? { ...u, count: u.count + 1 } : u,
       ),
-    );
+    }));
   };
 
   // Handle decrementing unit count
   const handleDecrementUnit = (unitId: string) => {
     if (!selectedProduct) return;
 
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === selectedProduct.id
-          ? {
-              ...p,
-              units: p.units.map((u) =>
-                u.id === unitId && u.count > 1
-                  ? { ...u, count: u.count - 1 }
-                  : u,
-              ),
-            }
-          : p,
+    setProductUnits((prev) => ({
+      ...prev,
+      [selectedProduct.id]: (prev[selectedProduct.id] || []).map((u) =>
+        u.id === unitId && u.count > 1 ? { ...u, count: u.count - 1 } : u,
       ),
-    );
+    }));
   };
 
   // Handle updating unit count
   const handleUpdateUnitCount = (unitId: string, count: number) => {
     if (!selectedProduct) return;
 
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === selectedProduct.id
-          ? {
-              ...p,
-              units: p.units.map((u) =>
-                u.id === unitId ? { ...u, count: Math.max(1, count) } : u,
-              ),
-            }
-          : p,
+    setProductUnits((prev) => ({
+      ...prev,
+      [selectedProduct.id]: (prev[selectedProduct.id] || []).map((u) =>
+        u.id === unitId ? { ...u, count: Math.max(1, count) } : u,
       ),
-    );
+    }));
   };
 
   // Handle deleting a unit
   const handleDeleteUnit = (unitId: string) => {
     if (!selectedProduct) return;
 
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === selectedProduct.id
-          ? { ...p, units: p.units.filter((u) => u.id !== unitId) }
-          : p,
+    setProductUnits((prev) => ({
+      ...prev,
+      [selectedProduct.id]: (prev[selectedProduct.id] || []).filter(
+        (u) => u.id !== unitId,
       ),
-    );
+    }));
   };
 
   // Handle adding new unit from AllSpecsSheet
@@ -237,13 +200,10 @@ export default function CreateGoodsInwardPage() {
       count: 1, // Always 1 for pieces, quantity represents total pieces
     };
 
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === selectedProduct.id
-          ? { ...p, units: [newUnit] } // Replace any existing unit (singleton)
-          : p,
-      ),
-    );
+    setProductUnits((prev) => ({
+      ...prev,
+      [selectedProduct.id]: [newUnit], // Replace any existing unit (singleton)
+    }));
   };
 
   // Check if user can proceed to step 2
@@ -562,7 +522,6 @@ export default function CreateGoodsInwardPage() {
           <ProductFormSheet
             open={showCreateProduct}
             onOpenChange={setShowCreateProduct}
-            onProductAdded={loadData}
           />
         )}
       </div>

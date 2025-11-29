@@ -6,6 +6,7 @@ import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getStockUnits,
   getStockUnitsByProduct,
+  getStockUnitsWithInwardDetails,
   getPendingQRStockUnits,
   updateStockUnit,
   updateStockUnits,
@@ -32,6 +33,25 @@ export function useStockUnitsByProduct(productId: string, warehouseId: string) {
     queryKey: queryKeys.stockUnits.byProduct(productId, warehouseId),
     queryFn: () => getStockUnitsByProduct(productId, warehouseId),
     ...getQueryOptions(STALE_TIME.STOCK_UNITS, GC_TIME.TRANSACTIONAL),
+  });
+}
+
+/**
+ * Fetch stock units for a product with full inward details
+ * Useful for product detail page to show stock flow history
+ */
+export function useStockUnitsWithInwardDetails(
+  productId: string | null,
+  warehouseId: string,
+) {
+  return useQuery({
+    queryKey: queryKeys.stockUnits.withInwardDetails(
+      productId || "",
+      warehouseId,
+    ),
+    queryFn: () => getStockUnitsWithInwardDetails(productId!, warehouseId),
+    ...getQueryOptions(STALE_TIME.STOCK_UNITS, GC_TIME.TRANSACTIONAL),
+    enabled: !!productId,
   });
 }
 

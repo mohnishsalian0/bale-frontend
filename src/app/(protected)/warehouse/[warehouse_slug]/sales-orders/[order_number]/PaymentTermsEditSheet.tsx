@@ -32,7 +32,6 @@ interface PaymentTermsEditSheetProps {
   currentAdvanceAmount: number;
   currentDiscountType: DiscountType;
   currentDiscountValue: number;
-  onSuccess: () => void;
 }
 
 export function PaymentTermsEditSheet({
@@ -43,7 +42,6 @@ export function PaymentTermsEditSheet({
   currentAdvanceAmount,
   currentDiscountType,
   currentDiscountValue,
-  onSuccess,
 }: PaymentTermsEditSheetProps) {
   const [paymentTerms, setPaymentTerms] = useState("");
   const [advanceAmount, setAdvanceAmount] = useState(0);
@@ -89,7 +87,6 @@ export function PaymentTermsEditSheet({
       if (error) throw error;
 
       toast.success("Payment terms updated");
-      onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating payment terms:", error);

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { IconBuildingWarehouse, IconShare } from "@tabler/icons-react";
 import { LoadingState } from "@/components/layouts/loading-state";
@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon } from "@/lib/utils/product";
-import { createClient } from "@/lib/supabase/client";
 import { useSession } from "@/contexts/session-context";
 import { formatCurrency } from "@/lib/utils/financial";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
@@ -25,40 +24,11 @@ import { SummaryTab } from "./SummaryTab";
 import { StockUnitsTab } from "./StockUnitsTab";
 import { StockFlowTab } from "./StockFlowTab";
 import { ProductFormSheet } from "../ProductFormSheet";
-import type { Tables } from "@/types/database/supabase";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import IconStore from "@/components/icons/IconStore";
-import {
-  PRODUCT_WITH_ATTRIBUTES_SELECT,
-  transformProductWithAttributes,
-  type ProductWithAttributes,
-} from "@/lib/queries/products";
-
-type Product = ProductWithAttributes;
-type StockUnit = Tables<"stock_units">;
-type GoodsInward = Tables<"goods_inwards">;
-type GoodsOutward = Tables<"goods_outwards">;
-type GoodsOutwardItem = Tables<"goods_outward_items">;
-type Partner = Tables<"partners">;
-type Warehouse = Tables<"warehouses">;
-
-interface StockUnitWithInward extends StockUnit {
-  goods_inward:
-    | (GoodsInward & {
-        partner: Partner | null;
-        from_warehouse: Warehouse | null;
-      })
-    | null;
-}
-
-interface OutwardItemWithDetails extends GoodsOutwardItem {
-  outward:
-    | (GoodsOutward & {
-        partner: Partner | null;
-        to_warehouse: Warehouse | null;
-      })
-    | null;
-}
+import { useProductBySequence } from "@/lib/query/hooks/products";
+import { useStockUnitsWithInwardDetails } from "@/lib/query/hooks/stock-units";
+import { useOutwardItemsByProduct } from "@/lib/query/hooks/stock-flow";
 
 interface PageParams {
   params: Promise<{
@@ -71,129 +41,56 @@ export default function ProductDetailPage({ params }: PageParams) {
   const router = useRouter();
   const { product_number } = use(params);
   const { warehouse } = useSession();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [stockUnits, setStockUnits] = useState<StockUnitWithInward[]>([]);
-  const [outwardItems, setOutwardItems] = useState<OutwardItemWithDetails[]>(
-    [],
-  );
-  const [totalQuantity, setTotalQuantity] = useState(0);
-  const [totalStockValue, setTotalStockValue] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<
     "summary" | "stock_units" | "stock_flow"
   >("summary");
   const [showEditProduct, setShowEditProduct] = useState(false);
 
-  const fetchProduct = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  // Fetch product using TanStack Query
+  const {
+    data: product,
+    isLoading: productLoading,
+    isError: productError,
+  } = useProductBySequence(product_number);
 
-      const supabase = createClient();
+  // Fetch stock units with inward details using new hook
+  const { data: stockUnits = [], isLoading: stockUnitsLoading } =
+    useStockUnitsWithInwardDetails(product?.id || null, warehouse.id);
 
-      // Fetch product with aggregates and attributes
-      const { data: productData, error: productError } = await supabase
-        .from("products")
-        .select(
-          `
-					${PRODUCT_WITH_ATTRIBUTES_SELECT},
-					inventory_agg:product_inventory_aggregates!product_id(
-						in_stock_quantity,
-						in_stock_value
-					)
-				`,
-        )
-        .eq("sequence_number", parseInt(product_number))
-        .eq("product_inventory_aggregates.warehouse_id", warehouse.id)
-        .is("deleted_at", null)
-        .single();
+  // Fetch outward items using new hook
+  const { data: outwardItems = [], isLoading: outwardItemsLoading } =
+    useOutwardItemsByProduct(product?.id || null);
 
-      if (productError) throw productError;
-      if (!productData) throw new Error("Product not found");
+  // Calculate aggregated values using useMemo
+  const { totalQuantity, totalStockValue } = useMemo(() => {
+    const quantity = stockUnits.reduce(
+      (sum, unit) => sum + (unit.remaining_quantity || 0),
+      0,
+    );
+    const value = stockUnits.reduce(
+      (sum, unit) =>
+        sum +
+        (unit.remaining_quantity || 0) *
+          (unit.product?.cost_price_per_unit || 0),
+      0,
+    );
+    return {
+      totalQuantity: quantity,
+      totalStockValue: value,
+    };
+  }, [stockUnits]);
 
-      setProduct(transformProductWithAttributes(productData));
-
-      // Get aggregated values
-      const inventoryAgg = (productData as any).inventory_agg?.[0];
-      if (inventoryAgg) {
-        setTotalQuantity(Number(inventoryAgg.in_stock_quantity || 0));
-        setTotalStockValue(Number(inventoryAgg.in_stock_value || 0));
-      }
-
-      // Fetch stock units with inward details
-      const { data: stockUnitsData, error: stockUnitsError } = await supabase
-        .from("stock_units")
-        .select(
-          `
-					*,
-					goods_inward:goods_inwards!created_from_inward_id(
-						id, sequence_number, inward_date, inward_type,
-						partner:partners!goods_inwards_partner_id_fkey(
-							id, first_name, last_name, company_name
-						),
-						from_warehouse:warehouses!goods_inwards_from_warehouse_id_fkey(
-							id, name
-						)
-					)
-				`,
-        )
-        .eq("product_id", productData.id)
-        .eq("warehouse_id", warehouse.id)
-        .eq("status", "in_stock")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false });
-
-      if (stockUnitsError) throw stockUnitsError;
-
-      setStockUnits((stockUnitsData as StockUnitWithInward[]) || []);
-
-      // Fetch outward items
-      const { data: outwardItemsData, error: outwardError } = await supabase
-        .from("goods_outward_items")
-        .select(
-          `
-					*,
-					stock_unit:stock_units!inner(product_id),
-					outward:goods_outwards(
-						id, sequence_number, outward_date, outward_type,
-						partner:partners!goods_outwards_partner_id_fkey(
-							id, first_name, last_name, company_name
-						),
-						to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(
-							id, name
-						)
-					)
-				`,
-        )
-        .eq("stock_unit.product_id", productData.id)
-        .order("created_at", { ascending: false })
-        .limit(50);
-
-      if (outwardError) throw outwardError;
-
-      setOutwardItems((outwardItemsData as OutwardItemWithDetails[]) || []);
-    } catch (err) {
-      console.error("Error fetching product:", err);
-      setError(err instanceof Error ? err.message : "Failed to load product");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProduct();
-  }, [product_number]);
+  const loading = productLoading || stockUnitsLoading || outwardItemsLoading;
 
   if (loading) {
     return <LoadingState message="Loading product details..." />;
   }
 
-  if (error || !product) {
+  if (productError || !product) {
     return (
       <ErrorState
         title="Product not found"
-        message={error || "This product does not exist or has been deleted"}
+        message="This product does not exist or has been deleted"
         onRetry={() => router.back()}
         actionText="Go back"
       />
@@ -283,7 +180,7 @@ export default function ProductDetailPage({ params }: PageParams) {
               <span className="text-xs text-gray-500">Total stock</span>
             </div>
             <p className="text-lg font-bold text-gray-700 whitespace-pre">
-              {`${totalQuantity} ${unitAbbr}  •  ₹ ${formatCurrency(totalStockValue)}`}
+              {`${totalQuantity.toFixed(2)} ${unitAbbr}  •  ₹ ${formatCurrency(totalStockValue)}`}
             </p>
           </div>
 
@@ -379,7 +276,6 @@ export default function ProductDetailPage({ params }: PageParams) {
           <ProductFormSheet
             open={showEditProduct}
             onOpenChange={setShowEditProduct}
-            onProductAdded={fetchProduct}
             productToEdit={product}
           />
         )}

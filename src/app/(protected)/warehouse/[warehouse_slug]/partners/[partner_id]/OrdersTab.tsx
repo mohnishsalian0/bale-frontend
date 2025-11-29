@@ -11,35 +11,22 @@ import {
   getOrderDisplayStatus,
   type DisplayStatus,
 } from "@/lib/utils/sales-order";
-import type { Tables } from "@/types/database/supabase";
 import type { SalesOrderStatus } from "@/types/database/enums";
-
-type SalesOrder = Tables<"sales_orders">;
-type SalesOrderItem = Tables<"sales_order_items">;
-type Product = Tables<"products">;
-
-interface OrderWithDetails extends SalesOrder {
-  status: SalesOrderStatus;
-  sales_order_items: Array<
-    SalesOrderItem & {
-      product: Product | null;
-    }
-  >;
-}
+import type { SalesOrderWithDetails } from "@/lib/queries/sales-orders";
 
 interface MonthGroup {
   month: string;
   monthYear: string;
-  orders: OrderWithDetails[];
+  orders: SalesOrderWithDetails[];
 }
 
 interface OrdersTabProps {
-  orders: OrderWithDetails[];
+  orders: SalesOrderWithDetails[];
   warehouseSlug: string;
 }
 
 function getProductSummary(
-  items: OrderWithDetails["sales_order_items"],
+  items: SalesOrderWithDetails["sales_order_items"],
 ): string {
   const productNames = items
     .map((item) => item.product?.name)

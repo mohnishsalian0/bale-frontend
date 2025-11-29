@@ -8,6 +8,7 @@ import {
   getGoodsOutwards,
   getGoodsInwardBySequenceNumber,
   getGoodsOutwardBySequenceNumber,
+  getOutwardItemsByProduct,
   createGoodsInward,
   createGoodsOutward,
   type GoodsInwardFilters,
@@ -64,6 +65,19 @@ export function useGoodsOutwardBySequenceNumber(sequenceNumber: string | null) {
     queryFn: () => getGoodsOutwardBySequenceNumber(sequenceNumber!),
     ...getQueryOptions(STALE_TIME.STOCK_FLOW, GC_TIME.TRANSACTIONAL),
     enabled: !!sequenceNumber,
+  });
+}
+
+/**
+ * Fetch outward items for a specific product
+ * Useful for product detail page to show outward flow history
+ */
+export function useOutwardItemsByProduct(productId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.stockFlow.outwardItemsByProduct(productId || ""),
+    queryFn: () => getOutwardItemsByProduct(productId!),
+    ...getQueryOptions(STALE_TIME.STOCK_FLOW, GC_TIME.TRANSACTIONAL),
+    enabled: !!productId,
   });
 }
 

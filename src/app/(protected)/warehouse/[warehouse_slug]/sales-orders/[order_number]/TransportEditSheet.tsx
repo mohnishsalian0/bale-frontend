@@ -27,7 +27,6 @@ interface TransportEditSheetProps {
   onOpenChange: (open: boolean) => void;
   orderId: string;
   currentExpectedDeliveryDate: string | null;
-  onSuccess: () => void;
 }
 
 export function TransportEditSheet({
@@ -35,7 +34,6 @@ export function TransportEditSheet({
   onOpenChange,
   orderId,
   currentExpectedDeliveryDate,
-  onSuccess,
 }: TransportEditSheetProps) {
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState<
     Date | undefined
@@ -74,7 +72,6 @@ export function TransportEditSheet({
       if (error) throw error;
 
       toast.success("Expected delivery date updated");
-      onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating delivery date:", error);

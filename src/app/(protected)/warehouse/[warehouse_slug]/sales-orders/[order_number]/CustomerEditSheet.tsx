@@ -34,7 +34,6 @@ interface CustomerEditSheetProps {
   onOpenChange: (open: boolean) => void;
   orderId: string;
   currentCustomerId: string;
-  onSuccess: () => void;
 }
 
 export function CustomerEditSheet({
@@ -42,7 +41,6 @@ export function CustomerEditSheet({
   onOpenChange,
   orderId,
   currentCustomerId,
-  onSuccess,
 }: CustomerEditSheetProps) {
   const [selectedCustomerId, setSelectedCustomerId] =
     useState(currentCustomerId);
@@ -75,7 +73,6 @@ export function CustomerEditSheet({
       if (error) throw error;
 
       toast.success("Customer updated");
-      onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating customer:", error);

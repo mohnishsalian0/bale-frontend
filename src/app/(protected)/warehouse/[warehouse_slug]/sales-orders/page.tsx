@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { IconSearch } from "@tabler/icons-react";
@@ -18,8 +18,9 @@ import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
 import { Progress } from "@/components/ui/progress";
-import { getSalesOrders } from "@/lib/queries/sales-orders";
-import { getCustomers } from "@/lib/queries/partners";
+import { useSalesOrders } from "@/lib/query/hooks/sales-orders";
+import { useCustomers } from "@/lib/query/hooks/partners";
+import { useProducts } from "@/lib/query/hooks/products";
 import { getPartnerName } from "@/lib/utils/partner";
 import {
   calculateCompletionPercentage,
@@ -60,139 +61,133 @@ export default function OrdersPage() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState("all");
   const [selectedCustomer, setSelectedCustomer] = useState("all");
-  const [monthGroups, setMonthGroups] = useState<MonthGroup[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [totalOrdered, setTotalOrdered] = useState(0);
-  const [totalSales, setTotalSales] = useState(0);
-  const [availableProducts, setAvailableProducts] = useState<string[]>([]);
-  const [availableCustomers, setAvailableCustomers] = useState<
-    Array<{ id: string; name: string }>
-  >([]);
 
-  const fetchSalesOrders = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  // Fetch orders, customers, and products using TanStack Query
+  const {
+    data: orders = [],
+    isLoading: ordersLoading,
+    isError: ordersError,
+  } = useSalesOrders(warehouse.id);
+  const {
+    data: customers = [],
+    isLoading: customersLoading,
+  } = useCustomers();
+  const {
+    data: products = [],
+    isLoading: productsLoading,
+  } = useProducts();
 
-      // Fetch orders and customers in parallel
-      const [orders, customers] = await Promise.all([
-        getSalesOrders(warehouse.id),
-        getCustomers(),
-      ]);
+  const loading = ordersLoading || customersLoading || productsLoading;
+  const error = ordersError;
 
-      // Transform orders
-      const orderItems: OrderListItem[] = orders.map((order) => {
-        const customerName = getPartnerName(order.customer);
+  // Transform products and customers for filters
+  const availableProducts = useMemo(
+    () => products.map((product) => product.name).sort(),
+    [products],
+  );
 
-        // Calculate products with quantities
-        const products = (order.sales_order_items || []).map((item) => ({
-          name: item.product?.name || "Unknown Product",
-          quantity: item.required_quantity,
-        }));
+  const availableCustomers = useMemo(
+    () =>
+      customers.map((customer) => ({
+        id: customer.id,
+        name: getPartnerName(customer),
+      })),
+    [customers],
+  );
 
-        // Calculate completion percentage using utility
-        const completionPercentage = calculateCompletionPercentage(
-          order.sales_order_items || [],
-        );
-
-        // Determine status (including overdue) using utility
-        const status = getOrderDisplayStatus(
-          order.status as SalesOrderStatus,
-          order.expected_delivery_date,
-        );
-
-        return {
-          id: order.id,
-          orderNumber: order.sequence_number,
-          customerId: order.customer_id,
-          customerName,
-          products,
-          dueDate: order.expected_delivery_date,
-          orderDate: order.order_date,
-          status,
-          completionPercentage,
-          totalAmount: order.total_amount || 0,
-        };
-      });
-
-      // Extract unique products from orders
-      const productSet = new Set<string>();
-      orders.forEach((order) => {
-        order.sales_order_items.forEach((item) => {
-          if (item.product?.name) productSet.add(item.product.name);
-        });
-      });
-
-      setAvailableProducts(Array.from(productSet).sort());
-
-      // Set customers from separate query
-      setAvailableCustomers(
-        customers.map((customer) => ({
-          id: customer.id,
-          name: getPartnerName(customer),
-        })),
-      );
-
-      // Group by month (based on order creation date)
-      const groups: { [key: string]: MonthGroup } = {};
-
-      orderItems.forEach((order) => {
-        const date = new Date(order.orderDate);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-        const monthName = date.toLocaleString("en-US", { month: "long" });
-        const year = date.getFullYear();
-
-        if (!groups[monthKey]) {
-          groups[monthKey] = {
-            month: monthName,
-            monthYear: `${monthName} ${year}`,
-            orders: [],
-          };
-        }
-
-        groups[monthKey].orders.push(order);
-      });
-
-      const sortedGroups = Object.values(groups).sort((a, b) => {
-        const [monthA, yearA] = a.monthYear.split(" ");
-        const [monthB, yearB] = b.monthYear.split(" ");
-        const dateA = new Date(`${monthA} 1, ${yearA}`);
-        const dateB = new Date(`${monthB} 1, ${yearB}`);
-        return dateB.getTime() - dateA.getTime();
-      });
-
-      setMonthGroups(sortedGroups);
-
-      // Calculate totals for past month (based on order date)
-      const oneMonthAgo = new Date();
-      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-      const recentOrders = orderItems.filter(
-        (order) => new Date(order.orderDate) >= oneMonthAgo,
-      );
-      const totalQty = recentOrders.reduce((sum, order) => {
-        return sum + order.products.reduce((pSum, p) => pSum + p.quantity, 0);
-      }, 0);
-      const totalValue = Math.round(
-        recentOrders.reduce((sum, order) => sum + order.totalAmount, 0),
-      );
-
-      setTotalOrdered(totalQty);
-      setTotalSales(totalValue);
-    } catch (err) {
-      console.error("Error fetching sales orders:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load sales orders",
-      );
-    } finally {
-      setLoading(false);
+  // Process orders data using useMemo
+  const { monthGroups, totalOrdered, totalSales } = useMemo(() => {
+    if (!orders.length) {
+      return {
+        monthGroups: [],
+        totalOrdered: 0,
+        totalSales: 0,
+      };
     }
-  };
 
-  useEffect(() => {
-    fetchSalesOrders();
-  }, [warehouse.id]);
+    // Transform orders
+    const orderItems: OrderListItem[] = orders.map((order) => {
+      const customerName = getPartnerName(order.customer);
+
+      // Calculate products with quantities
+      const products = (order.sales_order_items || []).map((item) => ({
+        name: item.product?.name || "Unknown Product",
+        quantity: item.required_quantity,
+      }));
+
+      // Calculate completion percentage using utility
+      const completionPercentage = calculateCompletionPercentage(
+        order.sales_order_items || [],
+      );
+
+      // Determine status (including overdue) using utility
+      const status = getOrderDisplayStatus(
+        order.status as SalesOrderStatus,
+        order.expected_delivery_date,
+      );
+
+      return {
+        id: order.id,
+        orderNumber: order.sequence_number,
+        customerId: order.customer_id,
+        customerName,
+        products,
+        dueDate: order.expected_delivery_date,
+        orderDate: order.order_date,
+        status,
+        completionPercentage,
+        totalAmount: order.total_amount || 0,
+      };
+    });
+
+    // Group by month (based on order creation date)
+    const groups: { [key: string]: MonthGroup } = {};
+
+    orderItems.forEach((order) => {
+      const date = new Date(order.orderDate);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const monthName = date.toLocaleString("en-US", { month: "long" });
+      const year = date.getFullYear();
+
+      if (!groups[monthKey]) {
+        groups[monthKey] = {
+          month: monthName,
+          monthYear: `${monthName} ${year}`,
+          orders: [],
+        };
+      }
+
+      groups[monthKey].orders.push(order);
+    });
+
+    const monthGroups = Object.values(groups).sort((a, b) => {
+      const [monthA, yearA] = a.monthYear.split(" ");
+      const [monthB, yearB] = b.monthYear.split(" ");
+      const dateA = new Date(`${monthA} 1, ${yearA}`);
+      const dateB = new Date(`${monthB} 1, ${yearB}`);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    // Calculate totals for past month (based on order date)
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    const recentOrders = orderItems.filter(
+      (order) => new Date(order.orderDate) >= oneMonthAgo,
+    );
+    const totalOrdered = recentOrders.reduce((sum, order) => {
+      return sum + order.products.reduce((pSum, p) => pSum + p.quantity, 0);
+    }, 0);
+    const totalSales = Math.round(
+      recentOrders.reduce((sum, order) => sum + order.totalAmount, 0),
+    );
+
+    return {
+      monthGroups,
+      totalOrdered,
+      totalSales,
+    };
+  }, [orders]);
 
   // Filter groups using useMemo
   const filteredGroups = useMemo(() => {
@@ -243,7 +238,7 @@ export default function OrdersPage() {
     return (
       <ErrorState
         title="Failed to load sales orders"
-        message={error}
+        message="Unable to fetch sales orders data"
         onRetry={() => window.location.reload()}
       />
     );

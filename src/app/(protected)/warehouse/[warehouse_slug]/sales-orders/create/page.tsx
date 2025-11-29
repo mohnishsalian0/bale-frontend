@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
@@ -15,13 +15,10 @@ import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import {
-  getProductsWithInventory,
-  getProductAttributeLists,
-  type ProductWithInventory,
-  type ProductMaterial,
-  type ProductColor,
-  type ProductTag,
-} from "@/lib/queries/products";
+  useProductsWithInventory,
+  useProductAttributes,
+} from "@/lib/query/hooks/products";
+import type { ProductWithInventory } from "@/lib/queries/products";
 
 interface ProductWithSelection extends ProductWithInventory {
   selected: boolean;
@@ -47,17 +44,38 @@ export default function CreateSalesOrderPage() {
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
   const [currentStep, setCurrentStep] = useState<FormStep>("products");
-  const [products, setProducts] = useState<ProductWithSelection[]>([]);
-  const [materials, setMaterials] = useState<ProductMaterial[]>([]);
-  const [colors, setColors] = useState<ProductColor[]>([]);
-  const [tags, setTags] = useState<ProductTag[]>([]);
 
-  // Hide chrome for immersive flow experience
-  useEffect(() => {
-    hideChrome();
-    return () => showChromeUI(); // Restore chrome on unmount
-  }, [hideChrome, showChromeUI]);
-  const [loading, setLoading] = useState(true);
+  // Fetch products and attributes using TanStack Query
+  const {
+    data: productsData = [],
+    isLoading: productsLoading,
+  } = useProductsWithInventory(warehouse.id);
+  const {
+    data: attributesData,
+    isLoading: attributesLoading,
+  } = useProductAttributes();
+
+  // Track product selection state locally
+  const [productSelections, setProductSelections] = useState<
+    Record<string, { selected: boolean; quantity: number }>
+  >({});
+
+  // Combine products data with selection state
+  const products: ProductWithSelection[] = useMemo(
+    () =>
+      productsData.map((product) => ({
+        ...product,
+        selected: productSelections[product.id]?.selected || false,
+        quantity: productSelections[product.id]?.quantity || 0,
+      })),
+    [productsData, productSelections],
+  );
+
+  const materials = attributesData?.materials || [];
+  const colors = attributesData?.colors || [];
+  const tags = attributesData?.tags || [];
+  const loading = productsLoading || attributesLoading;
+
   const [selectedProduct, setSelectedProduct] =
     useState<ProductWithInventory | null>(null);
   const [showQuantitySheet, setShowQuantitySheet] = useState(false);
@@ -69,6 +87,12 @@ export default function CreateSalesOrderPage() {
   const [saving, setSaving] = useState(false);
 
   const supabase = createClient();
+
+  // Hide chrome for immersive flow experience
+  useEffect(() => {
+    hideChrome();
+    return () => showChromeUI();
+  }, [hideChrome, showChromeUI]);
 
   const [formData, setFormData] = useState<OrderFormData>({
     warehouseId: warehouse.id,
@@ -82,41 +106,6 @@ export default function CreateSalesOrderPage() {
     files: [],
   });
 
-  // Load products on mount
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // Fetch products with inventory and attributes in parallel
-      const [productsData, attributeLists] = await Promise.all([
-        getProductsWithInventory(warehouse.id),
-        getProductAttributeLists(),
-      ]);
-
-      // Add selection state to products
-      const productsWithSelection: ProductWithSelection[] = productsData.map(
-        (product) => ({
-          ...product,
-          selected: false,
-          quantity: 0,
-        }),
-      );
-
-      setProducts(productsWithSelection);
-      setMaterials(attributeLists.materials);
-      setColors(attributeLists.colors);
-      setTags(attributeLists.tags);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      toast.error("Failed to load products");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleOpenQuantitySheet = (product: ProductWithInventory) => {
     setSelectedProduct(product);
     setShowQuantitySheet(true);
@@ -124,28 +113,18 @@ export default function CreateSalesOrderPage() {
 
   const handleQuantityConfirm = (quantity: number) => {
     if (selectedProduct) {
-      setProducts((prevProducts) =>
-        prevProducts.map((product) =>
-          product.id === selectedProduct.id
-            ? {
-                ...product,
-                selected: true,
-                quantity: quantity,
-              }
-            : product,
-        ),
-      );
+      setProductSelections((prev) => ({
+        ...prev,
+        [selectedProduct.id]: { selected: true, quantity },
+      }));
     }
   };
 
   const handleRemoveProduct = (productId: string) => {
-    setProducts((prev) =>
-      prev.map((product) =>
-        product.id === productId
-          ? { ...product, selected: false, quantity: 0 }
-          : product,
-      ),
-    );
+    setProductSelections((prev) => ({
+      ...prev,
+      [productId]: { selected: false, quantity: 0 },
+    }));
   };
 
   const canProceed = useMemo(
@@ -402,7 +381,6 @@ export default function CreateSalesOrderPage() {
           <ProductFormSheet
             open={showCreateProduct}
             onOpenChange={setShowCreateProduct}
-            onProductAdded={loadData}
           />
         )}
 

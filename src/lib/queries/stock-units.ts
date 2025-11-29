@@ -3,9 +3,21 @@ import type { Tables, TablesUpdate } from "@/types/database/supabase";
 
 type StockUnit = Tables<"stock_units">;
 type Product = Tables<"products">;
+type GoodsInward = Tables<"goods_inwards">;
+type Partner = Tables<"partners">;
+type Warehouse = Tables<"warehouses">;
 
 export interface StockUnitWithProduct extends StockUnit {
   product: Product;
+}
+
+export interface StockUnitWithInwardDetails extends StockUnitWithProduct {
+  goods_inward:
+    | (GoodsInward & {
+        partner: Partner | null;
+        from_warehouse: Warehouse | null;
+      })
+    | null;
 }
 
 export interface StockUnitFilters extends Record<string, unknown> {
@@ -93,6 +105,46 @@ export async function getStockUnitsByProduct(
 
   if (error) {
     console.error("Error fetching stock units by product:", error);
+    throw error;
+  }
+
+  return (data as any[]) || [];
+}
+
+/**
+ * Fetch stock units for a product with full inward details
+ * Useful for product detail page to show stock flow history
+ */
+export async function getStockUnitsWithInwardDetails(
+  productId: string,
+  warehouseId: string,
+): Promise<StockUnitWithInwardDetails[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("stock_units")
+    .select(
+      `
+      *,
+      goods_inward:goods_inwards!created_from_inward_id(
+        id, sequence_number, inward_date, inward_type,
+        partner:partners!goods_inwards_partner_id_fkey(
+          id, first_name, last_name, company_name
+        ),
+        from_warehouse:warehouses!goods_inwards_from_warehouse_id_fkey(
+          id, name
+        )
+      )
+    `,
+    )
+    .eq("product_id", productId)
+    .eq("warehouse_id", warehouseId)
+    .eq("status", "in_stock")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching stock units with inward details:", error);
     throw error;
   }
 

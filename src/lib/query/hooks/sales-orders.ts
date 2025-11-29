@@ -3,7 +3,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
-import { getSalesOrders, getSalesOrder } from "@/lib/queries/sales-orders";
+import {
+  getSalesOrders,
+  getSalesOrder,
+  getPendingSalesOrdersByCustomer,
+} from "@/lib/queries/sales-orders";
 
 /**
  * Fetch all sales orders for a warehouse
@@ -25,6 +29,21 @@ export function useSalesOrder(sequenceNumber: string | null) {
     queryFn: () => getSalesOrder(sequenceNumber!),
     ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
     enabled: !!sequenceNumber,
+  });
+}
+
+/**
+ * Fetch pending sales orders for a customer (for partner detail page)
+ */
+export function usePendingSalesOrdersByCustomer(
+  customerId: string | null,
+  enabled: boolean = true,
+) {
+  return useQuery({
+    queryKey: queryKeys.salesOrders.pendingByCustomer(customerId || ""),
+    queryFn: () => getPendingSalesOrdersByCustomer(customerId!),
+    ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
+    enabled: !!customerId && enabled,
   });
 }
 

@@ -61,6 +61,40 @@ export async function getSalesOrders(
 }
 
 /**
+ * Fetch pending sales orders for a customer (for partner detail page)
+ */
+export async function getPendingSalesOrdersByCustomer(
+  customerId: string,
+): Promise<SalesOrderWithDetails[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("sales_orders")
+    .select(
+      `
+			*,
+			expected_delivery_date,
+			sales_order_items(
+				id, product_id, required_quantity, dispatched_quantity,
+				pending_quantity, unit_rate, line_total,
+				product:products(
+					id, name, measuring_unit,
+					product_images, sequence_number
+				)
+			)
+		`,
+    )
+    .eq("customer_id", customerId)
+    .in("status", ["in_progress", "approval_pending"])
+    .is("deleted_at", null)
+    .order("order_date", { ascending: false })
+    .limit(1);
+
+  if (error) throw error;
+  return (data as SalesOrderWithDetails[]) || [];
+}
+
+/**
  * Fetch a single sales order by sequence number
  */
 export async function getSalesOrder(sequenceNumber: string) {
