@@ -6,7 +6,7 @@ import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getSalesOrders,
   getSalesOrder,
-  getPendingSalesOrdersByCustomer,
+  getSalesOrdersByCustomer,
 } from "@/lib/queries/sales-orders";
 
 /**
@@ -33,15 +33,15 @@ export function useSalesOrder(sequenceNumber: string | null) {
 }
 
 /**
- * Fetch pending sales orders for a customer (for partner detail page)
+ * Fetch sales orders for a customer (for partner detail page)
  */
-export function usePendingSalesOrdersByCustomer(
+export function useSalesOrdersByCustomer(
   customerId: string | null,
   enabled: boolean = true,
 ) {
   return useQuery({
-    queryKey: queryKeys.salesOrders.pendingByCustomer(customerId || ""),
-    queryFn: () => getPendingSalesOrdersByCustomer(customerId!),
+    queryKey: queryKeys.salesOrders.customer(customerId || ""),
+    queryFn: () => getSalesOrdersByCustomer(customerId!),
     ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
     enabled: !!customerId && enabled,
   });

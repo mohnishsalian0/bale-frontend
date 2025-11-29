@@ -1,0 +1,81 @@
+import {
+  ProductColor,
+  ProductMaterial,
+  ProductTag,
+} from "@/lib/queries/products";
+import type { Tables } from "./database/supabase";
+
+type SalesOrder = Tables<"sales_orders">;
+type SalesOrderItem = Tables<"sales_order_items">;
+type Partner = Tables<"partners">;
+type Warehouse = Tables<"warehouses">;
+type Product = Tables<"products">;
+
+// =====================================================
+// LIST VIEW TYPES (for sales order list pages)
+// =====================================================
+
+/**
+ * Sales order item for list views
+ * Minimal product info for quick loading
+ * Used in: sales order list page, partner detail page
+ */
+export interface SalesOrderItemListView extends SalesOrderItem {
+  product: Pick<
+    Product,
+    "id" | "name" | "measuring_unit" | "product_images" | "sequence_number"
+  > | null;
+}
+
+/**
+ * Sales order with minimal details for list views
+ * Used in: sales order list page, partner detail page
+ */
+export interface SalesOrderListView extends SalesOrder {
+  customer: Pick<
+    Partner,
+    "id" | "first_name" | "last_name" | "company_name"
+  > | null;
+  agent: Pick<
+    Partner,
+    "id" | "first_name" | "last_name" | "company_name"
+  > | null;
+  sales_order_items: SalesOrderItemListView[];
+}
+
+// =====================================================
+// DETAIL VIEW TYPES (for sales order detail page)
+// =====================================================
+
+/**
+ * Sales order item with full product details (for order detail page)
+ * Includes materials, colors, and tags
+ */
+export interface SalesOrderItemDetailView extends SalesOrderItem {
+  product:
+    | (Pick<
+        Product,
+        | "id"
+        | "name"
+        | "measuring_unit"
+        | "product_images"
+        | "sequence_number"
+        | "stock_type"
+      > & {
+        materials: Array<{ material: ProductMaterial }>;
+        colors: Array<{ color: ProductColor }>;
+        tags: Array<{ tag: ProductTag }>;
+      })
+    | null;
+}
+
+/**
+ * Sales order with complete details (for order detail page)
+ * Includes customer address, agent, warehouse, and full product details
+ */
+export interface SalesOrderDetailView extends SalesOrder {
+  customer: Partner | null;
+  agent: Partner | null;
+  warehouse: Warehouse | null;
+  sales_order_items: SalesOrderItemDetailView[];
+}

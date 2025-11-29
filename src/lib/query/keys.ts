@@ -48,8 +48,8 @@ export const queryKeys = {
       ["sales-orders", "detail", sequenceNumber] as const,
     dashboard: (warehouseId: string) =>
       ["sales-orders", "dashboard", warehouseId] as const,
-    pendingByCustomer: (customerId: string) =>
-      ["sales-orders", "pending", "customer", customerId] as const,
+    customer: (customerId: string) =>
+      ["sales-orders", "customer", customerId] as const,
   },
 
   // Warehouses (companyId removed - RLS handles scoping, user in single company)

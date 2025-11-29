@@ -1,53 +1,42 @@
 import { createClient } from "@/lib/supabase/client";
-import type { Tables } from "@/types/database/supabase";
+import type {
+  SalesOrderListView,
+  SalesOrderDetailView,
+} from "@/types/sales-orders.types";
 
-type SalesOrder = Tables<"sales_orders">;
-type Partner = Tables<"partners">;
-type Product = Tables<"products">;
-type SalesOrderItem = Tables<"sales_order_items">;
-
-export interface SalesOrderWithDetails extends SalesOrder {
-  customer: Partner | null;
-  agent: Partner | null;
-  sales_order_items: Array<
-    SalesOrderItem & {
-      product: Product | null;
-    }
-  >;
-}
+// Re-export types for convenience
+export type { SalesOrderListView, SalesOrderDetailView };
 
 /**
  * Fetch all sales orders for a warehouse
  */
 export async function getSalesOrders(
   warehouseId: string | null,
-): Promise<SalesOrderWithDetails[]> {
+): Promise<SalesOrderListView[]> {
   const supabase = createClient();
 
   let query = supabase
     .from("sales_orders")
     .select(
       `
-			*,
-			customer:partners!sales_orders_customer_id_fkey(
-				id, first_name, last_name, company_name
-			),
-			agent:partners!sales_orders_agent_id_fkey(
-				id, first_name, last_name, company_name
-			),
-			sales_order_items(
-				id,
-				required_quantity,
-				dispatched_quantity,
-				pending_quantity,
-				product:products(name)
-			)
-		`,
+        *,
+        customer:customer_id(
+          id, first_name, last_name, company_name
+        ),
+        agent:agent_id(
+          id, first_name, last_name, company_name
+        ),
+        sales_order_items(
+          *,
+          product:product_id(
+            id, name, measuring_unit, product_images, sequence_number
+          )
+        )
+      `,
     )
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
-  // Filter by warehouse if provided
   if (warehouseId) {
     query = query.or(`warehouse_id.eq.${warehouseId},warehouse_id.is.null`);
   }
@@ -56,16 +45,17 @@ export async function getSalesOrders(
 
   if (error) throw error;
   if (!data) throw new Error("No data returned");
+  console.log(data);
 
-  return data as SalesOrderWithDetails[];
+  return data as SalesOrderListView[];
 }
 
 /**
- * Fetch pending sales orders for a customer (for partner detail page)
+ * Fetch sales orders for a customer (for partner detail page)
  */
-export async function getPendingSalesOrdersByCustomer(
+export async function getSalesOrdersByCustomer(
   customerId: string,
-): Promise<SalesOrderWithDetails[]> {
+): Promise<SalesOrderListView[]> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -73,31 +63,35 @@ export async function getPendingSalesOrdersByCustomer(
     .select(
       `
 			*,
-			expected_delivery_date,
+			customer:customer_id(
+				id, first_name, last_name, company_name
+			),
+			agent:agent_id(
+				id, first_name, last_name, company_name
+			),
 			sales_order_items(
-				id, product_id, required_quantity, dispatched_quantity,
-				pending_quantity, unit_rate, line_total,
-				product:products(
-					id, name, measuring_unit,
-					product_images, sequence_number
-				)
+				*,
+				product:product_id(id, name, measuring_unit, product_images, sequence_number)
 			)
 		`,
     )
     .eq("customer_id", customerId)
-    .in("status", ["in_progress", "approval_pending"])
     .is("deleted_at", null)
-    .order("order_date", { ascending: false })
-    .limit(1);
+    .order("order_date", { ascending: false });
 
   if (error) throw error;
-  return (data as SalesOrderWithDetails[]) || [];
+  if (!data) return [];
+  console.log(data);
+
+  return data as SalesOrderListView[];
 }
 
 /**
  * Fetch a single sales order by sequence number
  */
-export async function getSalesOrder(sequenceNumber: string) {
+export async function getSalesOrder(
+  sequenceNumber: string,
+): Promise<SalesOrderDetailView> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -105,28 +99,28 @@ export async function getSalesOrder(sequenceNumber: string) {
     .select(
       `
 			*,
-			customer:partners!sales_orders_customer_id_fkey(
-				id, first_name, last_name, company_name,
-				phone_number, email, address_line1, address_line2,
-				city, state, pin_code
-			),
-			agent:partners!sales_orders_agent_id_fkey(
+			customer:customer_id(*),
+			agent:agent_id(
 				id, first_name, last_name, company_name
 			),
-			warehouse:warehouses(id, name, address_line1, address_line2, city, state, pin_code),
+			warehouse:warehouse_id(*),
 			sales_order_items(
-				id, product_id, required_quantity, dispatched_quantity,
-				pending_quantity, unit_rate, line_total, notes,
-				product:products(
-					id, name, measuring_unit, product_images, sequence_number,
-					product_material_assignments(
-						material:product_materials(*)
+				*,
+				product:product_id(
+					id,
+					name,
+					measuring_unit,
+					product_images,
+					sequence_number,
+					stock_type,
+					materials:product_material_assignments(
+						material:material_id(*)
 					),
-					product_color_assignments(
-						color:product_colors(*)
+					colors:product_color_assignments(
+						color:color_id(*)
 					),
-					product_tag_assignments(
-						tag:product_tags(*)
+					tags:product_tag_assignments(
+						tag:tag_id(*)
 					)
 				)
 			)
@@ -138,6 +132,8 @@ export async function getSalesOrder(sequenceNumber: string) {
 
   if (error) throw error;
   if (!data) throw new Error("Order not found");
+  console.log(data);
 
-  return data;
+  // Transform Supabase's array format to single objects
+  return data as SalesOrderDetailView;
 }

@@ -16,7 +16,6 @@ import {
   type DisplayStatus,
 } from "@/lib/utils/sales-order";
 import type { DiscountType, SalesOrderStatus } from "@/types/database/enums";
-import type { Tables } from "@/types/database/supabase";
 import { NotesEditSheet } from "./NotesEditSheet";
 import { CustomerEditSheet } from "./CustomerEditSheet";
 import { AgentEditSheet } from "./AgentEditSheet";
@@ -36,7 +35,7 @@ import {
 import { IconDotsVertical } from "@tabler/icons-react";
 import { useSalesOrder } from "@/lib/query/hooks/sales-orders";
 
-interface PageParams{
+interface PageParams {
   params: Promise<{
     warehouse_slug: string;
     order_number: string;
@@ -69,8 +68,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
     if (!order) return null;
 
     const itemTotal = order.sales_order_items.reduce(
-      (sum: number, item: Tables<"sales_order_items">) =>
-        sum + (item.line_total || 0),
+      (sum, item) => sum + (item.line_total || 0),
       0,
     );
 

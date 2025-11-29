@@ -34,7 +34,7 @@ import { OrdersTab } from "./OrdersTab";
 import { PartnerFormSheet } from "../PartnerFormSheet";
 import type { PartnerType, SalesOrderStatus } from "@/types/database/enums";
 import { usePartner } from "@/lib/query/hooks/partners";
-import { usePendingSalesOrdersByCustomer } from "@/lib/query/hooks/sales-orders";
+import { useSalesOrdersByCustomer } from "@/lib/query/hooks/sales-orders";
 
 interface PageParams {
   params: Promise<{
@@ -72,8 +72,6 @@ export default function PartnerDetailPage({ params }: PageParams) {
     isError: partnerError,
   } = usePartner(partner_id);
 
-  console.log(partner);
-
   // Get aggregates from partner data
   const aggregates = partner?.partner_order_aggregates;
   const totalOrders = aggregates?.total_orders || 0;
@@ -84,7 +82,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
 
   // Fetch pending sales orders only when there are pending orders to display
   const { data: orders = [], isLoading: ordersLoading } =
-    usePendingSalesOrdersByCustomer(
+    useSalesOrdersByCustomer(
       partner?.partner_type === "customer" ? partner_id : null,
       pendingOrdersCount > 0,
     );

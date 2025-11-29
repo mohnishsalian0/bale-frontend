@@ -12,21 +12,21 @@ import {
   type DisplayStatus,
 } from "@/lib/utils/sales-order";
 import type { SalesOrderStatus } from "@/types/database/enums";
-import type { SalesOrderWithDetails } from "@/lib/queries/sales-orders";
+import type { SalesOrderListView } from "@/lib/queries/sales-orders";
 
 interface MonthGroup {
   month: string;
   monthYear: string;
-  orders: SalesOrderWithDetails[];
+  orders: SalesOrderListView[];
 }
 
 interface OrdersTabProps {
-  orders: SalesOrderWithDetails[];
+  orders: SalesOrderListView[];
   warehouseSlug: string;
 }
 
 function getProductSummary(
-  items: SalesOrderWithDetails["sales_order_items"],
+  items: SalesOrderListView["sales_order_items"],
 ): string {
   const productNames = items
     .map((item) => item.product?.name)

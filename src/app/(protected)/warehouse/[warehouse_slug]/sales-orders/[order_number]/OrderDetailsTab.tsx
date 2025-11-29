@@ -20,35 +20,10 @@ import type { Tables } from "@/types/database/supabase";
 import type { SalesOrderStatus, StockType } from "@/types/database/enums";
 import { Section } from "@/components/layouts/section";
 import { getProductIcon } from "@/lib/utils/product";
-
-type Partner = Tables<"partners">;
-type Warehouse = Tables<"warehouses">;
-type Product = Tables<"products">;
-type SalesOrderItem = Tables<"sales_order_items">;
-
-interface OrderWithDetails {
-  id: string;
-  sequence_number: number;
-  status: SalesOrderStatus;
-  payment_terms: string | null;
-  advance_amount: number | null;
-  discount_type: string;
-  discount_value: number | null;
-  gst_rate: number | null;
-  notes: string | null;
-  has_outward: boolean | null;
-  customer: Partner | null;
-  agent: Partner | null;
-  warehouse: Warehouse | null;
-  sales_order_items: Array<
-    SalesOrderItem & {
-      product: Product | null;
-    }
-  >;
-}
+import type { SalesOrderDetailView } from "@/lib/queries/sales-orders";
 
 interface OrderDetailsTabProps {
-  order: OrderWithDetails;
+  order: SalesOrderDetailView;
   financials: {
     itemTotal: number;
     discountAmount: number;

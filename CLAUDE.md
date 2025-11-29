@@ -144,19 +144,109 @@ npm run build
 
 ### TypeScript Type Safety
 
-- **Shared types** for complex data structures go in `/src/types/` (e.g., `stock-flow.types.ts`)
-- **Use `Pick<>` for selective fetching** - When queries fetch only specific fields, use `Pick<Type, 'field1' | 'field2'>` instead of the full type
-- **Type must match query** - If query fetches 9 fields, type should reflect those 9 fields (not all 25)
-- **Benefits**: TypeScript catches errors if you try to access unfetched fields, self-documenting code
+#### Shared Type Files
+
+- **Shared types** for complex data structures go in `/src/types/` (e.g., `sales-orders.types.ts`, `stock-flow.types.ts`)
+- **Domain-specific files** - Each domain gets its own type file (e.g., `partners.types.ts`, `products.types.ts`)
+- **Import base types** - Always import base types from `database/supabase` at the top of type files
+
+#### Type Structure Rules
+
+1. **Always use `Pick<>` with base type inside** - Never extend database types directly
+
+```typescript
+// ❌ Bad - Extends DB type directly
+export interface SalesOrderListView extends SalesOrder {
+  customer: Partner | null;
+}
+
+// ✅ Good - Uses Pick<> with base type inside
+export interface SalesOrderListView
+  extends Pick<SalesOrder, 'id' | 'sequence_number' | 'status'> {
+  customer: Pick<Partner, 'first_name' | 'last_name'> | null;
+}
+```
+
+2. **Never use `*` in queries** - Always specify exact fields to keep types and queries in sync
+
+```typescript
+// ❌ Bad - Uses wildcard
+.select('*, customer:partners(*)')
+
+// ✅ Good - Explicit fields matching type
+.select('id, sequence_number, status, customer:partners(first_name, last_name)')
+```
+
+3. **Only add `| null` if FK is nullable in schema** - Check database migration to verify
+
+```typescript
+// If agent_id is NULLABLE in database:
+agent: Pick<Partner, 'id' | 'name'> | null;
+
+// If customer_id is NOT NULL in database:
+customer: Pick<Partner, 'id' | 'name'>;
+```
+
+4. **Don't create new field interfaces** - Use `Pick<>` unless fields are derived/computed
+
+```typescript
+// ❌ Bad - Creates new interface for DB fields
+export interface SalesOrderItemListView {
+  id: string;
+  quantity: number;
+}
+
+// ✅ Good - Uses Pick<> for DB fields
+export interface SalesOrderItemListView
+  extends Pick<SalesOrderItem, 'id' | 'quantity'> {
+  // Only add new fields if they're computed/derived
+  displayName?: string; // Computed field, not from DB
+}
+```
+
+5. **Naming convention** - All view types end with "View" suffix
+
+```typescript
+// ✅ Good naming
+export interface SalesOrderListView { }
+export interface SalesOrderDetailView { }
+export interface PartnerListView { }
+```
+
+6. **Consolidate to 2 types per domain** - ListView and DetailView (unless bespoke requirement)
+
+```typescript
+// For most domains, keep it simple:
+- ProductListView      // For list pages
+- ProductDetailView    // For detail pages
+
+// Only add specialized views if truly needed:
+- ProductCatalogView   // Bespoke requirement for public catalog
+```
+
+#### Type-Query Alignment
+
+- **Type must match query exactly** - If query fetches 9 fields, type should have those exact 9 fields
+- **Benefits**: TypeScript catches errors when accessing unfetched fields, self-documenting code
+- **Payload reduction**: Fetching only needed fields can reduce payload by 50-70%
 
 Example:
 ```typescript
-// ❌ Bad - Type says all Partner fields available, but query only fetches 3
+// ❌ Bad - Type includes all fields, query fetches 3
 partner: Partner | null;
 
-// ✅ Good - Type matches what query actually fetches
+// ✅ Good - Type matches what query fetches
 partner: Pick<Partner, 'first_name' | 'last_name' | 'company_name'> | null;
 ```
 
-- **Shared types prevent duplication** - Define complex types once, import everywhere
-- **Document type purpose** - Add JSDoc comments explaining what the type represents
+#### Documentation
+
+- **Add JSDoc comments** - Explain what each view type represents and where it's used
+
+```typescript
+/**
+ * Sales order with minimal details for list views
+ * Used in: sales order list page, partner detail page
+ */
+export interface SalesOrderListView { }
+```
