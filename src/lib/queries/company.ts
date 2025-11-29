@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Tables, TablesUpdate } from "@/types/database/supabase";
+import { uploadCompanyLogo } from "@/lib/storage";
 
 type Company = Tables<"companies">;
 type Warehouse = Tables<"warehouses">;
@@ -72,11 +73,27 @@ export async function getCompanyWarehouses(): Promise<Warehouse[]> {
 /**
  * Update company details
  */
-export async function updateCompanyDetails(
-  companyId: string,
-  updates: TablesUpdate<"companies">,
-): Promise<Company> {
+export async function updateCompanyDetails({
+  companyId,
+  updates,
+  image,
+}: {
+  companyId: string;
+  updates: TablesUpdate<"companies">;
+  image?: File | null;
+}): Promise<Company> {
   const supabase = createClient();
+
+  // Upload logo if provided
+  if (image) {
+    try {
+      const { publicUrl } = await uploadCompanyLogo(companyId, image);
+      updates.logo_url = publicUrl;
+    } catch (uploadError) {
+      console.error("Logo upload failed:", uploadError);
+      // Don't re-throw, proceed with other updates
+    }
+  }
 
   const { data, error } = await supabase
     .from("companies")
@@ -88,6 +105,10 @@ export async function updateCompanyDetails(
   if (error) {
     console.error("Error updating company details:", error);
     throw error;
+  }
+
+  if (!data) {
+    throw new Error("Failed to update company");
   }
 
   return data;

@@ -31,10 +31,12 @@ export function useCompanyMutations(authUserId: string) {
     mutationFn: ({
       companyId,
       data,
+      image,
     }: {
       companyId: string;
       data: TablesUpdate<"companies">;
-    }) => updateCompanyDetails(companyId, data),
+      image?: File | null;
+    }) => updateCompanyDetails({ companyId, updates: data, image }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.company.detail(authUserId),

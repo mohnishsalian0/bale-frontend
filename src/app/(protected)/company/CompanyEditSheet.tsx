@@ -18,8 +18,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { validateImageFile, uploadCompanyLogo } from "@/lib/storage";
-import { updateCompanyDetails } from "@/lib/queries/company";
+import { validateImageFile } from "@/lib/storage";
+import { useCompanyMutations } from "@/lib/query/hooks/company";
+import { useSession } from "@/contexts/session-context";
 import type { Tables } from "@/types/database/supabase";
 
 type Company = Tables<"companies">;
@@ -53,51 +54,32 @@ export function CompanyEditSheet({
   company,
 }: CompanyEditSheetProps) {
   const [formData, setFormData] = useState<CompanyFormData>({
-    name: "",
-    businessType: "",
-    email: "",
-    phoneNumber: "",
-    websiteUrl: "",
-    addressLine1: "",
-    addressLine2: "",
-    city: "",
-    state: "",
-    country: "India",
-    pinCode: "",
-    gstNumber: "",
-    panNumber: "",
+    name: company.name || "",
+    businessType: company.business_type || "",
+    email: company.email || "",
+    phoneNumber: company.phone_number || "",
+    websiteUrl: company.website_url || "",
+    addressLine1: company.address_line1 || "",
+    addressLine2: company.address_line2 || "",
+    city: company.city || "",
+    state: company.state || "",
+    country: company.country || "India",
+    pinCode: company.pin_code || "",
+    gstNumber: company.gst_number || "",
+    panNumber: company.pan_number || "",
     image: null,
   });
 
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    company.logo_url,
+  );
   const [imageError, setImageError] = useState<string | null>(null);
   const [showContact, setShowContact] = useState(true);
   const [showAddress, setShowAddress] = useState(false);
   const [showFinancial, setShowFinancial] = useState(false);
-  const [saving, setSaving] = useState(false);
 
-  // Pre-populate form data when sheet opens
-  useEffect(() => {
-    if (company && open) {
-      setFormData({
-        name: company.name || "",
-        businessType: company.business_type || "",
-        email: company.email || "",
-        phoneNumber: company.phone_number || "",
-        websiteUrl: company.website_url || "",
-        addressLine1: company.address_line1 || "",
-        addressLine2: company.address_line2 || "",
-        city: company.city || "",
-        state: company.state || "",
-        country: company.country || "India",
-        pinCode: company.pin_code || "",
-        gstNumber: company.gst_number || "",
-        panNumber: company.pan_number || "",
-        image: null,
-      });
-      setImagePreview(company.logo_url);
-    }
-  }, [company, open]);
+  const { user } = useSession();
+  const { update } = useCompanyMutations(user.auth_user_id || "");
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -120,54 +102,43 @@ export function CompanyEditSheet({
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
 
-    try {
-      // Upload logo if a new image was selected
-      let logoUrl = company.logo_url;
-      if (formData.image) {
-        try {
-          const { publicUrl } = await uploadCompanyLogo(
-            company.id,
-            formData.image,
+    // Update company details using mutation
+    update.mutate(
+      {
+        companyId: company.id,
+        data: {
+          name: formData.name,
+          business_type: formData.businessType || null,
+          email: formData.email || null,
+          phone_number: formData.phoneNumber || null,
+          website_url: formData.websiteUrl || null,
+          address_line1: formData.addressLine1 || null,
+          address_line2: formData.addressLine2 || null,
+          city: formData.city || null,
+          state: formData.state || null,
+          country: formData.country || null,
+          pin_code: formData.pinCode || null,
+          gst_number: formData.gstNumber || null,
+          pan_number: formData.panNumber || null,
+        },
+        image: formData.image,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Company updated successfully");
+          handleCancel();
+        },
+        onError: (error) => {
+          console.error("Error updating company:", error);
+          toast.error(
+            error instanceof Error ? error.message : "Failed to update company",
           );
-          logoUrl = publicUrl;
-        } catch (uploadError) {
-          console.error("Logo upload failed:", uploadError);
-          throw new Error("Failed to upload logo. Please try again.");
-        }
-      }
-
-      // Update company details
-      await updateCompanyDetails(company.id, {
-        name: formData.name,
-        business_type: formData.businessType || null,
-        email: formData.email || null,
-        phone_number: formData.phoneNumber || null,
-        website_url: formData.websiteUrl || null,
-        address_line1: formData.addressLine1 || null,
-        address_line2: formData.addressLine2 || null,
-        city: formData.city || null,
-        state: formData.state || null,
-        country: formData.country || null,
-        pin_code: formData.pinCode || null,
-        gst_number: formData.gstNumber || null,
-        pan_number: formData.panNumber || null,
-        logo_url: logoUrl,
-      });
-
-      toast.success("Company updated successfully");
-      handleCancel();
-    } catch (error) {
-      console.error("Error updating company:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to update company";
-      toast.error(errorMessage);
-    } finally {
-      setSaving(false);
-    }
+        },
+      },
+    );
   };
 
   const handleCancel = () => {
@@ -423,13 +394,17 @@ export function CompanyEditSheet({
                 type="button"
                 variant="outline"
                 onClick={handleCancel}
-                disabled={saving}
+                disabled={update.isPending}
                 className="flex-1"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving} className="flex-1">
-                {saving ? "Saving..." : "Save"}
+              <Button
+                type="submit"
+                disabled={update.isPending}
+                className="flex-1"
+              >
+                {update.isPending ? "Saving..." : "Save"}
               </Button>
             </div>
           </SheetFooter>

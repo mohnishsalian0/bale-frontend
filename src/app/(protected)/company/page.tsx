@@ -280,11 +280,14 @@ export default function CompanyPage() {
       )}
 
       {/* Company Edit Sheet */}
-      <CompanyEditSheet
-        open={showEditCompany}
-        onOpenChange={setShowEditCompany}
-        company={company}
-      />
+      {showEditCompany && (
+        <CompanyEditSheet
+          key={company.id}
+          open={showEditCompany}
+          onOpenChange={setShowEditCompany}
+          company={company}
+        />
+      )}
     </div>
   );
 }
