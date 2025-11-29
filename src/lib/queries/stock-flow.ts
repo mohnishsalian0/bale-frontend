@@ -1,90 +1,21 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Tables, TablesInsert } from "@/types/database/supabase";
+import type {
+  GoodsInwardWithDetails,
+  GoodsOutwardWithDetails,
+  GoodsInwardFilters,
+  GoodsOutwardFilters,
+  GoodsInwardListItem,
+  GoodsOutwardListItem,
+  OutwardItemWithDetails,
+} from "@/types/stock-flow.types";
 
+// Re-export types for convenience
+export type { GoodsInwardFilters, GoodsOutwardFilters };
+
+// Local type aliases for convenience
 type GoodsInward = Tables<"goods_inwards">;
 type GoodsOutward = Tables<"goods_outwards">;
-type GoodsOutwardItem = Tables<"goods_outward_items">;
-type StockUnit = Tables<"stock_units">;
-type Partner = Tables<"partners">;
-type Warehouse = Tables<"warehouses">;
-type Product = Tables<"products">;
-type ProductMaterial = Tables<"product_materials">;
-type ProductColor = Tables<"product_colors">;
-type ProductTag = Tables<"product_tags">;
-
-export interface GoodsInwardFilters extends Record<string, unknown> {
-  partner_id?: string;
-  date_from?: string;
-  date_to?: string;
-}
-
-export interface GoodsOutwardFilters extends Record<string, unknown> {
-  partner_id?: string;
-  date_from?: string;
-  date_to?: string;
-}
-
-// List view types (simplified data)
-export interface GoodsInwardListItem extends GoodsInward {
-  partner: Pick<Partner, "first_name" | "last_name" | "company_name"> | null;
-  stock_units: Array<{
-    initial_quantity: number;
-    product: Pick<Product, "id" | "name" | "measuring_unit"> | null;
-  }>;
-}
-
-export interface GoodsOutwardListItem extends GoodsOutward {
-  partner: Pick<Partner, "first_name" | "last_name" | "company_name"> | null;
-  goods_outward_items: Array<{
-    quantity_dispatched: number;
-    stock_unit: {
-      product: Pick<Product, "id" | "name" | "measuring_unit"> | null;
-    } | null;
-  }>;
-}
-
-// Detail view types (full data with relationships)
-export interface ProductWithAssignments extends Product {
-  product_material_assignments: Array<{
-    material: ProductMaterial;
-  }>;
-  product_color_assignments: Array<{
-    color: ProductColor;
-  }>;
-  product_tag_assignments: Array<{
-    tag: ProductTag;
-  }>;
-}
-
-export interface StockUnitWithDetailedProduct extends StockUnit {
-  product: ProductWithAssignments | null;
-}
-
-export interface GoodsInwardWithDetails extends GoodsInward {
-  partner: Partner | null;
-  warehouse: Warehouse | null;
-  stock_units: StockUnitWithDetailedProduct[];
-}
-
-export interface GoodsOutwardItemWithDetailedProduct extends GoodsOutwardItem {
-  stock_unit: StockUnitWithDetailedProduct | null;
-}
-
-export interface GoodsOutwardWithDetails extends GoodsOutward {
-  partner: Partner | null;
-  warehouse: Warehouse | null;
-  goods_outward_items: GoodsOutwardItemWithDetailedProduct[];
-}
-
-// Outward items for product detail page
-export interface OutwardItemWithDetails extends GoodsOutwardItem {
-  outward:
-    | (GoodsOutward & {
-        partner: Partner | null;
-        to_warehouse: Warehouse | null;
-      })
-    | null;
-}
 
 /**
  * Fetch goods inwards for a warehouse with optional filters
@@ -195,8 +126,12 @@ export async function getGoodsInwardBySequenceNumber(
     .select(
       `
       *,
-      partner:partners!goods_inwards_partner_id_fkey(*),
-      warehouse:warehouses!goods_inwards_warehouse_id_fkey(*),
+      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, company_name, address_line1, address_line2, city, state, pin_code, country),
+      agent:partners!goods_inwards_agent_id_fkey(first_name, last_name, company_name),
+      warehouse:warehouses!goods_inwards_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
+      from_warehouse:warehouses!goods_inwards_from_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
+      sales_order:sales_orders(sequence_number),
+      job_work:job_works(sequence_number),
       stock_units(
         *,
         product:products(
@@ -238,8 +173,12 @@ export async function getGoodsOutwardBySequenceNumber(
     .select(
       `
       *,
-      partner:partners!goods_outwards_partner_id_fkey(*),
-      warehouse:warehouses!goods_outwards_warehouse_id_fkey(*),
+      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name, address_line1, address_line2, city, state, pin_code, country),
+      agent:partners!goods_outwards_agent_id_fkey(first_name, last_name, company_name),
+      warehouse:warehouses!goods_outwards_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
+      to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
+      sales_order:sales_orders(sequence_number),
+      job_work:job_works(sequence_number),
       goods_outward_items(
         *,
         stock_unit:stock_units(

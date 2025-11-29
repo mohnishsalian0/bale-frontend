@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
-  getUserByAuthId,
+  getUser,
   updateUserWarehouse,
   getUserRole,
   updateUser,
@@ -12,14 +12,13 @@ import {
 import type { TablesUpdate } from "@/types/database/supabase";
 
 /**
- * Fetch current user by auth ID
+ * Fetch current user
  */
-export function useCurrentUser(authUserId: string | null) {
+export function useCurrentUser() {
   return useQuery({
-    queryKey: queryKeys.users.current(authUserId || ""),
-    queryFn: () => getUserByAuthId(authUserId!),
+    queryKey: queryKeys.users.current(),
+    queryFn: () => getUser(),
     ...getQueryOptions(STALE_TIME.USER, GC_TIME.MASTER_DATA),
-    enabled: !!authUserId,
   });
 }
 
@@ -38,7 +37,7 @@ export function useUserRole(userId: string | null, roleName: string) {
 /**
  * User mutations (update profile, warehouse)
  */
-export function useUserMutations(authUserId: string) {
+export function useUserMutations() {
   const queryClient = useQueryClient();
 
   const updateWarehouse = useMutation({
@@ -51,7 +50,7 @@ export function useUserMutations(authUserId: string) {
     }) => updateUserWarehouse(userId, warehouseId),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.users.current(authUserId),
+        queryKey: queryKeys.users.current(),
       });
     },
   });
@@ -66,7 +65,7 @@ export function useUserMutations(authUserId: string) {
     }) => updateUser(userId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.users.current(authUserId),
+        queryKey: queryKeys.users.current(),
       });
     },
   });

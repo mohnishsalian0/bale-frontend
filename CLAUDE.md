@@ -141,3 +141,22 @@ npm run build
 - **Custom hooks pattern**: `useProducts()`, `usePartners()`, `useWarehouses()`, etc.
 - **Mutations**: Use hook mutations for automatic cache invalidation (e.g., `useProductMutations()`)
 - **New queries**: Add to `@/lib/queries/`, create hook in `@/lib/query/hooks/`, add key to `keys.ts`
+
+### TypeScript Type Safety
+
+- **Shared types** for complex data structures go in `/src/types/` (e.g., `stock-flow.types.ts`)
+- **Use `Pick<>` for selective fetching** - When queries fetch only specific fields, use `Pick<Type, 'field1' | 'field2'>` instead of the full type
+- **Type must match query** - If query fetches 9 fields, type should reflect those 9 fields (not all 25)
+- **Benefits**: TypeScript catches errors if you try to access unfetched fields, self-documenting code
+
+Example:
+```typescript
+// ❌ Bad - Type says all Partner fields available, but query only fetches 3
+partner: Partner | null;
+
+// ✅ Good - Type matches what query actually fetches
+partner: Pick<Partner, 'first_name' | 'last_name' | 'company_name'> | null;
+```
+
+- **Shared types prevent duplication** - Define complex types once, import everywhere
+- **Document type purpose** - Add JSDoc comments explaining what the type represents

@@ -4,12 +4,6 @@ import {
   IconNote,
   IconBuildingWarehouse,
   IconMapPin,
-  IconTruck,
-  IconTrain,
-  IconPlane,
-  IconShip,
-  IconPackage,
-  IconBox,
   IconShoppingCart,
   IconCalendar,
   IconHash,
@@ -19,50 +13,15 @@ import { Section } from "@/components/layouts/section";
 import { getInitials } from "@/lib/utils/initials";
 import { getPartnerName, getFormattedAddress } from "@/lib/utils/partner";
 import { formatAbsoluteDate } from "@/lib/utils/date";
-import type { Tables } from "@/types/database/supabase";
+import {
+  getTransportIcon,
+  getTransportTypeDisplay,
+} from "@/lib/utils/transport";
+import type { GoodsInwardWithDetails } from "@/types/stock-flow.types";
 import type { ComponentType } from "react";
 
-type GoodsInward = Tables<"goods_inwards">;
-type Partner = Tables<"partners">;
-type Warehouse = Tables<"warehouses">;
-type SalesOrder = Tables<"sales_orders">;
-type JobWork = Tables<"job_works">;
-
-interface InwardWithDetails extends GoodsInward {
-  partner: Partner | null;
-  agent: Partner | null;
-  warehouse: Warehouse | null;
-  from_warehouse: Warehouse | null;
-  sales_order: SalesOrder | null;
-  job_work: JobWork | null;
-}
-
 interface InwardDetailsTabProps {
-  inward: InwardWithDetails;
-}
-
-// Helper function to get transport icon
-function getTransportIcon(transportType: string | null) {
-  switch (transportType) {
-    case "road":
-      return IconTruck;
-    case "rail":
-      return IconTrain;
-    case "air":
-      return IconPlane;
-    case "sea":
-      return IconShip;
-    case "courier":
-      return IconPackage;
-    default:
-      return IconBox;
-  }
-}
-
-// Helper function to get transport type display name
-function getTransportTypeDisplay(transportType: string | null): string {
-  if (!transportType) return "Not specified";
-  return transportType.charAt(0).toUpperCase() + transportType.slice(1);
+  inward: GoodsInwardWithDetails;
 }
 
 export function InwardDetailsTab({ inward }: InwardDetailsTabProps) {

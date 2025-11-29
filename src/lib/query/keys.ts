@@ -117,14 +117,14 @@ export const queryKeys = {
 
   // Company
   company: {
-    detail: (authUserId: string) => ["company", authUserId] as const,
+    detail: () => ["company"] as const,
     warehouses: (companyId: string) =>
       ["company", "warehouses", companyId] as const,
   },
 
   // Users
   users: {
-    current: (authUserId: string) => ["users", "current", authUserId] as const,
+    current: () => ["users", "current"] as const,
     role: (userId: string) => ["users", "role", userId] as const,
   },
 

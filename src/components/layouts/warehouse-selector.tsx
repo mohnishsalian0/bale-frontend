@@ -45,9 +45,7 @@ export default function WarehouseSelector({
   const { data: warehouses = [], isLoading: loading } = useWarehouses();
 
   // User mutations hook
-  const { updateWarehouse: updateUserWarehouse } = useUserMutations(
-    user?.auth_user_id || "",
-  );
+  const { updateWarehouse: updateUserWarehouse } = useUserMutations();
 
   const handleSelect = async (warehouseId: string) => {
     try {

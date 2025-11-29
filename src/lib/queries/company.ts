@@ -8,7 +8,7 @@ type Warehouse = Tables<"warehouses">;
 /**
  * Fetch company details for the current authenticated user
  */
-export async function getCompanyByAuthId(): Promise<Company> {
+export async function getCompany(): Promise<Company> {
   const supabase = createClient();
 
   // Get the current auth user

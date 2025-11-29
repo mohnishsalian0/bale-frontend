@@ -34,7 +34,7 @@ export function useInviteMutations() {
         queryKey: queryKeys.invites.byCode(variables.inviteToken),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.users.current(variables.authUserId),
+        queryKey: queryKeys.users.current(),
       });
     },
   });

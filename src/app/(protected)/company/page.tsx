@@ -23,7 +23,6 @@ import { WarehouseFormSheet } from "@/app/(protected)/warehouse/WarehouseFormShe
 import { CompanyEditSheet } from "@/app/(protected)/company/CompanyEditSheet";
 import { useCompany } from "@/lib/query/hooks/company";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
-import { useSession } from "@/contexts/session-context";
 import {
   formatWebsiteUrl,
   getFormattedCompanyAddress,
@@ -31,7 +30,6 @@ import {
 
 export default function CompanyPage() {
   const router = useRouter();
-  const { user } = useSession();
   const [showEditCompany, setShowEditCompany] = useState(false);
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
 
@@ -41,7 +39,7 @@ export default function CompanyPage() {
     isLoading: companyLoading,
     isError: companyError,
     refetch: refetchCompany,
-  } = useCompany(user?.auth_user_id || null);
+  } = useCompany();
   const {
     data: warehouses = [],
     isLoading: warehousesLoading,

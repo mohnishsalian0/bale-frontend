@@ -10,18 +10,24 @@ export interface UserWithRole extends User {
 }
 
 /**
- * Fetch user by auth user ID
+ * Fetch user
  * This is the primary way to get the current logged-in user
  */
-export async function getUserByAuthId(
-  authUserId: string,
-): Promise<User | null> {
+export async function getUser(): Promise<User | null> {
   const supabase = createClient();
+
+  // Get the current auth user
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  if (!authUser) {
+    throw new Error("Not authenticated");
+  }
 
   const { data, error } = await supabase
     .from("users")
     .select("*")
-    .eq("auth_user_id", authUserId)
+    .eq("auth_user_id", authUser.id)
     .single();
 
   if (error) {

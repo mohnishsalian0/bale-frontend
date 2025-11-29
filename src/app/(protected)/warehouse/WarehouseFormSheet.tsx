@@ -74,8 +74,12 @@ export function WarehouseFormSheet({
         );
         handleCancel();
       },
-      onError: (error: Error) => {
-        toast.error(error.message);
+      onError: () => {
+        toast.error(
+          warehouse
+            ? "Failed to updated warehouse"
+            : "Failed to created warehouse",
+        );
       },
     };
 

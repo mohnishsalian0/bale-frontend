@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { IconChevronDown, IconBuilding, IconWorld } from "@tabler/icons-react";
 import { toast } from "sonner";
@@ -78,8 +78,7 @@ export function CompanyEditSheet({
   const [showAddress, setShowAddress] = useState(false);
   const [showFinancial, setShowFinancial] = useState(false);
 
-  const { user } = useSession();
-  const { update } = useCompanyMutations(user.auth_user_id || "");
+  const { update } = useCompanyMutations();
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -105,6 +104,16 @@ export function CompanyEditSheet({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const mutationOptions = {
+      onSuccess: () => {
+        toast.success("Company updated successfully");
+        handleCancel();
+      },
+      onError: () => {
+        toast.error("Failed to update company");
+      },
+    };
+
     // Update company details using mutation
     update.mutate(
       {
@@ -126,18 +135,7 @@ export function CompanyEditSheet({
         },
         image: formData.image,
       },
-      {
-        onSuccess: () => {
-          toast.success("Company updated successfully");
-          handleCancel();
-        },
-        onError: (error) => {
-          console.error("Error updating company:", error);
-          toast.error(
-            error instanceof Error ? error.message : "Failed to update company",
-          );
-        },
-      },
+      mutationOptions,
     );
   };
 

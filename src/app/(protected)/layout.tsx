@@ -110,9 +110,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const { data: warehouse, isLoading: warehouseLoading } = useWarehouseBySlug(
     warehouseSlug || "",
   );
-  const { updateWarehouse: updateUserWarehouse } = useUserMutations(
-    user?.auth_user_id || "",
-  );
+  const { updateWarehouse: updateUserWarehouse } = useUserMutations();
 
   const loading = authLoading || (warehouseSlug ? warehouseLoading : false);
 
