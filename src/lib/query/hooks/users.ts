@@ -6,8 +6,8 @@ import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getUser,
   updateUserWarehouse,
-  getUserRole,
   updateUser,
+  getUserPermissions,
 } from "@/lib/queries/users";
 import type { TablesUpdate } from "@/types/database/supabase";
 
@@ -25,12 +25,12 @@ export function useCurrentUser() {
 /**
  * Fetch user role with permissions
  */
-export function useUserRole(userId: string | null, roleName: string) {
+export function useUserPermissions(roleName: string | null) {
   return useQuery({
-    queryKey: queryKeys.users.role(userId || ""),
-    queryFn: () => getUserRole(userId!, roleName),
+    queryKey: queryKeys.users.permissions(),
+    queryFn: () => getUserPermissions(roleName!),
     ...getQueryOptions(STALE_TIME.USER, GC_TIME.MASTER_DATA),
-    enabled: !!userId,
+    enabled: !!roleName,
   });
 }
 

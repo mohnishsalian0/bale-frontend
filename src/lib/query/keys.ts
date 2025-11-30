@@ -125,7 +125,7 @@ export const queryKeys = {
   // Users
   users: {
     current: () => ["users", "current"] as const,
-    role: (userId: string) => ["users", "role", userId] as const,
+    permissions: () => ["users", "permissions"] as const,
   },
 
   // Invites

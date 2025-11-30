@@ -18,12 +18,12 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useWarehouseMutations } from "@/lib/query/hooks/warehouses";
-import type { TablesInsert, Tables } from "@/types/database/supabase";
+import { Warehouse, WarehouseInsert } from "@/types/warehouses.types";
 
 interface WarehouseFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  warehouse?: Tables<"warehouses"> | null; // For edit mode
+  warehouse?: Warehouse | null; // For edit mode
 }
 
 interface WarehouseFormData {
@@ -83,7 +83,7 @@ export function WarehouseFormSheet({
       },
     };
 
-    const warehouseData = {
+    const warehouseData: WarehouseInsert = {
       name: formData.name,
       contact_name: formData.contactName || null,
       contact_number: formData.contactNumber || null,
@@ -106,10 +106,7 @@ export function WarehouseFormSheet({
       );
     } else {
       // Create new warehouse using mutation
-      create.mutate(
-        warehouseData as TablesInsert<"warehouses">,
-        mutationOptions,
-      );
+      create.mutate(warehouseData, mutationOptions);
     }
   };
 

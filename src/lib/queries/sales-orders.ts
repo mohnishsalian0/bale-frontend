@@ -45,7 +45,6 @@ export async function getSalesOrders(
 
   if (error) throw error;
   if (!data) throw new Error("No data returned");
-  console.log(data);
 
   return data as SalesOrderListView[];
 }
@@ -81,7 +80,6 @@ export async function getSalesOrdersByCustomer(
 
   if (error) throw error;
   if (!data) return [];
-  console.log(data);
 
   return data as SalesOrderListView[];
 }
@@ -132,7 +130,6 @@ export async function getSalesOrder(
 
   if (error) throw error;
   if (!data) throw new Error("Order not found");
-  console.log(data);
 
   // Transform Supabase's array format to single objects
   return data as SalesOrderDetailView;

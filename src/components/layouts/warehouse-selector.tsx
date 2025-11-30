@@ -15,10 +15,7 @@ import { WarehouseFormSheet } from "@/app/(protected)/warehouse/WarehouseFormShe
 import { useSession } from "@/contexts/session-context";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
 import { useUserMutations } from "@/lib/query/hooks/users";
-import type { Tables } from "@/types/database/supabase";
 import { getWarehouseFormattedAddress } from "@/lib/utils/warehouse";
-
-type Warehouse = Tables<"warehouses">;
 
 interface WarehouseSelectorProps {
   open: boolean;

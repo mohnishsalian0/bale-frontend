@@ -1,9 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
-import type { Tables, TablesUpdate } from "@/types/database/supabase";
+import { type Company, type CompanyUpdate } from "@/types/companies.types";
+import { type Warehouse } from "@/types/warehouses.types";
 import { uploadCompanyLogo } from "@/lib/storage";
-
-type Company = Tables<"companies">;
-type Warehouse = Tables<"warehouses">;
 
 /**
  * Fetch company details for the current authenticated user
@@ -36,7 +34,7 @@ export async function getCompany(): Promise<Company> {
     .from("companies")
     .select("*")
     .eq("id", userData.company_id)
-    .single();
+    .single<Company>();
 
   if (error) {
     console.error("Error fetching company details:", error);
@@ -66,8 +64,9 @@ export async function getCompanyWarehouses(): Promise<Warehouse[]> {
     console.error("Error fetching company warehouses:", error);
     throw error;
   }
+  if (!data) return [];
 
-  return data || [];
+  return data as Warehouse[];
 }
 
 /**
@@ -79,7 +78,7 @@ export async function updateCompanyDetails({
   image,
 }: {
   companyId: string;
-  updates: TablesUpdate<"companies">;
+  updates: CompanyUpdate;
   image?: File | null;
 }): Promise<Company> {
   const supabase = createClient();
@@ -100,7 +99,7 @@ export async function updateCompanyDetails({
     .update(updates)
     .eq("id", companyId)
     .select()
-    .single();
+    .single<Company>();
 
   if (error) {
     console.error("Error updating company details:", error);

@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import { getCompany, updateCompanyDetails } from "@/lib/queries/company";
-import type { TablesUpdate } from "@/types/database/supabase";
+import { CompanyUpdate } from "@/types/companies.types";
 
 /**
  * Fetch company details for the current authenticated user
@@ -30,7 +30,7 @@ export function useCompanyMutations() {
       image,
     }: {
       companyId: string;
-      data: TablesUpdate<"companies">;
+      data: CompanyUpdate;
       image?: File | null;
     }) => updateCompanyDetails({ companyId, updates: data, image }),
     onSuccess: () => {

@@ -1,57 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { IconBuildingWarehouse } from "@tabler/icons-react";
-import { createClient, getCurrentUser } from "@/lib/supabase/client";
-import type { Tables } from "@/types/database/supabase";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
-
-type Warehouse = Tables<"warehouses">;
-type User = Tables<"users">;
+import { useCurrentUser, useUserMutations } from "@/lib/query/hooks/users";
+import { Warehouse } from "@/types/warehouses.types";
 
 export default function WarehouseSelectionPage() {
-  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
-  const supabase = createClient();
 
   // Fetch warehouses using TanStack Query
-  const { data: warehouses = [], isLoading: loading } = useWarehouses();
-
-  useEffect(() => {
-    const fetchWarehousesAndUser = async () => {
-      // Get current user
-      const currentUser = await getCurrentUser();
-      if (!currentUser) {
-        router.push("/auth/login");
-        return;
-      }
-
-      setUser(currentUser);
-    };
-    fetchWarehousesAndUser();
-  }, []);
+  const { data: warehouses = [], isLoading: warehousesLoading } =
+    useWarehouses();
+  const { data: user, isLoading: userLoading } = useCurrentUser();
+  const { updateWarehouse } = useUserMutations();
 
   const handleWarehouseSelect = async (warehouse: Warehouse) => {
-    try {
-      // Update user's selected warehouse
-      const { error } = await supabase
-        .from("users")
-        .update({ warehouse_id: warehouse.id })
-        .eq("id", user?.id);
-
-      if (error) {
-        console.error("Error updating warehouse:", error);
-        return;
-      }
-
-      // Redirect to warehouse dashboard
-      router.push(`/warehouse/${warehouse.slug}/dashboard`);
-    } catch (error) {
-      console.error("Error selecting warehouse:", error);
-    }
+    updateWarehouse.mutate(
+      { userId: user!.id, warehouseId: warehouse.id },
+      {
+        onSuccess: () => {
+          router.push(`/warehouse/${warehouse.slug}/dashboard`);
+        },
+        onError: (error) => {
+          console.error("Error selecting warehouse:", error);
+        },
+      },
+    );
   };
 
   useEffect(() => {
@@ -60,7 +38,7 @@ export default function WarehouseSelectionPage() {
     }
   }, [user, warehouses]);
 
-  if (loading) {
+  if (warehousesLoading || userLoading) {
     return <LoadingState />;
   }
 

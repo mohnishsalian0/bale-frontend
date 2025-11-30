@@ -1,11 +1,9 @@
 import { createClient } from "@/lib/supabase/client";
-import type {
-  Tables,
-  TablesInsert,
-  TablesUpdate,
-} from "@/types/database/supabase";
-
-type Warehouse = Tables<"warehouses">;
+import {
+  Warehouse,
+  WarehouseInsert,
+  WarehouseUpdate,
+} from "@/types/warehouses.types";
 
 /**
  * Fetch all warehouses for the current company
@@ -24,16 +22,15 @@ export async function getWarehouses(): Promise<Warehouse[]> {
     console.error("Error fetching warehouses:", error);
     throw error;
   }
+  if (!data) return [];
 
-  return data || [];
+  return data as Warehouse[];
 }
 
 /**
  * Fetch a single warehouse by slug
  */
-export async function getWarehouseBySlug(
-  slug: string,
-): Promise<Warehouse | null> {
+export async function getWarehouseBySlug(slug: string): Promise<Warehouse> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -41,12 +38,13 @@ export async function getWarehouseBySlug(
     .select("*")
     .eq("slug", slug)
     .is("deleted_at", null)
-    .single();
+    .single<Warehouse>();
 
   if (error) {
     console.error("Error fetching warehouse by slug:", error);
-    return null;
   }
+
+  if (!data) throw new Error("Warehoue not found");
 
   return data;
 }
@@ -54,7 +52,7 @@ export async function getWarehouseBySlug(
 /**
  * Fetch a single warehouse by ID
  */
-export async function getWarehouseById(id: string): Promise<Warehouse | null> {
+export async function getWarehouseById(id: string): Promise<Warehouse> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -62,11 +60,15 @@ export async function getWarehouseById(id: string): Promise<Warehouse | null> {
     .select("*")
     .eq("id", id)
     .is("deleted_at", null)
-    .single();
+    .single<Warehouse>();
 
   if (error) {
     console.error("Error fetching warehouse by ID:", error);
-    return null;
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error("Warehoue not found");
   }
 
   return data;
@@ -76,7 +78,7 @@ export async function getWarehouseById(id: string): Promise<Warehouse | null> {
  * Create a new warehouse
  */
 export async function createWarehouse(
-  warehouse: TablesInsert<"warehouses">,
+  warehouse: WarehouseInsert,
 ): Promise<Warehouse> {
   const supabase = createClient();
 
@@ -84,11 +86,15 @@ export async function createWarehouse(
     .from("warehouses")
     .insert(warehouse)
     .select()
-    .single();
+    .single<Warehouse>();
 
   if (error) {
     console.error("Error creating warehouse:", error);
     throw error;
+  }
+
+  if (!data) {
+    throw new Error("Failed to create warehouse");
   }
 
   return data;
@@ -99,7 +105,7 @@ export async function createWarehouse(
  */
 export async function updateWarehouse(
   id: string,
-  updates: TablesUpdate<"warehouses">,
+  updates: WarehouseUpdate,
 ): Promise<Warehouse> {
   const supabase = createClient();
 
@@ -108,11 +114,15 @@ export async function updateWarehouse(
     .update(updates)
     .eq("id", id)
     .select()
-    .single();
+    .single<Warehouse>();
 
   if (error) {
     console.error("Error updating warehouse:", error);
     throw error;
+  }
+
+  if (!data) {
+    throw new Error("Failed to update warehouse");
   }
 
   return data;

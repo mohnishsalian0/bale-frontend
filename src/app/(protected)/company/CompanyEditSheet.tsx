@@ -20,10 +20,7 @@ import {
 } from "@/components/ui/collapsible";
 import { validateImageFile } from "@/lib/storage";
 import { useCompanyMutations } from "@/lib/query/hooks/company";
-import { useSession } from "@/contexts/session-context";
-import type { Tables } from "@/types/database/supabase";
-
-type Company = Tables<"companies">;
+import { CompanyUpdate, type Company } from "@/types/companies.types";
 
 interface CompanyEditSheetProps {
   open: boolean;
@@ -114,25 +111,27 @@ export function CompanyEditSheet({
       },
     };
 
+    const companyData: CompanyUpdate = {
+      name: formData.name,
+      business_type: formData.businessType || null,
+      email: formData.email || null,
+      phone_number: formData.phoneNumber || null,
+      website_url: formData.websiteUrl || null,
+      address_line1: formData.addressLine1 || null,
+      address_line2: formData.addressLine2 || null,
+      city: formData.city || null,
+      state: formData.state || null,
+      country: formData.country || null,
+      pin_code: formData.pinCode || null,
+      gst_number: formData.gstNumber || null,
+      pan_number: formData.panNumber || null,
+    };
+
     // Update company details using mutation
     update.mutate(
       {
         companyId: company.id,
-        data: {
-          name: formData.name,
-          business_type: formData.businessType || null,
-          email: formData.email || null,
-          phone_number: formData.phoneNumber || null,
-          website_url: formData.websiteUrl || null,
-          address_line1: formData.addressLine1 || null,
-          address_line2: formData.addressLine2 || null,
-          city: formData.city || null,
-          state: formData.state || null,
-          country: formData.country || null,
-          pin_code: formData.pinCode || null,
-          gst_number: formData.gstNumber || null,
-          pan_number: formData.panNumber || null,
-        },
+        data: companyData,
         image: formData.image,
       },
       mutationOptions,

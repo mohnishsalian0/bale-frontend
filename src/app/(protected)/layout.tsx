@@ -4,7 +4,6 @@ import { ReactNode, useState, useEffect } from "react";
 import { useParams, useRouter, usePathname } from "next/navigation";
 import { SessionProvider } from "@/contexts/session-context";
 import { AppChromeProvider, useAppChrome } from "@/contexts/app-chrome-context";
-import { getCurrentUser } from "@/lib/supabase/client";
 import { createClient } from "@/lib/supabase/client";
 import { LoadingState } from "@/components/layouts/loading-state";
 import TopBar from "@/components/layouts/topbar";
@@ -13,12 +12,13 @@ import WarehouseSelector from "@/components/layouts/warehouse-selector";
 import { AppSidebar } from "@/components/layouts/app-sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { toast } from "sonner";
-import type { Tables } from "@/types/database/supabase";
 import { useWarehouseBySlug } from "@/lib/query/hooks/warehouses";
-import { useUserMutations } from "@/lib/query/hooks/users";
-
-type Warehouse = Tables<"warehouses">;
-type User = Tables<"users">;
+import {
+  useCurrentUser,
+  useUserMutations,
+  useUserPermissions,
+} from "@/lib/query/hooks/users";
+import { Warehouse } from "@/types/warehouses.types";
 
 /**
  * Chrome Wrapper - Conditionally renders app chrome based on context
@@ -46,7 +46,7 @@ function ChromeWrapper({
       router.push("/auth/login");
     } catch (error: any) {
       console.error("Error logging out:", error);
-      toast.error(error.message || "Failed to log out");
+      toast.error("Failed to log out:", error.message);
     }
   };
 
@@ -100,19 +100,16 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const warehouseSlug = params.warehouse_slug as string | undefined;
 
-  const [user, setUser] = useState<User | null>(null);
-  const [permissions, setPermissions] = useState<string[]>([]);
   const [authLoading, setAuthLoading] = useState(true);
-
-  const supabase = createClient();
 
   // Fetch warehouse using TanStack Query if slug exists
   const { data: warehouse, isLoading: warehouseLoading } = useWarehouseBySlug(
     warehouseSlug || "",
   );
+  const { data: user, isLoading: userLoading } = useCurrentUser();
+  const { data: permissions, isLoading: permissionsLoading } =
+    useUserPermissions(user?.role || null);
   const { updateWarehouse: updateUserWarehouse } = useUserMutations();
-
-  const loading = authLoading || (warehouseSlug ? warehouseLoading : false);
 
   useEffect(() => {
     validateAccess();
@@ -121,15 +118,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const validateAccess = async () => {
     try {
       setAuthLoading(true);
-
-      // Get current user - required for all protected routes
-      const currentUser = await getCurrentUser();
-      if (!currentUser) {
-        router.push(`/auth/login?redirectTo=${encodeURIComponent(pathname)}`);
-        return;
-      }
-
-      setUser(currentUser);
 
       // If this is a warehouse route, validate warehouse access
       if (warehouseSlug && !warehouseLoading) {
@@ -140,40 +128,31 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         }
 
         // Sync user's selected warehouse with URL
-        if (currentUser.warehouse_id !== warehouse.id) {
-          await updateUserWarehouse.mutateAsync({
-            userId: currentUser.id,
-            warehouseId: warehouse.id,
-          });
-        }
-
-        // Load user permissions from database
-        const { data: roleData } = await supabase
-          .from("roles")
-          .select("id")
-          .eq("name", currentUser.role)
-          .single();
-
-        if (roleData) {
-          const { data: permData } = await supabase
-            .from("role_permissions")
-            .select("permissions!inner(permission_path)")
-            .eq("role_id", roleData.id);
-
-          const userPermissions = (permData || [])
-            .map((rp: any) => rp.permissions?.permission_path)
-            .filter(Boolean);
-
-          setPermissions(userPermissions);
+        if (user && user.warehouse_id !== warehouse.id) {
+          updateUserWarehouse.mutate(
+            {
+              userId: user.id,
+              warehouseId: warehouse.id,
+            },
+            {
+              onError: (error: Error) => {
+                console.error("Error validating access:", error);
+                router.push("/auth/login");
+              },
+            },
+          );
         }
       }
-    } catch (error) {
-      console.error("Error validating access:", error);
-      router.push("/auth/login");
     } finally {
       setAuthLoading(false);
     }
   };
+
+  const loading =
+    authLoading ||
+    userLoading ||
+    permissionsLoading ||
+    (warehouseSlug ? warehouseLoading : false);
 
   if (loading) {
     return <LoadingState />;
@@ -189,7 +168,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       <SessionProvider
         warehouse={warehouse}
         user={user}
-        permissions={permissions}
+        permissions={permissions || []}
       >
         <AppChromeProvider>
           <ChromeWrapper warehouse={warehouse}>{children}</ChromeWrapper>

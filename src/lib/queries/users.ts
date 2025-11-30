@@ -1,19 +1,11 @@
 import { createClient } from "@/lib/supabase/client";
-import type { Tables, TablesUpdate } from "@/types/database/supabase";
-
-type User = Tables<"users">;
-
-export interface UserWithRole extends User {
-  role_permissions?: {
-    permission_path: string;
-  }[];
-}
+import { Permission, User, UserUpdate } from "@/types/user.types";
 
 /**
  * Fetch user
  * This is the primary way to get the current logged-in user
  */
-export async function getUser(): Promise<User | null> {
+export async function getUser(): Promise<User> {
   const supabase = createClient();
 
   // Get the current auth user
@@ -28,11 +20,15 @@ export async function getUser(): Promise<User | null> {
     .from("users")
     .select("*")
     .eq("auth_user_id", authUser.id)
-    .single();
+    .single<User>();
 
   if (error) {
     console.error("Error fetching user by auth ID:", error);
-    return null;
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error("User not found");
   }
 
   return data;
@@ -52,11 +48,15 @@ export async function updateUserWarehouse(
     .update({ warehouse_id: warehouseId })
     .eq("id", userId)
     .select()
-    .single();
+    .single<User>();
 
   if (error) {
     console.error("Error updating user warehouse:", error);
     throw error;
+  }
+
+  if (!data) {
+    throw new Error("User not found");
   }
 
   return data;
@@ -65,23 +65,8 @@ export async function updateUserWarehouse(
 /**
  * Fetch user's role and permissions
  */
-export async function getUserRole(
-  userId: string,
-  roleName: string,
-): Promise<UserWithRole | null> {
+export async function getUserPermissions(roleName: string): Promise<string[]> {
   const supabase = createClient();
-
-  // Fetch user data
-  const { data: user, error: userError } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", userId)
-    .single();
-
-  if (userError || !user) {
-    console.error("Error fetching user:", userError);
-    return null;
-  }
 
   // Fetch role ID
   const { data: roleData, error: roleError } = await supabase
@@ -91,8 +76,8 @@ export async function getUserRole(
     .single();
 
   if (roleError || !roleData) {
-    console.error("Error fetching role:", roleError);
-    return user;
+    console.log(`Error fetching role: ${roleError}`);
+    throw new Error(`Error fetching role: ${roleError}`);
   }
 
   // Fetch permissions for this role
@@ -103,15 +88,17 @@ export async function getUserRole(
 
   if (permError) {
     console.error("Error fetching permissions:", permError);
-    return user;
+    throw new Error(`Error fetching permissions: ${permError}`);
   }
 
-  return {
-    ...user,
-    role_permissions: permData?.map((p: any) => ({
-      permission_path: p.permissions.permission_path,
-    })),
-  };
+  console.log(permData);
+
+  return (
+    (permData?.map(
+      (p: { permissions: Pick<Permission, "permission_path">[] }) =>
+        p.permissions.permission_path,
+    ) as string[]) ?? []
+  );
 }
 
 /**
@@ -119,7 +106,7 @@ export async function getUserRole(
  */
 export async function updateUser(
   userId: string,
-  updates: TablesUpdate<"users">,
+  updates: UserUpdate,
 ): Promise<User> {
   const supabase = createClient();
 
@@ -128,7 +115,7 @@ export async function updateUser(
     .update(updates)
     .eq("id", userId)
     .select()
-    .single();
+    .single<User>();
 
   if (error) {
     console.error("Error updating user:", error);

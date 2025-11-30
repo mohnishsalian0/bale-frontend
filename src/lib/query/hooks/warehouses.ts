@@ -11,7 +11,7 @@ import {
   updateWarehouse,
   deleteWarehouse,
 } from "@/lib/queries/warehouses";
-import type { TablesInsert, TablesUpdate } from "@/types/database/supabase";
+import { WarehouseInsert, WarehouseUpdate } from "@/types/warehouses.types";
 
 /**
  * Fetch all warehouses for the company
@@ -56,20 +56,15 @@ export function useWarehouseMutations() {
   const queryClient = useQueryClient();
 
   const create = useMutation({
-    mutationFn: (data: TablesInsert<"warehouses">) => createWarehouse(data),
+    mutationFn: (data: WarehouseInsert) => createWarehouse(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.warehouses.all() });
     },
   });
 
   const update = useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: TablesUpdate<"warehouses">;
-    }) => updateWarehouse(id, data),
+    mutationFn: ({ id, data }: { id: string; data: WarehouseUpdate }) =>
+      updateWarehouse(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.warehouses.detail(variables.id),
