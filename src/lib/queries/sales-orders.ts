@@ -94,7 +94,7 @@ export async function getSalesOrdersByCustomer(
 /**
  * Fetch a single sales order by sequence number
  */
-export async function getSalesOrderBySequenceNumber(
+export async function getSalesOrderByNumber(
   sequenceNumber: string,
 ): Promise<SalesOrderDetailView> {
   const supabase = createClient();

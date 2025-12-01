@@ -21,7 +21,7 @@ import {
 } from "@/components/layouts/stock-unit-details-content";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { createClient } from "@/lib/supabase/browser";
-import { formatStockUnitNumber } from "@/lib/utils/stock-unit";
+import { formatStockUnitNumber } from "@/lib/utils/product";
 import { useSession } from "@/contexts/session-context";
 import type { StockType, StockUnitStatus } from "@/types/database/enums";
 import { PRODUCT_WITH_ATTRIBUTES_SELECT } from "@/lib/queries/products";

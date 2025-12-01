@@ -33,6 +33,24 @@ export interface GoodsOutwardFilters extends Record<string, unknown> {
 // LIST VIEW TYPES (for list pages)
 // =====================================================
 
+/**
+ * Minimal inward view for list items
+ * Used in: stock unit inward details
+ */
+export type InwardListView = Pick<
+  GoodsInward,
+  "id" | "sequence_number" | "inward_date" | "inward_type"
+>;
+
+/**
+ * Inward with partner details for list views
+ * Used in: stock unit with inward details
+ */
+export interface InwardWithPartnerListView extends InwardListView {
+  partner: Pick<Partner, "id" | "first_name" | "last_name" | "company_name"> | null;
+  from_warehouse: Pick<Warehouse, "id" | "name"> | null;
+}
+
 export interface GoodsInwardListItem extends GoodsInward {
   partner: Pick<Partner, "first_name" | "last_name" | "company_name"> | null;
   stock_units: Array<{

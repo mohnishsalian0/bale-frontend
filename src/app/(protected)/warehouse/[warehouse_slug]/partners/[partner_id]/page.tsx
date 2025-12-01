@@ -33,7 +33,7 @@ import { SummaryTab } from "./SummaryTab";
 import { OrdersTab } from "./OrdersTab";
 import { PartnerFormSheet } from "../PartnerFormSheet";
 import type { PartnerType, SalesOrderStatus } from "@/types/database/enums";
-import { usePartner } from "@/lib/query/hooks/partners";
+import { usePartnerWithOrderStats } from "@/lib/query/hooks/partners";
 import { useSalesOrdersByCustomer } from "@/lib/query/hooks/sales-orders";
 
 interface PageParams {
@@ -65,12 +65,12 @@ export default function PartnerDetailPage({ params }: PageParams) {
   const [activeTab, setActiveTab] = useState<"summary" | "orders">("summary");
   const [showEditPartner, setShowEditPartner] = useState(false);
 
-  // Fetch partner using TanStack Query
+  // Fetch partner with order stats using TanStack Query
   const {
     data: partner,
     isLoading: partnerLoading,
     isError: partnerError,
-  } = usePartner(partner_id);
+  } = usePartnerWithOrderStats(partner_id);
 
   // Get aggregates from partner data
   const aggregates = partner?.partner_order_aggregates;

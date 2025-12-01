@@ -26,10 +26,8 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { createClient } from "@/lib/supabase/browser";
 import { toast } from "sonner";
-import { useAgents } from "@/lib/query/hooks/partners";
-import type { Tables } from "@/types/database/supabase";
-
-type Partner = Tables<"partners">;
+import { usePartners } from "@/lib/query/hooks/partners";
+import { PartnerListView } from "@/types/partners.types";
 
 interface AgentEditSheetProps {
   open: boolean;
@@ -51,7 +49,9 @@ export function AgentEditSheet({
   const isMobile = useIsMobile();
 
   // Fetch agents using TanStack Query
-  const { data: agents = [], isLoading: fetchingAgents } = useAgents();
+  const { data: agents = [], isLoading: fetchingAgents } = usePartners({
+    partner_type: "agent",
+  });
 
   useEffect(() => {
     if (open) {
@@ -87,7 +87,7 @@ export function AgentEditSheet({
     }
   };
 
-  const getAgentName = (agent: Partner) => {
+  const getAgentName = (agent: PartnerListView) => {
     return agent.company_name || `${agent.first_name} ${agent.last_name}`;
   };
 

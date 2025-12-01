@@ -5,29 +5,34 @@ import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getPartners,
-  getCustomers,
-  getSuppliers,
-  getAgents,
   getPartnerById,
+  getPartnerWithOrderStatsById,
   createPartner,
   updatePartner,
   deletePartner,
 } from "@/lib/queries/partners";
+import type { PartnerFilters } from "@/types/partners.types";
 
 /**
- * Fetch all partners with optional filters
- * @param filters - Currently unused, reserved for future client-side filtering
+ * Fetch partners with optional filters
+ *
+ * Examples:
+ * - All partners: usePartners()
+ * - Customers: usePartners({ partner_type: 'customer' })
+ * - Suppliers: usePartners({ partner_type: 'supplier' })
+ * - Agents: usePartners({ partner_type: 'agent' })
  */
-export function usePartners(filters?: Record<string, unknown>) {
+export function usePartners(filters?: PartnerFilters) {
   return useQuery({
     queryKey: queryKeys.partners.all(filters),
-    queryFn: getPartners,
+    queryFn: () => getPartners(filters),
     ...getQueryOptions(STALE_TIME.PARTNERS, GC_TIME.MASTER_DATA),
   });
 }
 
 /**
- * Fetch single partner by ID
+ * Fetch single partner by ID (without order aggregates)
+ * Used for: partner form, basic partner details
  */
 export function usePartner(partnerId: string | null) {
   return useQuery({
@@ -39,35 +44,15 @@ export function usePartner(partnerId: string | null) {
 }
 
 /**
- * Fetch only customer partners
+ * Fetch single partner by ID with order statistics
+ * Used for: partner detail page
  */
-export function useCustomers() {
+export function usePartnerWithOrderStats(partnerId: string | null) {
   return useQuery({
-    queryKey: queryKeys.partners.customers(),
-    queryFn: getCustomers,
+    queryKey: queryKeys.partners.detail(partnerId || ""),
+    queryFn: () => getPartnerWithOrderStatsById(partnerId!),
     ...getQueryOptions(STALE_TIME.PARTNERS, GC_TIME.MASTER_DATA),
-  });
-}
-
-/**
- * Fetch only supplier/vendor partners
- */
-export function useSuppliers() {
-  return useQuery({
-    queryKey: queryKeys.partners.suppliers(),
-    queryFn: getSuppliers,
-    ...getQueryOptions(STALE_TIME.PARTNERS, GC_TIME.MASTER_DATA),
-  });
-}
-
-/**
- * Fetch only agent partners
- */
-export function useAgents() {
-  return useQuery({
-    queryKey: queryKeys.partners.agents(),
-    queryFn: getAgents,
-    ...getQueryOptions(STALE_TIME.PARTNERS, GC_TIME.MASTER_DATA),
+    enabled: !!partnerId,
   });
 }
 

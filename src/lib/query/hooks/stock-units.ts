@@ -5,17 +5,21 @@ import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getStockUnits,
-  getStockUnitsByProduct,
-  getStockUnitsWithInwardDetails,
-  getPendingQRStockUnits,
+  getStockUnitsWithInward,
+  getStockUnitWithProductDetail,
   updateStockUnit,
   updateStockUnits,
-  type StockUnitFilters,
 } from "@/lib/queries/stock-units";
+import type { StockUnitFilters } from "@/types/stock-units.types";
 import type { TablesUpdate } from "@/types/database/supabase";
 
 /**
  * Fetch stock units for a warehouse with optional filters
+ *
+ * Examples:
+ * - All stock units: useStockUnits(warehouseId)
+ * - By product: useStockUnits(warehouseId, { product_id: productId, status: "in_stock" })
+ * - Pending QR: useStockUnits(warehouseId, { status: "in_stock", qr_generated_at: "null" })
  */
 export function useStockUnits(warehouseId: string, filters?: StockUnitFilters) {
   return useQuery({
@@ -26,43 +30,31 @@ export function useStockUnits(warehouseId: string, filters?: StockUnitFilters) {
 }
 
 /**
- * Fetch stock units for a specific product
- */
-export function useStockUnitsByProduct(productId: string, warehouseId: string) {
-  return useQuery({
-    queryKey: queryKeys.stockUnits.byProduct(productId, warehouseId),
-    queryFn: () => getStockUnitsByProduct(productId, warehouseId),
-    ...getQueryOptions(STALE_TIME.STOCK_UNITS, GC_TIME.TRANSACTIONAL),
-  });
-}
-
-/**
  * Fetch stock units for a product with full inward details
  * Useful for product detail page to show stock flow history
  */
-export function useStockUnitsWithInwardDetails(
+export function useStockUnitsWithInward(
   productId: string | null,
   warehouseId: string,
 ) {
   return useQuery({
-    queryKey: queryKeys.stockUnits.withInwardDetails(
-      productId || "",
-      warehouseId,
-    ),
-    queryFn: () => getStockUnitsWithInwardDetails(productId!, warehouseId),
+    queryKey: queryKeys.stockUnits.all(warehouseId),
+    queryFn: () => getStockUnitsWithInward(productId!, warehouseId),
     ...getQueryOptions(STALE_TIME.STOCK_UNITS, GC_TIME.TRANSACTIONAL),
     enabled: !!productId,
   });
 }
 
 /**
- * Fetch stock units that need QR codes
+ * Fetch a single stock unit by ID with full product details
+ * Used for: stock unit detail modal, detail pages
  */
-export function usePendingQRStockUnits(warehouseId: string) {
+export function useStockUnitWithProductDetail(stockUnitId: string | null) {
   return useQuery({
-    queryKey: queryKeys.stockUnits.pendingQR(warehouseId),
-    queryFn: () => getPendingQRStockUnits(warehouseId),
+    queryKey: queryKeys.stockUnits.byId(stockUnitId || ""),
+    queryFn: () => getStockUnitWithProductDetail(stockUnitId!),
     ...getQueryOptions(STALE_TIME.STOCK_UNITS, GC_TIME.TRANSACTIONAL),
+    enabled: !!stockUnitId,
   });
 }
 

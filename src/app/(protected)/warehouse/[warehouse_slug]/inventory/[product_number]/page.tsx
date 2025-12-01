@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useMemo } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconBuildingWarehouse, IconShare } from "@tabler/icons-react";
 import { LoadingState } from "@/components/layouts/loading-state";
@@ -26,8 +26,8 @@ import { StockFlowTab } from "./StockFlowTab";
 import { ProductFormSheet } from "../ProductFormSheet";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import IconStore from "@/components/icons/IconStore";
-import { useProductBySequence } from "@/lib/query/hooks/products";
-import { useStockUnitsWithInwardDetails } from "@/lib/query/hooks/stock-units";
+import { useProductWithInventoryByNumber } from "@/lib/query/hooks/products";
+import { useStockUnitsWithInward } from "@/lib/query/hooks/stock-units";
 import { useOutwardItemsByProduct } from "@/lib/query/hooks/stock-flow";
 
 interface PageParams {
@@ -51,34 +51,15 @@ export default function ProductDetailPage({ params }: PageParams) {
     data: product,
     isLoading: productLoading,
     isError: productError,
-  } = useProductBySequence(product_number);
+  } = useProductWithInventoryByNumber(product_number, warehouse.id);
 
   // Fetch stock units with inward details using new hook
   const { data: stockUnits = [], isLoading: stockUnitsLoading } =
-    useStockUnitsWithInwardDetails(product?.id || null, warehouse.id);
+    useStockUnitsWithInward(product?.id || null, warehouse.id);
 
   // Fetch outward items using new hook
   const { data: outwardItems = [], isLoading: outwardItemsLoading } =
     useOutwardItemsByProduct(product?.id || null);
-
-  // Calculate aggregated values using useMemo
-  const { totalQuantity, totalStockValue } = useMemo(() => {
-    const quantity = stockUnits.reduce(
-      (sum, unit) => sum + (unit.remaining_quantity || 0),
-      0,
-    );
-    const value = stockUnits.reduce(
-      (sum, unit) =>
-        sum +
-        (unit.remaining_quantity || 0) *
-          (unit.product?.cost_price_per_unit || 0),
-      0,
-    );
-    return {
-      totalQuantity: quantity,
-      totalStockValue: value,
-    };
-  }, [stockUnits]);
 
   const loading = productLoading || stockUnitsLoading || outwardItemsLoading;
 
@@ -180,7 +161,7 @@ export default function ProductDetailPage({ params }: PageParams) {
               <span className="text-xs text-gray-500">Total stock</span>
             </div>
             <p className="text-lg font-bold text-gray-700 whitespace-pre">
-              {`${totalQuantity.toFixed(2)} ${unitAbbr}  •  ₹ ${formatCurrency(totalStockValue)}`}
+              {`${product.inventory.in_stock_quantity?.toFixed(2) || 0} ${unitAbbr}  •  ₹ ${formatCurrency(product.inventory.in_stock_value || 0)}`}
             </p>
           </div>
 
@@ -213,11 +194,7 @@ export default function ProductDetailPage({ params }: PageParams) {
         <div className="flex-1 border-r border-border">
           {activeTab === "summary" && <SummaryTab product={product} />}
           {activeTab === "stock_units" && (
-            <StockUnitsTab
-              stockUnits={stockUnits}
-              measuringUnit={product.measuring_unit as MeasuringUnit}
-              product={product}
-            />
+            <StockUnitsTab stockUnits={stockUnits} product={product} />
           )}
           {activeTab === "stock_flow" && (
             <StockFlowTab
@@ -274,6 +251,7 @@ export default function ProductDetailPage({ params }: PageParams) {
         {/* Edit Product Sheet */}
         {showEditProduct && product && (
           <ProductFormSheet
+            key={product.id}
             open={showEditProduct}
             onOpenChange={setShowEditProduct}
             productToEdit={product}

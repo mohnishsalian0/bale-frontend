@@ -27,7 +27,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { createClient } from "@/lib/supabase/browser";
 import { getPartnerName } from "@/lib/utils/partner";
 import { toast } from "sonner";
-import { useCustomers } from "@/lib/query/hooks/partners";
+import { usePartners } from "@/lib/query/hooks/partners";
 
 interface CustomerEditSheetProps {
   open: boolean;
@@ -48,7 +48,9 @@ export function CustomerEditSheet({
   const isMobile = useIsMobile();
 
   // Fetch customers using TanStack Query
-  const { data: customers = [], isLoading: fetchingCustomers } = useCustomers();
+  const { data: customers = [], isLoading: fetchingCustomers } = usePartners({
+    partner_type: "customer",
+  });
 
   useEffect(() => {
     if (open) {

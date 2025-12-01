@@ -6,11 +6,13 @@ import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getProductAttributeLists,
   getProductById,
-  getProductBySequenceNumber,
+  getProductByNumber,
   getProductColors,
   getProductMaterials,
   getProducts,
   getProductsWithInventory,
+  getProductWithInventoryById,
+  getProductWithInventoryByNumber,
   getProductTags,
   createProductMaterial,
   createProductColor,
@@ -37,9 +39,9 @@ export function useProducts() {
 /**
  * Fetch single product by ID with attributes
  */
-export function useProduct(productId: string | null) {
+export function useProductById(productId: string | null) {
   return useQuery({
-    queryKey: queryKeys.products.detail(productId || ""),
+    queryKey: queryKeys.products.byId(productId || ""),
     queryFn: () => getProductById(productId!),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
     enabled: !!productId,
@@ -49,10 +51,10 @@ export function useProduct(productId: string | null) {
 /**
  * Fetch single product by sequence number with attributes
  */
-export function useProductBySequence(sequenceNumber: string | null) {
+export function useProductByNumber(sequenceNumber: string | null) {
   return useQuery({
-    queryKey: queryKeys.products.bySequence(sequenceNumber || ""),
-    queryFn: () => getProductBySequenceNumber(Number(sequenceNumber)),
+    queryKey: queryKeys.products.byNumber(sequenceNumber || ""),
+    queryFn: () => getProductByNumber(Number(sequenceNumber)),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
     enabled: !!sequenceNumber,
   });
@@ -67,6 +69,43 @@ export function useProductsWithInventory(warehouseId: string | null) {
     queryFn: () => getProductsWithInventory(warehouseId!),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
     enabled: !!warehouseId,
+  });
+}
+
+/**
+ * Fetch single product with inventory by ID
+ */
+export function useProductWithInventoryById(
+  productId: string | null,
+  warehouseId: string | null,
+) {
+  return useQuery({
+    queryKey: queryKeys.products.withInventoryById(
+      productId || "",
+      warehouseId || "",
+    ),
+    queryFn: () => getProductWithInventoryById(productId!, warehouseId!),
+    ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+    enabled: !!productId && !!warehouseId,
+  });
+}
+
+/**
+ * Fetch single product with inventory by sequence number
+ */
+export function useProductWithInventoryByNumber(
+  sequenceNumber: string | null,
+  warehouseId: string | null,
+) {
+  return useQuery({
+    queryKey: queryKeys.products.withInventoryByNumber(
+      sequenceNumber || "",
+      warehouseId || "",
+    ),
+    queryFn: () =>
+      getProductWithInventoryByNumber(Number(sequenceNumber), warehouseId!),
+    ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+    enabled: !!sequenceNumber && !!warehouseId,
   });
 }
 
@@ -123,8 +162,12 @@ export function useCreateProductMaterial() {
   return useMutation({
     mutationFn: (name: string) => createProductMaterial(name),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.materials() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.attributes() });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.products.materials(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.products.attributes(),
+      });
     },
   });
 }
@@ -136,7 +179,9 @@ export function useCreateProductColor() {
     mutationFn: (name: string) => createProductColor(name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.products.colors() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.attributes() });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.products.attributes(),
+      });
     },
   });
 }
@@ -148,7 +193,9 @@ export function useCreateProductTag() {
     mutationFn: (name: string) => createProductTag(name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.products.tags() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.attributes() });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.products.attributes(),
+      });
     },
   });
 }
@@ -192,7 +239,7 @@ export function useProductMutations() {
     }) => updateProduct(productId, productData, attributeIds),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.products.detail(variables.productId),
+        queryKey: queryKeys.products.byId(variables.productId),
       });
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
     },

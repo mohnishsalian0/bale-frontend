@@ -14,12 +14,13 @@ import {
 } from "@/components/ui/drawer";
 import { StockStatusBadge } from "@/components/ui/stock-status-badge";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { formatStockUnitNumber } from "@/lib/utils/stock-unit";
+import { formatStockUnitNumber } from "@/lib/utils/product";
 import {
   StockUnitDetailsContent,
   type StockUnitWithProduct,
 } from "./stock-unit-details-content";
 import type { StockType, StockUnitStatus } from "@/types/database/enums";
+import { StockUnitWithProductDetailView } from "@/types/stock-units.types";
 
 // Re-export for backward compatibility
 export type { StockUnitWithProduct };
@@ -27,7 +28,7 @@ export type { StockUnitWithProduct };
 interface StockUnitDetailsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  stockUnit: StockUnitWithProduct | null;
+  stockUnit: StockUnitWithProductDetailView | null;
 }
 
 export function StockUnitDetailsModal({

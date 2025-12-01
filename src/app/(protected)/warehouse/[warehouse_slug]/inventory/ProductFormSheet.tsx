@@ -25,10 +25,7 @@ import {
 import MultipleSelector, {
   type Option,
 } from "@/components/ui/multiple-selector";
-import {
-  validateImageFile,
-  MAX_PRODUCT_IMAGES,
-} from "@/lib/storage";
+import { validateImageFile, MAX_PRODUCT_IMAGES } from "@/lib/storage";
 import { getProductAttributeLists } from "@/lib/queries/products";
 import type {
   ProductDetailView,
@@ -83,22 +80,31 @@ export function ProductFormSheet({
   const { upload, deleteImages, updateField } = useProductImageMutations();
 
   const [formData, setFormData] = useState<ProductFormData>({
-    name: "",
-    productNumber: "PROD-001",
-    showOnCatalog: true,
-    materials: [],
-    colors: [],
-    gsm: "",
-    threadCount: "",
-    tags: [],
-    stockType: "",
-    measuringUnit: "",
-    costPrice: "",
-    sellingPrice: "",
-    minStockAlert: false,
-    minStockThreshold: "",
-    hsnCode: "",
-    notes: "",
+    name: productToEdit?.name || "",
+    productNumber: "", // Not used in edit mode
+    showOnCatalog: productToEdit?.show_on_catalog ?? true,
+    materials:
+      productToEdit?.materials.map((m) => ({
+        value: m.id,
+        label: m.name,
+      })) || [],
+    colors:
+      productToEdit?.colors.map((c) => ({
+        value: c.id,
+        label: c.name,
+      })) || [],
+    gsm: productToEdit?.gsm?.toString() || "",
+    threadCount: productToEdit?.thread_count_cm?.toString() || "",
+    tags:
+      productToEdit?.tags.map((t) => ({ value: t.id, label: t.name })) || [],
+    stockType: productToEdit?.stock_type as StockType,
+    measuringUnit: (productToEdit?.measuring_unit as MeasuringUnit) || "",
+    costPrice: productToEdit?.cost_price_per_unit?.toString() || "",
+    sellingPrice: productToEdit?.selling_price_per_unit?.toString() || "",
+    minStockAlert: productToEdit?.min_stock_alert ?? false,
+    minStockThreshold: productToEdit?.min_stock_threshold?.toString() || "",
+    hsnCode: productToEdit?.hsn_code || "",
+    notes: productToEdit?.notes || "",
     images: [],
   });
 
@@ -141,42 +147,6 @@ export function ProductFormSheet({
     };
     fetchAttributes();
   }, []);
-
-  // Populate form data when editing
-  useEffect(() => {
-    if (productToEdit && open) {
-      setFormData({
-        name: productToEdit.name,
-        productNumber: "", // Not used in edit mode
-        showOnCatalog: productToEdit.show_on_catalog ?? true,
-        materials: productToEdit.materials.map((m) => ({
-          value: m.id,
-          label: m.name,
-        })),
-        colors: productToEdit.colors.map((c) => ({
-          value: c.id,
-          label: c.name,
-        })),
-        gsm: productToEdit.gsm?.toString() || "",
-        threadCount: productToEdit.thread_count_cm?.toString() || "",
-        tags: productToEdit.tags.map((t) => ({ value: t.id, label: t.name })),
-        stockType: productToEdit.stock_type as StockType,
-        measuringUnit: (productToEdit.measuring_unit as MeasuringUnit) || "",
-        costPrice: productToEdit.cost_price_per_unit?.toString() || "",
-        sellingPrice: productToEdit.selling_price_per_unit?.toString() || "",
-        minStockAlert: productToEdit.min_stock_alert ?? false,
-        minStockThreshold: productToEdit.min_stock_threshold?.toString() || "",
-        hsnCode: productToEdit.hsn_code || "",
-        notes: productToEdit.notes || "",
-        images: [],
-      });
-      // Set existing images
-      const images = productToEdit.product_images || [];
-      setExistingImages(images);
-      setOriginalImages(images); // Track original images for deletion
-      setImagePreviews(images);
-    }
-  }, [productToEdit, open]);
 
   // Simple handlers - new items are identified by value === label
   // They will be inserted to DB on form submit

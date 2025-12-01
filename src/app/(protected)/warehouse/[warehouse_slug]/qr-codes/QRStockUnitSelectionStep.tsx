@@ -5,7 +5,7 @@ import { IconChevronDown } from "@tabler/icons-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { formatRelativeDate } from "@/lib/utils/date";
-import { formatStockUnitNumber } from "@/lib/utils/stock-unit";
+import { formatStockUnitNumber } from "@/lib/utils/product";
 import type { Tables } from "@/types/database/supabase";
 import type { StockType } from "@/types/database/enums";
 import {
@@ -14,7 +14,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useSession } from "@/contexts/session-context";
-import { useStockUnitsByProduct } from "@/lib/query/hooks/stock-units";
+import { useStockUnits } from "@/lib/query/hooks/stock-units";
 
 interface StockUnit extends Tables<"stock_units"> {
   product?: Tables<"products">;
@@ -38,8 +38,10 @@ export function QRStockUnitSelectionStep({
   const { warehouse } = useSession();
 
   // Fetch stock units using TanStack Query
-  const { data: stockUnitsData = [], isLoading: loading } =
-    useStockUnitsByProduct(warehouse.id, productId);
+  const { data: stockUnitsData = [], isLoading: loading } = useStockUnits(
+    warehouse.id,
+    { product_id: productId, status: "in_stock" },
+  );
 
   // Group stock units by goods inward
   const goodsInwards: GoodsInward[] = useMemo(() => {

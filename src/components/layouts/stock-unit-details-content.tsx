@@ -9,6 +9,7 @@ import { formatAbsoluteDate } from "@/lib/utils/date";
 import type { Tables } from "@/types/database/supabase";
 import type { ProductListView } from "@/types/products.types";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
+import { StockUnitWithProductDetailView } from "@/types/stock-units.types";
 
 type StockUnit = Tables<"stock_units">;
 
@@ -17,7 +18,7 @@ export interface StockUnitWithProduct extends StockUnit {
 }
 
 interface StockUnitDetailsContentProps {
-  stockUnit: StockUnitWithProduct;
+  stockUnit: StockUnitWithProductDetailView;
   /**
    * Whether to show the action buttons
    */

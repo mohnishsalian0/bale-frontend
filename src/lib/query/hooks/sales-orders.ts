@@ -5,7 +5,7 @@ import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getSalesOrders,
-  getSalesOrderBySequenceNumber,
+  getSalesOrderByNumber,
   getSalesOrdersByCustomer,
   createSalesOrder,
   type CreateSalesOrderData,
@@ -26,10 +26,10 @@ export function useSalesOrders(warehouseId: string | null) {
 /**
  * Fetch single sales order by sequence number
  */
-export function useSalesOrderBySequenceNumber(sequenceNumber: string | null) {
+export function useSalesOrderByNumber(sequenceNumber: string | null) {
   return useQuery({
     queryKey: queryKeys.salesOrders.detail(sequenceNumber || ""),
-    queryFn: () => getSalesOrderBySequenceNumber(sequenceNumber!),
+    queryFn: () => getSalesOrderByNumber(sequenceNumber!),
     ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
     enabled: !!sequenceNumber,
   });

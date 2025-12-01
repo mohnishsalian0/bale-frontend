@@ -11,54 +11,48 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  StockUnitDetailsModal,
-  type StockUnitWithProduct,
-} from "@/components/layouts/stock-unit-modal";
+import { StockUnitDetailsModal } from "@/components/layouts/stock-unit-modal";
 import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
-import { formatStockUnitNumber } from "@/lib/utils/stock-unit";
-import type { Tables } from "@/types/database/supabase";
+import { formatStockUnitNumber } from "@/lib/utils/product";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import type { ProductListView } from "@/types/products.types";
-
-type StockUnit = Tables<"stock_units">;
-type GoodsInward = Tables<"goods_inwards">;
-
-interface StockUnitWithInward extends StockUnit {
-  goods_inward: GoodsInward | null;
-}
+import { StockUnitWithInwardListView } from "@/types/stock-units.types";
+import { useStockUnitWithProductDetail } from "@/lib/query/hooks/stock-units";
+import type { InwardWithPartnerListView } from "@/types/stock-flow.types";
 
 interface StockUnitsTabProps {
-  stockUnits: StockUnitWithInward[];
-  measuringUnit: MeasuringUnit | null;
+  stockUnits: StockUnitWithInwardListView[];
   product: ProductListView;
 }
 
 type SortOption = "latest" | "oldest" | "quantity_high" | "quantity_low";
 
-export function StockUnitsTab({
-  stockUnits,
-  measuringUnit,
-  product,
-}: StockUnitsTabProps) {
+export function StockUnitsTab({ stockUnits, product }: StockUnitsTabProps) {
   const [sortBy, setSortBy] = useState<SortOption>("latest");
   const [qrPendingOnly, setQrPendingOnly] = useState(false);
-  const [selectedStockUnit, setSelectedStockUnit] =
-    useState<StockUnitWithProduct | null>(null);
+  const [selectedStockUnitId, setSelectedStockUnitId] = useState<string | null>(
+    null,
+  );
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-  const handleStockUnitClick = (unit: StockUnitWithInward) => {
-    // Convert to StockUnitWithProduct format for the modal
-    const stockUnitWithProduct: StockUnitWithProduct = {
-      ...unit,
-      product,
-    };
-    setSelectedStockUnit(stockUnitWithProduct);
+  // Fetch stock unit detail when selected
+  const { data: stockUnitDetail } =
+    useStockUnitWithProductDetail(selectedStockUnitId);
+
+  const handleStockUnitClick = (stockUnitId: string) => {
+    setSelectedStockUnitId(stockUnitId);
     setShowDetailsModal(true);
   };
 
-  const unitAbbr = getMeasuringUnitAbbreviation(measuringUnit);
+  const handleModalClose = () => {
+    setShowDetailsModal(false);
+    setSelectedStockUnitId(null);
+  };
+
+  const unitAbbr = getMeasuringUnitAbbreviation(
+    product.measuring_unit as MeasuringUnit,
+  );
 
   // Filter and sort stock units
   const filteredAndSortedUnits = useMemo(() => {
@@ -96,7 +90,10 @@ export function StockUnitsTab({
   const groupedUnits = useMemo(() => {
     const groups: Map<
       string,
-      { inward: GoodsInward; units: StockUnitWithInward[] }
+      {
+        inward: InwardWithPartnerListView;
+        units: StockUnitWithInwardListView[];
+      }
     > = new Map();
 
     filteredAndSortedUnits.forEach((unit) => {
@@ -204,7 +201,7 @@ export function StockUnitsTab({
                 return (
                   <button
                     key={unit.id}
-                    onClick={() => handleStockUnitClick(unit)}
+                    onClick={() => handleStockUnitClick(unit.id)}
                     className="flex items-start justify-between gap-4 px-4 py-3 border-t border-dashed border-gray-200 hover:bg-gray-50 transition-colors w-full text-left cursor-pointer"
                   >
                     <div className="flex-1 min-w-0">
@@ -263,8 +260,8 @@ export function StockUnitsTab({
       {/* Stock Unit Details Modal */}
       <StockUnitDetailsModal
         open={showDetailsModal}
-        onOpenChange={setShowDetailsModal}
-        stockUnit={selectedStockUnit}
+        onOpenChange={handleModalClose}
+        stockUnit={stockUnitDetail || null}
       />
     </div>
   );

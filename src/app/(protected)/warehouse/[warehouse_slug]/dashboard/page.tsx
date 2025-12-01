@@ -178,6 +178,7 @@ export default function DashboardPage() {
 
       {/* Add Product Sheet */}
       <ProductFormSheet
+        key="new"
         open={showCreateProduct}
         onOpenChange={setShowCreateProduct}
       />

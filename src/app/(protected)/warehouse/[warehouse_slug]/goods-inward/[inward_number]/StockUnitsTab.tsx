@@ -4,7 +4,7 @@ import { IconBox } from "@tabler/icons-react";
 import type { Tables } from "@/types/database/supabase";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon } from "@/lib/utils/product";
-import { formatStockUnitNumber } from "@/lib/utils/stock-unit";
+import { formatStockUnitNumber } from "@/lib/utils/product";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 

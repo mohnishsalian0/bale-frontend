@@ -515,6 +515,7 @@ export default function CreateGoodsInwardPage() {
         {/* Add Product Sheet */}
         {showCreateProduct && (
           <ProductFormSheet
+            key="new"
             open={showCreateProduct}
             onOpenChange={setShowCreateProduct}
           />

@@ -123,14 +123,23 @@ export function getStockTypeDisplay(
 }
 
 /**
+ * Format stock unit number with appropriate prefix based on stock type
+ * @param sequenceNumber - The stock unit sequence number
+ * @returns Formatted string like "PROD-123"
+ */
+export function formatProductNumber(sequenceNumber: number): string {
+  return `PROD-${sequenceNumber}`;
+}
+
+/**
  * Helper function to format available stock text
  */
 export function getAvailableStockText(
   product: ProductWithInventoryListView,
 ): string {
   const stockType = product.stock_type as StockType;
-  const units = product.in_stock.in_stock_units as number;
-  const quantity = product.in_stock.in_stock_quantity as number;
+  const units = product.inventory.in_stock_units as number;
+  const quantity = product.inventory.in_stock_quantity as number;
   const unitAbbreviation = getMeasuringUnitAbbreviation(
     product.measuring_unit as MeasuringUnit | null,
   );
@@ -144,4 +153,35 @@ export function getAvailableStockText(
   } else {
     return "";
   }
+}
+
+// ============================================================================
+// STOCK UNIT UTIL FUNCTIONS
+// ============================================================================
+
+/**
+ * Format stock unit number with appropriate prefix based on stock type
+ * @param sequenceNumber - The stock unit sequence number
+ * @param stockType - The type of stock (roll, batch, piece)
+ * @returns Formatted string like "ROLL-123", "BATCH-456", "PIECE-789"
+ * @example
+ * formatStockUnitNumber(123, 'roll') // "ROLL-123"
+ * formatStockUnitNumber(456, 'batch') // "BATCH-456"
+ * formatStockUnitNumber(789, 'piece') // "PIECE-789"
+ * formatStockUnitNumber(111, null) // "SU-111"
+ */
+export function formatStockUnitNumber(
+  sequenceNumber: number,
+  stockType: StockType | null | undefined,
+): string {
+  const prefix =
+    stockType === "roll"
+      ? "ROLL"
+      : stockType === "batch"
+        ? "BATCH"
+        : stockType === "piece"
+          ? "PIECE"
+          : "SU"; // fallback to generic SU if type unknown
+
+  return `${prefix}-${sequenceNumber}`;
 }

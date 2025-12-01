@@ -21,11 +21,15 @@ export const queryKeys = {
   // Products (companyId removed - RLS handles scoping, user in single company)
   products: {
     all: () => ["products"] as const,
-    detail: (productId: string) => ["products", "detail", productId] as const,
-    bySequence: (sequenceNumber: string) =>
+    byId: (productId: string) => ["products", "detail", productId] as const,
+    byNumber: (sequenceNumber: string) =>
       ["products", "sequence", sequenceNumber] as const,
     withInventory: (warehouseId: string) =>
       ["products", "inventory", warehouseId] as const,
+    withInventoryById: (productId: string, warehouseId: string) =>
+      ["products", "inventory", "detail", productId, warehouseId] as const,
+    withInventoryByNumber: (sequenceNumber: string, warehouseId: string) =>
+      ["products", "inventory", "number", sequenceNumber, warehouseId] as const,
     materials: () => ["products", "materials"] as const,
     colors: () => ["products", "colors"] as const,
     tags: () => ["products", "tags"] as const,
@@ -64,12 +68,8 @@ export const queryKeys = {
   stockUnits: {
     all: (warehouseId: string, filters?: Record<string, unknown>) =>
       ["stock-units", warehouseId, filters] as const,
-    byProduct: (productId: string, warehouseId: string) =>
-      ["stock-units", "product", productId, warehouseId] as const,
-    withInwardDetails: (productId: string, warehouseId: string) =>
-      ["stock-units", "with-inward-details", productId, warehouseId] as const,
-    pendingQR: (warehouseId: string) =>
-      ["stock-units", "pending-qr", warehouseId] as const,
+    byId: (stockUnitId: string) =>
+      ["stock-units", "product", stockUnitId] as const,
   },
 
   // Stock Flow (Goods Inward/Outward)

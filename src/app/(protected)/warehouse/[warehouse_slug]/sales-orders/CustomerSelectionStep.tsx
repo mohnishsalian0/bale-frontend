@@ -5,7 +5,7 @@ import { IconSearch, IconPlus, IconCheck } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ImageWrapper from "@/components/ui/image-wrapper";
-import { useCustomers } from "@/lib/query/hooks/partners";
+import { usePartners } from "@/lib/query/hooks/partners";
 import { getPartnerInfo, getPartnerName } from "@/lib/utils/partner";
 import { getInitials } from "@/lib/utils/initials";
 
@@ -21,7 +21,9 @@ export function CustomerSelectionStep({
   onAddNewCustomer,
 }: CustomerSelectionStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: customers = [], isLoading: loading } = useCustomers();
+  const { data: customers = [], isLoading: loading } = usePartners({
+    partner_type: "customer",
+  });
 
   // Filter and sort customers using useMemo
   const filteredCustomers = useMemo(() => {

@@ -9,7 +9,7 @@ import ImageWrapper from "@/components/ui/image-wrapper";
 import { SelectInventorySheet } from "./SelectInventorySheet";
 import { StockUnitQuantitySheet } from "./StockUnitQuantitySheet";
 import { createClient } from "@/lib/supabase/browser";
-import { formatStockUnitNumber } from "@/lib/utils/stock-unit";
+import { formatStockUnitNumber } from "@/lib/utils/product";
 import type { Tables } from "@/types/database/supabase";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import {

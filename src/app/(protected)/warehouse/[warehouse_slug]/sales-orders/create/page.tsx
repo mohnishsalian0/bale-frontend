@@ -370,6 +370,7 @@ export default function CreateSalesOrderPage() {
         {/* Add Product Sheet */}
         {showCreateProduct && (
           <ProductFormSheet
+            key="new"
             open={showCreateProduct}
             onOpenChange={setShowCreateProduct}
           />

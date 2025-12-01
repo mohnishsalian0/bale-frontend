@@ -147,7 +147,6 @@ export default function CheckoutPage() {
         formData,
         cartItems,
       });
-      console.log("Order", order.id);
 
       // Redirect to order confirmation page (cart cleared in cleanup)
       router.push(`/company/${slug}/order/${order.id}`);

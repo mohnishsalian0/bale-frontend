@@ -19,7 +19,7 @@ import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
 import { Progress } from "@/components/ui/progress";
 import { useSalesOrders } from "@/lib/query/hooks/sales-orders";
-import { useCustomers } from "@/lib/query/hooks/partners";
+import { usePartners } from "@/lib/query/hooks/partners";
 import { useProducts } from "@/lib/query/hooks/products";
 import { getPartnerName } from "@/lib/utils/partner";
 import {
@@ -71,7 +71,7 @@ export default function OrdersPage() {
   const {
     data: customers = [],
     isLoading: customersLoading,
-  } = useCustomers();
+  } = usePartners({ partner_type: "customer" });
   const {
     data: products = [],
     isLoading: productsLoading,

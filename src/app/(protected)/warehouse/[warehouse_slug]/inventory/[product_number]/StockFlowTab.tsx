@@ -10,9 +10,7 @@ import { getPartnerName } from "@/lib/utils/partner";
 import { useSession } from "@/contexts/session-context";
 import type { Tables } from "@/types/database/supabase";
 import type { MeasuringUnit } from "@/types/database/enums";
-
-type StockUnit = Tables<"stock_units">;
-type GoodsInward = Tables<"goods_inwards">;
+import { StockUnitWithInwardListView } from "@/types/stock-units.types";
 type GoodsOutward = Tables<"goods_outwards">;
 type GoodsOutwardItem = Tables<"goods_outward_items">;
 type Partner = Tables<"partners">;
@@ -38,15 +36,6 @@ interface OutwardFlow {
 
 type FlowItem = InwardFlow | OutwardFlow;
 
-interface StockUnitWithInward extends StockUnit {
-  goods_inward:
-    | (GoodsInward & {
-        partner: Partner | null;
-        from_warehouse: Warehouse | null;
-      })
-    | null;
-}
-
 interface OutwardItemWithDetails extends GoodsOutwardItem {
   outward:
     | (GoodsOutward & {
@@ -57,7 +46,7 @@ interface OutwardItemWithDetails extends GoodsOutwardItem {
 }
 
 interface StockFlowTabProps {
-  inwardItems: StockUnitWithInward[];
+  inwardItems: StockUnitWithInwardListView[];
   outwardItems: OutwardItemWithDetails[];
   measuringUnit: MeasuringUnit | null;
 }

@@ -1,113 +1,122 @@
 import { createClient } from "@/lib/supabase/browser";
-import type {
-  Tables,
-  TablesInsert,
-  TablesUpdate,
-} from "@/types/database/supabase";
 import { uploadPartnerImage } from "@/lib/storage";
+import type {
+  PartnerFilters,
+  PartnerListView,
+  PartnerDetailView,
+  PartnerWithOrderStatsDetailView,
+  PartnerInsert,
+  PartnerUpdate,
+} from "@/types/partners.types";
 
-type Partner = Tables<"partners">;
-type PartnerOrderAggregate = Tables<"partner_order_aggregates">;
-export type PartnerInsert = TablesInsert<"partners">;
-export type PartnerUpdate = TablesUpdate<"partners">;
+// Re-export for convenience
+export type { PartnerInsert, PartnerUpdate };
 
-export interface PartnerWithAggregates extends Partner {
-  partner_order_aggregates: PartnerOrderAggregate | null;
-}
+// ============================================================================
+// SELECT CONSTANTS
+// ============================================================================
+
+// Select query for PartnerListView
+export const PARTNER_LIST_VIEW_SELECT = `
+  id,
+  first_name,
+  last_name,
+  company_name,
+  partner_type,
+  phone_number,
+  email,
+  city,
+  state,
+  image_url
+`;
+
+// Select query for PartnerWithOrderStatsDetailView
+export const PARTNER_WITH_ORDER_STATS_DETAIL_VIEW_SELECT = `
+  *,
+  partner_order_aggregates(*)
+`;
+
+// ============================================================================
+// QUERY FUNCTIONS
+// ============================================================================
 
 /**
- * Fetch all partners (for filters, dropdowns, etc.)
+ * Fetch partners with optional filters
+ *
+ * Examples:
+ * - All partners: getPartners()
+ * - Customers: getPartners({ partner_type: 'customer' })
+ * - Suppliers: getPartners({ partner_type: 'supplier' })
+ * - Agents: getPartners({ partner_type: 'agent' })
  */
-export async function getPartners(): Promise<Partner[]> {
+export async function getPartners(
+  filters?: PartnerFilters,
+): Promise<PartnerListView[]> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("partners")
-    .select("*")
+    .select(PARTNER_LIST_VIEW_SELECT)
     .is("deleted_at", null)
     .order("first_name", { ascending: true });
 
+  // Apply filters
+  if (filters?.partner_type) {
+    query = query.eq("partner_type", filters.partner_type);
+  }
+
+  const { data, error } = await query;
+
   if (error) throw error;
-  return data || [];
+  return (data as PartnerListView[]) || [];
 }
 
 /**
- * Fetch customers (for filters, dropdowns, etc.)
- */
-export async function getCustomers(): Promise<Partner[]> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("partners")
-    .select("*")
-    .eq("partner_type", "customer")
-    .is("deleted_at", null)
-    .order("first_name", { ascending: true });
-
-  if (error) throw error;
-  return data || [];
-}
-
-/**
- * Fetch suppliers/vendors (for filters, dropdowns, etc.)
- */
-export async function getSuppliers(): Promise<Partner[]> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("partners")
-    .select("*")
-    .in("partner_type", ["supplier", "vendor"])
-    .is("deleted_at", null)
-    .order("first_name", { ascending: true });
-
-  if (error) throw error;
-  return data || [];
-}
-
-/**
- * Fetch agents (for filters, dropdowns, etc.)
- */
-export async function getAgents(): Promise<Partner[]> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("partners")
-    .select("*")
-    .eq("partner_type", "agent")
-    .is("deleted_at", null)
-    .order("first_name", { ascending: true });
-
-  if (error) throw error;
-  return data || [];
-}
-
-/**
- * Fetch a single partner by ID with order aggregates
+ * Fetch a single partner by ID (without order aggregates)
+ * Used for: partner form, basic partner details
  */
 export async function getPartnerById(
   partnerId: string,
-): Promise<PartnerWithAggregates | null> {
+): Promise<PartnerDetailView | null> {
   const supabase = createClient();
 
   const { data, error } = await supabase
     .from("partners")
-    .select(
-      `
-      *,
-      partner_order_aggregates(*)
-    `,
-    )
+    .select("*")
     .eq("id", partnerId)
     .is("deleted_at", null)
-    .single();
+    .single<PartnerDetailView>();
 
   if (error) {
     console.error("Error fetching partner:", error);
     return null;
   }
 
-  return data as PartnerWithAggregates;
+  return data;
+}
+
+/**
+ * Fetch a single partner by ID with order statistics
+ * Used for: partner detail page
+ */
+export async function getPartnerWithOrderStatsById(
+  partnerId: string,
+): Promise<PartnerWithOrderStatsDetailView | null> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("partners")
+    .select(PARTNER_WITH_ORDER_STATS_DETAIL_VIEW_SELECT)
+    .eq("id", partnerId)
+    .is("deleted_at", null)
+    .single<PartnerWithOrderStatsDetailView>();
+
+  if (error) {
+    console.error("Error fetching partner with order stats:", error);
+    return null;
+  }
+
+  return data;
 }
 
 /**
@@ -121,14 +130,14 @@ export async function createPartner({
   partner: Omit<PartnerInsert, "image_url">;
   image: File | null;
   companyId: string;
-}): Promise<Partner> {
+}): Promise<string> {
   const supabase = createClient();
 
   const { data: newPartner, error: insertError } = await supabase
     .from("partners")
     .insert(partner)
-    .select()
-    .single();
+    .select("id")
+    .single<{ id: string }>();
 
   if (insertError) throw insertError;
   if (!newPartner) throw new Error("Failed to create partner");
@@ -141,22 +150,19 @@ export async function createPartner({
         image,
       );
 
-      const { data: updatedPartner, error: imageUpdateError } = await supabase
+      const { error: imageUpdateError } = await supabase
         .from("partners")
         .update({ image_url: publicUrl })
-        .eq("id", newPartner.id)
-        .select()
-        .single();
+        .eq("id", newPartner.id);
 
       if (imageUpdateError) throw imageUpdateError;
-      return updatedPartner!;
     } catch (uploadError) {
       console.error("Image upload failed:", uploadError);
       // Don't re-throw, return partner data without image
     }
   }
 
-  return newPartner;
+  return newPartner.id;
 }
 
 /**
@@ -172,7 +178,7 @@ export async function updatePartner({
   updates: PartnerUpdate;
   image: File | null;
   companyId: string;
-}): Promise<Partner> {
+}): Promise<string> {
   const supabase = createClient();
 
   if (image) {
@@ -193,13 +199,13 @@ export async function updatePartner({
     .from("partners")
     .update(updates)
     .eq("id", partnerId)
-    .select()
-    .single();
+    .select("id")
+    .single<{ id: string }>();
 
   if (updateError) throw updateError;
   if (!updatedPartner) throw new Error("Failed to update partner");
 
-  return updatedPartner;
+  return updatedPartner.id;
 }
 
 /**

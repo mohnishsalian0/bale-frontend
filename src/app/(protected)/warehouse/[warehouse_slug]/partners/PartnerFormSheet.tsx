@@ -30,18 +30,19 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { validateImageFile } from "@/lib/storage";
-import type { Tables } from "@/types/database/supabase";
 import type { PartnerType } from "@/types/database/enums";
-import type { PartnerInsert, PartnerUpdate } from "@/lib/queries/partners";
+import type {
+  PartnerDetailView,
+  PartnerInsert,
+  PartnerUpdate,
+} from "@/types/partners.types";
 import { useSession } from "@/contexts/session-context";
-
-type Partner = Tables<"partners">;
 
 interface PartnerFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   partnerType?: PartnerType;
-  partnerToEdit?: Partner;
+  partnerToEdit?: PartnerDetailView;
 }
 
 interface PartnerFormData {

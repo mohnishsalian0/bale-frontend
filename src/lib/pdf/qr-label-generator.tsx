@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import QRCode from "qrcode";
-import { formatStockUnitNumber } from "@/lib/utils/stock-unit";
+import { formatStockUnitNumber } from "@/lib/utils/product";
 import type { QRTemplateField } from "@/app/(protected)/warehouse/[warehouse_slug]/qr-codes/QRTemplateCustomisationStep";
 import type { Tables } from "@/types/database/supabase";
 import type { StockType } from "@/types/database/enums";

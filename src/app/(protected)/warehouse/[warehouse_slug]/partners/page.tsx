@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -21,21 +21,8 @@ import { PartnerFormSheet } from "./PartnerFormSheet";
 import { usePartners } from "@/lib/query/hooks/partners";
 import { useSession } from "@/contexts/session-context";
 import { getInitials } from "@/lib/utils/initials";
-import type { Tables } from "@/types/database/supabase";
 import type { PartnerType } from "@/types/database/enums";
 import { getFormattedAddress, getPartnerName } from "@/lib/utils/partner";
-
-type PartnerRow = Tables<"partners">;
-
-interface Partner {
-  id: string;
-  name: string;
-  type: PartnerType;
-  amount?: number;
-  transactionType?: "sales" | "purchase";
-  address?: string;
-  phone?: string;
-}
 
 const PARTNER_TYPES: { value: PartnerType | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -72,34 +59,20 @@ export default function PartnersPage() {
     refetch,
   } = usePartners();
 
-  // Transform and filter partners
-  const partners: Partner[] = useMemo(() => {
-    let filtered = allPartners;
-
-    // Filter by type
-    if (selectedType !== "all") {
-      filtered = filtered.filter((p) => p.partner_type === selectedType);
+  // Filter partners by search query
+  const filteredPartners = allPartners.filter((partner) => {
+    const name = getPartnerName(partner);
+    if (!name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
     }
 
-    // Transform data to match Partner interface
-    return filtered.map((p: PartnerRow) => ({
-      id: p.id,
-      name: getPartnerName(p),
-      type: p.partner_type as PartnerType,
-      address: getFormattedAddress(p).join(", "),
-      phone: p.phone_number || undefined,
-      // TODO: Fetch transaction amounts from orders/inwards
-      amount: undefined,
-      transactionType: undefined,
-    }));
-  }, [allPartners, selectedType]);
+    // Type filter
+    if (selectedType !== "all" && partner.partner_type !== selectedType) {
+      return false;
+    }
 
-  // Filter partners by search query
-  const filteredPartners = useMemo(() => {
-    return partners.filter((partner) =>
-      partner.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
-  }, [partners, searchQuery]);
+    return true;
+  });
 
   // Loading state
   if (loading) {
@@ -182,97 +155,100 @@ export default function PartnersPage() {
             </p>
           </div>
         ) : (
-          filteredPartners.map((partner) => (
-            <ul key={partner.id}>
-              <Card
-                className="cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() =>
-                  router.push(
-                    `/warehouse/${warehouse.slug}/partners/${partner.id}`,
-                  )
-                }
-              >
-                <CardContent className="p-4 pb-3 flex flex-col gap-4">
-                  {/* Partner Info */}
-                  <div className="flex gap-4">
-                    {/* Avatar */}
-                    <ImageWrapper
-                      size="lg"
-                      shape="circle"
-                      alt={partner.name}
-                      placeholderInitials={getInitials(partner.name)}
-                    />
+          filteredPartners.map((partner) => {
+            const name = getPartnerName(partner);
+            const type = partner.partner_type as PartnerType;
+            const address = getFormattedAddress(partner).join(", ");
 
-                    {/* Details */}
-                    <div className="flex-1 flex justify-between py-2">
-                      <div className="flex flex-col">
-                        <p className="text-base font-medium text-gray-900">
-                          {partner.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {
-                            PARTNER_TYPES.find((t) => t.value === partner.type)
-                              ?.label
-                          }
-                        </p>
-                      </div>
+            return (
+              <ul key={partner.id}>
+                <Card
+                  className="cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() =>
+                    router.push(
+                      `/warehouse/${warehouse.slug}/partners/${partner.id}`,
+                    )
+                  }
+                >
+                  <CardContent className="p-4 pb-3 flex flex-col gap-4">
+                    {/* Partner Info */}
+                    <div className="flex gap-4">
+                      {/* Avatar */}
+                      <ImageWrapper
+                        size="lg"
+                        shape="circle"
+                        alt={name}
+                        placeholderInitials={getInitials(name)}
+                      />
 
-                      {/* Amount */}
-                      {partner.amount && (
-                        <div className="flex flex-col items-end justify-center">
-                          <p
-                            className={`text-base font-bold ${
-                              partner.transactionType === "sales"
-                                ? "text-teal-700"
-                                : "text-yellow-700"
-                            }`}
-                          >
-                            ₹{partner.amount.toLocaleString("en-IN")}
+                      {/* Details */}
+                      <div className="flex-1 flex justify-between py-2">
+                        <div className="flex flex-col">
+                          <p className="text-base font-medium text-gray-900">
+                            {name}
                           </p>
                           <p className="text-xs text-gray-500">
-                            in {partner.transactionType}
+                            {PARTNER_TYPES.find((t) => t.value === type)?.label}
                           </p>
                         </div>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Contact Info */}
-                  <div className="flex gap-6 px-2 text-sm">
-                    <div className="flex gap-1.5 items-center">
-                      <IconMapPin className="size-4 text-gray-500 shrink-0" />
-                      <span className="text-gray-700">
-                        {partner.address || "No address"}
-                      </span>
+                        {/* TODO: Amount */}
+                        {/* {partner.amount && ( */}
+                        {/*   <div className="flex flex-col items-end justify-center"> */}
+                        {/*     <p */}
+                        {/*       className={`text-base font-bold ${ */}
+                        {/*         partner.transactionType === "sales" */}
+                        {/*           ? "text-teal-700" */}
+                        {/*           : "text-yellow-700" */}
+                        {/*       }`} */}
+                        {/*     > */}
+                        {/*       ₹{partner.amount.toLocaleString("en-IN")} */}
+                        {/*     </p> */}
+                        {/*     <p className="text-xs text-gray-500"> */}
+                        {/*       in {partner.transactionType} */}
+                        {/*     </p> */}
+                        {/*   </div> */}
+                        {/* )} */}
+                      </div>
                     </div>
-                    <div className="flex gap-1.5 items-center text-nowrap">
-                      <IconPhone className="size-4 text-primary-700" />
-                      <span
-                        className={
-                          partner.phone
-                            ? "text-primary-700 font-medium"
-                            : "text-gray-700"
-                        }
-                      >
-                        {partner.phone || "No phone number"}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
 
-                <CardFooter className="px-6 pb-4 pt-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-primary-700"
-                  >
-                    <IconPlus />
-                    {getActionLabel(partner.type)}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </ul>
-          ))
+                    {/* Contact Info */}
+                    <div className="flex gap-6 px-2 text-sm">
+                      <div className="flex gap-1.5 items-center">
+                        <IconMapPin className="size-4 text-gray-500 shrink-0" />
+                        <span className="text-gray-700">
+                          {address || "No address"}
+                        </span>
+                      </div>
+                      <div className="flex gap-1.5 items-center text-nowrap">
+                        <IconPhone className="size-4 text-primary-700" />
+                        <span
+                          className={
+                            partner.phone_number
+                              ? "text-primary-700 font-medium"
+                              : "text-gray-700"
+                          }
+                        >
+                          {partner.phone_number || "No phone number"}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+
+                  <CardFooter className="px-6 pb-4 pt-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-primary-700"
+                    >
+                      <IconPlus />
+                      {getActionLabel(type)}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </ul>
+            );
+          })
         )}
       </li>
 

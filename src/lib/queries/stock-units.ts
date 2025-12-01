@@ -1,30 +1,124 @@
 import { createClient } from "@/lib/supabase/browser";
 import type { Tables, TablesUpdate } from "@/types/database/supabase";
+import {
+  StockUnitFilters,
+  StockUnitListView,
+  StockUnitWithProductListView,
+  StockUnitWithInwardListView,
+  StockUnitWithProductDetailView,
+} from "@/types/stock-units.types";
+import {
+  PRODUCT_LIST_VIEW_SELECT,
+  PRODUCT_DETAIL_VIEW_SELECT,
+  transformProductListView,
+  transformProductDetailView,
+} from "@/lib/queries/products";
+import type {
+  ProductMaterial,
+  ProductColor,
+  ProductTag,
+} from "@/types/products.types";
+import type { InwardWithPartnerListView } from "@/types/stock-flow.types";
 
-type StockUnit = Tables<"stock_units">;
-type Product = Tables<"products">;
-type GoodsInward = Tables<"goods_inwards">;
-type Partner = Tables<"partners">;
-type Warehouse = Tables<"warehouses">;
+// ============================================================================
+// RAW TYPES - For Supabase responses
+// ============================================================================
 
-export interface StockUnitWithProduct extends StockUnit {
-  product: Product;
-}
-
-export interface StockUnitWithInwardDetails extends StockUnitWithProduct {
-  goods_inward:
-    | (GoodsInward & {
-        partner: Partner | null;
-        from_warehouse: Warehouse | null;
+type StockUnitWithProductListViewRaw = StockUnitListView & {
+  product:
+    | (Pick<
+        Tables<"products">,
+        | "id"
+        | "sequence_number"
+        | "name"
+        | "show_on_catalog"
+        | "stock_type"
+        | "measuring_unit"
+        | "product_images"
+      > & {
+        product_material_assignments: Array<{
+          material: Pick<ProductMaterial, "id" | "name" | "color_hex"> | null;
+        }>;
+        product_color_assignments: Array<{
+          color: Pick<ProductColor, "id" | "name" | "color_hex"> | null;
+        }>;
+        product_tag_assignments: Array<{
+          tag: Pick<ProductTag, "id" | "name" | "color_hex"> | null;
+        }>;
       })
     | null;
+};
+
+type StockUnitWithInwardListViewRaw = StockUnitWithProductListViewRaw & {
+  goods_inward: InwardWithPartnerListView | null;
+};
+
+type StockUnitWithProductDetailViewRaw = Tables<"stock_units"> & {
+  product:
+    | (Tables<"products"> & {
+        product_material_assignments: Array<{
+          material: Pick<ProductMaterial, "id" | "name" | "color_hex"> | null;
+        }>;
+        product_color_assignments: Array<{
+          color: Pick<ProductColor, "id" | "name" | "color_hex"> | null;
+        }>;
+        product_tag_assignments: Array<{
+          tag: Pick<ProductTag, "id" | "name" | "color_hex"> | null;
+        }>;
+      })
+    | null;
+};
+
+// ============================================================================
+// TRANSFORM FUNCTIONS
+// ============================================================================
+
+/**
+ * Transform raw stock unit data with product to StockUnitWithProductListView
+ */
+function transformStockUnitWithProductListView(
+  raw: StockUnitWithProductListViewRaw,
+): StockUnitWithProductListView {
+  const { product: rawProduct, ...stockUnit } = raw;
+
+  return {
+    ...stockUnit,
+    product: rawProduct ? transformProductListView(rawProduct) : null,
+  };
 }
 
-export interface StockUnitFilters extends Record<string, unknown> {
-  status?: string;
-  qr_generated_at?: "null" | "not_null";
-  created_from_inward_id?: string | null;
+/**
+ * Transform raw stock unit data with inward to StockUnitWithInwardListView
+ */
+function transformStockUnitWithInwardListView(
+  raw: StockUnitWithInwardListViewRaw,
+): StockUnitWithInwardListView {
+  const { product: rawProduct, goods_inward, ...stockUnit } = raw;
+
+  return {
+    ...stockUnit,
+    product: rawProduct ? transformProductListView(rawProduct) : null,
+    goods_inward,
+  };
 }
+
+/**
+ * Transform raw stock unit data with product detail to StockUnitWithProductDetailView
+ */
+function transformStockUnitWithProductDetailView(
+  raw: StockUnitWithProductDetailViewRaw,
+): StockUnitWithProductDetailView {
+  const { product: rawProduct, ...stockUnit } = raw;
+
+  return {
+    ...stockUnit,
+    product: rawProduct ? transformProductDetailView(rawProduct) : null,
+  };
+}
+
+// ============================================================================
+// QUERY FUNCTIONS
+// ============================================================================
 
 /**
  * Fetch stock units for a warehouse with optional filters
@@ -32,15 +126,23 @@ export interface StockUnitFilters extends Record<string, unknown> {
 export async function getStockUnits(
   warehouseId: string,
   filters?: StockUnitFilters,
-): Promise<StockUnitWithProduct[]> {
+): Promise<StockUnitWithProductListView[]> {
   const supabase = createClient();
 
   let query = supabase
     .from("stock_units")
     .select(
       `
-      *,
-      product:products(*)
+      id,
+      sequence_number,
+      initial_quantity,
+      remaining_quantity,
+      quality_grade,
+      warehouse_location,
+      manufacturing_date,
+      status,
+			qr_generated_at,
+      product:products(${PRODUCT_LIST_VIEW_SELECT})
     `,
     )
     .eq("warehouse_id", warehouseId)
@@ -48,6 +150,10 @@ export async function getStockUnits(
     .order("created_at", { ascending: false });
 
   // Apply filters
+  if (filters?.product_id) {
+    query = query.eq("product_id", filters.product_id);
+  }
+
   if (filters?.status) {
     query = query.eq("status", filters.status);
   }
@@ -76,56 +182,40 @@ export async function getStockUnits(
     throw error;
   }
 
-  return (data as any[]) || [];
-}
-
-/**
- * Fetch stock units for a specific product in a warehouse
- * Useful for QR code generation selection
- */
-export async function getStockUnitsByProduct(
-  productId: string,
-  warehouseId: string,
-): Promise<StockUnitWithProduct[]> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("stock_units")
-    .select(
-      `
-      *,
-      product:products(*)
-    `,
-    )
-    .eq("product_id", productId)
-    .eq("warehouse_id", warehouseId)
-    .eq("status", "in_stock")
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Error fetching stock units by product:", error);
-    throw error;
-  }
-
-  return (data as any[]) || [];
+  return (
+    (data as unknown as StockUnitWithProductListViewRaw[])?.map(
+      transformStockUnitWithProductListView,
+    ) || []
+  );
 }
 
 /**
  * Fetch stock units for a product with full inward details
  * Useful for product detail page to show stock flow history
  */
-export async function getStockUnitsWithInwardDetails(
+export async function getStockUnitsWithInward(
   productId: string,
   warehouseId: string,
-): Promise<StockUnitWithInwardDetails[]> {
+): Promise<StockUnitWithInwardListView[]> {
   const supabase = createClient();
 
   const { data, error } = await supabase
     .from("stock_units")
     .select(
       `
-      *,
+      id,
+      sequence_number,
+      initial_quantity,
+      remaining_quantity,
+      quality_grade,
+      warehouse_location,
+      manufacturing_date,
+      status,
+			qr_generated_at,
+			created_at,
+			created_from_inward_id,
+			supplier_number,
+      product:products(${PRODUCT_LIST_VIEW_SELECT}),
       goods_inward:goods_inwards!created_from_inward_id(
         id, sequence_number, inward_date, inward_type,
         partner:partners!goods_inwards_partner_id_fkey(
@@ -148,16 +238,20 @@ export async function getStockUnitsWithInwardDetails(
     throw error;
   }
 
-  return (data as any[]) || [];
+  return (
+    (data as unknown as StockUnitWithInwardListViewRaw[])?.map(
+      transformStockUnitWithInwardListView,
+    ) || []
+  );
 }
 
 /**
- * Fetch stock units that need QR codes (for dashboard widget)
- * Returns all pending stock units without grouping
+ * Fetch a single stock unit by ID with full product details
+ * Used for: stock unit detail modal, detail pages
  */
-export async function getPendingQRStockUnits(
-  warehouseId: string,
-): Promise<StockUnitWithProduct[]> {
+export async function getStockUnitWithProductDetail(
+  stockUnitId: string,
+): Promise<StockUnitWithProductDetailView> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -165,32 +259,23 @@ export async function getPendingQRStockUnits(
     .select(
       `
       *,
-      product:products(
-        id, name, measuring_unit, product_images, sequence_number,
-        product_material_assignments(
-          material:product_materials(*)
-        ),
-        product_color_assignments(
-          color:product_colors(*)
-        ),
-        product_tag_assignments(
-          tag:product_tags(*)
-        )
-      )
+      product:products(${PRODUCT_DETAIL_VIEW_SELECT})
     `,
     )
-    .eq("warehouse_id", warehouseId)
-    .eq("status", "in_stock")
-    .is("qr_generated_at", null)
+    .eq("id", stockUnitId)
     .is("deleted_at", null)
-    .order("created_at", { ascending: false });
+    .single<StockUnitWithProductDetailViewRaw>();
 
   if (error) {
-    console.error("Error fetching pending QR stock units:", error);
+    console.error("Error fetching stock unit with product detail:", error);
     throw error;
   }
 
-  return (data as any[]) || [];
+  if (!data) {
+    throw new Error("Stock unit not found");
+  }
+
+  return transformStockUnitWithProductDetailView(data);
 }
 
 /**
@@ -199,22 +284,22 @@ export async function getPendingQRStockUnits(
 export async function updateStockUnit(
   id: string,
   updates: TablesUpdate<"stock_units">,
-): Promise<StockUnit> {
+): Promise<string> {
   const supabase = createClient();
 
   const { data, error } = await supabase
     .from("stock_units")
     .update(updates)
     .eq("id", id)
-    .select()
-    .single();
+    .select("id")
+    .single<{ id: string }>();
 
   if (error) {
     console.error("Error updating stock unit:", error);
     throw error;
   }
 
-  return data;
+  return data.id;
 }
 
 /**

@@ -69,7 +69,7 @@ export const PRODUCT_WITH_INVENTORY_LIST_VIEW_SELECT = `
 	product_tag_assignments(
 		tag:product_tags(id, name, color_hex)
 	),
-	product_inventory_aggregates!inner(in_stock_units, in_stock_quantity)
+	product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value)
 `;
 
 // Select query for ProductWithInventoryDetailView
@@ -141,8 +141,11 @@ type ProductDetailViewRaw = Tables<"products"> & ProductAttributeAssignmentsRaw;
 // Raw type for ProductWithInventoryListView query response
 type ProductWithInventoryListViewRaw = ProductListViewRaw & {
   product_inventory_aggregates: Array<
-    Pick<ProductInventory, "in_stock_units" | "in_stock_quantity">
-  > | null;
+    Pick<
+      ProductInventory,
+      "in_stock_units" | "in_stock_quantity" | "in_stock_value"
+    >
+  >;
 };
 
 // Raw type for ProductWithInventoryDetailView query response
@@ -239,10 +242,7 @@ export function transformProductWithInventoryListView(
     materials,
     colors,
     tags,
-    in_stock: {
-      in_stock_units: inventory?.in_stock_units || 0,
-      in_stock_quantity: inventory?.in_stock_quantity || 0,
-    },
+    inventory,
   };
 }
 
@@ -320,7 +320,7 @@ export async function getProductById(
 /**
  * Get a single product by sequence number (detail view with all fields)
  */
-export async function getProductBySequenceNumber(
+export async function getProductByNumber(
   sequenceNumber: number,
 ): Promise<ProductDetailView> {
   const supabase = createClient();
@@ -387,7 +387,7 @@ export async function getProductWithInventoryById(
 /**
  * Get a single product with inventory (detail view) by sequence number
  */
-export async function getProductWithInventoryBySequenceNumber(
+export async function getProductWithInventoryByNumber(
   sequenceNumber: number,
   warehouseId: string,
 ): Promise<ProductWithInventoryDetailView> {

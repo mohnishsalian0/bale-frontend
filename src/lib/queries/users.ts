@@ -91,8 +91,6 @@ export async function getUserPermissions(roleName: string): Promise<string[]> {
     throw new Error(`Error fetching permissions: ${permError}`);
   }
 
-  console.log(permData);
-
   return (
     (permData?.map(
       (p: { permissions: Pick<Permission, "permission_path">[] }) =>

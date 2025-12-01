@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { IconSearch, IconAlertTriangle } from "@tabler/icons-react";
@@ -27,13 +27,6 @@ import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import { Button } from "@/components/ui/button";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
-import { type ProductListView } from "@/types/products.types";
-
-interface Product extends ProductListView {
-  productNumber: string;
-  totalQuantity: number;
-  imageUrl?: string;
-}
 
 export default function InventoryPage() {
   const router = useRouter();
@@ -57,6 +50,9 @@ export default function InventoryPage() {
     isError: attributesError,
   } = useProductAttributes();
 
+  console.log("Products", productsData);
+  console.log("Attributes", attributeLists);
+
   const loading = productsLoading || attributesLoading;
   const error = productsError || attributesError;
 
@@ -64,22 +60,11 @@ export default function InventoryPage() {
   const colors = attributeLists?.colors || [];
   const tags = attributeLists?.tags || [];
 
-  // Transform products data
-  const products: Product[] = useMemo(() => {
-    return (productsData as any[]).map((p: any) => ({
-      ...p,
-      productNumber: `PROD-${p.sequence_number}`,
-      totalQuantity:
-        p.product_inventory_aggregates?.[0]?.in_stock_quantity || 0,
-      imageUrl: p.product_images?.[0],
-    }));
-  }, [productsData]);
-
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = productsData.filter((product) => {
     // Search filter
     const matchesSearch =
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.productNumber.toLowerCase().includes(searchQuery.toLowerCase());
+      product.sequence_number.toString().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
 
     // Material filter
@@ -227,7 +212,8 @@ export default function InventoryPage() {
           </div>
         ) : (
           filteredProducts.map((product) => {
-            const imageUrl = product.imageUrl;
+            const totalQuantity = product.inventory?.in_stock_quantity || 0;
+            const imageUrl = product.product_images?.[0];
             const productInfoText = getProductInfo(product);
             const unitAbbreviation = getMeasuringUnitAbbreviation(
               product.measuring_unit as MeasuringUnit | null,
@@ -268,7 +254,7 @@ export default function InventoryPage() {
                   {/* Quantity */}
                   <div className="flex flex-col items-end">
                     <p className="text-base font-bold text-gray-900">
-                      {product.totalQuantity} {unitAbbreviation}
+                      {totalQuantity} {unitAbbreviation}
                     </p>
                   </div>
                 </CardContent>
@@ -287,6 +273,7 @@ export default function InventoryPage() {
       {/* Add Product Sheet */}
       {showCreateProduct && (
         <ProductFormSheet
+          key="new"
           open={showCreateProduct}
           onOpenChange={setShowCreateProduct}
         />
