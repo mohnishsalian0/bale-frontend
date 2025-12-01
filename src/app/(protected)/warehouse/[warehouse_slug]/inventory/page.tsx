@@ -50,9 +50,6 @@ export default function InventoryPage() {
     isError: attributesError,
   } = useProductAttributes();
 
-  console.log("Products", productsData);
-  console.log("Attributes", attributeLists);
-
   const loading = productsLoading || attributesLoading;
   const error = productsError || attributesError;
 
@@ -222,7 +219,7 @@ export default function InventoryPage() {
             return (
               <Card
                 key={product.id}
-                className="border border-border shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
+                className="border-2 border-border shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() =>
                   router.push(
                     `/warehouse/${warehouse.slug}/inventory/${product.sequence_number}`,

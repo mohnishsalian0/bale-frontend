@@ -1,4 +1,6 @@
 import type { Tables } from "./database/supabase";
+import { StockUnitWithProductDetailView } from "./stock-units.types";
+import type { ProductListView } from "./products.types";
 
 type GoodsInward = Tables<"goods_inwards">;
 type GoodsOutward = Tables<"goods_outwards">;
@@ -7,23 +9,18 @@ type Partner = Tables<"partners">;
 type Warehouse = Tables<"warehouses">;
 type SalesOrder = Tables<"sales_orders">;
 type JobWork = Tables<"job_works">;
-type Product = Tables<"products">;
-type ProductMaterial = Tables<"product_materials">;
-type ProductColor = Tables<"product_colors">;
-type ProductTag = Tables<"product_tags">;
-type StockUnit = Tables<"stock_units">;
 
 // =====================================================
 // FILTERS
 // =====================================================
 
-export interface GoodsInwardFilters extends Record<string, unknown> {
+export interface InwardFilters extends Record<string, unknown> {
   partner_id?: string;
   date_from?: string;
   date_to?: string;
 }
 
-export interface GoodsOutwardFilters extends Record<string, unknown> {
+export interface OutwardFilters extends Record<string, unknown> {
   partner_id?: string;
   date_from?: string;
   date_to?: string;
@@ -34,65 +31,44 @@ export interface GoodsOutwardFilters extends Record<string, unknown> {
 // =====================================================
 
 /**
- * Minimal inward view for list items
- * Used in: stock unit inward details
+ * Inward with partner details for stock unit list views
+ * Used in: stock units tab showing inward source information
  */
-export type InwardListView = Pick<
+export interface InwardWithPartnerListView extends Pick<
   GoodsInward,
   "id" | "sequence_number" | "inward_date" | "inward_type"
->;
-
-/**
- * Inward with partner details for list views
- * Used in: stock unit with inward details
- */
-export interface InwardWithPartnerListView extends InwardListView {
-  partner: Pick<Partner, "id" | "first_name" | "last_name" | "company_name"> | null;
+> {
+  partner: Pick<
+    Partner,
+    "id" | "first_name" | "last_name" | "company_name"
+  > | null;
   from_warehouse: Pick<Warehouse, "id" | "name"> | null;
 }
 
-export interface GoodsInwardListItem extends GoodsInward {
+/**
+ * Goods inward with stock units for list views
+ * Used in: inward list page
+ */
+export interface InwardWithStockUnitListView extends GoodsInward {
   partner: Pick<Partner, "first_name" | "last_name" | "company_name"> | null;
   stock_units: Array<{
     initial_quantity: number;
-    product: Pick<Product, "id" | "name" | "measuring_unit"> | null;
+    product: ProductListView | null;
   }>;
 }
 
-export interface GoodsOutwardListItem extends GoodsOutward {
+/**
+ * Goods outward with outward items for list views
+ * Used in: outward list page
+ */
+export interface OutwardWithOutwardItemListView extends GoodsOutward {
   partner: Pick<Partner, "first_name" | "last_name" | "company_name"> | null;
   goods_outward_items: Array<{
     quantity_dispatched: number;
     stock_unit: {
-      product: Pick<Product, "id" | "name" | "measuring_unit"> | null;
+      product: ProductListView | null;
     } | null;
   }>;
-}
-
-// =====================================================
-// PRODUCT-RELATED TYPES
-// =====================================================
-
-/**
- * Product with all assignments (materials, colors, tags)
- */
-export interface ProductWithAssignments extends Product {
-  product_material_assignments: Array<{
-    material: ProductMaterial;
-  }>;
-  product_color_assignments: Array<{
-    color: ProductColor;
-  }>;
-  product_tag_assignments: Array<{
-    tag: ProductTag;
-  }>;
-}
-
-/**
- * Stock unit with detailed product information
- */
-export interface StockUnitWithDetailedProduct extends StockUnit {
-  product: ProductWithAssignments | null;
 }
 
 /**
@@ -101,7 +77,7 @@ export interface StockUnitWithDetailedProduct extends StockUnit {
  *
  * Note: Uses Pick<> to ensure type safety - only fields actually fetched from the query
  */
-export interface GoodsInwardWithDetails extends GoodsInward {
+export interface InwardDetailView extends GoodsInward {
   partner: Pick<
     Partner,
     | "first_name"
@@ -137,14 +113,14 @@ export interface GoodsInwardWithDetails extends GoodsInward {
   > | null;
   sales_order: Pick<SalesOrder, "sequence_number"> | null;
   job_work: Pick<JobWork, "sequence_number"> | null;
-  stock_units: StockUnitWithDetailedProduct[];
+  stock_units: StockUnitWithProductDetailView[];
 }
 
 /**
  * Goods outward item with detailed stock unit and product information
  */
-export interface GoodsOutwardItemWithDetailedProduct extends GoodsOutwardItem {
-  stock_unit: StockUnitWithDetailedProduct | null;
+export interface OutwardItemWithStockUnitDetailView extends GoodsOutwardItem {
+  stock_unit: StockUnitWithProductDetailView | null;
 }
 
 /**
@@ -153,7 +129,7 @@ export interface GoodsOutwardItemWithDetailedProduct extends GoodsOutwardItem {
  *
  * Note: Uses Pick<> to ensure type safety - only fields actually fetched from the query
  */
-export interface GoodsOutwardWithDetails extends GoodsOutward {
+export interface OutwardDetailView extends GoodsOutward {
   partner: Pick<
     Partner,
     | "first_name"
@@ -189,18 +165,24 @@ export interface GoodsOutwardWithDetails extends GoodsOutward {
   > | null;
   sales_order: Pick<SalesOrder, "sequence_number"> | null;
   job_work: Pick<JobWork, "sequence_number"> | null;
-  goods_outward_items: GoodsOutwardItemWithDetailedProduct[];
+  goods_outward_items: OutwardItemWithStockUnitDetailView[];
 }
 
 /**
  * Outward item with details for product detail page
  * Shows outward flow history for a specific product
  */
-export interface OutwardItemWithDetails extends GoodsOutwardItem {
+export interface OutwardItemWithOutwardDetailView extends GoodsOutwardItem {
   outward:
-    | (GoodsOutward & {
-        partner: Partner | null;
-        to_warehouse: Warehouse | null;
+    | (Pick<
+        GoodsOutward,
+        "id" | "sequence_number" | "outward_date" | "outward_type"
+      > & {
+        partner: Pick<
+          Partner,
+          "id" | "first_name" | "last_name" | "company_name"
+        > | null;
+        to_warehouse: Pick<Warehouse, "id" | "name"> | null;
       })
     | null;
 }

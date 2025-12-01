@@ -209,5 +209,55 @@ AFTER INSERT OR UPDATE OR DELETE ON stock_units
 FOR EACH ROW
 EXECUTE FUNCTION trigger_update_product_inventory_aggregates();
 
+-- Trigger function to create initial aggregates when a new product is created
+CREATE OR REPLACE FUNCTION trigger_create_product_inventory_aggregates()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Create aggregate records for all warehouses in the company
+    INSERT INTO product_inventory_aggregates (
+        product_id,
+        warehouse_id,
+        company_id,
+        in_stock_units,
+        in_stock_quantity,
+        in_stock_value,
+        dispatched_units,
+        dispatched_quantity,
+        dispatched_value,
+        removed_units,
+        removed_quantity,
+        removed_value,
+        total_units_received,
+        total_quantity_received
+    )
+    SELECT
+        NEW.id,
+        w.id,
+        NEW.company_id,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+    FROM warehouses w
+    WHERE w.company_id = NEW.company_id
+    ON CONFLICT (product_id, warehouse_id) DO NOTHING;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger on products table to initialize aggregates
+CREATE TRIGGER trg_create_product_inventory_aggregates
+AFTER INSERT ON products
+FOR EACH ROW
+EXECUTE FUNCTION trigger_create_product_inventory_aggregates();
+
 -- Add comment
 COMMENT ON TABLE product_inventory_aggregates IS 'Aggregated inventory metrics per product per warehouse, segregated by stock unit status. Updated automatically via triggers.';

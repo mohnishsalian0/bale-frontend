@@ -8,13 +8,9 @@ import { formatAbsoluteDate } from "@/lib/utils/date";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getPartnerName } from "@/lib/utils/partner";
 import { useSession } from "@/contexts/session-context";
-import type { Tables } from "@/types/database/supabase";
 import type { MeasuringUnit } from "@/types/database/enums";
 import { StockUnitWithInwardListView } from "@/types/stock-units.types";
-type GoodsOutward = Tables<"goods_outwards">;
-type GoodsOutwardItem = Tables<"goods_outward_items">;
-type Partner = Tables<"partners">;
-type Warehouse = Tables<"warehouses">;
+import type { OutwardItemWithOutwardDetailView } from "@/types/stock-flow.types";
 
 interface InwardFlow {
   type: "inward";
@@ -36,18 +32,9 @@ interface OutwardFlow {
 
 type FlowItem = InwardFlow | OutwardFlow;
 
-interface OutwardItemWithDetails extends GoodsOutwardItem {
-  outward:
-    | (GoodsOutward & {
-        partner: Partner | null;
-        to_warehouse: Warehouse | null;
-      })
-    | null;
-}
-
 interface StockFlowTabProps {
   inwardItems: StockUnitWithInwardListView[];
-  outwardItems: OutwardItemWithDetails[];
+  outwardItems: OutwardItemWithOutwardDetailView[];
   measuringUnit: MeasuringUnit | null;
 }
 
@@ -169,7 +156,7 @@ export function StockFlowTab({
 
           <div>
             <p className="text-base font-semibold text-gray-900 text-right">
-              {flow.quantity} {unitAbbr}
+              {flow.quantity.toFixed(2)} {unitAbbr}
             </p>
             <p className="text-xs text-gray-600 text-right">
               {flow.type === "inward" ? "received" : "dispatched"}

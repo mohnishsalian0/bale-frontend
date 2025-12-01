@@ -6,23 +6,20 @@ import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getGoodsInwards,
   getGoodsOutwards,
-  getGoodsInwardBySequenceNumber,
-  getGoodsOutwardBySequenceNumber,
+  getGoodsInwardByNumber,
+  getGoodsOutwardByNumber,
   getOutwardItemsByProduct,
   createGoodsInward,
   createGoodsOutward,
-  type GoodsInwardFilters,
-  type GoodsOutwardFilters,
+  type InwardFilters,
+  type OutwardFilters,
 } from "@/lib/queries/stock-flow";
 import type { TablesInsert } from "@/types/database/supabase";
 
 /**
  * Fetch goods inwards for a warehouse
  */
-export function useGoodsInwards(
-  warehouseId: string,
-  filters?: GoodsInwardFilters,
-) {
+export function useGoodsInwards(warehouseId: string, filters?: InwardFilters) {
   return useQuery({
     queryKey: queryKeys.stockFlow.inwards(warehouseId, filters),
     queryFn: () => getGoodsInwards(warehouseId, filters),
@@ -35,7 +32,7 @@ export function useGoodsInwards(
  */
 export function useGoodsOutwards(
   warehouseId: string,
-  filters?: GoodsOutwardFilters,
+  filters?: OutwardFilters,
 ) {
   return useQuery({
     queryKey: queryKeys.stockFlow.outwards(warehouseId, filters),
@@ -50,7 +47,7 @@ export function useGoodsOutwards(
 export function useGoodsInwardBySequenceNumber(sequenceNumber: string | null) {
   return useQuery({
     queryKey: queryKeys.stockFlow.inwardDetail(sequenceNumber || ""),
-    queryFn: () => getGoodsInwardBySequenceNumber(sequenceNumber!),
+    queryFn: () => getGoodsInwardByNumber(sequenceNumber!),
     ...getQueryOptions(STALE_TIME.STOCK_FLOW, GC_TIME.TRANSACTIONAL),
     enabled: !!sequenceNumber,
   });
@@ -62,7 +59,7 @@ export function useGoodsInwardBySequenceNumber(sequenceNumber: string | null) {
 export function useGoodsOutwardBySequenceNumber(sequenceNumber: string | null) {
   return useQuery({
     queryKey: queryKeys.stockFlow.outwardDetail(sequenceNumber || ""),
-    queryFn: () => getGoodsOutwardBySequenceNumber(sequenceNumber!),
+    queryFn: () => getGoodsOutwardByNumber(sequenceNumber!),
     ...getQueryOptions(STALE_TIME.STOCK_FLOW, GC_TIME.TRANSACTIONAL),
     enabled: !!sequenceNumber,
   });

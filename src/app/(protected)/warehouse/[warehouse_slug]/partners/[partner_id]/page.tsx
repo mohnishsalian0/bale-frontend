@@ -72,6 +72,8 @@ export default function PartnerDetailPage({ params }: PageParams) {
     isError: partnerError,
   } = usePartnerWithOrderStats(partner_id);
 
+  console.log(partner);
+
   // Get aggregates from partner data
   const order_stats = partner?.order_stats;
   const totalOrders = order_stats?.total_orders || 0;

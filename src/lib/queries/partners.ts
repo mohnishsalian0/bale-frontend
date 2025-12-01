@@ -33,7 +33,7 @@ export const PARTNER_LIST_VIEW_SELECT = `
 // Select query for PartnerWithOrderStatsDetailView
 export const PARTNER_WITH_ORDER_STATS_DETAIL_VIEW_SELECT = `
   *,
-  partner_order_aggregates(*)
+  order_stats:partner_order_aggregates(*)
 `;
 
 // ============================================================================

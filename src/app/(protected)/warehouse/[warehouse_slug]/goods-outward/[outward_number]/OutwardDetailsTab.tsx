@@ -18,11 +18,11 @@ import {
   getTransportIcon,
   getTransportTypeDisplay,
 } from "@/lib/utils/transport";
-import type { GoodsOutwardWithDetails } from "@/types/stock-flow.types";
+import type { OutwardDetailView } from "@/types/stock-flow.types";
 import type { ComponentType } from "react";
 
 interface OutwardDetailsTabProps {
-  outward: GoodsOutwardWithDetails;
+  outward: OutwardDetailView;
 }
 
 export function OutwardDetailsTab({ outward }: OutwardDetailsTabProps) {

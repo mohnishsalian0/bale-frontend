@@ -213,5 +213,53 @@ AFTER INSERT OR UPDATE OR DELETE ON sales_orders
 FOR EACH ROW
 EXECUTE FUNCTION trigger_update_partner_order_aggregates();
 
+-- Trigger function to create initial aggregates when a new partner is created
+CREATE OR REPLACE FUNCTION trigger_create_partner_order_aggregates()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Create initial aggregate record with zero values
+    INSERT INTO partner_order_aggregates (
+        partner_id,
+        company_id,
+        approval_pending_count,
+        approval_pending_value,
+        in_progress_count,
+        in_progress_value,
+        completed_count,
+        completed_value,
+        cancelled_count,
+        cancelled_value,
+        total_orders,
+        lifetime_order_value,
+        first_order_date,
+        last_order_date
+    ) VALUES (
+        NEW.id,
+        NEW.company_id,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        NULL,
+        NULL
+    )
+    ON CONFLICT (partner_id) DO NOTHING;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger on partners table to initialize aggregates
+CREATE TRIGGER trg_create_partner_order_aggregates
+AFTER INSERT ON partners
+FOR EACH ROW
+EXECUTE FUNCTION trigger_create_partner_order_aggregates();
+
 -- Add comment
 COMMENT ON TABLE partner_order_aggregates IS 'Aggregated sales order metrics per partner, segregated by order status. Updated automatically via triggers.';

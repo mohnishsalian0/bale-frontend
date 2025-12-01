@@ -18,7 +18,7 @@ import type {
   ProductColor,
   ProductTag,
 } from "@/types/products.types";
-import type { InwardWithPartnerListView } from "@/types/stock-flow.types";
+import type { InwardWithPartnerListView } from "@/types/stock-units.types";
 
 // ============================================================================
 // RAW TYPES - For Supabase responses

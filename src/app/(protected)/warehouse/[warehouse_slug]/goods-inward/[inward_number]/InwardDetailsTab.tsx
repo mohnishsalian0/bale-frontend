@@ -17,11 +17,11 @@ import {
   getTransportIcon,
   getTransportTypeDisplay,
 } from "@/lib/utils/transport";
-import type { GoodsInwardWithDetails } from "@/types/stock-flow.types";
+import type { InwardDetailView } from "@/types/stock-flow.types";
 import type { ComponentType } from "react";
 
 interface InwardDetailsTabProps {
-  inward: GoodsInwardWithDetails;
+  inward: InwardDetailView;
 }
 
 export function InwardDetailsTab({ inward }: InwardDetailsTabProps) {

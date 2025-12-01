@@ -36,8 +36,13 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Check if route is public (uses centralized config)
-  const isPublic = pathname.includes("public");
+  // Define public routes (from (public) route group)
+  const isPublic =
+    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/invite/") ||
+    (pathname.startsWith("/company/") && pathname !== "/company");
+
+  console.log(user, pathname);
 
   // If not authenticated and trying to access protected route
   if (!user && !isPublic) {

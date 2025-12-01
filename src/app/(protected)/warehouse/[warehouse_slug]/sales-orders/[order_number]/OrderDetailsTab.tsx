@@ -16,8 +16,7 @@ import { formatCurrency } from "@/lib/utils/financial";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getPartnerName, getFormattedAddress } from "@/lib/utils/partner";
 import type { DisplayStatus } from "@/lib/utils/sales-order";
-import type { Tables } from "@/types/database/supabase";
-import type { SalesOrderStatus, StockType } from "@/types/database/enums";
+import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import { Section } from "@/components/layouts/section";
 import { getProductIcon } from "@/lib/utils/product";
 import type { SalesOrderDetailView } from "@/lib/queries/sales-orders";
@@ -84,14 +83,14 @@ export function OrderDetailsTab({
                   <p className="text-xs text-gray-500 mt-0.5">
                     {item.required_quantity}{" "}
                     {getMeasuringUnitAbbreviation(
-                      item.product?.measuring_unit as any,
+                      item.product?.measuring_unit as MeasuringUnit,
                     )}
                     {order.status !== "approval_pending" && (
                       <>
                         {" "}
                         ({item.dispatched_quantity || 0}{" "}
                         {getMeasuringUnitAbbreviation(
-                          item.product?.measuring_unit as any,
+                          item.product?.measuring_unit as MeasuringUnit,
                         )}{" "}
                         shipped)
                       </>

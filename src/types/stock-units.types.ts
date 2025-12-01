@@ -1,6 +1,9 @@
 import type { Tables } from "@/types/database/supabase";
 
 type StockUnit = Tables<"stock_units">;
+type GoodsInward = Tables<"goods_inwards">;
+type Partner = Tables<"partners">;
+type Warehouse = Tables<"warehouses">;
 
 // ============================================================================
 // FILTERS
@@ -18,7 +21,27 @@ export interface StockUnitFilters extends Record<string, unknown> {
 // ============================================================================
 
 import { ProductDetailView, ProductListView } from "./products.types";
-import { InwardWithPartnerListView } from "./stock-flow.types";
+
+/**
+ * Minimal inward view for list items
+ * Used in: stock unit inward details
+ */
+export type InwardListView = Pick<
+  GoodsInward,
+  "id" | "sequence_number" | "inward_date" | "inward_type"
+>;
+
+/**
+ * Inward with partner details for list views
+ * Used in: stock unit with inward details
+ */
+export interface InwardWithPartnerListView extends InwardListView {
+  partner: Pick<
+    Partner,
+    "id" | "first_name" | "last_name" | "company_name"
+  > | null;
+  from_warehouse: Pick<Warehouse, "id" | "name"> | null;
+}
 
 /**
  * Stock unit with minimal details for list views

@@ -110,7 +110,7 @@ export const PRODUCT_WITH_ATTRIBUTES_SELECT = `
 // ============================================================================
 
 // Common structure for attribute assignments
-type ProductAttributeAssignmentsRaw = {
+export type ProductAttributeAssignmentsRaw = {
   product_material_assignments: Array<{
     material: Pick<ProductMaterial, "id" | "name" | "color_hex"> | null;
   }>;
@@ -123,7 +123,7 @@ type ProductAttributeAssignmentsRaw = {
 };
 
 // Raw type for ProductListView query response
-type ProductListViewRaw = Pick<
+export type ProductListViewRaw = Pick<
   Tables<"products">,
   | "id"
   | "sequence_number"
@@ -136,7 +136,8 @@ type ProductListViewRaw = Pick<
   ProductAttributeAssignmentsRaw;
 
 // Raw type for ProductDetailView query response
-type ProductDetailViewRaw = Tables<"products"> & ProductAttributeAssignmentsRaw;
+export type ProductDetailViewRaw = Tables<"products"> &
+  ProductAttributeAssignmentsRaw;
 
 // Raw type for ProductWithInventoryListView query response
 type ProductWithInventoryListViewRaw = ProductListViewRaw & {

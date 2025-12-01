@@ -1,29 +1,165 @@
 import { createClient } from "@/lib/supabase/browser";
 import type { Tables, TablesInsert } from "@/types/database/supabase";
 import type {
-  GoodsInwardWithDetails,
-  GoodsOutwardWithDetails,
-  GoodsInwardFilters,
-  GoodsOutwardFilters,
-  GoodsInwardListItem,
-  GoodsOutwardListItem,
-  OutwardItemWithDetails,
+  OutwardDetailView,
+  InwardFilters,
+  OutwardFilters,
+  OutwardItemWithOutwardDetailView,
+  InwardWithStockUnitListView,
+  OutwardWithOutwardItemListView,
+  InwardDetailView,
 } from "@/types/stock-flow.types";
+import {
+  PRODUCT_LIST_VIEW_SELECT,
+  PRODUCT_DETAIL_VIEW_SELECT,
+  transformProductListView,
+  transformProductDetailView,
+  type ProductListViewRaw,
+  type ProductDetailViewRaw,
+} from "@/lib/queries/products";
 
 // Re-export types for convenience
-export type { GoodsInwardFilters, GoodsOutwardFilters };
+export type { InwardFilters, OutwardFilters };
 
-// Local type aliases for convenience
-type GoodsInward = Tables<"goods_inwards">;
-type GoodsOutward = Tables<"goods_outwards">;
+// ============================================================================
+// RAW TYPES - For Supabase responses
+// ============================================================================
+
+type InwardWithStockUnitListViewRaw = Omit<
+  InwardWithStockUnitListView,
+  "stock_units"
+> & {
+  stock_units: Array<{
+    product: ProductListViewRaw | null;
+    initial_quantity: number;
+  }>;
+};
+
+type OutwardItemRaw = {
+  quantity_dispatched: number;
+  stock_unit: {
+    product: ProductListViewRaw | null;
+  } | null;
+};
+
+type OutwardWithOutwardItemListViewRaw = Omit<
+  OutwardWithOutwardItemListView,
+  "goods_outward_items"
+> & {
+  goods_outward_items: OutwardItemRaw[];
+};
+
+type InwardDetailViewRaw = Omit<InwardDetailView, "stock_units"> & {
+  stock_units: Array<
+    Tables<"stock_units"> & {
+      product: ProductDetailViewRaw | null;
+    }
+  >;
+};
+
+type OutwardDetailViewRaw = Omit<OutwardDetailView, "goods_outward_items"> & {
+  goods_outward_items: Array<
+    Tables<"goods_outward_items"> & {
+      stock_unit:
+        | (Tables<"stock_units"> & {
+            product: ProductDetailViewRaw | null;
+          })
+        | null;
+    }
+  >;
+};
+
+// ============================================================================
+// TRANSFORM FUNCTIONS
+// ============================================================================
+
+/**
+ * Transform raw inward data with stock units to InwardWithStockUnitListView
+ */
+function transformInwardWithStockUnitListView(
+  raw: InwardWithStockUnitListViewRaw,
+): InwardWithStockUnitListView {
+  const { stock_units: rawStockUnits, ...inward } = raw;
+
+  return {
+    ...inward,
+    stock_units: rawStockUnits.map((su) => ({
+      ...su,
+      product: su.product ? transformProductListView(su.product) : null,
+    })),
+  };
+}
+
+/**
+ * Transform raw outward data with items to OutwardWithOutwardItemListView
+ */
+function transformOutwardWithItemListView(
+  raw: OutwardWithOutwardItemListViewRaw,
+): OutwardWithOutwardItemListView {
+  const { goods_outward_items: rawItems, ...outward } = raw;
+
+  return {
+    ...outward,
+    goods_outward_items: rawItems.map((item) => ({
+      ...item,
+      stock_unit: item.stock_unit
+        ? {
+            ...item.stock_unit,
+            product: item.stock_unit.product
+              ? transformProductListView(item.stock_unit.product)
+              : null,
+          }
+        : null,
+    })),
+  };
+}
+
+/**
+ * Transform raw inward detail data to InwardDetailView
+ */
+function transformInwardDetailView(raw: InwardDetailViewRaw): InwardDetailView {
+  const { stock_units: rawStockUnits, ...inward } = raw;
+
+  return {
+    ...inward,
+    stock_units: rawStockUnits.map((su) => ({
+      ...su,
+      product: su.product ? transformProductDetailView(su.product) : null,
+    })),
+  };
+}
+
+/**
+ * Transform raw outward detail data to OutwardDetailView
+ */
+function transformOutwardDetailView(
+  raw: OutwardDetailViewRaw,
+): OutwardDetailView {
+  const { goods_outward_items: rawItems, ...outward } = raw;
+
+  return {
+    ...outward,
+    goods_outward_items: rawItems.map((item) => ({
+      ...item,
+      stock_unit: item.stock_unit
+        ? {
+            ...item.stock_unit,
+            product: item.stock_unit.product
+              ? transformProductDetailView(item.stock_unit.product)
+              : null,
+          }
+        : null,
+    })),
+  };
+}
 
 /**
  * Fetch goods inwards for a warehouse with optional filters
  */
 export async function getGoodsInwards(
   warehouseId: string,
-  filters?: GoodsInwardFilters,
-): Promise<GoodsInwardListItem[]> {
+  filters?: InwardFilters,
+): Promise<InwardWithStockUnitListView[]> {
   const supabase = createClient();
 
   let query = supabase
@@ -33,7 +169,7 @@ export async function getGoodsInwards(
       *,
       partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, company_name),
       stock_units(
-        product:products(id, name, measuring_unit),
+        product:products(${PRODUCT_LIST_VIEW_SELECT}),
         initial_quantity
       )
     `,
@@ -61,7 +197,11 @@ export async function getGoodsInwards(
     throw error;
   }
 
-  return data || [];
+  return (
+    (data as unknown as InwardWithStockUnitListViewRaw[])?.map(
+      transformInwardWithStockUnitListView,
+    ) || []
+  );
 }
 
 /**
@@ -69,8 +209,8 @@ export async function getGoodsInwards(
  */
 export async function getGoodsOutwards(
   warehouseId: string,
-  filters?: GoodsOutwardFilters,
-): Promise<GoodsOutwardListItem[]> {
+  filters?: OutwardFilters,
+): Promise<OutwardWithOutwardItemListView[]> {
   const supabase = createClient();
 
   let query = supabase
@@ -82,7 +222,7 @@ export async function getGoodsOutwards(
       goods_outward_items(
         quantity_dispatched,
         stock_unit:stock_units(
-          product:products(id, name, measuring_unit)
+          product:products(${PRODUCT_LIST_VIEW_SELECT})
         )
       )
     `,
@@ -110,15 +250,19 @@ export async function getGoodsOutwards(
     throw error;
   }
 
-  return data || [];
+  return (
+    (data as unknown as OutwardWithOutwardItemListViewRaw[])?.map(
+      transformOutwardWithItemListView,
+    ) || []
+  );
 }
 
 /**
  * Fetch a single goods inward by sequence number
  */
-export async function getGoodsInwardBySequenceNumber(
+export async function getGoodsInwardByNumber(
   sequenceNumber: string,
-): Promise<GoodsInwardWithDetails | null> {
+): Promise<InwardDetailView | null> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -134,38 +278,27 @@ export async function getGoodsInwardBySequenceNumber(
       job_work:job_works(sequence_number),
       stock_units(
         *,
-        product:products(
-          *,
-          product_material_assignments(
-            material:product_materials(*)
-          ),
-          product_color_assignments(
-            color:product_colors(*)
-          ),
-          product_tag_assignments(
-            tag:product_tags(*)
-          )
-        )
+        product:products(${PRODUCT_DETAIL_VIEW_SELECT})
       )
     `,
     )
     .eq("sequence_number", sequenceNumber)
-    .single();
+    .single<InwardDetailViewRaw>();
 
   if (error) {
     console.error("Error fetching goods inward by sequence number:", error);
     return null;
   }
 
-  return data;
+  return data ? transformInwardDetailView(data) : null;
 }
 
 /**
  * Fetch a single goods outward by sequence number
  */
-export async function getGoodsOutwardBySequenceNumber(
+export async function getGoodsOutwardByNumber(
   sequenceNumber: string,
-): Promise<GoodsOutwardWithDetails | null> {
+): Promise<OutwardDetailView | null> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -183,31 +316,20 @@ export async function getGoodsOutwardBySequenceNumber(
         *,
         stock_unit:stock_units(
           *,
-          product:products(
-            *,
-            product_material_assignments(
-              material:product_materials(*)
-            ),
-            product_color_assignments(
-              color:product_colors(*)
-            ),
-            product_tag_assignments(
-              tag:product_tags(*)
-            )
-          )
+          product:products(${PRODUCT_DETAIL_VIEW_SELECT})
         )
       )
     `,
     )
     .eq("sequence_number", sequenceNumber)
-    .single();
+    .single<OutwardDetailViewRaw>();
 
   if (error) {
     console.error("Error fetching goods outward by sequence number:", error);
     return null;
   }
 
-  return data;
+  return data ? transformOutwardDetailView(data) : null;
 }
 
 /**
@@ -216,7 +338,7 @@ export async function getGoodsOutwardBySequenceNumber(
  */
 export async function getOutwardItemsByProduct(
   productId: string,
-): Promise<OutwardItemWithDetails[]> {
+): Promise<OutwardItemWithOutwardDetailView[]> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -245,7 +367,7 @@ export async function getOutwardItemsByProduct(
     throw error;
   }
 
-  return data || [];
+  return (data as OutwardItemWithOutwardDetailView[]) || [];
 }
 
 /**
@@ -254,21 +376,21 @@ export async function getOutwardItemsByProduct(
  */
 export async function createGoodsInward(
   inward: TablesInsert<"goods_inwards">,
-): Promise<GoodsInward> {
+): Promise<string> {
   const supabase = createClient();
 
   const { data, error } = await supabase
     .from("goods_inwards")
     .insert(inward)
     .select()
-    .single();
+    .single<{ id: string }>();
 
   if (error) {
     console.error("Error creating goods inward:", error);
     throw error;
   }
 
-  return data;
+  return data.id;
 }
 
 /**
@@ -277,19 +399,19 @@ export async function createGoodsInward(
  */
 export async function createGoodsOutward(
   outward: TablesInsert<"goods_outwards">,
-): Promise<GoodsOutward> {
+): Promise<string> {
   const supabase = createClient();
 
   const { data, error } = await supabase
     .from("goods_outwards")
     .insert(outward)
-    .select()
-    .single();
+    .select("id")
+    .single<{ id: string }>();
 
   if (error) {
     console.error("Error creating goods outward:", error);
     throw error;
   }
 
-  return data;
+  return data.id;
 }
