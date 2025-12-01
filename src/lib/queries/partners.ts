@@ -170,12 +170,12 @@ export async function createPartner({
  */
 export async function updatePartner({
   partnerId,
-  updates,
+  partnerData,
   image,
   companyId,
 }: {
   partnerId: string;
-  updates: PartnerUpdate;
+  partnerData: PartnerUpdate;
   image: File | null;
   companyId: string;
 }): Promise<string> {
@@ -188,7 +188,7 @@ export async function updatePartner({
         partnerId,
         image,
       );
-      updates.image_url = publicUrl;
+      partnerData.image_url = publicUrl;
     } catch (uploadError) {
       console.error("Image upload failed:", uploadError);
       // Don't re-throw, proceed with other updates
@@ -197,7 +197,7 @@ export async function updatePartner({
 
   const { data: updatedPartner, error: updateError } = await supabase
     .from("partners")
-    .update(updates)
+    .update(partnerData)
     .eq("id", partnerId)
     .select("id")
     .single<{ id: string }>();

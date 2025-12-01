@@ -11,7 +11,7 @@ import {
   updatePartner,
   deletePartner,
 } from "@/lib/queries/partners";
-import type { PartnerFilters } from "@/types/partners.types";
+import type { PartnerFilters, PartnerUpdate } from "@/types/partners.types";
 
 /**
  * Fetch partners with optional filters
@@ -70,11 +70,21 @@ export function usePartnerMutations() {
   });
 
   const updatePartnerMutation = useMutation({
-    mutationFn: updatePartner,
-    onSuccess: (data) => {
+    mutationFn: ({
+      partnerId,
+      partnerData,
+      image,
+      companyId,
+    }: {
+      partnerId: string;
+      partnerData: PartnerUpdate;
+      image: File | null;
+      companyId: string;
+    }) => updatePartner({ partnerId, partnerData, image, companyId }),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.partners.all() });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.partners.detail(data.id),
+        queryKey: queryKeys.partners.detail(variables.partnerId),
       });
     },
   });

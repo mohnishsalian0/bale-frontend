@@ -15,16 +15,14 @@ import {
 } from "@/components/ui/drawer";
 import { StockStatusBadge } from "@/components/ui/stock-status-badge";
 import { QRScannerOverlay } from "@/components/ui/qr-scanner-overlay";
-import {
-  StockUnitDetailsContent,
-  type StockUnitWithProduct,
-} from "@/components/layouts/stock-unit-details-content";
+import { StockUnitDetailsContent } from "@/components/layouts/stock-unit-details-content";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { createClient } from "@/lib/supabase/browser";
 import { formatStockUnitNumber } from "@/lib/utils/product";
 import { useSession } from "@/contexts/session-context";
 import type { StockType, StockUnitStatus } from "@/types/database/enums";
 import { PRODUCT_WITH_ATTRIBUTES_SELECT } from "@/lib/queries/products";
+import { StockUnitWithProductDetailView } from "@/types/stock-units.types";
 
 const SCAN_DELAY = 1200;
 
@@ -45,7 +43,7 @@ export function DashboardScannerModal({
   const [paused, setPaused] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scannedStockUnit, setScannedStockUnit] =
-    useState<StockUnitWithProduct | null>(null);
+    useState<StockUnitWithProductDetailView | null>(null);
 
   const handleScan = async (detectedCodes: any[]) => {
     if (paused || detectedCodes.length === 0) return;

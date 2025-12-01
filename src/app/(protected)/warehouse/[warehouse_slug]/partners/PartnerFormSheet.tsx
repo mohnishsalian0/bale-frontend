@@ -181,7 +181,7 @@ export function PartnerFormSheet({
       updatePartner.mutate(
         {
           partnerId: partnerToEdit.id,
-          updates,
+          partnerData: updates,
           image: formData.image,
           companyId: user.company_id,
         },

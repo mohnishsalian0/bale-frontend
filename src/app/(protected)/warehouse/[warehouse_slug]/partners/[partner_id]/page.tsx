@@ -73,12 +73,12 @@ export default function PartnerDetailPage({ params }: PageParams) {
   } = usePartnerWithOrderStats(partner_id);
 
   // Get aggregates from partner data
-  const aggregates = partner?.partner_order_aggregates;
-  const totalOrders = aggregates?.total_orders || 0;
-  const totalOrderValue = aggregates?.lifetime_order_value || 0;
+  const order_stats = partner?.order_stats;
+  const totalOrders = order_stats?.total_orders || 0;
+  const totalOrderValue = order_stats?.lifetime_order_value || 0;
   const pendingOrdersCount =
-    (aggregates?.approval_pending_count || 0) +
-    (aggregates?.in_progress_count || 0);
+    (order_stats?.approval_pending_count || 0) +
+    (order_stats?.in_progress_count || 0);
 
   // Fetch pending sales orders only when there are pending orders to display
   const { data: orders = [], isLoading: ordersLoading } =
