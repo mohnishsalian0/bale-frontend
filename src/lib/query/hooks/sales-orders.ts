@@ -1,12 +1,15 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getSalesOrders,
-  getSalesOrder,
+  getSalesOrderBySequenceNumber,
   getSalesOrdersByCustomer,
+  createSalesOrder,
+  type CreateSalesOrderData,
+  type CreateSalesOrderLineItem,
 } from "@/lib/queries/sales-orders";
 
 /**
@@ -23,10 +26,10 @@ export function useSalesOrders(warehouseId: string | null) {
 /**
  * Fetch single sales order by sequence number
  */
-export function useSalesOrder(sequenceNumber: string | null) {
+export function useSalesOrderBySequenceNumber(sequenceNumber: string | null) {
   return useQuery({
     queryKey: queryKeys.salesOrders.detail(sequenceNumber || ""),
-    queryFn: () => getSalesOrder(sequenceNumber!),
+    queryFn: () => getSalesOrderBySequenceNumber(sequenceNumber!),
     ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
     enabled: !!sequenceNumber,
   });
@@ -50,18 +53,25 @@ export function useSalesOrdersByCustomer(
 /**
  * Sales order mutations (create, update, delete)
  */
-export function useSalesOrderMutations(_warehouseId: string | null) {
-  // const queryClient = useQueryClient();
+export function useSalesOrderMutations(warehouseId: string | null) {
+  const queryClient = useQueryClient();
+
+  const create = useMutation({
+    mutationFn: ({
+      orderData,
+      lineItems,
+    }: {
+      orderData: CreateSalesOrderData;
+      lineItems: CreateSalesOrderLineItem[];
+    }) => createSalesOrder(orderData, lineItems),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.salesOrders.all(warehouseId),
+      });
+    },
+  });
 
   return {
-    // Placeholder for mutations
-    // Would need corresponding functions in queries/sales-orders.ts
-    // updateStatus: useMutation({
-    //   mutationFn: ({ orderId, status }) => updateSalesOrderStatus(orderId, status),
-    //   onSuccess: (_, variables) => {
-    //     queryClient.invalidateQueries({ queryKey: queryKeys.salesOrders.detail(variables.orderId) });
-    //     queryClient.invalidateQueries({ queryKey: queryKeys.salesOrders.all(warehouseId) });
-    //   },
-    // }),
+    create,
   };
 }

@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import type { Tables } from "@/types/database/supabase";
+import type { ProductListView } from "@/types/products.types";
 import {
-  type ProductWithAttributes,
   PRODUCT_WITH_ATTRIBUTES_SELECT,
-  transformProductWithAttributes,
+  transformProductListView,
 } from "./products";
 
 type SalesOrder = Tables<"sales_orders">;
@@ -13,7 +13,7 @@ type SalesOrderItem = Tables<"sales_order_items">;
 type Warehouse = Tables<"warehouses">;
 
 export interface StockUnitWithProduct extends StockUnit {
-  product: ProductWithAttributes | null;
+  product: ProductListView | null;
 }
 
 export interface DashboardSalesOrder extends SalesOrder {
@@ -22,16 +22,16 @@ export interface DashboardSalesOrder extends SalesOrder {
   warehouse: Warehouse | null;
   sales_order_items: Array<
     SalesOrderItem & {
-      product: ProductWithAttributes[] | null;
+      product: ProductListView[] | null;
     }
   >;
 }
 
-export interface LowStockProduct extends ProductWithAttributes {
+export interface LowStockProduct extends ProductListView {
   current_stock: number;
 }
 
-export interface PendingQRProduct extends ProductWithAttributes {
+export interface PendingQRProduct extends ProductListView {
   pending_qr_count: number;
 }
 
@@ -142,7 +142,7 @@ export async function getLowStockProducts(
     const stockData = lowStockData.find(
       (item: any) => item.product_id === product.id,
     );
-    const transformedProduct = transformProductWithAttributes(product);
+    const transformedProduct = transformProductListView(product);
 
     return {
       ...transformedProduct,
@@ -200,7 +200,7 @@ export async function getPendingQRProducts(
   // Group by product and count pending QR codes
   const productMap = new Map<
     string,
-    { product: ProductWithAttributes; count: number }
+    { product: ProductListView; count: number }
   >();
 
   for (const unit of stockUnits as any[]) {
@@ -211,7 +211,7 @@ export async function getPendingQRProducts(
       existing.count += 1;
     } else {
       productMap.set(unit.product_id, {
-        product: transformProductWithAttributes(unit.product),
+        product: transformProductListView(unit.product),
         count: 1,
       });
     }

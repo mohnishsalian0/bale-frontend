@@ -13,20 +13,20 @@ import {
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import type {
-  ProductWithAttributes,
+  ProductListView,
   ProductMaterial,
   ProductColor,
   ProductTag,
-} from "@/lib/queries/products";
+} from "@/types/products.types";
 import type { StockType } from "@/types/database/enums";
 
 interface QRProductSelectionStepProps {
-  products: ProductWithAttributes[];
+  products: ProductListView[];
   materials: ProductMaterial[];
   colors: ProductColor[];
   tags: ProductTag[];
   loading: boolean;
-  onProductSelect: (product: ProductWithAttributes) => void;
+  onProductSelect: (product: ProductListView) => void;
 }
 
 export function QRProductSelectionStep({

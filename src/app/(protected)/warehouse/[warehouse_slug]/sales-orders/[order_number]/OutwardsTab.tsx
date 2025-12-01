@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { IconPhoto } from "@tabler/icons-react";
 import IconGoodsOutward from "@/components/icons/IconGoodsOutward";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import type { Tables } from "@/types/database/supabase";

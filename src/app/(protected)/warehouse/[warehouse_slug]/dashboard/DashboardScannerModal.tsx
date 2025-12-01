@@ -20,7 +20,7 @@ import {
   type StockUnitWithProduct,
 } from "@/components/layouts/stock-unit-details-content";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import { formatStockUnitNumber } from "@/lib/utils/stock-unit";
 import { useSession } from "@/contexts/session-context";
 import type { StockType, StockUnitStatus } from "@/types/database/enums";

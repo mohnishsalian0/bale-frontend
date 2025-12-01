@@ -14,13 +14,13 @@ import { AllSpecificationsSheet } from "../AllSpecificationsSheet";
 import { PieceQuantitySheet } from "../PieceQuantitySheet";
 import { InwardDetailsStep } from "../InwardDetailsStep";
 import { ProductFormSheet } from "../../inventory/ProductFormSheet";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import { useProducts, useProductAttributes } from "@/lib/query/hooks/products";
-import type { ProductWithAttributes } from "@/lib/queries/products";
 import type { TablesInsert } from "@/types/database/supabase";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
+import { ProductListView } from "@/types/products.types";
 
 interface DetailsFormData {
   receivedFromType: "partner" | "warehouse";
@@ -44,14 +44,9 @@ export default function CreateGoodsInwardPage() {
   const [currentStep, setCurrentStep] = useState<FormStep>("products");
 
   // Fetch products and attributes using TanStack Query
-  const {
-    data: productsData = [],
-    isLoading: productsLoading,
-  } = useProducts();
-  const {
-    data: attributesData,
-    isLoading: attributesLoading,
-  } = useProductAttributes();
+  const { data: productsData = [], isLoading: productsLoading } = useProducts();
+  const { data: attributesData, isLoading: attributesLoading } =
+    useProductAttributes();
 
   // Track product units state locally
   const [productUnits, setProductUnits] = useState<
@@ -87,7 +82,7 @@ export default function CreateGoodsInwardPage() {
   const [showPieceQuantitySheet, setShowPieceQuantitySheet] = useState(false);
   const [showCreateProduct, setShowCreateProduct] = useState(false);
   const [selectedProduct, setSelectedProduct] =
-    useState<ProductWithAttributes | null>(null);
+    useState<ProductListView | null>(null);
 
   // Details form state
   const [detailsFormData, setDetailsFormData] = useState<DetailsFormData>({
@@ -103,7 +98,7 @@ export default function CreateGoodsInwardPage() {
 
   // Handle opening unit sheet
   const handleOpenUnitSheet = (
-    product: ProductWithAttributes,
+    product: ProductListView,
     hasExistingUnits: boolean,
   ) => {
     setSelectedProduct(product);

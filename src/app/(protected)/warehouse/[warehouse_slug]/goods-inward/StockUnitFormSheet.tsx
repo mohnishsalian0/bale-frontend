@@ -35,7 +35,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
-import type { ProductWithAttributes } from "@/lib/queries/products";
+import type { ProductListView } from "@/types/products.types";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import type { StockUnitSpec } from "./ProductSelectionStep";
 import { Input } from "@/components/ui/input";
@@ -44,7 +44,7 @@ import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 interface StockUnitFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  product: ProductWithAttributes | null;
+  product: ProductListView | null;
   initialUnit?: Partial<StockUnitSpec>;
   onConfirm: (unit: Omit<StockUnitSpec, "id">) => void;
 }

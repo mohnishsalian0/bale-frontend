@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
 import { ProductQuantitySheet } from "../ProductQuantitySheet";
 import { ProductSelectionStep } from "../ProductSelectionStep";
 import { CustomerSelectionStep } from "../CustomerSelectionStep";
@@ -18,9 +17,11 @@ import {
   useProductsWithInventory,
   useProductAttributes,
 } from "@/lib/query/hooks/products";
-import type { ProductWithInventory } from "@/lib/queries/products";
+import { useSalesOrderMutations } from "@/lib/query/hooks/sales-orders";
+import type { ProductWithInventoryListView } from "@/types/products.types";
+import { CreateSalesOrderData } from "@/types/sales-orders.types";
 
-interface ProductWithSelection extends ProductWithInventory {
+interface ProductWithSelection extends ProductWithInventoryListView {
   selected: boolean;
   quantity: number;
 }
@@ -46,14 +47,13 @@ export default function CreateSalesOrderPage() {
   const [currentStep, setCurrentStep] = useState<FormStep>("products");
 
   // Fetch products and attributes using TanStack Query
-  const {
-    data: productsData = [],
-    isLoading: productsLoading,
-  } = useProductsWithInventory(warehouse.id);
-  const {
-    data: attributesData,
-    isLoading: attributesLoading,
-  } = useProductAttributes();
+  const { data: productsData = [], isLoading: productsLoading } =
+    useProductsWithInventory(warehouse.id);
+  const { data: attributesData, isLoading: attributesLoading } =
+    useProductAttributes();
+
+  // Sales order mutations
+  const { create: createOrder } = useSalesOrderMutations(warehouse.id);
 
   // Track product selection state locally
   const [productSelections, setProductSelections] = useState<
@@ -77,16 +77,13 @@ export default function CreateSalesOrderPage() {
   const loading = productsLoading || attributesLoading;
 
   const [selectedProduct, setSelectedProduct] =
-    useState<ProductWithInventory | null>(null);
+    useState<ProductWithInventoryListView | null>(null);
   const [showQuantitySheet, setShowQuantitySheet] = useState(false);
   const [showCreateProduct, setShowCreateProduct] = useState(false);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
     null,
   );
-  const [saving, setSaving] = useState(false);
-
-  const supabase = createClient();
 
   // Hide chrome for immersive flow experience
   useEffect(() => {
@@ -106,7 +103,7 @@ export default function CreateSalesOrderPage() {
     files: [],
   });
 
-  const handleOpenQuantitySheet = (product: ProductWithInventory) => {
+  const handleOpenQuantitySheet = (product: ProductWithInventoryListView) => {
     setSelectedProduct(product);
     setShowQuantitySheet(true);
   };
@@ -170,61 +167,55 @@ export default function CreateSalesOrderPage() {
     router.push(`/warehouse/${warehouse.slug}/sales-orders`);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!canSubmit) return;
-    setSaving(true);
 
-    try {
-      const selectedProducts = products.filter(
-        (p) => p.selected && p.quantity > 0,
-      );
+    const selectedProducts = products.filter(
+      (p) => p.selected && p.quantity > 0,
+    );
 
-      // Prepare order data
-      const orderData = {
-        warehouse_id: formData.warehouseId,
-        customer_id: formData.customerId,
-        agent_id: formData.agentId || null,
-        order_date: formData.orderDate,
-        expected_delivery_date: formData.expectedDate || null,
-        advance_amount: formData.advanceAmount
-          ? parseFloat(formData.advanceAmount)
-          : 0,
-        discount_type: "none",
-        discount_value: 0,
-        notes: formData.notes || null,
-        attachments: [], // TODO: Implement file upload
-        status: "approval_pending",
-      };
+    // Prepare order data
+    const orderData: CreateSalesOrderData = {
+      warehouse_id: formData.warehouseId,
+      customer_id: formData.customerId,
+      agent_id: formData.agentId || null,
+      order_date: formData.orderDate,
+      expected_delivery_date: formData.expectedDate || null,
+      advance_amount: formData.advanceAmount
+        ? parseFloat(formData.advanceAmount)
+        : 0,
+      discount_type: "none",
+      discount_value: 0,
+      notes: formData.notes || null,
+      attachments: [], // TODO: Implement file upload
+      status: "approval_pending",
+    };
 
-      // Prepare line items
-      const lineItems = selectedProducts.map((product) => ({
-        product_id: product.id,
-        required_quantity: product.quantity,
-        unit_rate: 0,
-      }));
+    // Prepare line items
+    const lineItems = selectedProducts.map((product) => ({
+      product_id: product.id,
+      required_quantity: product.quantity,
+      unit_rate: 0,
+    }));
 
-      // Create sales order with items atomically using RPC function
-      const { data: _orderId, error: orderError } = await supabase.rpc(
-        "create_sales_order_with_items",
-        {
-          p_order_data: orderData,
-          p_line_items: lineItems,
+    // Create sales order using mutation
+    createOrder.mutate(
+      { orderData, lineItems },
+      {
+        onSuccess: () => {
+          toast.success("Sales order created successfully");
+          router.push(`/warehouse/${warehouse.slug}/sales-orders`);
         },
-      );
-
-      if (orderError) throw orderError;
-
-      // Success! Show toast and redirect
-      toast.success("Sales order created successfully");
-      router.push(`/warehouse/${warehouse.slug}/sales-orders`);
-    } catch (error) {
-      console.error("Error creating sales order:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create sales order",
-      );
-    } finally {
-      setSaving(false);
-    }
+        onError: (error) => {
+          console.error("Error creating sales order:", error);
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Failed to create sales order",
+          );
+        },
+      },
+    );
   };
 
   return (
@@ -237,7 +228,7 @@ export default function CreateSalesOrderPage() {
               variant="ghost"
               size="icon"
               onClick={handleCancel}
-              disabled={saving}
+              disabled={createOrder.isPending}
             >
               <IconArrowLeft className="size-5" />
             </Button>
@@ -310,14 +301,14 @@ export default function CreateSalesOrderPage() {
                 <Button
                   variant="outline"
                   onClick={handleCancel}
-                  disabled={saving}
+                  disabled={createOrder.isPending}
                   className="flex-1"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleNext}
-                  disabled={!canProceed || saving}
+                  disabled={!canProceed || createOrder.isPending}
                   className="flex-1"
                 >
                   Next
@@ -328,14 +319,14 @@ export default function CreateSalesOrderPage() {
                 <Button
                   variant="outline"
                   onClick={handleBack}
-                  disabled={saving}
+                  disabled={createOrder.isPending}
                   className="flex-1"
                 >
                   Back
                 </Button>
                 <Button
                   onClick={handleNext}
-                  disabled={!selectedCustomerId || saving}
+                  disabled={!selectedCustomerId || createOrder.isPending}
                   className="flex-1"
                 >
                   Next
@@ -346,17 +337,17 @@ export default function CreateSalesOrderPage() {
                 <Button
                   variant="outline"
                   onClick={handleBack}
-                  disabled={saving}
+                  disabled={createOrder.isPending}
                   className="flex-1"
                 >
                   Back
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={!canSubmit || saving}
+                  disabled={!canSubmit || createOrder.isPending}
                   className="flex-1"
                 >
-                  {saving ? "Saving..." : "Submit"}
+                  {createOrder.isPending ? "Saving..." : "Submit"}
                 </Button>
               </>
             )}

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import type { Tables } from "@/types/database/supabase";
 import type { CartItem } from "@/contexts/cart-context";
 

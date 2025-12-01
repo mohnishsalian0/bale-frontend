@@ -1,6 +1,6 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import { useState, Suspense } from "react";
 import Image from "next/image";
 import { IconBrandGoogleFilled } from "@tabler/icons-react";

@@ -9,7 +9,7 @@ import { ErrorState } from "@/components/layouts/error-state";
 import { InviteFormSheet } from "./InviteFormSheet";
 import { StaffMembersTab } from "./StaffMembersTab";
 import { ActiveInvitesTab } from "./ActiveInvitesTab";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import type { UserRole } from "@/types/database/enums";
 
 interface StaffMember {

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import { QRProductSelectionStep } from "../QRProductSelectionStep";
 import { QRStockUnitSelectionStep } from "../QRStockUnitSelectionStep";
 import {
@@ -17,7 +17,7 @@ import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import { generatePDFBlob, downloadPDF } from "@/lib/pdf/batch-pdf-generator";
 import type { LabelData } from "@/lib/pdf/qr-label-generator";
-import type { ProductWithAttributes } from "@/lib/queries/products";
+import type { ProductListView } from "@/types/products.types";
 import { useProducts, useProductAttributes } from "@/lib/query/hooks/products";
 
 type FormStep = "product" | "stock-units" | "template";
@@ -28,7 +28,7 @@ export default function CreateQRBatchPage() {
   const { hideChrome, showChromeUI } = useAppChrome();
   const [currentStep, setCurrentStep] = useState<FormStep>("product");
   const [selectedProduct, setSelectedProduct] =
-    useState<ProductWithAttributes | null>(null);
+    useState<ProductListView | null>(null);
   const [selectedStockUnitIds, setSelectedStockUnitIds] = useState<string[]>(
     [],
   );
@@ -53,7 +53,7 @@ export default function CreateQRBatchPage() {
     return () => showChromeUI(); // Restore chrome on unmount
   }, [hideChrome, showChromeUI]);
 
-  const handleProductSelect = (product: ProductWithAttributes) => {
+  const handleProductSelect = (product: ProductListView) => {
     setSelectedProduct(product);
     setCurrentStep("stock-units");
   };

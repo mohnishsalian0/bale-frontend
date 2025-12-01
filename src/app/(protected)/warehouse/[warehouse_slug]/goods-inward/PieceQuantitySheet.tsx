@@ -25,13 +25,13 @@ import {
   getMeasuringUnitAbbreviation,
   pluralizeMeasuringUnitAbbreviation,
 } from "@/lib/utils/measuring-units";
-import type { ProductWithAttributes } from "@/lib/queries/products";
+import type { ProductListView } from "@/types/products.types";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 
 interface PieceQuantitySheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  product: ProductWithAttributes | null;
+  product: ProductListView | null;
   initialQuantity?: number;
   currentInventory?: number; // Current stock quantity if exists
   onConfirm: (quantity: number) => void;

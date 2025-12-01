@@ -14,11 +14,11 @@ import {
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import type {
-  ProductWithAttributes,
+  ProductListView,
   ProductMaterial,
   ProductColor,
   ProductTag,
-} from "@/lib/queries/products";
+} from "@/types/products.types";
 import { pluralizeStockType } from "@/lib/utils/pluralize";
 import type { StockType } from "@/types/database/enums";
 
@@ -32,7 +32,7 @@ export interface StockUnitSpec {
   count: number; // for duplicate specs
 }
 
-export interface ProductWithUnits extends ProductWithAttributes {
+export interface ProductWithUnits extends ProductListView {
   units: StockUnitSpec[];
 }
 
@@ -43,7 +43,7 @@ interface ProductSelectionStepProps {
   tags: ProductTag[];
   loading: boolean;
   onOpenUnitSheet: (
-    product: ProductWithAttributes,
+    product: ProductListView,
     hasExistingUnits: boolean,
   ) => void;
   onAddNewProduct: () => void;
@@ -151,7 +151,7 @@ export function ProductSelectionStep({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All materials</SelectItem>
-              {materials.map((material) => (
+              {materials.map((material: ProductMaterial) => (
                 <SelectItem key={material.id} value={material.id}>
                   {material.name}
                 </SelectItem>

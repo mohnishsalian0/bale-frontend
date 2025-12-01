@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import { ProductStockStatus } from "@/types/database/enums";
 import type { Tables } from "@/types/database/supabase";
 

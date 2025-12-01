@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import { toast } from "sonner";
 import { useAgents } from "@/lib/query/hooks/partners";
 import type { Tables } from "@/types/database/supabase";

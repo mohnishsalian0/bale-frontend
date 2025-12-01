@@ -1,11 +1,18 @@
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import type {
   SalesOrderListView,
   SalesOrderDetailView,
+  CreateSalesOrderData,
+  CreateSalesOrderLineItem,
 } from "@/types/sales-orders.types";
 
 // Re-export types for convenience
-export type { SalesOrderListView, SalesOrderDetailView };
+export type {
+  SalesOrderListView,
+  SalesOrderDetailView,
+  CreateSalesOrderData,
+  CreateSalesOrderLineItem,
+};
 
 /**
  * Fetch all sales orders for a warehouse
@@ -87,7 +94,7 @@ export async function getSalesOrdersByCustomer(
 /**
  * Fetch a single sales order by sequence number
  */
-export async function getSalesOrder(
+export async function getSalesOrderBySequenceNumber(
   sequenceNumber: string,
 ): Promise<SalesOrderDetailView> {
   const supabase = createClient();
@@ -126,11 +133,34 @@ export async function getSalesOrder(
     )
     .eq("sequence_number", parseInt(sequenceNumber))
     .is("deleted_at", null)
-    .single();
+    .single<SalesOrderDetailView>();
 
   if (error) throw error;
   if (!data) throw new Error("Order not found");
 
-  // Transform Supabase's array format to single objects
-  return data as SalesOrderDetailView;
+  return data;
+}
+
+/**
+ * Create a new sales order with line items
+ */
+export async function createSalesOrder(
+  orderData: CreateSalesOrderData,
+  lineItems: CreateSalesOrderLineItem[],
+): Promise<string> {
+  const supabase = createClient();
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { data: orderId, error } = await supabase.rpc(
+    "create_sales_order_with_items",
+    {
+      p_order_data: orderData,
+      p_line_items: lineItems,
+    },
+  );
+
+  if (error) throw error;
+  if (!orderId) throw new Error("No order ID returned");
+
+  return orderId as string;
 }

@@ -33,7 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { IconDotsVertical } from "@tabler/icons-react";
-import { useSalesOrder } from "@/lib/query/hooks/sales-orders";
+import { useSalesOrderBySequenceNumber } from "@/lib/query/hooks/sales-orders";
 
 interface PageParams {
   params: Promise<{
@@ -61,7 +61,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
     data: order,
     isLoading: loading,
     isError: error,
-  } = useSalesOrder(order_number);
+  } = useSalesOrderBySequenceNumber(order_number);
 
   // Calculate financials
   const financials = useMemo(() => {

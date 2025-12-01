@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/collapsible";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import type { Tables } from "@/types/database/supabase";
 import { dateToISOString } from "@/lib/utils/date";
 import { useSession } from "@/contexts/session-context";

@@ -27,9 +27,9 @@ import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import { Button } from "@/components/ui/button";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
-import { type ProductWithAttributes } from "@/lib/queries/products";
+import { type ProductListView } from "@/types/products.types";
 
-interface Product extends ProductWithAttributes {
+interface Product extends ProductListView {
   productNumber: string;
   totalQuantity: number;
   imageUrl?: string;

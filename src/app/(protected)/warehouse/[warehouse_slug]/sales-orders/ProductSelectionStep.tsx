@@ -19,14 +19,14 @@ import {
   getProductInfo,
 } from "@/lib/utils/product";
 import type {
-  ProductWithInventory,
+  ProductWithInventoryListView,
   ProductMaterial,
   ProductColor,
   ProductTag,
-} from "@/lib/queries/products";
+} from "@/types/products.types";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
 
-interface ProductWithSelection extends ProductWithInventory {
+interface ProductWithSelection extends ProductWithInventoryListView {
   selected: boolean;
   quantity: number;
 }
@@ -37,7 +37,7 @@ interface ProductSelectionStepProps {
   colors: ProductColor[];
   tags: ProductTag[];
   loading: boolean;
-  onOpenQuantitySheet: (product: ProductWithInventory) => void;
+  onOpenQuantitySheet: (product: ProductWithInventoryListView) => void;
   onAddNewProduct: () => void;
   onRemoveProduct: (productId: string) => void;
 }

@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatExpiryDate } from "@/lib/utils/date";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import type { UserRole } from "@/types/database/enums";
 import { RoleBadge } from "@/components/ui/role-badge";
 

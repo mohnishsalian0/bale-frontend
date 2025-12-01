@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Checkbox } from "@/components/ui/checkbox";
 import { IconQrcode } from "@tabler/icons-react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import { useSession } from "@/contexts/session-context";
 
 export type QRTemplateField =

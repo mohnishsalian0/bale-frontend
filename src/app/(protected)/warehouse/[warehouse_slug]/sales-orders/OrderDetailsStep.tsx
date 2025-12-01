@@ -21,7 +21,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import type { Tables } from "@/types/database/supabase";
 import { DatePicker } from "@/components/ui/date-picker";
 import { dateToISOString } from "@/lib/utils/date";

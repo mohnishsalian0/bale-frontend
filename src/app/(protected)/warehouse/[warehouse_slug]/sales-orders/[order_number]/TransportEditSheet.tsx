@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/drawer";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import { toast } from "sonner";
 
 interface TransportEditSheetProps {

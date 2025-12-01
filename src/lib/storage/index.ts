@@ -3,7 +3,7 @@
  * Handles file uploads, deletions, and URL generation for Supabase Storage
  */
 
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 
 // Bucket names
 export const STORAGE_BUCKETS = {

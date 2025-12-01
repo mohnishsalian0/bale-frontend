@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { IconBuildingWarehouse } from "@tabler/icons-react";
 import { LoadingState } from "@/components/layouts/loading-state";
+import { ErrorState } from "@/components/layouts/error-state";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
 import { useCurrentUser, useUserMutations } from "@/lib/query/hooks/users";
 import { Warehouse } from "@/types/warehouses.types";
@@ -13,9 +14,18 @@ export default function WarehouseSelectionPage() {
   const router = useRouter();
 
   // Fetch warehouses using TanStack Query
-  const { data: warehouses = [], isLoading: warehousesLoading } =
-    useWarehouses();
-  const { data: user, isLoading: userLoading } = useCurrentUser();
+  const {
+    data: warehouses = [],
+    isLoading: warehousesLoading,
+    isError: warehousesError,
+    refetch: refetchWarehouses,
+  } = useWarehouses();
+  const {
+    data: user,
+    isLoading: userLoading,
+    isError: userError,
+    refetch: refetchUser,
+  } = useCurrentUser();
   const { updateWarehouse } = useUserMutations();
 
   const handleWarehouseSelect = async (warehouse: Warehouse) => {
@@ -40,6 +50,24 @@ export default function WarehouseSelectionPage() {
 
   if (warehousesLoading || userLoading) {
     return <LoadingState />;
+  }
+
+  if (warehousesError || userError) {
+    return (
+      <ErrorState
+        title="Failed to load data"
+        message={
+          warehousesError
+            ? "Could not load warehouses. Please try again."
+            : "Could not load user data. Please try again."
+        }
+        onRetry={() => {
+          refetchWarehouses();
+          refetchUser();
+        }}
+        actionText="Retry"
+      />
+    );
   }
 
   return (

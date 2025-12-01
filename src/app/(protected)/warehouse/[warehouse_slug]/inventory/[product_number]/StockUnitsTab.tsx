@@ -20,7 +20,7 @@ import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { formatStockUnitNumber } from "@/lib/utils/stock-unit";
 import type { Tables } from "@/types/database/supabase";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
-import type { ProductWithAttributes } from "@/lib/queries/products";
+import type { ProductListView } from "@/types/products.types";
 
 type StockUnit = Tables<"stock_units">;
 type GoodsInward = Tables<"goods_inwards">;
@@ -32,7 +32,7 @@ interface StockUnitWithInward extends StockUnit {
 interface StockUnitsTabProps {
   stockUnits: StockUnitWithInward[];
   measuringUnit: MeasuringUnit | null;
-  product: ProductWithAttributes;
+  product: ProductListView;
 }
 
 type SortOption = "latest" | "oldest" | "quantity_high" | "quantity_low";

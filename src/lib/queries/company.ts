@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import { type Company, type CompanyUpdate } from "@/types/companies.types";
 import { type Warehouse } from "@/types/warehouses.types";
 import { uploadCompanyLogo } from "@/lib/storage";

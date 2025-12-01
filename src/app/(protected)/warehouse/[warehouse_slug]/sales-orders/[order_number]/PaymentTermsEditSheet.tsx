@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/drawer";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import { toast } from "sonner";
 import type { DiscountType } from "@/types/database/enums";
 

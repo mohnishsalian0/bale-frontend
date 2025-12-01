@@ -27,23 +27,27 @@ import MultipleSelector, {
 } from "@/components/ui/multiple-selector";
 import {
   validateImageFile,
-  uploadProductImage,
   MAX_PRODUCT_IMAGES,
-  deleteProductImagesByUrls,
 } from "@/lib/storage";
-import { createClient } from "@/lib/supabase/client";
-import {
-  getProductAttributeLists,
-  type ProductWithAttributes,
-} from "@/lib/queries/products";
-import type { TablesInsert } from "@/types/database/supabase";
+import { getProductAttributeLists } from "@/lib/queries/products";
+import type {
+  ProductDetailView,
+  ProductUpsertData,
+} from "@/types/products.types";
 import type { StockType, MeasuringUnit } from "@/types/database/enums";
 import { useSession } from "@/contexts/session-context";
+import {
+  useProductMutations,
+  useCreateProductMaterial,
+  useCreateProductColor,
+  useCreateProductTag,
+  useProductImageMutations,
+} from "@/lib/query/hooks/products";
 
 interface ProductFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  productToEdit?: ProductWithAttributes;
+  productToEdit?: ProductDetailView;
 }
 
 interface ProductFormData {
@@ -72,6 +76,12 @@ export function ProductFormSheet({
   productToEdit,
 }: ProductFormSheetProps) {
   const { user } = useSession();
+  const { create, update } = useProductMutations();
+  const createMaterial = useCreateProductMaterial();
+  const createColor = useCreateProductColor();
+  const createTag = useCreateProductTag();
+  const { upload, deleteImages, updateField } = useProductImageMutations();
+
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
     productNumber: "PROD-001",
@@ -96,9 +106,19 @@ export function ProductFormSheet({
   const [imageError, setImageError] = useState<string | null>(null);
   const [showFeaturesImages, setShowFeaturesImages] = useState(false);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [originalImages, setOriginalImages] = useState<string[]>([]); // Track original images to detect removals
+
+  // Compute saving state from mutations
+  const saving =
+    create.isPending ||
+    update.isPending ||
+    createMaterial.isPending ||
+    createColor.isPending ||
+    createTag.isPending ||
+    upload.isPending ||
+    deleteImages.isPending ||
+    updateField.isPending;
 
   // Attribute options for MultipleSelector
   const [materialOptions, setMaterialOptions] = useState<Option[]>([]);
@@ -244,46 +264,44 @@ export function ProductFormSheet({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
 
     try {
-      const supabase = createClient();
-
-      // Helper to create new attributes and get their IDs
-      const resolveOptions = async (
-        options: Option[],
-        table: "product_materials" | "product_colors" | "product_tags",
-      ): Promise<string[]> => {
-        const ids: string[] = [];
-        for (const opt of options) {
-          // New items have value === label
-          if (opt.value === opt.label) {
-            const { data, error } = await supabase
-              .from(table)
-              .insert({ name: opt.label })
-              .select("id")
-              .single();
-            if (error) throw error;
-            ids.push(data.id);
-          } else {
-            ids.push(opt.value);
-          }
+      // Step 1: Resolve attribute IDs (create new ones if needed)
+      const materialIds: string[] = [];
+      for (const opt of formData.materials) {
+        if (opt.value === opt.label) {
+          // New material, create it
+          const id = await createMaterial.mutateAsync(opt.label);
+          materialIds.push(id);
+        } else {
+          materialIds.push(opt.value);
         }
-        return ids;
-      };
+      }
 
-      // Resolve all new attributes first
-      const [materialIds, colorIds, tagIds] = await Promise.all([
-        resolveOptions(formData.materials, "product_materials"),
-        resolveOptions(formData.colors, "product_colors"),
-        resolveOptions(formData.tags, "product_tags"),
-      ]);
+      const colorIds: string[] = [];
+      for (const opt of formData.colors) {
+        if (opt.value === opt.label) {
+          // New color, create it
+          const id = await createColor.mutateAsync(opt.label);
+          colorIds.push(id);
+        } else {
+          colorIds.push(opt.value);
+        }
+      }
 
-      // Prepare product data
-      const productData: Omit<
-        TablesInsert<"products">,
-        "created_by" | "modified_by" | "sequence_number"
-      > = {
+      const tagIds: string[] = [];
+      for (const opt of formData.tags) {
+        if (opt.value === opt.label) {
+          // New tag, create it
+          const id = await createTag.mutateAsync(opt.label);
+          tagIds.push(id);
+        } else {
+          tagIds.push(opt.value);
+        }
+      }
+
+      // Step 2: Prepare product data
+      const productData: ProductUpsertData = {
         name: formData.name,
         show_on_catalog: formData.showOnCatalog,
         gsm: formData.gsm ? parseInt(formData.gsm) : null,
@@ -306,128 +324,65 @@ export function ProductFormSheet({
         notes: formData.notes || null,
       };
 
-      let product;
+      const attributeIds = { materialIds, colorIds, tagIds };
 
+      // Step 3: Create or update product
+      let productId: string;
       if (productToEdit) {
-        // UPDATE existing product
-        const { data: updatedProduct, error: updateError } = await supabase
-          .from("products")
-          .update(productData)
-          .eq("id", productToEdit.id)
-          .select()
-          .single();
-
-        if (updateError) throw updateError;
-        product = updatedProduct;
-
-        // Delete old junction table entries
-        await Promise.all([
-          supabase
-            .from("product_material_assignments")
-            .delete()
-            .eq("product_id", productToEdit.id),
-          supabase
-            .from("product_color_assignments")
-            .delete()
-            .eq("product_id", productToEdit.id),
-          supabase
-            .from("product_tag_assignments")
-            .delete()
-            .eq("product_id", productToEdit.id),
-        ]);
+        productId = await update.mutateAsync({
+          productId: productToEdit.id,
+          productData,
+          attributeIds,
+        });
       } else {
-        // INSERT new product
-        const { data: newProduct, error: insertError } = await supabase
-          .from("products")
-          .insert(productData)
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        product = newProduct;
+        productId = await create.mutateAsync({
+          productData,
+          attributeIds,
+        });
       }
 
-      // Insert material assignments
-      if (materialIds.length > 0 && product) {
-        const materialAssignments = materialIds.map((id) => ({
-          product_id: product.id,
-          material_id: id,
-        }));
-        const { error: materialError } = await supabase
-          .from("product_material_assignments")
-          .insert(materialAssignments);
-        if (materialError)
-          console.error("Error inserting materials:", materialError);
-      }
-
-      // Insert color assignments
-      if (colorIds.length > 0 && product) {
-        const colorAssignments = colorIds.map((id) => ({
-          product_id: product.id,
-          color_id: id,
-        }));
-        const { error: colorError } = await supabase
-          .from("product_color_assignments")
-          .insert(colorAssignments);
-        if (colorError) console.error("Error inserting colors:", colorError);
-      }
-
-      // Insert tag assignments
-      if (tagIds.length > 0 && product) {
-        const tagAssignments = tagIds.map((id) => ({
-          product_id: product.id,
-          tag_id: id,
-        }));
-        const { error: tagError } = await supabase
-          .from("product_tag_assignments")
-          .insert(tagAssignments);
-        if (tagError) console.error("Error inserting tags:", tagError);
-      }
-
-      // Handle images: merge existing images with new uploads
-      if (product) {
-        try {
-          // If editing, delete removed images from storage
-          if (productToEdit) {
-            const removedImages = originalImages.filter(
-              (url) => !existingImages.includes(url),
-            );
-            if (removedImages.length > 0) {
-              await deleteProductImagesByUrls(removedImages);
-            }
+      // Step 4: Handle images
+      try {
+        // Delete removed images from storage
+        if (productToEdit) {
+          const removedImages = originalImages.filter(
+            (url) => !existingImages.includes(url),
+          );
+          if (removedImages.length > 0) {
+            await deleteImages.mutateAsync(removedImages);
           }
-
-          const imageUrls: string[] = [...existingImages]; // Start with existing images
-
-          // Upload new images
-          for (let i = 0; i < formData.images.length; i++) {
-            const result = await uploadProductImage(
-              user.company_id,
-              product.id,
-              formData.images[i],
-              existingImages.length + i, // Offset by existing images count
-            );
-            imageUrls.push(result.publicUrl);
-          }
-
-          // Update product with merged image URLs (only if there are changes)
-          if (
-            formData.images.length > 0 ||
-            existingImages.length !==
-              (productToEdit?.product_images?.length || 0)
-          ) {
-            await supabase
-              .from("products")
-              .update({ product_images: imageUrls })
-              .eq("id", product.id);
-          }
-        } catch (uploadError) {
-          console.error("Image upload failed:", uploadError);
-          // Don't fail the whole operation if image upload fails
         }
+
+        const imageUrls: string[] = [...existingImages];
+
+        // Upload new images
+        if (formData.images.length > 0) {
+          const newImageUrls = await upload.mutateAsync({
+            companyId: user.company_id,
+            productId,
+            images: formData.images,
+            offset: existingImages.length,
+          });
+          imageUrls.push(...newImageUrls);
+        }
+
+        // Update product images field if there are changes
+        if (
+          formData.images.length > 0 ||
+          existingImages.length !== (productToEdit?.product_images?.length || 0)
+        ) {
+          await updateField.mutateAsync({
+            productId,
+            imageUrls,
+          });
+        }
+      } catch (uploadError) {
+        console.error("Image upload failed:", uploadError);
+        // Don't fail the whole operation if image upload fails
+        toast.warning("Product saved, but some images failed to upload");
       }
 
-      // Success! Close sheet and notify parent
+      // Success!
       toast.success(
         productToEdit
           ? "Product updated successfully"
@@ -439,8 +394,6 @@ export function ProductFormSheet({
       const errorMessage =
         error instanceof Error ? error.message : "Failed to save product";
       toast.error(errorMessage);
-    } finally {
-      setSaving(false);
     }
   };
 

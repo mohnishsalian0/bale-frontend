@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { SelectInventorySheet } from "./SelectInventorySheet";
 import { StockUnitQuantitySheet } from "./StockUnitQuantitySheet";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import { formatStockUnitNumber } from "@/lib/utils/stock-unit";
 import type { Tables } from "@/types/database/supabase";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
@@ -17,12 +17,13 @@ import {
   pluralizeMeasuringUnitAbbreviation,
 } from "@/lib/utils/measuring-units";
 import { useSession } from "@/contexts/session-context";
+import { ProductListView } from "@/types/products.types";
 
 const SCAN_DELAY: number = 1200;
 
 export interface ScannedStockUnit {
   stockUnit: Tables<"stock_units">;
-  product: Tables<"products">;
+  product: ProductListView;
   quantity: number; // User-entered quantity to dispatch
 }
 
@@ -43,7 +44,7 @@ export function QRScannerStep({
   const [showQuantitySheet, setShowQuantitySheet] = useState(false);
   const [pendingStockUnit, setPendingStockUnit] = useState<{
     stockUnit: Tables<"stock_units">;
-    product: Tables<"products">;
+    product: ProductListView;
     editingIndex?: number;
     initialQuantity?: number;
   } | null>(null);
@@ -235,7 +236,7 @@ export function QRScannerStep({
     setShowInventorySheet(true);
   };
 
-  const handleProductSelect = (product: Tables<"products">) => {
+  const handleProductSelect = (product: ProductListView) => {
     // TODO: Open stock units selection for this product
     console.log("Selected product:", product);
     setShowInventorySheet(false);

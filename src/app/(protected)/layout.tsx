@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from "react";
 import { useParams, useRouter, usePathname } from "next/navigation";
 import { SessionProvider } from "@/contexts/session-context";
 import { AppChromeProvider, useAppChrome } from "@/contexts/app-chrome-context";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import { LoadingState } from "@/components/layouts/loading-state";
 import TopBar from "@/components/layouts/topbar";
 import BottomNav from "@/components/layouts/bottom-nav";

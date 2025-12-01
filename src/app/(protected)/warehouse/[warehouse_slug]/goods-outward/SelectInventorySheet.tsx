@@ -10,19 +10,18 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { InventoryProductListStep } from "./InventoryProductListStep";
+import { getProducts, getProductAttributeLists } from "@/lib/queries/products";
 import {
-  getProductsWithAttributes,
-  getProductAttributeLists,
-  type ProductWithAttributes,
+  type ProductListView,
   type ProductMaterial,
   type ProductColor,
   type ProductTag,
-} from "@/lib/queries/products";
+} from "@/types/products.types";
 
 interface SelectInventorySheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onProductSelect?: (product: ProductWithAttributes) => void;
+  onProductSelect?: (product: ProductListView) => void;
 }
 
 export function SelectInventorySheet({
@@ -30,7 +29,7 @@ export function SelectInventorySheet({
   onOpenChange,
   onProductSelect,
 }: SelectInventorySheetProps) {
-  const [products, setProducts] = useState<ProductWithAttributes[]>([]);
+  const [products, setProducts] = useState<ProductListView[]>([]);
   const [materials, setMaterials] = useState<ProductMaterial[]>([]);
   const [colors, setColors] = useState<ProductColor[]>([]);
   const [tags, setTags] = useState<ProductTag[]>([]);
@@ -48,7 +47,7 @@ export function SelectInventorySheet({
     try {
       // Fetch products and attributes in parallel
       const [productsData, attributeLists] = await Promise.all([
-        getProductsWithAttributes(),
+        getProducts(),
         getProductAttributeLists(),
       ]);
 
@@ -63,7 +62,7 @@ export function SelectInventorySheet({
     }
   };
 
-  const handleProductSelect = (product: ProductWithAttributes) => {
+  const handleProductSelect = (product: ProductListView) => {
     // TODO: Open stock units selection for this product
     console.log("Selected product:", product);
     if (onProductSelect) {

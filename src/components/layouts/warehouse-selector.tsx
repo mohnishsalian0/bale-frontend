@@ -16,6 +16,8 @@ import { useSession } from "@/contexts/session-context";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
 import { useUserMutations } from "@/lib/query/hooks/users";
 import { getWarehouseFormattedAddress } from "@/lib/utils/warehouse";
+import { Warehouse } from "@/types/warehouses.types";
+import { PermissionGate } from "../auth/PermissionGate";
 
 interface WarehouseSelectorProps {
   open: boolean;
@@ -36,51 +38,52 @@ export default function WarehouseSelector({
   const pathname = usePathname();
   const router = useRouter();
 
-  const isAdmin = user.role === "admin";
-
   // Fetch warehouses using TanStack Query
   const { data: warehouses = [], isLoading: loading } = useWarehouses();
 
   // User mutations hook
   const { updateWarehouse: updateUserWarehouse } = useUserMutations();
 
-  const handleSelect = async (warehouseId: string) => {
-    try {
-      // If selecting the same warehouse, just close the sheet
-      if (warehouseId === currentWarehouse) {
-        onOpenChange(false);
-        return;
-      }
+  const handleSelect = (warehouseId: string) => {
+    // If selecting the same warehouse, just close the sheet
+    if (warehouseId === currentWarehouse) {
+      onOpenChange(false);
+      return;
+    }
 
-      // Find selected warehouse to get slug
-      const selectedWarehouse = warehouses.find((w) => w.id === warehouseId);
-      if (!selectedWarehouse) {
-        console.error("Warehouse not found");
-        return;
-      }
+    // Find selected warehouse to get slug
+    const selectedWarehouse = warehouses.find((w) => w.id === warehouseId);
+    if (!selectedWarehouse) {
+      console.error("Warehouse not found");
+      return;
+    }
 
-      // Update user's selected warehouse using mutation
-      await updateUserWarehouse.mutateAsync({
+    // Update user's selected warehouse using mutation
+    updateUserWarehouse.mutate(
+      {
         userId: user.id,
         warehouseId: warehouseId,
-      });
+      },
+      {
+        onSuccess: () => {
+          // Determine redirect path
+          let redirectPath = `/warehouse/${selectedWarehouse.slug}/dashboard`;
 
-      // Determine redirect path - preserve current page if within warehouse context
-      let redirectPath = `/warehouse/${selectedWarehouse.slug}/dashboard`;
+          const warehouseRouteMatch = pathname.match(
+            /^\/warehouse\/[^/]+\/(.+)$/,
+          );
+          if (warehouseRouteMatch) {
+            const pagePath = warehouseRouteMatch[1];
+            redirectPath = `/warehouse/${selectedWarehouse.slug}/${pagePath}`;
+          }
 
-      // Match pattern: /warehouse/[warehouse_slug]/[...rest]
-      const warehouseRouteMatch = pathname.match(/^\/warehouse\/[^/]+\/(.+)$/);
-      if (warehouseRouteMatch) {
-        // Preserve the page path after the warehouse slug
-        const pagePath = warehouseRouteMatch[1];
-        redirectPath = `/warehouse/${selectedWarehouse.slug}/${pagePath}`;
-      }
-
-      // Redirect to warehouse
-      router.push(redirectPath);
-    } catch (error) {
-      console.error("Error selecting warehouse:", error);
-    }
+          router.push(redirectPath);
+        },
+        onError: (error: Error) => {
+          console.error("Error selecting warehouse:", error);
+        },
+      },
+    );
   };
 
   const handleEdit = (warehouse: Warehouse, e: React.MouseEvent) => {
@@ -194,8 +197,11 @@ export default function WarehouseSelector({
                           </div>
 
                           {/* Action buttons - Only show for admins */}
-                          {isAdmin && (
-                            <div className="flex items-center gap-2 mt-2 text-sm">
+                          <div className="flex items-center gap-2 mt-2 text-sm">
+                            <PermissionGate
+                              permission="warehouses.update"
+                              mode="disable"
+                            >
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -204,16 +210,16 @@ export default function WarehouseSelector({
                                 <IconPencil />
                                 Edit
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => handleShare(warehouse, e)}
-                              >
-                                <IconShare />
-                                Share
-                              </Button>
-                            </div>
-                          )}
+                            </PermissionGate>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => handleShare(warehouse, e)}
+                            >
+                              <IconShare />
+                              Share
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -222,12 +228,12 @@ export default function WarehouseSelector({
               )}
 
               {/* Floating Action Button - Only show for admins */}
-              {isAdmin && (
+              <PermissionGate permission="warehouses.create" mode="disable">
                 <Fab
                   onClick={handleFabClick}
                   className="fixed bottom-4 right-4"
                 />
-              )}
+              </PermissionGate>
             </div>
           </div>
         </SheetContent>

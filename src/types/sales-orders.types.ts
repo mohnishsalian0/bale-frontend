@@ -2,7 +2,7 @@ import {
   ProductColor,
   ProductMaterial,
   ProductTag,
-} from "@/lib/queries/products";
+} from "@/types/products.types";
 import type { Tables } from "./database/supabase";
 
 type SalesOrder = Tables<"sales_orders">;
@@ -78,4 +78,36 @@ export interface SalesOrderDetailView extends SalesOrder {
   agent: Partner | null;
   warehouse: Warehouse | null;
   sales_order_items: SalesOrderItemDetailView[];
+}
+
+// =====================================================
+// CREATE/UPDATE TYPES (for mutations)
+// =====================================================
+
+/**
+ * Data for creating a new sales order
+ * Used in: create sales order flow
+ */
+export interface CreateSalesOrderData {
+  warehouse_id: string;
+  customer_id: string;
+  agent_id: string | null;
+  order_date: string;
+  expected_delivery_date: string | null;
+  advance_amount: number;
+  discount_type: string;
+  discount_value: number;
+  notes: string | null;
+  attachments: string[];
+  status: string;
+}
+
+/**
+ * Line item data for creating a sales order
+ * Used in: create sales order flow
+ */
+export interface CreateSalesOrderLineItem {
+  product_id: string;
+  required_quantity: number;
+  unit_rate: number;
 }

@@ -1,18 +1,27 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
-  getProductsWithAttributes,
-  getProductByIdWithAttributes,
-  getProductBySequenceNumberWithAttributes,
-  getProductsWithInventory,
-  getProductMaterials,
-  getProductColors,
-  getProductTags,
   getProductAttributeLists,
+  getProductById,
+  getProductBySequenceNumber,
+  getProductColors,
+  getProductMaterials,
+  getProducts,
+  getProductsWithInventory,
+  getProductTags,
+  createProductMaterial,
+  createProductColor,
+  createProductTag,
+  createProduct,
+  updateProduct,
+  uploadProductImages,
+  deleteProductImages,
+  updateProductImagesField,
 } from "@/lib/queries/products";
+import { ProductUpsertData } from "@/types/products.types";
 
 /**
  * Fetch all products with attributes
@@ -20,7 +29,7 @@ import {
 export function useProducts() {
   return useQuery({
     queryKey: queryKeys.products.all(),
-    queryFn: getProductsWithAttributes,
+    queryFn: getProducts,
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
   });
 }
@@ -31,7 +40,7 @@ export function useProducts() {
 export function useProduct(productId: string | null) {
   return useQuery({
     queryKey: queryKeys.products.detail(productId || ""),
-    queryFn: () => getProductByIdWithAttributes(productId!),
+    queryFn: () => getProductById(productId!),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
     enabled: !!productId,
   });
@@ -43,8 +52,7 @@ export function useProduct(productId: string | null) {
 export function useProductBySequence(sequenceNumber: string | null) {
   return useQuery({
     queryKey: queryKeys.products.bySequence(sequenceNumber || ""),
-    queryFn: () =>
-      getProductBySequenceNumberWithAttributes(Number(sequenceNumber)),
+    queryFn: () => getProductBySequenceNumber(Number(sequenceNumber)),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
     enabled: !!sequenceNumber,
   });
@@ -53,11 +61,12 @@ export function useProductBySequence(sequenceNumber: string | null) {
 /**
  * Fetch products with inventory for a warehouse
  */
-export function useProductsWithInventory(warehouseId: string) {
+export function useProductsWithInventory(warehouseId: string | null) {
   return useQuery({
-    queryKey: queryKeys.products.withInventory(warehouseId),
-    queryFn: () => getProductsWithInventory(warehouseId),
+    queryKey: queryKeys.products.withInventory(warehouseId || ""),
+    queryFn: () => getProductsWithInventory(warehouseId!),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+    enabled: !!warehouseId,
   });
 }
 
@@ -106,27 +115,130 @@ export function useProductAttributes() {
 }
 
 /**
- * Product mutations (create, update, delete)
- * Note: Actual mutation functions need to be implemented in queries/products.ts
+ * Attribute mutation hooks
+ */
+export function useCreateProductMaterial() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (name: string) => createProductMaterial(name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.materials() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.attributes() });
+    },
+  });
+}
+
+export function useCreateProductColor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (name: string) => createProductColor(name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.colors() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.attributes() });
+    },
+  });
+}
+
+export function useCreateProductTag() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (name: string) => createProductTag(name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.tags() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.attributes() });
+    },
+  });
+}
+
+/**
+ * Product mutations (create, update)
  */
 export function useProductMutations() {
-  // const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-  // These would need corresponding functions in queries/products.ts
-  // For now, returning placeholder structure
+  const create = useMutation({
+    mutationFn: ({
+      productData,
+      attributeIds,
+    }: {
+      productData: ProductUpsertData;
+      attributeIds: {
+        materialIds: string[];
+        colorIds: string[];
+        tagIds: string[];
+      };
+    }) => createProduct(productData, attributeIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
+    },
+  });
+
+  const update = useMutation({
+    mutationFn: ({
+      productId,
+      productData,
+      attributeIds,
+    }: {
+      productId: string;
+      productData: ProductUpsertData;
+      attributeIds: {
+        materialIds: string[];
+        colorIds: string[];
+        tagIds: string[];
+      };
+    }) => updateProduct(productId, productData, attributeIds),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.products.detail(variables.productId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
+    },
+  });
+
   return {
-    // createProduct: useMutation({
-    //   mutationFn: (data) => createProduct(data),
-    //   onSuccess: () => {
-    //     queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
-    //   },
-    // }),
-    // updateProduct: useMutation({
-    //   mutationFn: ({ id, data }) => updateProduct(id, data),
-    //   onSuccess: (_, variables) => {
-    //     queryClient.invalidateQueries({ queryKey: queryKeys.products.detail(variables.id) });
-    //     queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
-    //   },
-    // }),
+    create,
+    update,
+  };
+}
+
+/**
+ * Product image mutations
+ */
+export function useProductImageMutations() {
+  const upload = useMutation({
+    mutationFn: ({
+      companyId,
+      productId,
+      images,
+      offset,
+    }: {
+      companyId: string;
+      productId: string;
+      images: File[];
+      offset?: number;
+    }) => uploadProductImages(companyId, productId, images, offset),
+  });
+
+  const deleteImages = useMutation({
+    mutationFn: (urls: string[]) => deleteProductImages(urls),
+  });
+
+  const updateField = useMutation({
+    mutationFn: ({
+      productId,
+      imageUrls,
+    }: {
+      productId: string;
+      imageUrls: string[];
+    }) => updateProductImagesField(productId, imageUrls),
+  });
+
+  return {
+    upload,
+    deleteImages,
+    updateField,
   };
 }

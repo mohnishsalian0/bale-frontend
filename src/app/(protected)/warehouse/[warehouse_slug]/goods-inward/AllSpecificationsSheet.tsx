@@ -18,13 +18,13 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { Tables } from "@/types/database/supabase";
 import type { StockUnitSpec } from "./ProductSelectionStep";
+import { ProductListView } from "@/types/products.types";
 
 interface AllSpecificationsSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  product: Tables<"products"> | null;
+  product: ProductListView | null;
   units: StockUnitSpec[];
   onIncrementUnit: (unitId: string) => void;
   onDecrementUnit: (unitId: string) => void;

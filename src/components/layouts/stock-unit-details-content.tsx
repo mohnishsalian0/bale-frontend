@@ -7,13 +7,13 @@ import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import type { Tables } from "@/types/database/supabase";
-import type { ProductWithAttributes } from "@/lib/queries/products";
+import type { ProductListView } from "@/types/products.types";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 
 type StockUnit = Tables<"stock_units">;
 
 export interface StockUnitWithProduct extends StockUnit {
-  product: ProductWithAttributes | null;
+  product: ProductListView | null;
 }
 
 interface StockUnitDetailsContentProps {

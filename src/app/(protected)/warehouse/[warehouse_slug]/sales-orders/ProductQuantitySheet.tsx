@@ -22,13 +22,13 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
-import type { ProductWithInventory } from "@/lib/queries/products";
+import type { ProductWithInventoryListView } from "@/types/products.types";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 
 interface ProductQuantitySheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  product: ProductWithInventory | null;
+  product: ProductWithInventoryListView | null;
   initialQuantity?: number;
   onConfirm: (quantity: number) => void;
 }

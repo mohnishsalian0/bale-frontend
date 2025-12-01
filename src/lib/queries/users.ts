@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/client";
-import { Permission, User, UserUpdate } from "@/types/user.types";
+import { createClient } from "@/lib/supabase/browser";
+import { Permission, User, UserUpdate } from "@/types/users.types";
 
 /**
  * Fetch user
@@ -83,7 +83,7 @@ export async function getUserPermissions(roleName: string): Promise<string[]> {
   // Fetch permissions for this role
   const { data: permData, error: permError } = await supabase
     .from("role_permissions")
-    .select("permissions!inner(permission_path)")
+    .select("permissions!permission_id(permission_path)")
     .eq("role_id", roleData.id);
 
   if (permError) {
@@ -96,6 +96,8 @@ export async function getUserPermissions(roleName: string): Promise<string[]> {
   return (
     (permData?.map(
       (p: { permissions: Pick<Permission, "permission_path">[] }) =>
+        // @ts-expect-error permission is actually a single object
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         p.permissions.permission_path,
     ) as string[]) ?? []
   );

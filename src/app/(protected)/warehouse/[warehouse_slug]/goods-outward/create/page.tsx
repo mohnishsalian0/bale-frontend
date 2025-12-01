@@ -6,7 +6,7 @@ import { IconArrowLeft } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { QRScannerStep, ScannedStockUnit } from "../QRScannerStep";
 import { OutwardDetailsStep } from "../OutwardDetailsStep";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import type { TablesInsert } from "@/types/database/supabase";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";

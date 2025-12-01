@@ -1,7 +1,7 @@
 import { ComponentType } from "react";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
 import { IconCylinder, IconPackage, IconShirt } from "@tabler/icons-react";
-import { ProductWithInventory } from "../queries/products";
+import type { ProductWithInventoryListView } from "@/types/products.types";
 import { getMeasuringUnitAbbreviation } from "./measuring-units";
 import { pluralizeStockType } from "./pluralize";
 
@@ -125,10 +125,12 @@ export function getStockTypeDisplay(
 /**
  * Helper function to format available stock text
  */
-export function getAvailableStockText(product: ProductWithInventory): string {
+export function getAvailableStockText(
+  product: ProductWithInventoryListView,
+): string {
   const stockType = product.stock_type as StockType;
-  const units = product.in_stock_units;
-  const quantity = product.in_stock_quantity;
+  const units = product.in_stock.in_stock_units as number;
+  const quantity = product.in_stock.in_stock_quantity as number;
   const unitAbbreviation = getMeasuringUnitAbbreviation(
     product.measuring_unit as MeasuringUnit | null,
   );

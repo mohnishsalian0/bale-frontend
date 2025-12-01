@@ -15,7 +15,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/browser";
 import type { Tables } from "@/types/database/supabase";
 import type { UserRole } from "@/types/database/enums";
 import { useSession } from "@/contexts/session-context";
