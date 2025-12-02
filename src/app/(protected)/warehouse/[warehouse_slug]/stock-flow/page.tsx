@@ -95,7 +95,7 @@ export default function StockFlowPage() {
   // Transform and group data
   const { monthGroups, totalReceived, totalOutwarded } = useMemo(() => {
     // Transform inwards
-    const inwardItems: StockFlowItem[] = (inwards as any[]).map((r) => {
+    const inwardItems: StockFlowItem[] = inwards.map((r) => {
       const partnerName = getPartnerName(r.partner);
 
       const stockUnits = r.stock_units || [];
@@ -103,7 +103,7 @@ export default function StockFlowPage() {
 
       // Get unique products
       const uniqueProducts = new Set(
-        stockUnits.map((unit: any) => unit.product?.id).filter(Boolean),
+        stockUnits.map((unit) => unit.product?.id).filter(Boolean),
       );
       const productCount = uniqueProducts.size;
       const productName =
@@ -112,7 +112,7 @@ export default function StockFlowPage() {
           : firstProduct?.name || "Unknown Product";
 
       const totalQty = stockUnits.reduce(
-        (sum: number, unit: any) => sum + (Number(unit.initial_quantity) || 0),
+        (sum: number, unit) => sum + (Number(unit.initial_quantity) || 0),
         0,
       );
       const unit = firstProduct?.measuring_unit || "m";
@@ -132,7 +132,7 @@ export default function StockFlowPage() {
     });
 
     // Transform outwards
-    const outwardItems: StockFlowItem[] = (outwards as any[]).map((d) => {
+    const outwardItems: StockFlowItem[] = outwards.map((d) => {
       const partnerName = d.partner
         ? d.partner.company_name ||
           `${d.partner.first_name} ${d.partner.last_name}`
@@ -143,7 +143,7 @@ export default function StockFlowPage() {
 
       // Get unique products
       const uniqueProducts = new Set(
-        items.map((item: any) => item.stock_unit?.product?.id).filter(Boolean),
+        items.map((item) => item.stock_unit?.product?.id).filter(Boolean),
       );
       const productCount = uniqueProducts.size;
       const productName =
@@ -152,8 +152,7 @@ export default function StockFlowPage() {
           : firstProduct?.name || "Unknown Product";
 
       const totalQty = items.reduce(
-        (sum: number, item: any) =>
-          sum + (Number(item.quantity_dispatched) || 0),
+        (sum: number, item) => sum + (Number(item.quantity_dispatched) || 0),
         0,
       );
       const unit = firstProduct?.measuring_unit || "m";

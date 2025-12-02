@@ -34,14 +34,13 @@ export function useStockUnits(warehouseId: string, filters?: StockUnitFilters) {
  * Useful for product detail page to show stock flow history
  */
 export function useStockUnitsWithInward(
-  productId: string | null,
   warehouseId: string,
+  filters?: StockUnitFilters,
 ) {
   return useQuery({
     queryKey: queryKeys.stockUnits.all(warehouseId),
-    queryFn: () => getStockUnitsWithInward(productId!, warehouseId),
+    queryFn: () => getStockUnitsWithInward(warehouseId, filters),
     ...getQueryOptions(STALE_TIME.STOCK_UNITS, GC_TIME.TRANSACTIONAL),
-    enabled: !!productId,
   });
 }
 

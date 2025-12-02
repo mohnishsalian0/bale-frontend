@@ -361,9 +361,7 @@ export function ProductFormSheet({
       handleCancel();
     } catch (error) {
       console.error("Error saving product:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to save product";
-      toast.error(errorMessage);
+      toast.error("Failed to save product");
     }
   };
 

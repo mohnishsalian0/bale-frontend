@@ -62,8 +62,6 @@ BEGIN
         );
     END LOOP;
 
-    -- Return the batch ID
-    v_result := jsonb_build_object('id', v_batch_id);
-    RETURN v_result;
+    RETURN v_batch_id;
 END;
 $$;

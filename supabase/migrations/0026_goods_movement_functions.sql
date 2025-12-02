@@ -17,12 +17,22 @@ AS $$
 DECLARE
     v_inward_id UUID;
     v_company_id UUID;
+    v_warehouse_id UUID;
+    v_unit JSONB;
+    v_product_id UUID;
+    v_product_stock_type TEXT;
+    v_quantity DECIMAL;
+    v_existing_unit_id UUID;
+    v_existing_initial_qty DECIMAL;
+    v_existing_remaining_qty DECIMAL;
 BEGIN
     -- Derive company_id from JWT if not provided (short-circuit evaluation)
     v_company_id := COALESCE(
         (p_inward_data->>'company_id')::UUID,
         get_jwt_company_id()
     );
+
+    v_warehouse_id := (p_inward_data->>'warehouse_id')::UUID;
 
     -- Insert goods inward
     INSERT INTO goods_inwards (
@@ -44,7 +54,7 @@ BEGIN
     )
     VALUES (
         v_company_id,
-        (p_inward_data->>'warehouse_id')::UUID,
+        v_warehouse_id,
         p_inward_data->>'inward_type',
         (p_inward_data->>'inward_date')::DATE,
         (p_inward_data->>'expected_delivery_date')::DATE,
@@ -61,35 +71,93 @@ BEGIN
     )
     RETURNING id INTO v_inward_id;
 
-    -- Insert stock units
-    INSERT INTO stock_units (
-        company_id,
-        warehouse_id,
-        product_id,
-        created_from_inward_id,
-        remaining_quantity,
-        initial_quantity,
-        status,
-        quality_grade,
-        supplier_number,
-        warehouse_location,
-        notes,
-        created_by
-    )
-    SELECT
-        v_company_id,
-        (unit->>'warehouse_id')::UUID,
-        (unit->>'product_id')::UUID,
-        v_inward_id,
-        (unit->>'initial_quantity')::DECIMAL,
-        (unit->>'initial_quantity')::DECIMAL,
-        unit->>'status',
-        unit->>'quality_grade',
-        unit->>'supplier_number',
-        unit->>'warehouse_location',
-        unit->>'notes',
-        COALESCE((unit->>'created_by')::UUID, auth.uid())
-    FROM unnest(p_stock_units) AS unit;
+    -- Process each stock unit
+    FOREACH v_unit IN ARRAY p_stock_units
+    LOOP
+        v_product_id := (v_unit->>'product_id')::UUID;
+        v_quantity := (v_unit->>'initial_quantity')::DECIMAL;
+
+        -- Get product stock_type
+        SELECT stock_type INTO v_product_stock_type
+        FROM products
+        WHERE id = v_product_id;
+
+        -- Handle piece type products (singleton pattern)
+        IF v_product_stock_type = 'piece' THEN
+            -- Check if singleton stock unit exists for this product in this warehouse
+            SELECT id, initial_quantity, remaining_quantity
+            INTO v_existing_unit_id, v_existing_initial_qty, v_existing_remaining_qty
+            FROM stock_units
+            WHERE product_id = v_product_id
+              AND warehouse_id = v_warehouse_id
+              AND deleted_at IS NULL
+            LIMIT 1;
+
+            IF v_existing_unit_id IS NOT NULL THEN
+                -- Update existing singleton
+                UPDATE stock_units
+                SET
+                    initial_quantity = v_existing_initial_qty + v_quantity,
+                    remaining_quantity = v_existing_remaining_qty + v_quantity,
+                    updated_at = NOW()
+                WHERE id = v_existing_unit_id;
+            ELSE
+                -- Create new singleton for piece type
+                INSERT INTO stock_units (
+                    company_id,
+                    warehouse_id,
+                    product_id,
+                    created_from_inward_id,
+                    remaining_quantity,
+                    initial_quantity,
+                    status,
+                    quality_grade,
+                    created_by
+                )
+                VALUES (
+                    v_company_id,
+                    v_warehouse_id,
+                    v_product_id,
+                    v_inward_id,
+                    v_quantity,
+                    v_quantity,
+                    'in_stock',
+                    COALESCE(v_unit->>'quality_grade', 'A'),
+                    COALESCE((v_unit->>'created_by')::UUID, auth.uid())
+                );
+            END IF;
+        ELSE
+            -- Handle non-piece type products (create new stock units as usual)
+            INSERT INTO stock_units (
+                company_id,
+                warehouse_id,
+                product_id,
+                created_from_inward_id,
+                remaining_quantity,
+                initial_quantity,
+                status,
+                quality_grade,
+                supplier_number,
+                warehouse_location,
+                notes,
+                created_by
+            )
+            VALUES (
+                v_company_id,
+                v_warehouse_id,
+                v_product_id,
+                v_inward_id,
+                v_quantity,
+                v_quantity,
+                v_unit->>'status',
+                v_unit->>'quality_grade',
+                v_unit->>'supplier_number',
+                v_unit->>'warehouse_location',
+                v_unit->>'notes',
+                COALESCE((v_unit->>'created_by')::UUID, auth.uid())
+            );
+        END IF;
+    END LOOP;
 
     -- Return the inward ID
     RETURN v_inward_id;

@@ -44,7 +44,7 @@ export async function getCurrentUser(): Promise<User | null> {
     .from("users")
     .select("*")
     .eq("auth_user_id", session.user.id)
-    .single();
+    .single<User>();
 
   if (userError) {
     console.error("Error fetching user profile:", userError.message);
@@ -106,7 +106,7 @@ export async function getUserWarehouseIds(): Promise<string[]> {
     return [];
   }
 
-  return (data || []).map((w) => w.id);
+  return ((data as { id: string }[]) || []).map((w) => w.id);
 }
 
 export async function requireAdmin() {

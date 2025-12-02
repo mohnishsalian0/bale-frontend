@@ -44,7 +44,9 @@ export function InwardDetailsStep({ formData, onChange }: DetailsStepProps) {
   const { warehouse } = useSession();
   const [partners, setPartners] = useState<Tables<"partners">[]>([]);
   const [warehouses, setWarehouses] = useState<Tables<"warehouses">[]>([]);
-  const [jobWorks, setJobWorks] = useState<{ id: string; name: string }[]>([]);
+  const [jobWorks, setJobWorks] = useState<
+    { id: string; job_work_number: string }[]
+  >([]);
   const [salesOrders, setSalesOrders] = useState<
     { id: string; order_number: string }[]
   >([]);
@@ -73,7 +75,7 @@ export function InwardDetailsStep({ formData, onChange }: DetailsStepProps) {
         // Fetch job works (placeholder - adjust based on actual schema)
         const { data: jobWorksData } = await supabase
           .from("job_works")
-          .select("id, job_work_number")
+          .select("id, sequence_number")
           .eq("warehouse_id", warehouse.id)
           .order("created_at", { ascending: false });
 
@@ -87,9 +89,9 @@ export function InwardDetailsStep({ formData, onChange }: DetailsStepProps) {
         setPartners(partnersData || []);
         setWarehouses(warehousesData || []);
         setJobWorks(
-          jobWorksData?.map((jw) => ({
+          jobWorksData?.map((jw: { id: string; sequence_number: string }) => ({
             id: jw.id,
-            name: jw.job_work_number,
+            job_work_number: jw.sequence_number,
           })) || [],
         );
         setSalesOrders(salesOrdersData || []);
@@ -101,7 +103,15 @@ export function InwardDetailsStep({ formData, onChange }: DetailsStepProps) {
     };
 
     fetchData();
-  }, []);
+  }, [
+    supabase,
+    warehouse.id,
+    setLoading,
+    setPartners,
+    setWarehouses,
+    setJobWorks,
+    setSalesOrders,
+  ]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -214,7 +224,7 @@ export function InwardDetailsStep({ formData, onChange }: DetailsStepProps) {
             <SelectContent>
               {jobWorks.map((jw) => (
                 <SelectItem key={jw.id} value={jw.id}>
-                  {jw.name}
+                  {jw.job_work_number}
                 </SelectItem>
               ))}
             </SelectContent>

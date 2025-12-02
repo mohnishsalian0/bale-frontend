@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,12 +17,11 @@ import { StockStatusBadge } from "@/components/ui/stock-status-badge";
 import { QRScannerOverlay } from "@/components/ui/qr-scanner-overlay";
 import { StockUnitDetailsContent } from "@/components/layouts/stock-unit-details-content";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { createClient } from "@/lib/supabase/browser";
 import { formatStockUnitNumber } from "@/lib/utils/product";
 import { useSession } from "@/contexts/session-context";
 import type { StockType, StockUnitStatus } from "@/types/database/enums";
-import { PRODUCT_WITH_ATTRIBUTES_SELECT } from "@/lib/queries/products";
-import { StockUnitWithProductDetailView } from "@/types/stock-units.types";
+import { useStockUnitWithProductDetail } from "@/lib/query/hooks/stock-units";
+import { IDetectedBarcode } from "@yudiel/react-qr-scanner";
 
 const SCAN_DELAY = 1200;
 
@@ -37,15 +36,51 @@ export function DashboardScannerModal({
 }: DashboardScannerModalProps) {
   const { warehouse } = useSession();
   const isMobile = useIsMobile();
-  const supabase = createClient();
 
   const [torch, setTorch] = useState(false);
   const [paused, setPaused] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [scannedStockUnit, setScannedStockUnit] =
-    useState<StockUnitWithProductDetailView | null>(null);
+  const [scannedStockUnitId, setScannedStockUnitId] = useState<string | null>(
+    null,
+  );
 
-  const handleScan = async (detectedCodes: any[]) => {
+  // Fetch stock unit detail when scanned
+  const { data: scannedStockUnit, isError: isStockUnitError } =
+    useStockUnitWithProductDetail(scannedStockUnitId);
+
+  // Handle query results
+  useEffect(() => {
+    if (!scannedStockUnitId) return;
+
+    if (isStockUnitError) {
+      queueMicrotask(() => setError("Stock unit not found"));
+      setTimeout(() => {
+        setError(null);
+        setPaused(false);
+        setScannedStockUnitId(null);
+      }, SCAN_DELAY);
+      return;
+    }
+
+    if (scannedStockUnit) {
+      // Check if stock unit belongs to current warehouse
+      if (scannedStockUnit.warehouse_id !== warehouse.id) {
+        queueMicrotask(() =>
+          setError("Stock unit not found in this warehouse"),
+        );
+        setTimeout(() => {
+          setError(null);
+          setPaused(false);
+          setScannedStockUnitId(null);
+        }, SCAN_DELAY);
+        return;
+      }
+      // Successfully loaded stock unit from current warehouse
+      // Scanner remains paused until user clicks Resume
+    }
+  }, [scannedStockUnit, isStockUnitError, scannedStockUnitId, warehouse.id]);
+
+  const handleScan = async (detectedCodes: IDetectedBarcode[]) => {
     if (paused || detectedCodes.length === 0) return;
 
     // Pause scanning temporarily to process
@@ -53,73 +88,24 @@ export function DashboardScannerModal({
 
     const decodedText = detectedCodes[0].rawValue;
 
-    try {
-      // Fetch stock unit from database by ID
-      const { data: stockUnit, error: stockError } = await supabase
-        .from("stock_units")
-        .select("*")
-        .eq("id", decodedText)
-        .eq("warehouse_id", warehouse.id)
-        .single();
-
-      if (stockError || !stockUnit) {
-        setError("Stock unit not found in this warehouse");
-        setTimeout(() => {
-          setError(null);
-          setPaused(false);
-        }, SCAN_DELAY);
-        return;
-      }
-
-      // Fetch product details with attributes
-      const { data: product, error: productError } = await supabase
-        .from("products")
-        .select(
-          `
-					${PRODUCT_WITH_ATTRIBUTES_SELECT}
-				`,
-        )
-        .eq("id", stockUnit.product_id)
-        .single();
-
-      if (productError || !product) {
-        setError("Product not found");
-        setTimeout(() => {
-          setError(null);
-          setPaused(false);
-        }, SCAN_DELAY);
-        return;
-      }
-
-      // Set the scanned stock unit with product data
-      setScannedStockUnit({
-        ...stockUnit,
-        product,
-      });
-
-      // Scanner remains paused until user clicks Resume
-    } catch (err) {
-      console.error("Error fetching stock unit:", err);
-      setError("Invalid QR code");
-      setTimeout(() => {
-        setError(null);
-        setPaused(false);
-      }, SCAN_DELAY);
-    }
+    // Set the scanned stock unit ID to trigger the query
+    setScannedStockUnitId(decodedText);
   };
 
-  const handleError = (err: any) => {
+  const handleError = (err: unknown) => {
     console.error("Scanner error:", err);
-    if (err?.name === "NotAllowedError") {
-      setError("Camera permission denied");
-    } else if (err?.name === "NotFoundError") {
-      setError("No camera found");
+    if (err instanceof Error) {
+      if (err?.name === "NotAllowedError") {
+        setError("Camera permission denied");
+      } else if (err?.name === "NotFoundError") {
+        setError("No camera found");
+      }
     }
   };
 
   const handleResume = () => {
     // Clear scanned unit and resume scanning
-    setScannedStockUnit(null);
+    setScannedStockUnitId(null);
     setPaused(false);
   };
 
@@ -134,7 +120,7 @@ export function DashboardScannerModal({
       setTorch(false);
       setPaused(false);
       setError(null);
-      setScannedStockUnit(null);
+      setScannedStockUnitId(null);
     }
   };
 

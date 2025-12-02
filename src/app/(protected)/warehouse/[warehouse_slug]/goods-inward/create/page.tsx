@@ -14,8 +14,8 @@ import { AllSpecificationsSheet } from "../AllSpecificationsSheet";
 import { PieceQuantitySheet } from "../PieceQuantitySheet";
 import { InwardDetailsStep } from "../InwardDetailsStep";
 import { ProductFormSheet } from "../../inventory/ProductFormSheet";
-import { createClient } from "@/lib/supabase/browser";
 import { useProducts, useProductAttributes } from "@/lib/query/hooks/products";
+import { useStockFlowMutations } from "@/lib/query/hooks/stock-flow";
 import type { TablesInsert } from "@/types/database/supabase";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
@@ -35,13 +35,14 @@ interface DetailsFormData {
 
 type FormStep = "products" | "details";
 
-const supabase = createClient();
-
 export default function CreateGoodsInwardPage() {
   const router = useRouter();
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
   const [currentStep, setCurrentStep] = useState<FormStep>("products");
+
+  // Mutations
+  const { createInwardWithUnits } = useStockFlowMutations(warehouse.id);
 
   // Fetch products and attributes using TanStack Query
   const { data: productsData = [], isLoading: productsLoading } = useProducts();
@@ -233,141 +234,94 @@ export default function CreateGoodsInwardPage() {
     if (!canSubmit) return;
     setSaving(true);
 
-    try {
-      // Map linkToType to inward_type
-      const inwardTypeMap: Record<typeof detailsFormData.linkToType, string> = {
-        purchase_order: "other",
-        job_work: "job_work",
-        sales_return: "sales_return",
-        other: "other",
-      };
+    // Map linkToType to inward_type
+    const inwardTypeMap: Record<typeof detailsFormData.linkToType, string> = {
+      purchase_order: "other",
+      job_work: "job_work",
+      sales_return: "sales_return",
+      other: "other",
+    };
 
-      // Prepare inward data
-      const inwardData: Omit<
-        TablesInsert<"goods_inwards">,
-        "created_by" | "sequence_number"
-      > = {
-        warehouse_id: warehouse.id,
-        inward_type: inwardTypeMap[detailsFormData.linkToType] as
-          | "job_work"
-          | "sales_return"
-          | "other",
-        inward_date: detailsFormData.inwardDate || undefined,
-        transport_reference_number: detailsFormData.invoiceNumber || undefined,
-        partner_id:
-          detailsFormData.receivedFromType === "partner"
-            ? detailsFormData.receivedFromId
-            : undefined,
-        from_warehouse_id:
-          detailsFormData.receivedFromType === "warehouse"
-            ? detailsFormData.receivedFromId
-            : undefined,
-        job_work_id:
-          detailsFormData.linkToType === "job_work" &&
-          detailsFormData.linkToValue
-            ? detailsFormData.linkToValue
-            : undefined,
-        sales_order_id:
-          detailsFormData.linkToType === "sales_return" &&
-          detailsFormData.linkToValue
-            ? detailsFormData.linkToValue
-            : undefined,
-        other_reason:
-          detailsFormData.linkToType === "other" && detailsFormData.linkToValue
-            ? detailsFormData.linkToValue
-            : undefined,
-        notes: detailsFormData.notes || undefined,
-      };
+    // Prepare inward data
+    const inwardData: Omit<
+      TablesInsert<"goods_inwards">,
+      "created_by" | "sequence_number"
+    > = {
+      warehouse_id: warehouse.id,
+      inward_type: inwardTypeMap[detailsFormData.linkToType] as
+        | "job_work"
+        | "sales_return"
+        | "other",
+      inward_date: detailsFormData.inwardDate || undefined,
+      transport_reference_number: detailsFormData.invoiceNumber || undefined,
+      partner_id:
+        detailsFormData.receivedFromType === "partner"
+          ? detailsFormData.receivedFromId
+          : undefined,
+      from_warehouse_id:
+        detailsFormData.receivedFromType === "warehouse"
+          ? detailsFormData.receivedFromId
+          : undefined,
+      job_work_id:
+        detailsFormData.linkToType === "job_work" && detailsFormData.linkToValue
+          ? detailsFormData.linkToValue
+          : undefined,
+      sales_order_id:
+        detailsFormData.linkToType === "sales_return" &&
+        detailsFormData.linkToValue
+          ? detailsFormData.linkToValue
+          : undefined,
+      other_reason:
+        detailsFormData.linkToType === "other" && detailsFormData.linkToValue
+          ? detailsFormData.linkToValue
+          : undefined,
+      notes: detailsFormData.notes || undefined,
+    };
 
-      // Handle piece type products separately (update singleton stock units)
-      const pieceProducts = products.filter(
-        (p) => p.stock_type === "piece" && p.units.length > 0,
-      );
-      for (const pieceProduct of pieceProducts) {
-        const quantity = pieceProduct.units[0]?.quantity || 0;
-        if (quantity <= 0) continue;
+    // Prepare stock units for all products (RPC handles piece vs non-piece)
+    const stockUnits: Omit<
+      TablesInsert<"stock_units">,
+      "created_by" | "modified_by" | "sequence_number"
+    >[] = [];
 
-        // Find existing singleton stock unit or create it
-        const { data: existingUnit } = await supabase
-          .from("stock_units")
-          .select("*")
-          .eq("product_id", pieceProduct.id)
-          .eq("warehouse_id", warehouse.id)
-          .single();
+    for (const product of products) {
+      if (product.units.length === 0) continue;
 
-        if (existingUnit) {
-          // Update existing singleton
-          await supabase
-            .from("stock_units")
-            .update({
-              initial_quantity: existingUnit.initial_quantity + quantity,
-              remaining_quantity: existingUnit.remaining_quantity + quantity,
-            })
-            .eq("id", existingUnit.id);
-        } else {
-          // Create new singleton stock unit
-          await supabase.from("stock_units").insert({
+      for (const unit of product.units) {
+        // For piece type: only one unit with total quantity
+        // For non-piece type: multiple stock units based on count
+        const unitCount = product.stock_type === "piece" ? 1 : unit.count;
+
+        for (let i = 0; i < unitCount; i++) {
+          stockUnits.push({
             warehouse_id: warehouse.id,
-            product_id: pieceProduct.id,
-            initial_quantity: quantity,
-            remaining_quantity: quantity,
+            product_id: product.id,
+            initial_quantity: unit.quantity,
+            remaining_quantity: unit.quantity,
             status: "in_stock",
-            quality_grade: "A",
+            quality_grade: unit.grade || null,
+            supplier_number: unit.supplier_number || null,
+            warehouse_location: unit.location || null,
+            notes: unit.notes || null,
           });
         }
       }
-
-      // Prepare stock units for non-piece products
-      const stockUnits: Omit<
-        TablesInsert<"stock_units">,
-        "created_by" | "modified_by" | "sequence_number"
-      >[] = [];
-      for (const product of products) {
-        if (product.units.length === 0) continue;
-        if (product.stock_type === "piece") continue; // Skip piece products (handled above)
-
-        for (const unit of product.units) {
-          // Create multiple stock units based on count
-          for (let i = 0; i < unit.count; i++) {
-            stockUnits.push({
-              warehouse_id: warehouse.id,
-              product_id: product.id,
-              initial_quantity: unit.quantity,
-              remaining_quantity: unit.quantity,
-              status: "in_stock",
-              quality_grade: unit.grade || null,
-              supplier_number: unit.supplier_number || null,
-              warehouse_location: unit.location || null,
-              notes: unit.notes || null,
-            });
-          }
-        }
-      }
-
-      // Call RPC function to create inward with stock units atomically
-      const { data: _result, error: rpcError } = await supabase.rpc(
-        "create_goods_inward_with_units",
-        {
-          p_inward_data: inwardData,
-          p_stock_units: stockUnits,
-        },
-      );
-
-      if (rpcError) throw rpcError;
-
-      // Success! Show toast and redirect to stock flow
-      toast.success("Goods inward created successfully");
-      router.push(`/warehouse/${warehouse.slug}/stock-flow`);
-    } catch (error) {
-      console.error("Error creating goods inward:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to create goods inward",
-      );
-    } finally {
-      setSaving(false);
     }
+
+    // Use mutation to create inward with stock units atomically
+    await createInwardWithUnits.mutateAsync(
+      { inwardData, stockUnits },
+      {
+        onSuccess: () => {
+          toast.success("Goods inward created successfully");
+          router.push(`/warehouse/${warehouse.slug}/stock-flow`);
+        },
+        onError: (error) => {
+          console.error("Error creating goods inward:", error);
+          toast.error("Failed to create goods inward");
+        },
+      },
+    );
   };
 
   // Get current product's units for AllSpecsSheet

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   RadioGroup as RadioGroupPills,
@@ -16,9 +16,9 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { createClient } from "@/lib/supabase/browser";
-import type { Tables } from "@/types/database/supabase";
 import type { UserRole } from "@/types/database/enums";
 import { useSession } from "@/contexts/session-context";
+import { useWarehouses } from "@/lib/query/hooks/warehouses";
 
 interface InviteFormSheetProps {
   open: boolean;
@@ -30,8 +30,6 @@ interface InviteFormData {
   role: UserRole;
   warehouseIds: string[];
 }
-
-type WarehouseRow = Tables<"warehouses">;
 
 export function InviteFormSheet({
   open,
@@ -46,34 +44,8 @@ export function InviteFormSheet({
 
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-  const [warehouses, setWarehouses] = useState<WarehouseRow[]>([]);
-  const [loadingWarehouses, setLoadingWarehouses] = useState(false);
 
-  const supabase = createClient();
-
-  // Fetch warehouses when sheet opens
-  useEffect(() => {
-    if (open) {
-      fetchWarehouses();
-    }
-  }, [open]);
-
-  const fetchWarehouses = async () => {
-    try {
-      setLoadingWarehouses(true);
-      const { data, error } = await supabase
-        .from("warehouses")
-        .select("*")
-        .order("name", { ascending: true });
-
-      if (error) throw error;
-      setWarehouses(data || []);
-    } catch (error) {
-      console.error("Error fetching warehouses:", error);
-    } finally {
-      setLoadingWarehouses(false);
-    }
-  };
+  const { data: warehouses = [], isLoading: loading } = useWarehouses();
 
   const handleWarehouseToggle = (warehouseId: string) => {
     setFormData((prev) => ({
@@ -101,7 +73,7 @@ export function InviteFormSheet({
       const { data: company } = await supabase
         .from("companies")
         .select("name")
-        .single();
+        .single<{ name: string }>();
 
       if (!company) {
         throw new Error("Failed to fetch company details");
@@ -112,6 +84,7 @@ export function InviteFormSheet({
       expiresAt.setDate(expiresAt.getDate() + 7);
 
       // Create invite using RPC function
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const { data: token, error: inviteError } = await supabase.rpc(
         "create_staff_invite",
         {
@@ -227,7 +200,7 @@ The Bale Team`;
               {formData.role === "staff" && (
                 <div className="flex flex-col gap-3">
                   <Label>Assign warehouses</Label>
-                  {loadingWarehouses ? (
+                  {loading ? (
                     <p className="text-sm text-gray-500">
                       Loading warehouses...
                     </p>

@@ -94,7 +94,7 @@ export default function CheckoutPage() {
         clearCart();
       }
     };
-  }, []);
+  }, [clearCart, router, slug, submitting]);
 
   // Redirect if cart is empty
   useEffect(() => {

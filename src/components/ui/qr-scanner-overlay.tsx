@@ -1,7 +1,7 @@
 "use client";
 
 import { IconBolt } from "@tabler/icons-react";
-import { Scanner } from "@yudiel/react-qr-scanner";
+import { IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
 import { Button } from "@/components/ui/button";
 
 interface QRScannerOverlayProps {
@@ -20,11 +20,11 @@ interface QRScannerOverlayProps {
   /**
    * Callback when QR code is scanned
    */
-  onScan: (detectedCodes: any[]) => void;
+  onScan: (detectedCodes: IDetectedBarcode[]) => void;
   /**
    * Callback when scanner encounters an error
    */
-  onError: (error: any) => void;
+  onError: (error: unknown) => void;
   /**
    * Whether to show the resume scanning button
    */

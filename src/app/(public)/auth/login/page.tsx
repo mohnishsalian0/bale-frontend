@@ -36,9 +36,13 @@ function LoginForm() {
       }
 
       // OAuth redirect will happen automatically
-    } catch (err: any) {
-      console.error("Error logging in:", err);
-      setError(err.message || "Failed to sign in with Google");
+    } catch (error) {
+      console.error("Error logging in:", error);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Failed to sign in with Google");
+      }
       setLoading(false);
     }
   };

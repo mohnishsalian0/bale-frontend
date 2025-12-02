@@ -21,72 +21,40 @@ import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
 import { useQRBatches } from "@/lib/query/hooks/qr-batches";
-import { useProducts } from "@/lib/query/hooks/products";
-
-interface QRBatch {
-  id: string;
-  batchName: string;
-  imageUrl: string | null;
-  itemCount: number;
-  createdAt: string;
-}
-
-interface Product {
-  id: string;
-  name: string;
-}
+import type { QRBatchListView } from "@/types/qr-batches.types";
+import type { ProductListView } from "@/types/products.types";
 
 export default function QRCodesPage() {
   const router = useRouter();
   const { warehouse } = useSession();
   const [selectedProduct, setSelectedProduct] = useState<string>("all");
 
-  // Fetch data using TanStack Query
+  // Fetch data using TanStack Query (with database-level filtering)
   const {
-    data: batchesData = [],
-    isLoading: batchesLoading,
-    isError: batchesError,
+    data: batches = [],
+    isLoading: loading,
+    isError: error,
     refetch: refetchBatches,
-  } = useQRBatches(warehouse.id);
-  const { data: productsData = [], isLoading: productsLoading } = useProducts();
+  } = useQRBatches(warehouse.id, {
+    product_id: selectedProduct !== "all" ? selectedProduct : undefined,
+  });
 
-  const loading = batchesLoading || productsLoading;
-  const error = batchesError;
+  // Extract unique products from all batches for the dropdown
+  const products: ProductListView[] = useMemo(() => {
+    const productMap = new Map<string, ProductListView>();
 
-  // Transform products for dropdown
-  const products: Product[] = useMemo(() => {
-    return productsData.map((p: any) => ({
-      id: p.id,
-      name: p.name,
-    }));
-  }, [productsData]);
+    batches.forEach((batch) => {
+      batch.distinct_products.forEach(({ product }) => {
+        if (!productMap.has(product.id)) {
+          productMap.set(product.id, product);
+        }
+      });
+    });
 
-  // Transform and filter batches
-  const batches: QRBatch[] = useMemo(() => {
-    let transformedBatches = (batchesData as any[]).map((batch: any) => ({
-      id: batch.id,
-      batchName: batch.batch_name,
-      imageUrl: batch.image_url,
-      itemCount: batch.qr_batch_items?.length || 0,
-      createdAt: batch.created_at,
-      productIds: new Set(
-        (batch.qr_batch_items || [])
-          .map((item: any) => item.stock_unit?.product_id)
-          .filter(Boolean),
-      ),
-    }));
+    return Array.from(productMap.values());
+  }, [batches]);
 
-    // Filter by product if selected
-    if (selectedProduct !== "all") {
-      transformedBatches = transformedBatches.filter((batch: any) =>
-        batch.productIds.has(selectedProduct),
-      );
-    }
-
-    return transformedBatches;
-  }, [batchesData, selectedProduct]);
-
-  const handleShare = async (batch: QRBatch) => {
+  const handleShare = async (batch: QRBatchListView) => {
     try {
       toast.loading("Generating PDF...", { id: "share-pdf" });
 
@@ -133,7 +101,7 @@ export default function QRCodesPage() {
     }
   };
 
-  const handleDownload = async (batch: QRBatch) => {
+  const handleDownload = async (batch: QRBatchListView) => {
     try {
       toast.loading("Generating PDF...", { id: "download-pdf" });
 
@@ -225,24 +193,24 @@ export default function QRCodesPage() {
                 <ImageWrapper
                   size="lg"
                   shape="square"
-                  imageUrl={batch.imageUrl || undefined}
-                  alt={batch.batchName}
+                  imageUrl={batch.image_url || undefined}
+                  alt={batch.batch_name}
                   placeholderIcon={IconQrcode}
                 />
 
                 {/* Batch Info */}
                 <div className="flex-1 flex flex-col items-start">
                   <p className="text-base font-medium text-gray-900">
-                    {batch.batchName}
+                    {batch.batch_name}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {batch.itemCount} {batch.itemCount === 1 ? "code" : "codes"}
+                    {batch.item_count} {batch.item_count === 1 ? "code" : "codes"}
                   </p>
                   <p
                     className="text-xs text-gray-500"
-                    title={formatAbsoluteDate(batch.createdAt)}
+                    title={formatAbsoluteDate(batch.created_at)}
                   >
-                    {formatCreatedAt(batch.createdAt)}
+                    {formatCreatedAt(batch.created_at)}
                   </p>
                 </div>
 

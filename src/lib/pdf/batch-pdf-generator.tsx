@@ -6,6 +6,7 @@ import {
   type LabelData,
 } from "./qr-label-generator";
 import type { QRTemplateField } from "@/app/(protected)/warehouse/[warehouse_slug]/qr-codes/QRTemplateCustomisationStep";
+import { getQRBatchById } from "@/lib/queries/qr-batches";
 
 /**
  * Generate PDF blob from stock units
@@ -61,57 +62,10 @@ export async function generateBatchPDF(
 ): Promise<{ blob: Blob; batchName: string }> {
   const supabase = createClient();
 
-  // Fetch batch details
-  const { data: batch, error: batchError } = await supabase
-    .from("qr_batches")
-    .select("batch_name, fields_selected")
-    .eq("id", batchId)
-    .single();
-
-  if (batchError) throw batchError;
-  if (!batch) throw new Error("Batch not found");
-
-  // Fetch stock units with full product data
-  const { data: batchItems, error: itemsError } = await supabase
-    .from("qr_batch_items")
-    .select(
-      `
-			stock_unit_id,
-			stock_units (
-				id,
-				sequence_number,
-				manufacturing_date,
-				initial_quantity,
-				quality_grade,
-				warehouse_location,
-				products (
-					name,
-					sequence_number,
-					hsn_code,
-					stock_type,
-					gsm,
-					selling_price_per_unit,
-					product_material_assignments (
-						material:product_materials (
-							id,
-							name
-						)
-					),
-					product_color_assignments (
-						color:product_colors (
-							id,
-							name
-						)
-					)
-				)
-			)
-		`,
-    )
-    .eq("batch_id", batchId);
-
-  if (itemsError) throw itemsError;
-  if (!batchItems || batchItems.length === 0) {
-    throw new Error("No stock units found in batch");
+  // Fetch batch with full details using centralized query
+  const batch = await getQRBatchById(batchId);
+  if (!batch) {
+    throw new Error("Batch not found");
   }
 
   // Fetch company logo
@@ -119,42 +73,35 @@ export async function generateBatchPDF(
     .from("companies")
     .select("logo_url")
     .eq("id", companyId)
-    .single();
+    .single<{ logo_url: string }>();
 
   if (companyError) throw companyError;
 
-  // Transform data to LabelData format
-  const stockUnits: LabelData[] = batchItems
-    .map((item: any) => {
-      const unit = item.stock_units;
-      if (!unit) return null;
+  // Transform batch items to LabelData format
+  const stockUnits: LabelData[] = batch.qr_batch_items.map((item) => {
+    const unit = item.stock_unit!;
+    const product = unit.product!;
 
-      return {
-        id: unit.id,
-        sequence_number: unit.sequence_number,
-        manufacturing_date: unit.manufacturing_date,
-        initial_quantity: unit.initial_quantity,
-        quality_grade: unit.quality_grade,
-        warehouse_location: unit.warehouse_location,
-        product: {
-          name: unit.products?.name || "",
-          sequence_number: unit.products?.sequence_number || 0,
-          hsn_code: unit.products?.hsn_code,
-          stock_type: unit.products?.stock_type,
-          gsm: unit.products?.gsm,
-          selling_price_per_unit: unit.products?.selling_price_per_unit,
-          materials:
-            unit.products?.product_material_assignments
-              ?.map((a: any) => a.material)
-              .filter(Boolean) || [],
-          colors:
-            unit.products?.product_color_assignments
-              ?.map((a: any) => a.color)
-              .filter(Boolean) || [],
-        },
-      };
-    })
-    .filter(Boolean) as LabelData[];
+    return {
+      id: unit.id,
+      sequence_number: unit.sequence_number,
+      manufacturing_date: unit.manufacturing_date,
+      initial_quantity: unit.initial_quantity,
+      quality_grade: unit.quality_grade,
+      warehouse_location: unit.warehouse_location,
+      product: {
+        name: product.name,
+        sequence_number: product.sequence_number,
+        hsn_code: product.hsn_code,
+        stock_type: product.stock_type,
+        gsm: product.gsm,
+        selling_price_per_unit: product.selling_price_per_unit,
+        // Product data already transformed with materials/colors arrays
+        materials: product.materials || [],
+        colors: product.colors || [],
+      },
+    };
+  });
 
   const selectedFields = (batch.fields_selected || []) as QRTemplateField[];
   const companyLogoUrl = companyData?.logo_url || null;

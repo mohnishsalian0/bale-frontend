@@ -24,9 +24,13 @@ export default function TestPage() {
 
         setStatus("connected");
         setTables(["companies", "users", "warehouses", "invites"]);
-      } catch (err: any) {
+      } catch (error) {
         setStatus("error");
-        setError(err.message || "Unknown error");
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError("Unknown error");
+        }
       }
     }
 

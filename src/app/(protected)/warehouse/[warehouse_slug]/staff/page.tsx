@@ -57,7 +57,7 @@ export default function StaffPage() {
 
       // Fetch warehouse assignments for each user
       const staffWithWarehouses = await Promise.all(
-        (usersData || []).map(async (user: any) => {
+        (usersData || []).map(async (user) => {
           const { data: userWarehouses } = await supabase
             .from("user_warehouses")
             .select(

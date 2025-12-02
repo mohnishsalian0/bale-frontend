@@ -285,12 +285,10 @@ export async function getGoodsInwardByNumber(
     .eq("sequence_number", sequenceNumber)
     .single<InwardDetailViewRaw>();
 
-  if (error) {
-    console.error("Error fetching goods inward by sequence number:", error);
-    return null;
-  }
+  if (error) throw error;
+  if (!data) throw new Error("No goods inward found");
 
-  return data ? transformInwardDetailView(data) : null;
+  return transformInwardDetailView(data);
 }
 
 /**
@@ -298,7 +296,7 @@ export async function getGoodsInwardByNumber(
  */
 export async function getGoodsOutwardByNumber(
   sequenceNumber: string,
-): Promise<OutwardDetailView | null> {
+): Promise<OutwardDetailView> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -324,12 +322,10 @@ export async function getGoodsOutwardByNumber(
     .eq("sequence_number", sequenceNumber)
     .single<OutwardDetailViewRaw>();
 
-  if (error) {
-    console.error("Error fetching goods outward by sequence number:", error);
-    return null;
-  }
+  if (error) throw error;
+  if (!data) throw new Error("No goods outward found");
 
-  return data ? transformOutwardDetailView(data) : null;
+  return transformOutwardDetailView(data);
 }
 
 /**
@@ -371,47 +367,62 @@ export async function getOutwardItemsByProduct(
 }
 
 /**
- * Create a new goods inward
- * Note: For complex creation with stock units, use RPC function if available
+ * Create a new goods inward with stock units atomically using RPC
  */
-export async function createGoodsInward(
-  inward: TablesInsert<"goods_inwards">,
+export async function createGoodsInwardWithUnits(
+  inwardData: Omit<
+    TablesInsert<"goods_inwards">,
+    "created_by" | "sequence_number"
+  >,
+  stockUnits: Omit<
+    TablesInsert<"stock_units">,
+    "created_by" | "modified_by" | "sequence_number"
+  >[],
 ): Promise<string> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
-    .from("goods_inwards")
-    .insert(inward)
-    .select()
-    .single<{ id: string }>();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { data, error } = await supabase.rpc("create_goods_inward_with_units", {
+    p_inward_data: inwardData,
+    p_stock_units: stockUnits,
+  });
 
   if (error) {
     console.error("Error creating goods inward:", error);
     throw error;
   }
 
-  return data.id;
+  return data as string;
 }
 
 /**
- * Create a new goods outward
- * Note: For complex creation with items, use RPC function if available
+ * Create a new goods outward with items atomically using RPC
  */
-export async function createGoodsOutward(
-  outward: TablesInsert<"goods_outwards">,
+export async function createGoodsOutwardWithItems(
+  outwardData: Omit<
+    TablesInsert<"goods_outwards">,
+    "created_by" | "sequence_number"
+  >,
+  stockUnitItems: Array<{
+    stock_unit_id: string;
+    quantity: number;
+  }>,
 ): Promise<string> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
-    .from("goods_outwards")
-    .insert(outward)
-    .select("id")
-    .single<{ id: string }>();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { data, error } = await supabase.rpc(
+    "create_goods_outward_with_items",
+    {
+      p_outward_data: outwardData,
+      p_stock_unit_items: stockUnitItems,
+    },
+  );
 
   if (error) {
     console.error("Error creating goods outward:", error);
     throw error;
   }
 
-  return data.id;
+  return data as string;
 }

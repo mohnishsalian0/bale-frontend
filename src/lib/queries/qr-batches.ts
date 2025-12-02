@@ -1,20 +1,110 @@
 import { createClient } from "@/lib/supabase/browser";
-import type { Tables, TablesInsert } from "@/types/database/supabase";
+import type { Tables } from "@/types/database/supabase";
+import type {
+  QRBatchListView,
+  QRBatchDetailView,
+  QRBatchFilters,
+  CreateQRBatchParams,
+  QRBatchProductSummary,
+} from "@/types/qr-batches.types";
+import {
+  PRODUCT_LIST_VIEW_SELECT,
+  PRODUCT_DETAIL_VIEW_SELECT,
+  transformProductListView,
+  transformProductDetailView,
+  type ProductListViewRaw,
+  type ProductDetailViewRaw,
+} from "@/lib/queries/products";
 
-type QRBatch = Tables<"qr_batches">;
+// Local type aliases
 type QRBatchItem = Tables<"qr_batch_items">;
 
-export interface QRBatchWithItems extends QRBatch {
-  qr_batch_items: QRBatchItem[];
+// Re-export types for convenience
+export type { QRBatchFilters, CreateQRBatchParams };
+
+// ============================================================================
+// RAW TYPES - For Supabase responses
+// ============================================================================
+
+type QRBatchListViewRaw = Omit<
+  QRBatchListView,
+  "item_count" | "distinct_products"
+> & {
+  qr_batch_items: Array<{
+    stock_unit: {
+      product: ProductListViewRaw;
+    };
+  }>;
+};
+
+type QRBatchDetailViewRaw = Omit<QRBatchDetailView, "qr_batch_items"> & {
+  qr_batch_items: Array<
+    Tables<"qr_batch_items"> & {
+      stock_unit:
+        | (Tables<"stock_units"> & {
+            product: ProductDetailViewRaw | null;
+          })
+        | null;
+    }
+  >;
+};
+
+// ============================================================================
+// TRANSFORM FUNCTIONS
+// ============================================================================
+
+/**
+ * Transform raw QR batch list data to QRBatchListView
+ */
+function transformQRBatchListView(raw: QRBatchListViewRaw): QRBatchListView {
+  const { qr_batch_items: rawItems, ...batch } = raw;
+
+  // Group by product to get distinct products and their counts
+  const productMap = new Map<string, QRBatchProductSummary>();
+
+  rawItems.forEach((item) => {
+    const rawProduct = item.stock_unit.product;
+    const productId = rawProduct.id;
+
+    if (productMap.has(productId)) {
+      productMap.get(productId)!.unit_count++;
+    } else {
+      productMap.set(productId, {
+        product: transformProductListView(rawProduct),
+        unit_count: 1,
+      });
+    }
+  });
+
+  return {
+    ...batch,
+    item_count: rawItems.length,
+    distinct_products: Array.from(productMap.values()),
+  };
 }
 
-export interface QRBatchFilters extends Record<string, unknown> {
-  product_id?: string;
-}
+/**
+ * Transform raw QR batch detail data to QRBatchDetailView
+ */
+function transformQRBatchDetailView(
+  raw: QRBatchDetailViewRaw,
+): QRBatchDetailView {
+  const { qr_batch_items: rawItems, ...batch } = raw;
 
-export interface CreateQRBatchParams {
-  batchData: TablesInsert<"qr_batches">;
-  stockUnitIds: string[];
+  return {
+    ...batch,
+    qr_batch_items: rawItems.map((item) => ({
+      ...item,
+      stock_unit: item.stock_unit
+        ? {
+            ...item.stock_unit,
+            product: item.stock_unit.product
+              ? transformProductDetailView(item.stock_unit.product)
+              : null,
+          }
+        : null,
+    })),
+  };
 }
 
 /**
@@ -23,7 +113,7 @@ export interface CreateQRBatchParams {
 export async function getQRBatches(
   warehouseId: string,
   filters?: QRBatchFilters,
-): Promise<QRBatchWithItems[]> {
+): Promise<QRBatchListView[]> {
   const supabase = createClient();
 
   let query = supabase
@@ -34,14 +124,23 @@ export async function getQRBatches(
       batch_name,
       image_url,
       created_at,
-      qr_batch_items (
-        id,
-        stock_unit_id
+      qr_batch_items!inner (
+        stock_unit:stock_units!inner (
+          product:products(${PRODUCT_LIST_VIEW_SELECT})
+        )
       )
     `,
     )
     .eq("warehouse_id", warehouseId)
     .order("created_at", { ascending: false });
+
+  // Apply product filter at database level
+  if (filters?.product_id) {
+    query = query.eq(
+      "qr_batch_items.stock_unit.product_id",
+      filters.product_id,
+    );
+  }
 
   const { data, error } = await query;
 
@@ -50,110 +149,42 @@ export async function getQRBatches(
     throw error;
   }
 
-  let batches = (data as any[]) || [];
-
-  // Filter by product if specified
-  if (filters?.product_id) {
-    const { data: batchItemsData, error: itemsError } = await supabase
-      .from("qr_batch_items")
-      .select(
-        `
-        batch_id,
-        stock_units (
-          product_id
-        )
-      `,
-      )
-      .eq("stock_units.product_id", filters.product_id);
-
-    if (itemsError) {
-      console.error("Error filtering QR batches by product:", itemsError);
-      throw itemsError;
-    }
-
-    const batchIds = new Set(
-      batchItemsData?.map((item: any) => item.batch_id) || [],
-    );
-    batches = batches.filter((batch) => batchIds.has(batch.id));
-  }
-
-  return batches;
+  return (
+    (data as unknown as QRBatchListViewRaw[])?.map(transformQRBatchListView) ||
+    []
+  );
 }
 
 /**
  * Fetch a single QR batch with full details
  * Used for PDF generation
  */
-export async function getQRBatchById(batchId: string): Promise<any> {
+export async function getQRBatchById(
+  batchId: string,
+): Promise<QRBatchDetailView> {
   const supabase = createClient();
 
-  // Fetch batch info
-  const { data: batch, error: batchError } = await supabase
+  const { data, error } = await supabase
     .from("qr_batches")
-    .select("batch_name, fields_selected")
-    .eq("id", batchId)
-    .single();
-
-  if (batchError) {
-    console.error("Error fetching QR batch:", batchError);
-    throw batchError;
-  }
-
-  if (!batch) {
-    throw new Error("Batch not found");
-  }
-
-  // Fetch stock units with full product data
-  const { data: batchItems, error: itemsError } = await supabase
-    .from("qr_batch_items")
     .select(
       `
-      stock_unit_id,
-      stock_units (
-        id,
-        sequence_number,
-        manufacturing_date,
-        initial_quantity,
-        quality_grade,
-        warehouse_location,
-        products (
-          name,
-          sequence_number,
-          hsn_code,
-          stock_type,
-          gsm,
-          selling_price_per_unit,
-          product_material_assignments (
-            material:product_materials (
-              id,
-              name
-            )
-          ),
-          product_color_assignments (
-            color:product_colors (
-              id,
-              name
-            )
-          )
+      *,
+      qr_batch_items (
+        *,
+        stock_unit:stock_units (
+          *,
+          product:products(${PRODUCT_DETAIL_VIEW_SELECT})
         )
       )
     `,
     )
-    .eq("batch_id", batchId);
+    .eq("id", batchId)
+    .single<QRBatchDetailViewRaw>();
 
-  if (itemsError) {
-    console.error("Error fetching QR batch items:", itemsError);
-    throw itemsError;
-  }
+  if (error) throw error;
+  if (!data) throw new Error("No batch returned");
 
-  if (!batchItems || batchItems.length === 0) {
-    throw new Error("No stock units found in batch");
-  }
-
-  return {
-    ...batch,
-    items: batchItems,
-  };
+  return transformQRBatchDetailView(data);
 }
 
 /**
@@ -173,26 +204,31 @@ export async function getQRBatchItems(batchId: string): Promise<QRBatchItem[]> {
     throw error;
   }
 
-  return data || [];
+  return (data as QRBatchItem[]) || [];
 }
 
 /**
  * Create a new QR batch with stock units atomically
  * Uses RPC function for atomic operation
+ * Returns the created batch ID
  */
 export async function createQRBatch({
   batchData,
   stockUnitIds,
-}: CreateQRBatchParams): Promise<void> {
+}: CreateQRBatchParams): Promise<string> {
   const supabase = createClient();
 
-  const { error } = await supabase.rpc("create_qr_batch_with_items", {
-    p_batch_data: batchData,
-    p_stock_unit_ids: stockUnitIds,
-  });
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { data: batchId, error } = await supabase.rpc(
+    "create_qr_batch_with_items",
+    {
+      p_batch_data: batchData,
+      p_stock_unit_ids: stockUnitIds,
+    },
+  );
 
-  if (error) {
-    console.error("Error creating QR batch:", error);
-    throw error;
-  }
+  if (error) throw error;
+  if (!batchId) throw new Error("No order ID returned");
+
+  return batchId as string;
 }

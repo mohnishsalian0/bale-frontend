@@ -6,7 +6,7 @@ import { IconArrowLeft } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { QRScannerStep, ScannedStockUnit } from "../QRScannerStep";
 import { OutwardDetailsStep } from "../OutwardDetailsStep";
-import { createClient } from "@/lib/supabase/browser";
+import { useStockFlowMutations } from "@/lib/query/hooks/stock-flow";
 import type { TablesInsert } from "@/types/database/supabase";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
@@ -35,7 +35,8 @@ export default function CreateGoodsOutwardPage() {
   const [scannedUnits, setScannedUnits] = useState<ScannedStockUnit[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const supabase = createClient();
+  // Mutations
+  const { createOutwardWithItems } = useStockFlowMutations(warehouse.id);
 
   // Hide chrome for immersive flow experience
   useEffect(() => {
@@ -140,16 +141,11 @@ export default function CreateGoodsOutwardPage() {
         quantity: item.quantity,
       }));
 
-      // Call RPC function to create outward with items atomically
-      const { data: _result, error: rpcError } = await supabase.rpc(
-        "create_goods_outward_with_items",
-        {
-          p_outward_data: outwardData,
-          p_stock_unit_items: stockUnitItems,
-        },
-      );
-
-      if (rpcError) throw rpcError;
+      // Use mutation to create outward with items atomically
+      await createOutwardWithItems.mutateAsync({
+        outwardData,
+        stockUnitItems,
+      });
 
       // Success! Show toast and redirect to stock flow
       toast.success("Goods outward created successfully");

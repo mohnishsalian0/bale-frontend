@@ -6,7 +6,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { formatRelativeDate } from "@/lib/utils/date";
 import { formatStockUnitNumber } from "@/lib/utils/product";
-import type { Tables } from "@/types/database/supabase";
 import type { StockType } from "@/types/database/enums";
 import {
   Collapsible,
@@ -14,14 +13,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useSession } from "@/contexts/session-context";
-import { useStockUnits } from "@/lib/query/hooks/stock-units";
+import { useStockUnitsWithInward } from "@/lib/query/hooks/stock-units";
+import { StockUnitWithProductListView } from "@/types/stock-units.types";
+import { InwardWithPartnerListView } from "@/types/stock-flow.types";
+import { LoadingState } from "@/components/layouts/loading-state";
 
-interface StockUnit extends Tables<"stock_units"> {
-  product?: Tables<"products">;
-}
-
-interface GoodsInward extends Tables<"goods_inwards"> {
-  stock_units: StockUnit[];
+interface GoodsInward extends InwardWithPartnerListView {
+  stock_units: StockUnitWithProductListView[];
 }
 
 interface QRStockUnitSelectionStepProps {
@@ -38,16 +36,17 @@ export function QRStockUnitSelectionStep({
   const { warehouse } = useSession();
 
   // Fetch stock units using TanStack Query
-  const { data: stockUnitsData = [], isLoading: loading } = useStockUnits(
-    warehouse.id,
-    { product_id: productId, status: "in_stock" },
-  );
+  const { data: stockUnitsData = [], isLoading: loading } =
+    useStockUnitsWithInward(warehouse.id, {
+      product_id: productId,
+      status: "in_stock",
+    });
 
   // Group stock units by goods inward
   const goodsInwards: GoodsInward[] = useMemo(() => {
     // Group stock units by goods inward
-    const inwardMap = new Map<string | null, StockUnit[]>();
-    (stockUnitsData as any[]).forEach((unit) => {
+    const inwardMap = new Map<string | null, StockUnitWithProductListView[]>();
+    stockUnitsData.forEach((unit) => {
       const inwardId = unit.created_from_inward_id;
       if (!inwardMap.has(inwardId)) {
         inwardMap.set(inwardId, []);
@@ -56,8 +55,8 @@ export function QRStockUnitSelectionStep({
     });
 
     // Get unique inward data from stock units
-    const inwardDataMap = new Map<string, any>();
-    (stockUnitsData as any[]).forEach((unit) => {
+    const inwardDataMap = new Map<string, InwardWithPartnerListView>();
+    stockUnitsData.forEach((unit) => {
       if (unit.created_from_inward_id && unit.goods_inward) {
         inwardDataMap.set(unit.created_from_inward_id, unit.goods_inward);
       }
@@ -83,7 +82,7 @@ export function QRStockUnitSelectionStep({
         id: "orphaned",
         sequence_number: 0,
         stock_units: orphanedUnits,
-      } as any);
+      } as GoodsInward);
     }
 
     return groupedInwards;
@@ -144,7 +143,7 @@ export function QRStockUnitSelectionStep({
     return "some";
   };
 
-  const getQRStatus = (unit: StockUnit): string => {
+  const getQRStatus = (unit: StockUnitWithProductListView): string => {
     if (unit.qr_generated_at) {
       return `QR made ${formatRelativeDate(unit.qr_generated_at)}`;
     }
@@ -153,12 +152,9 @@ export function QRStockUnitSelectionStep({
 
   const totalSelected = selectedStockUnitIds.length;
 
+  // Loading state
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-gray-500">Loading stock units...</p>
-      </div>
-    );
+    return <LoadingState message="Loading stock units..." />;
   }
 
   if (goodsInwards.length === 0) {

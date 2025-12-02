@@ -9,8 +9,8 @@ import {
   getGoodsInwardByNumber,
   getGoodsOutwardByNumber,
   getOutwardItemsByProduct,
-  createGoodsInward,
-  createGoodsOutward,
+  createGoodsInwardWithUnits,
+  createGoodsOutwardWithItems,
   type InwardFilters,
   type OutwardFilters,
 } from "@/lib/queries/stock-flow";
@@ -84,9 +84,20 @@ export function useOutwardItemsByProduct(productId: string | null) {
 export function useStockFlowMutations(warehouseId: string) {
   const queryClient = useQueryClient();
 
-  const createInward = useMutation({
-    mutationFn: (data: TablesInsert<"goods_inwards">) =>
-      createGoodsInward(data),
+  const createInwardWithUnits = useMutation({
+    mutationFn: ({
+      inwardData,
+      stockUnits,
+    }: {
+      inwardData: Omit<
+        TablesInsert<"goods_inwards">,
+        "created_by" | "sequence_number"
+      >;
+      stockUnits: Omit<
+        TablesInsert<"stock_units">,
+        "created_by" | "modified_by" | "sequence_number"
+      >[];
+    }) => createGoodsInwardWithUnits(inwardData, stockUnits),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.stockFlow.inwards(warehouseId),
@@ -103,9 +114,20 @@ export function useStockFlowMutations(warehouseId: string) {
     },
   });
 
-  const createOutward = useMutation({
-    mutationFn: (data: TablesInsert<"goods_outwards">) =>
-      createGoodsOutward(data),
+  const createOutwardWithItems = useMutation({
+    mutationFn: ({
+      outwardData,
+      stockUnitItems,
+    }: {
+      outwardData: Omit<
+        TablesInsert<"goods_outwards">,
+        "created_by" | "sequence_number"
+      >;
+      stockUnitItems: Array<{
+        stock_unit_id: string;
+        quantity: number;
+      }>;
+    }) => createGoodsOutwardWithItems(outwardData, stockUnitItems),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.stockFlow.outwards(warehouseId),
@@ -123,7 +145,7 @@ export function useStockFlowMutations(warehouseId: string) {
   });
 
   return {
-    createInward,
-    createOutward,
+    createInwardWithUnits,
+    createOutwardWithItems,
   };
 }

@@ -21,7 +21,7 @@ export async function getInviteByCode(code: string): Promise<Invite | null> {
     .from("invites")
     .select("*")
     .eq("token", code)
-    .single();
+    .single<Invite>();
 
   if (error) {
     console.error("Error fetching invite:", error);
@@ -43,6 +43,7 @@ export async function acceptInvite(
 ): Promise<string> {
   const supabase = createClient();
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data: newUserId, error } = await supabase.rpc(
     "create_user_from_invite",
     {
@@ -59,5 +60,5 @@ export async function acceptInvite(
     throw error;
   }
 
-  return newUserId;
+  return newUserId as string;
 }

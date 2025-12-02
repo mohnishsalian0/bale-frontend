@@ -44,9 +44,13 @@ function ChromeWrapper({
       }
 
       router.push("/auth/login");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error logging out:", error);
-      toast.error("Failed to log out:", error.message);
+      if (error instanceof Error) {
+        toast.error("Failed to log out:" + error.message);
+      } else {
+        toast.error("Failed to log out: An unknown error occurred.");
+      }
     }
   };
 
@@ -112,41 +116,48 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const { updateWarehouse: updateUserWarehouse } = useUserMutations();
 
   useEffect(() => {
-    validateAccess();
-  }, [warehouseSlug, pathname, warehouse]);
+    const validateAccess = async () => {
+      try {
+        setAuthLoading(true);
 
-  const validateAccess = async () => {
-    try {
-      setAuthLoading(true);
+        // If this is a warehouse route, validate warehouse access
+        if (warehouseSlug && !warehouseLoading) {
+          if (!warehouse) {
+            console.error("Warehouse not found");
+            router.push("/warehouse");
+            return;
+          }
 
-      // If this is a warehouse route, validate warehouse access
-      if (warehouseSlug && !warehouseLoading) {
-        if (!warehouse) {
-          console.error("Warehouse not found");
-          router.push("/warehouse");
-          return;
-        }
-
-        // Sync user's selected warehouse with URL
-        if (user && user.warehouse_id !== warehouse.id) {
-          updateUserWarehouse.mutate(
-            {
-              userId: user.id,
-              warehouseId: warehouse.id,
-            },
-            {
-              onError: (error: Error) => {
-                console.error("Error validating access:", error);
-                router.push("/auth/login");
+          // Sync user's selected warehouse with URL
+          if (user && user.warehouse_id !== warehouse.id) {
+            updateUserWarehouse.mutate(
+              {
+                userId: user.id,
+                warehouseId: warehouse.id,
               },
-            },
-          );
+              {
+                onError: (error: Error) => {
+                  console.error("Error validating access:", error);
+                  router.push("/auth/login");
+                },
+              },
+            );
+          }
         }
+      } finally {
+        setAuthLoading(false);
       }
-    } finally {
-      setAuthLoading(false);
-    }
-  };
+    };
+    validateAccess();
+  }, [
+    warehouseSlug,
+    pathname,
+    warehouse,
+    warehouseLoading,
+    user,
+    updateUserWarehouse,
+    router,
+  ]);
 
   const loading =
     authLoading ||

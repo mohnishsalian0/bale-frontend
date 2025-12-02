@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/browser";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import type { Tables } from "@/types/database/supabase";
+import { MeasuringUnit } from "@/types/database/enums";
 
 type GoodsOutward = Tables<"goods_outwards">;
 type GoodsOutwardItem = Tables<"goods_outward_items">;
@@ -163,7 +164,7 @@ export function OutwardsTab({ orderId, warehouseSlug }: OutwardsTabProps) {
                 <p className="text-sm font-medium text-gray-900 shrink-0">
                   {item.quantity_dispatched}
                   {getMeasuringUnitAbbreviation(
-                    item.stock_unit?.product?.measuring_unit as any,
+                    item.stock_unit?.product?.measuring_unit as MeasuringUnit,
                   )}
                 </p>
               </div>

@@ -125,6 +125,7 @@ export default [
       "dist/",
       "build/",
       "coverage/",
+      "scripts/",
       "next-env.d.ts",
     ],
   },

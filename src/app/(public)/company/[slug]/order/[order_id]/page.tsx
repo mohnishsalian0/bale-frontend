@@ -19,7 +19,11 @@ import { toast } from "sonner";
 import { Section } from "@/components/layouts/section";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon } from "@/lib/utils/product";
-import { SalesOrderStatus, StockType } from "@/types/database/enums";
+import {
+  MeasuringUnit,
+  SalesOrderStatus,
+  StockType,
+} from "@/types/database/enums";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getFormattedAddress, getPartnerName } from "@/lib/utils/partner";
 import { DisplayStatus, getOrderDisplayStatus } from "@/lib/utils/sales-order";
@@ -126,7 +130,7 @@ export default function OrderConfirmationPage() {
           icon={IconPackage}
         >
           <div className="space-y-3">
-            {order.sales_order_items?.map((item: any) => (
+            {order.sales_order_items?.map((item) => (
               <div key={item.id} className="flex gap-3">
                 <ImageWrapper
                   size="xl"
@@ -150,7 +154,7 @@ export default function OrderConfirmationPage() {
                   <p className="text-sm font-medium text-gray-700 mt-0.5">
                     Qty: {item.required_quantity}{" "}
                     {getMeasuringUnitAbbreviation(
-                      item.product?.measuring_unit as any,
+                      item.product?.measuring_unit as MeasuringUnit,
                     )}
                   </p>
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { IconBuildingWarehouse } from "@tabler/icons-react";
@@ -28,25 +28,26 @@ export default function WarehouseSelectionPage() {
   } = useCurrentUser();
   const { updateWarehouse } = useUserMutations();
 
-  const handleWarehouseSelect = async (warehouse: Warehouse) => {
-    updateWarehouse.mutate(
-      { userId: user!.id, warehouseId: warehouse.id },
-      {
-        onSuccess: () => {
-          router.push(`/warehouse/${warehouse.slug}/dashboard`);
-        },
-        onError: (error) => {
-          console.error("Error selecting warehouse:", error);
-        },
-      },
-    );
-  };
+  const handleWarehouseSelect = useCallback(
+    async (warehouse: Warehouse) => {
+      try {
+        await updateWarehouse.mutateAsync({
+          userId: user!.id,
+          warehouseId: warehouse.id,
+        });
+        router.push(`/warehouse/${warehouse.slug}/dashboard`);
+      } catch (error) {
+        console.error("Error selecting warehouse:", error);
+      }
+    },
+    [router, updateWarehouse, user],
+  );
 
   useEffect(() => {
     if (user && warehouses.length === 1) {
       handleWarehouseSelect(warehouses[0]);
     }
-  }, [user, warehouses]);
+  }, [user, warehouses, handleWarehouseSelect]);
 
   if (warehousesLoading || userLoading) {
     return <LoadingState />;

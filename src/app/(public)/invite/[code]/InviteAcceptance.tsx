@@ -48,9 +48,13 @@ export default function InviteAcceptance({
       }
 
       // OAuth redirect will happen automatically
-    } catch (err: any) {
-      console.error("Error accepting invite:", err);
-      setError(err.message || "Failed to sign in with Google");
+    } catch (error) {
+      console.error("Error accepting invite:", error);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Error accepting invite");
+      }
       setLoading(false);
     }
   };

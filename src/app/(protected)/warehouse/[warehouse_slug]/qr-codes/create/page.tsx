@@ -19,6 +19,8 @@ import { generatePDFBlob, downloadPDF } from "@/lib/pdf/batch-pdf-generator";
 import type { LabelData } from "@/lib/pdf/qr-label-generator";
 import type { ProductListView } from "@/types/products.types";
 import { useProducts, useProductAttributes } from "@/lib/query/hooks/products";
+import { useQRBatchMutations } from "@/lib/query/hooks/qr-batches";
+import { getQRBatchById } from "@/lib/queries/qr-batches";
 
 type FormStep = "product" | "stock-units" | "template";
 
@@ -42,6 +44,7 @@ export default function CreateQRBatchPage() {
   // Fetch data using TanStack Query
   const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: attributeLists } = useProductAttributes();
+  const { create: createBatch } = useQRBatchMutations(warehouse.id);
 
   const materials = attributeLists?.materials || [];
   const colors = attributeLists?.colors || [];
@@ -100,80 +103,51 @@ export default function CreateQRBatchPage() {
         pdf_url: null,
       };
 
-      // Call RPC function to create batch atomically
-      const { data: _data, error } = await supabase.rpc(
-        "create_qr_batch_with_items",
-        {
-          p_batch_data: batchData,
-          p_stock_unit_ids: selectedStockUnitIds,
-        },
-      );
+      // Create batch using mutation hook
+      const batchId = await createBatch.mutateAsync({
+        batchData,
+        stockUnitIds: selectedStockUnitIds,
+      });
 
-      if (error) throw error;
-
-      // Fetch stock unit data for PDF generation
-      const { data: stockUnitsData, error: stockUnitsError } = await supabase
-        .from("stock_units")
-        .select(
-          `
-					id,
-					sequence_number,
-					manufacturing_date,
-					initial_quantity,
-					quality_grade,
-					warehouse_location,
-					products (
-						name, sequence_number, hsn_code, gsm, selling_price_per_unit, stock_type,
-						product_material_assignments(
-							material:product_materials(*)
-						),
-						product_color_assignments(
-							color:product_colors(*)
-						),
-						product_tag_assignments(
-							tag:product_tags(*)
-						)
-					)
-				`,
-        )
-        .in("id", selectedStockUnitIds);
-
-      if (stockUnitsError) throw stockUnitsError;
+      // Fetch full batch details with transformed product data
+      const batch = await getQRBatchById(batchId);
+      if (!batch) {
+        throw new Error("Failed to fetch batch details");
+      }
 
       // Fetch company logo
       const { data: companyData, error: companyError } = await supabase
         .from("companies")
         .select("logo_url")
-        .single();
+        .single<{ logo_url: string }>();
 
       if (companyError) throw companyError;
 
-      // Map data to LabelData format
-      const stockUnits: LabelData[] = stockUnitsData.map((unit: any) => ({
-        id: unit.id,
-        sequence_number: unit.sequence_number,
-        manufacturing_date: unit.manufacturing_date,
-        initial_quantity: unit.initial_quantity,
-        quality_grade: unit.quality_grade,
-        warehouse_location: unit.warehouse_location,
-        product: {
-          name: unit.products?.name || "",
-          sequence_number: unit.products?.sequence_number || 0,
-          hsn_code: unit.products?.hsn_code,
-          stock_type: unit.products?.stock_type,
-          gsm: unit.products?.gsm,
-          selling_price_per_unit: unit.products?.selling_price_per_unit,
-          // Keep as arrays of objects - PDF generator will handle joining
-          materials:
-            unit.products?.product_material_assignments
-              ?.map((a: any) => a.material)
-              .filter(Boolean) || [],
-          colors:
-            unit.products?.product_color_assignments
-              ?.map((a: any) => a.color)
-              .filter(Boolean) || [],
-        },
-      }));
+      // Map batch items to LabelData format
+      const stockUnits: LabelData[] = batch.qr_batch_items.map((item) => {
+        const unit = item.stock_unit!;
+        const product = unit.product!;
+
+        return {
+          id: unit.id,
+          sequence_number: unit.sequence_number,
+          manufacturing_date: unit.manufacturing_date,
+          initial_quantity: unit.initial_quantity,
+          quality_grade: unit.quality_grade,
+          warehouse_location: unit.warehouse_location,
+          product: {
+            name: product.name,
+            sequence_number: product.sequence_number,
+            hsn_code: product.hsn_code,
+            stock_type: product.stock_type,
+            gsm: product.gsm,
+            selling_price_per_unit: product.selling_price_per_unit,
+            // Product data already transformed with materials/colors arrays
+            materials: product.materials || [],
+            colors: product.colors || [],
+          },
+        };
+      });
 
       // Generate and download PDF
       const blob = await generatePDFBlob(
@@ -189,9 +163,7 @@ export default function CreateQRBatchPage() {
       router.push(`/warehouse/${warehouse.slug}/qr-codes`);
     } catch (error) {
       console.error("Error creating QR batch:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create QR batch",
-      );
+      toast.error("Failed to create QR batch");
     } finally {
       setSaving(false);
     }

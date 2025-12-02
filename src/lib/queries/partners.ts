@@ -77,7 +77,7 @@ export async function getPartners(
  */
 export async function getPartnerById(
   partnerId: string,
-): Promise<PartnerDetailView | null> {
+): Promise<PartnerDetailView> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -87,10 +87,8 @@ export async function getPartnerById(
     .is("deleted_at", null)
     .single<PartnerDetailView>();
 
-  if (error) {
-    console.error("Error fetching partner:", error);
-    return null;
-  }
+  if (error) throw error;
+  if (!data) throw new Error("No partner found");
 
   return data;
 }
@@ -111,10 +109,8 @@ export async function getPartnerWithOrderStatsById(
     .is("deleted_at", null)
     .single<PartnerWithOrderStatsDetailView>();
 
-  if (error) {
-    console.error("Error fetching partner with order stats:", error);
-    return null;
-  }
+  if (error) throw error;
+  if (!data) throw new Error("No partner found");
 
   return data;
 }

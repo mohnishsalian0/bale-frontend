@@ -58,32 +58,24 @@ export default function WarehouseSelector({
       return;
     }
 
-    // Update user's selected warehouse using mutation
-    updateUserWarehouse.mutate(
-      {
+    try {
+      // Update user's selected warehouse using mutation
+      updateUserWarehouse.mutate({
         userId: user.id,
         warehouseId: warehouseId,
-      },
-      {
-        onSuccess: () => {
-          // Determine redirect path
-          let redirectPath = `/warehouse/${selectedWarehouse.slug}/dashboard`;
+      });
+      let redirectPath = `/warehouse/${selectedWarehouse.slug}/dashboard`;
 
-          const warehouseRouteMatch = pathname.match(
-            /^\/warehouse\/[^/]+\/(.+)$/,
-          );
-          if (warehouseRouteMatch) {
-            const pagePath = warehouseRouteMatch[1];
-            redirectPath = `/warehouse/${selectedWarehouse.slug}/${pagePath}`;
-          }
+      const warehouseRouteMatch = pathname.match(/^\/warehouse\/[^/]+\/(.+)$/);
+      if (warehouseRouteMatch) {
+        const pagePath = warehouseRouteMatch[1];
+        redirectPath = `/warehouse/${selectedWarehouse.slug}/${pagePath}`;
+      }
 
-          router.push(redirectPath);
-        },
-        onError: (error: Error) => {
-          console.error("Error selecting warehouse:", error);
-        },
-      },
-    );
+      router.push(redirectPath);
+    } catch (error) {
+      console.error("Error selecting warehouse:", error);
+    }
   };
 
   const handleEdit = (warehouse: Warehouse, e: React.MouseEvent) => {

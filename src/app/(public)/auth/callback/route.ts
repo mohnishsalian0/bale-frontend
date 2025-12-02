@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { Tables } from "@/types/database/supabase";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
@@ -73,7 +74,7 @@ export async function GET(request: Request) {
       .from("invites")
       .select("*")
       .eq("token", inviteCode)
-      .single();
+      .single<Tables<"invites">>();
 
     console.log("Invite:", invite);
     console.log("Invite error:", inviteError);
@@ -96,10 +97,12 @@ export async function GET(request: Request) {
       },
     );
 
+    console.log(authUser);
+
     // Extract names from user metadata
     const firstName =
       authUser.user_metadata?.given_name ||
-      authUser.user_metadata?.name?.split(" ")[0] ||
+      authUser.user_metadata?.name?.split(" ")?.[0] ||
       "User";
     const lastName =
       authUser.user_metadata?.family_name ||

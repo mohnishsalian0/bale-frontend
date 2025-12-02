@@ -194,12 +194,12 @@ export async function getStockUnits(
  * Useful for product detail page to show stock flow history
  */
 export async function getStockUnitsWithInward(
-  productId: string,
   warehouseId: string,
+  filters?: StockUnitFilters,
 ): Promise<StockUnitWithInwardListView[]> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("stock_units")
     .select(
       `
@@ -227,11 +227,37 @@ export async function getStockUnitsWithInward(
       )
     `,
     )
-    .eq("product_id", productId)
     .eq("warehouse_id", warehouseId)
-    .eq("status", "in_stock")
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
+
+  // Apply filters
+  if (filters?.product_id) {
+    query = query.eq("product_id", filters.product_id);
+  }
+
+  if (filters?.status) {
+    query = query.eq("status", filters.status);
+  }
+
+  if (filters?.qr_generated_at === "null") {
+    query = query.is("qr_generated_at", null);
+  } else if (filters?.qr_generated_at === "not_null") {
+    query = query.not("qr_generated_at", "is", null);
+  }
+
+  if (filters?.created_from_inward_id !== undefined) {
+    if (filters.created_from_inward_id === null) {
+      query = query.is("created_from_inward_id", null);
+    } else {
+      query = query.eq(
+        "created_from_inward_id",
+        filters.created_from_inward_id,
+      );
+    }
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching stock units with inward details:", error);
