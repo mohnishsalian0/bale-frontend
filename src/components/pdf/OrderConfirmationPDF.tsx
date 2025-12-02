@@ -7,13 +7,12 @@ import {
   Image,
   StyleSheet,
 } from "@react-pdf/renderer";
-import type { Tables } from "@/types/database/supabase";
-
-type Company = Tables<"companies">;
+import { PublicCompany, PublicSalesOrder } from "@/types/catalog.types";
+import { getPartnerName } from "@/lib/utils/partner";
 
 interface OrderConfirmationPDFProps {
-  company: Company;
-  order: any; // Full order with customer and items
+  company: PublicCompany;
+  order: PublicSalesOrder; // Full order with customer and items
 }
 
 const styles = StyleSheet.create({
@@ -181,7 +180,7 @@ export function OrderConfirmationPDF({
                 Quantity
               </Text>
             </View>
-            {order.sales_order_items?.map((item: any, index: number) => (
+            {order.sales_order_items?.map((item, index: number) => (
               <View key={index} style={styles.tableRow}>
                 <View style={styles.col1}>
                   <Text style={styles.tableCell}>{item.product?.name}</Text>
@@ -195,7 +194,7 @@ export function OrderConfirmationPDF({
                   </Text>
                 </View>
                 <Text style={[styles.tableCell, styles.col2]}>
-                  {item.quantity}
+                  {item.required_quantity}
                 </Text>
               </View>
             ))}
@@ -208,7 +207,9 @@ export function OrderConfirmationPDF({
           <View style={styles.infoGrid}>
             <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>Name</Text>
-              <Text style={styles.infoValue}>{order.customer?.name}</Text>
+              <Text style={styles.infoValue}>
+                {getPartnerName(order.customer)}
+              </Text>
             </View>
             <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>Email</Text>
@@ -216,12 +217,16 @@ export function OrderConfirmationPDF({
             </View>
             <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>Phone</Text>
-              <Text style={styles.infoValue}>{order.customer?.phone}</Text>
+              <Text style={styles.infoValue}>
+                {order.customer?.phone_number}
+              </Text>
             </View>
-            {order.customer?.gstin && (
+            {order.customer?.gst_number && (
               <View style={styles.infoItem}>
                 <Text style={styles.infoLabel}>GSTIN</Text>
-                <Text style={styles.infoValue}>{order.customer.gstin}</Text>
+                <Text style={styles.infoValue}>
+                  {order.customer.gst_number}
+                </Text>
               </View>
             )}
           </View>
@@ -231,9 +236,9 @@ export function OrderConfirmationPDF({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Delivery Address</Text>
           <View style={styles.address}>
-            <Text>{order.customer?.address_line_1}</Text>
-            {order.customer?.address_line_2 && (
-              <Text>{order.customer.address_line_2}</Text>
+            <Text>{order.customer?.address_line1}</Text>
+            {order.customer?.address_line2 && (
+              <Text>{order.customer.address_line2}</Text>
             )}
             <Text>
               {order.customer?.city}, {order.customer?.state}{" "}

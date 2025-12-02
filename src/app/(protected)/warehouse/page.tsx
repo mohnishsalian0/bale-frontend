@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { IconBuildingWarehouse } from "@tabler/icons-react";
@@ -27,6 +27,7 @@ export default function WarehouseSelectionPage() {
     refetch: refetchUser,
   } = useCurrentUser();
   const { updateWarehouse } = useUserMutations();
+  const autoSelectAttempted = useRef(false);
 
   const handleWarehouseSelect = useCallback(
     async (warehouse: Warehouse) => {
@@ -44,7 +45,8 @@ export default function WarehouseSelectionPage() {
   );
 
   useEffect(() => {
-    if (user && warehouses.length === 1) {
+    if (user && warehouses.length === 1 && !autoSelectAttempted.current) {
+      autoSelectAttempted.current = true;
       handleWarehouseSelect(warehouses[0]);
     }
   }, [user, warehouses, handleWarehouseSelect]);

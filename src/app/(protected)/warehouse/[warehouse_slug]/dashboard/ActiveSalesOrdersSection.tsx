@@ -20,11 +20,11 @@ import {
 } from "@/lib/utils/sales-order";
 import { getPartnerName } from "@/lib/utils/partner";
 import { formatAbsoluteDate } from "@/lib/utils/date";
-import type { DashboardSalesOrder } from "@/lib/queries/dashboard";
+import type { SalesOrderListView } from "@/types/sales-orders.types";
 import type { SalesOrderStatus } from "@/types/database/enums";
 
 interface ActiveSalesOrdersSectionProps {
-  orders: DashboardSalesOrder[];
+  orders: SalesOrderListView[];
   warehouseSlug: string;
   onNavigate: (path: string) => void;
 }
@@ -74,7 +74,7 @@ export function ActiveSalesOrdersSection({
               ? getPartnerName(order.customer)
               : "Unknown Customer";
             const products = order.sales_order_items.map((item) => ({
-              name: item.product?.[0]?.name || "Unknown Product",
+              name: item.product?.name || "Unknown Product",
               quantity: item.required_quantity,
             }));
 

@@ -23,7 +23,7 @@ import { ProductQuantitySheet } from "../ProductQuantitySheet";
 import { LoadingState } from "@/components/layouts/loading-state";
 import type { PublicProduct } from "@/lib/queries/catalog";
 import {
-  useCatalogCompany,
+  usePublicCompany,
   usePublicProducts,
 } from "@/lib/query/hooks/catalog";
 
@@ -34,9 +34,9 @@ export default function StorePage() {
   const slug = params.slug as string;
 
   // Fetch data using TanStack Query
-  const { data: company, isLoading: companyLoading } = useCatalogCompany(slug);
+  const { data: company, isLoading: companyLoading } = usePublicCompany(slug);
   const { data: products = [], isLoading: productsLoading } = usePublicProducts(
-    company?.id || "",
+    company?.id || null,
   );
 
   const loading = companyLoading || productsLoading;

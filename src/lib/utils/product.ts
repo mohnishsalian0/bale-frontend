@@ -185,3 +185,32 @@ export function formatStockUnitNumber(
 
   return `${prefix}-${sequenceNumber}`;
 }
+
+// ============================================================================
+// STOCK STATUS CALCULATIONS
+// ============================================================================
+
+/**
+ * Calculate stock status based on current quantity and minimum threshold
+ *
+ * Logic:
+ * - out_of_stock: quantity is 0
+ * - low_stock: quantity > 0 but <= min threshold (if threshold is set)
+ * - in_stock: quantity > 0 and above threshold (or no threshold set)
+ *
+ * Used in: catalog products, inventory dashboards
+ */
+export function calculateStockStatus(
+  currentStock: number,
+  minThreshold: number | null,
+): "in_stock" | "low_stock" | "out_of_stock" {
+  if (currentStock === 0) {
+    return "out_of_stock";
+  }
+
+  if (minThreshold && currentStock <= minThreshold) {
+    return "low_stock";
+  }
+
+  return "in_stock";
+}

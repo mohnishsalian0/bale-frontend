@@ -1,42 +1,16 @@
 import { createClient } from "@/lib/supabase/browser";
 import type { Tables } from "@/types/database/supabase";
-import type { CartItem } from "@/contexts/cart-context";
+import type {
+  CheckoutFormData,
+  CreateCatalogOrderParams,
+  PublicSalesOrder,
+} from "@/types/catalog.types";
 
-export interface CheckoutFormData {
-  firstName: string;
-  lastName: string;
-  phone: string;
-  email: string;
-  addressLine1: string;
-  addressLine2: string;
-  city: string;
-  state: string;
-  country: string;
-  pinCode: string;
-  gstin: string;
-  specialInstructions: string;
-  termsAccepted: boolean;
-}
+// Re-export types for convenience
+export type { CheckoutFormData, CreateCatalogOrderParams, PublicSalesOrder };
 
 type Partner = Tables<"partners">;
 type SalesOrder = Tables<"sales_orders">;
-type SalesOrderItem = Tables<"sales_order_items">;
-type Product = Tables<"products">;
-
-export interface SalesOrderItemWithProduct extends SalesOrderItem {
-  product: Product | null;
-}
-
-export interface SalesOrderWithDetails extends SalesOrder {
-  customer: Partner | null;
-  sales_order_items: SalesOrderItemWithProduct[];
-}
-
-export interface CreateCatalogOrderParams {
-  companyId: string;
-  formData: CheckoutFormData;
-  cartItems: CartItem[];
-}
 
 /**
  * Update existing customer by email or phone, or create a new one
@@ -72,14 +46,14 @@ export async function findOrCreateCustomer(
       ignoreDuplicates: false,
     })
     .select()
-    .single();
+    .single<Partner>();
 
   if (error) {
     console.error("Customer upsert error:", error);
     throw new Error(error.message);
   }
 
-  return data as Partner;
+  return data;
 }
 
 /**
@@ -114,6 +88,7 @@ export async function createCatalogOrder({
   }));
 
   // Create sales order with items atomically using RPC function
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data: orderId, error: orderError } = await supabase.rpc(
     "create_sales_order_with_items",
     {
@@ -132,14 +107,14 @@ export async function createCatalogOrder({
     .from("sales_orders")
     .select("*")
     .eq("id", orderId)
-    .single();
+    .single<SalesOrder>();
 
   if (fetchError) {
     console.error("Error fetching created sales order:", fetchError);
     throw new Error("Failed to fetch sales order");
   }
 
-  return salesOrder as SalesOrder;
+  return salesOrder;
 }
 
 /**
@@ -148,7 +123,7 @@ export async function createCatalogOrder({
 export async function getSalesOrderById(
   companyId: string,
   orderId: string,
-): Promise<SalesOrderWithDetails | null> {
+): Promise<PublicSalesOrder | null> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -156,21 +131,42 @@ export async function getSalesOrderById(
     .select(
       `
 			*,
-			customer:partners!customer_id(*),
+			customer:partners!customer_id(
+				id,
+				first_name,
+				last_name,
+				email,
+				phone_number,
+				address_line1,
+				address_line2,
+				city,
+				state,
+				country,
+				pin_code,
+				company_name,
+				gst_number
+			),
 			sales_order_items(
 				*,
-				product:products(*)
+				product:products(
+					id,
+					name,
+					product_images,
+					measuring_unit,
+					sequence_number,
+					stock_type
+				)
 			)
 		`,
     )
     .eq("company_id", companyId)
     .eq("id", orderId)
-    .single();
+    .single<PublicSalesOrder>();
 
   if (error) {
     console.error("Error fetching sales order:", error);
     return null;
   }
 
-  return data as SalesOrderWithDetails;
+  return data;
 }

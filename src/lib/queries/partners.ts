@@ -47,7 +47,8 @@ export const PARTNER_WITH_ORDER_STATS_DETAIL_VIEW_SELECT = `
  * - All partners: getPartners()
  * - Customers: getPartners({ partner_type: 'customer' })
  * - Suppliers: getPartners({ partner_type: 'supplier' })
- * - Agents: getPartners({ partner_type: 'agent' })
+ * - Multiple types: getPartners({ partner_type: ['customer', 'supplier'] })
+ * - Recent partners: getPartners({ order_by: 'last_interaction_at', order_direction: 'desc', limit: 5 })
  */
 export async function getPartners(
   filters?: PartnerFilters,
@@ -57,12 +58,25 @@ export async function getPartners(
   let query = supabase
     .from("partners")
     .select(PARTNER_LIST_VIEW_SELECT)
-    .is("deleted_at", null)
-    .order("first_name", { ascending: true });
+    .is("deleted_at", null);
 
-  // Apply filters
+  // Apply partner_type filter (supports single value or array)
   if (filters?.partner_type) {
-    query = query.eq("partner_type", filters.partner_type);
+    if (Array.isArray(filters.partner_type)) {
+      query = query.in("partner_type", filters.partner_type);
+    } else {
+      query = query.eq("partner_type", filters.partner_type);
+    }
+  }
+
+  // Apply ordering (defaults to first_name ascending)
+  const orderBy = filters?.order_by || "first_name";
+  const ascending = filters?.order_direction !== "desc";
+  query = query.order(orderBy, { ascending });
+
+  // Apply limit
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
   }
 
   const { data, error } = await query;

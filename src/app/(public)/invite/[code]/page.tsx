@@ -1,10 +1,8 @@
 import { redirect } from "next/navigation";
 import InviteAcceptance from "./InviteAcceptance";
-import { useInvite } from "@/lib/query/hooks/invites";
-import { LoadingState } from "@/components/layouts/loading-state";
-import { use, useEffect } from "react";
-import { createClient } from "@/lib/supabase/browser";
-import { getUser } from "@/lib/queries/users";
+import { createClient } from "@/lib/supabase/server";
+import { Invite } from "@/types/invites.types";
+import { User } from "@/types/users.types";
 
 interface InvitePageProps {
   params: Promise<{
@@ -12,35 +10,37 @@ interface InvitePageProps {
   }>;
 }
 
-export default function InvitePage({ params }: InvitePageProps) {
-  const { code } = use(params);
-  const supabase = createClient();
+export default async function InvitePage({ params }: InvitePageProps) {
+  const { code } = await params;
+  const supabase = await createClient();
 
-  // Check if invite is valid
-  const { data: invite, isLoading: loading, isError: error } = useInvite(code);
+  const { data: invite, error } = await supabase
+    .from("invites")
+    .select("*")
+    .eq("token", code)
+    .single<Invite>();
 
-  useEffect(() => {
-    const checkUser = async () => {
-      // Check if user is already logged in
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
+  if (error) {
+    console.error("Error fetching invite:", error);
+    return null;
+  }
 
-      if (authUser) {
-        // Check if user profile exists
-        const currentUser = await getUser();
+  // Check if user is already logged in
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
 
-        if (currentUser) {
-          redirect("/warehouse");
-        }
-      }
-    };
+  if (authUser) {
+    // Check if user profile exists
+    const { data: currentUser } = await supabase
+      .from("users")
+      .select("*")
+      .eq("auth_user_id", authUser.id)
+      .single<User>();
 
-    checkUser();
-  }, [supabase]);
-
-  if (loading) {
-    return <LoadingState message="Loading invite..." />;
+    if (currentUser) {
+      redirect("/warehouse");
+    }
   }
 
   if (error || !invite) {

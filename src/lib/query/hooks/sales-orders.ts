@@ -8,17 +8,27 @@ import {
   getSalesOrderByNumber,
   getSalesOrdersByCustomer,
   createSalesOrder,
+  type SalesOrderFilters,
   type CreateSalesOrderData,
   type CreateSalesOrderLineItem,
 } from "@/lib/queries/sales-orders";
 
 /**
- * Fetch all sales orders for a warehouse
+ * Fetch sales orders for a warehouse with optional filters
+ *
+ * Examples:
+ * - All orders: useSalesOrders(warehouseId)
+ * - Pending orders: useSalesOrders(warehouseId, { status: 'approval_pending' })
+ * - Active orders: useSalesOrders(warehouseId, { status: ['approval_pending', 'in_progress'] })
+ * - Recent orders: useSalesOrders(warehouseId, { limit: 5 })
  */
-export function useSalesOrders(warehouseId: string | null) {
+export function useSalesOrders(
+  warehouseId: string | null,
+  filters?: SalesOrderFilters,
+) {
   return useQuery({
-    queryKey: queryKeys.salesOrders.all(warehouseId),
-    queryFn: () => getSalesOrders(warehouseId),
+    queryKey: queryKeys.salesOrders.all(warehouseId, filters),
+    queryFn: () => getSalesOrders(warehouseId, filters),
     ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
   });
 }
@@ -65,8 +75,9 @@ export function useSalesOrderMutations(warehouseId: string | null) {
       lineItems: CreateSalesOrderLineItem[];
     }) => createSalesOrder(orderData, lineItems),
     onSuccess: () => {
+      // Invalidate all sales order queries for this warehouse (regardless of filters)
       queryClient.invalidateQueries({
-        queryKey: queryKeys.salesOrders.all(warehouseId),
+        queryKey: ["sales-orders", warehouseId],
       });
     },
   });

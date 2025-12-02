@@ -38,7 +38,7 @@ export function useStockUnitsWithInward(
   filters?: StockUnitFilters,
 ) {
   return useQuery({
-    queryKey: queryKeys.stockUnits.all(warehouseId),
+    queryKey: queryKeys.stockUnits.all(warehouseId, filters),
     queryFn: () => getStockUnitsWithInward(warehouseId, filters),
     ...getQueryOptions(STALE_TIME.STOCK_UNITS, GC_TIME.TRANSACTIONAL),
   });

@@ -26,6 +26,9 @@ CREATE TABLE product_inventory_aggregates (
     total_units_received INTEGER DEFAULT 0,
     total_quantity_received NUMERIC(15,3) DEFAULT 0,
 
+    -- QR Code metrics
+    pending_qr_units INTEGER DEFAULT 0, -- Count of in_stock units without QR codes
+
     -- Metadata
     last_updated_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -37,6 +40,7 @@ CREATE TABLE product_inventory_aggregates (
 CREATE INDEX idx_product_inventory_agg_product ON product_inventory_aggregates(product_id);
 CREATE INDEX idx_product_inventory_agg_warehouse ON product_inventory_aggregates(warehouse_id);
 CREATE INDEX idx_product_inventory_agg_company ON product_inventory_aggregates(company_id);
+CREATE INDEX idx_product_inventory_agg_pending_qr ON product_inventory_aggregates(warehouse_id, pending_qr_units DESC) WHERE pending_qr_units > 0;
 
 -- RLS Policies
 ALTER TABLE product_inventory_aggregates ENABLE ROW LEVEL SECURITY;
@@ -69,6 +73,7 @@ DECLARE
     v_removed_value NUMERIC(15,2);
     v_total_units INTEGER;
     v_total_quantity NUMERIC(15,3);
+    v_pending_qr_units INTEGER;
 BEGIN
     -- Get product company_id and cost_price
     SELECT company_id, COALESCE(cost_price_per_unit, 0)
@@ -92,6 +97,16 @@ BEGIN
         AND deleted_at IS NULL;
 
     v_in_stock_value := v_in_stock_quantity * v_cost_price;
+
+    -- Calculate pending QR units (in_stock units without QR code)
+    SELECT COALESCE(COUNT(*), 0)
+    INTO v_pending_qr_units
+    FROM stock_units
+    WHERE product_id = p_product_id
+        AND warehouse_id = p_warehouse_id
+        AND status = 'in_stock'
+        AND qr_generated_at IS NULL
+        AND deleted_at IS NULL;
 
     -- Calculate dispatched metrics
     SELECT
@@ -145,6 +160,7 @@ BEGIN
         removed_value,
         total_units_received,
         total_quantity_received,
+        pending_qr_units,
         last_updated_at
     ) VALUES (
         p_product_id,
@@ -161,6 +177,7 @@ BEGIN
         v_removed_value,
         v_total_units,
         v_total_quantity,
+        v_pending_qr_units,
         NOW()
     )
     ON CONFLICT (product_id, warehouse_id)
@@ -176,6 +193,7 @@ BEGIN
         removed_value = EXCLUDED.removed_value,
         total_units_received = EXCLUDED.total_units_received,
         total_quantity_received = EXCLUDED.total_quantity_received,
+        pending_qr_units = EXCLUDED.pending_qr_units,
         last_updated_at = NOW();
 END;
 $$ LANGUAGE plpgsql;

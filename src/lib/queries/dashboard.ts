@@ -1,160 +1,22 @@
 import { createClient } from "@/lib/supabase/browser";
-import type { Tables } from "@/types/database/supabase";
-import type { ProductListView } from "@/types/products.types";
+import type { ProductInventory, ProductListView } from "@/types/products.types";
 import {
-  PRODUCT_WITH_ATTRIBUTES_SELECT,
+  PRODUCT_LIST_VIEW_SELECT,
+  ProductListViewRaw,
   transformProductListView,
 } from "./products";
-
-type SalesOrder = Tables<"sales_orders">;
-type Partner = Tables<"partners">;
-type StockUnit = Tables<"stock_units">;
-type SalesOrderItem = Tables<"sales_order_items">;
-type Warehouse = Tables<"warehouses">;
-
-export interface StockUnitWithProduct extends StockUnit {
-  product: ProductListView | null;
-}
-
-export interface DashboardSalesOrder extends SalesOrder {
-  customer: Partner | null;
-  agent: Partner | null;
-  warehouse: Warehouse | null;
-  sales_order_items: Array<
-    SalesOrderItem & {
-      product: ProductListView[] | null;
-    }
-  >;
-}
-
-export interface LowStockProduct extends ProductListView {
-  current_stock: number;
-}
 
 export interface PendingQRProduct extends ProductListView {
   pending_qr_count: number;
 }
 
-export interface RecentPartner extends Partner {
-  last_interaction: string | null;
-}
-
-/**
- * Fetch sales orders for dashboard (approval_pending, in_progress, and overdue)
- * Limited to 5 most recent orders
- */
-export async function getDashboardSalesOrders(
-  warehouseId: string,
-): Promise<DashboardSalesOrder[]> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("sales_orders")
-    .select(
-      `
-			*,
-			customer:partners!sales_orders_customer_id_fkey(
-				id, first_name, last_name, company_name
-			),
-			agent:partners!sales_orders_agent_id_fkey(
-				id, first_name, last_name, company_name
-			),
-			warehouse:warehouses(id, name),
-			sales_order_items(
-				id, product_id, required_quantity, dispatched_quantity,
-				pending_quantity, unit_rate, line_total,
-				product:products(
-					id, name, measuring_unit, product_images, sequence_number,
-					product_material_assignments(
-						material:product_materials(*)
-					),
-					product_color_assignments(
-						color:product_colors(*)
-					),
-					product_tag_assignments(
-						tag:product_tags(*)
-					)
-				)
-			)
-		`,
-    )
-    .eq("warehouse_id", warehouseId)
-    .in("status", ["approval_pending", "in_progress"])
-    .is("deleted_at", null)
-    .order("order_date", { ascending: false })
-    .limit(5);
-
-  if (error) {
-    console.error("Error fetching dashboard sales orders:", error);
-    throw error;
-  }
-
-  return (data || []) as DashboardSalesOrder[];
-}
-
-/**
- * Fetch products with low stock (below minimum threshold)
- * Limited to 5 products
- * Uses RPC function with aggregates for efficient single-query lookup
- */
-export async function getLowStockProducts(
-  warehouseId: string,
-): Promise<LowStockProduct[]> {
-  const supabase = createClient();
-
-  // Use RPC function to get low stock product IDs efficiently
-  const { data: lowStockData, error: rpcError } = await supabase.rpc(
-    "get_low_stock_products",
-    {
-      p_warehouse_id: warehouseId,
-      p_limit: 5,
-    },
-  );
-
-  if (rpcError) {
-    console.error("Error fetching low stock products:", rpcError);
-    throw rpcError;
-  }
-
-  if (!lowStockData || lowStockData.length === 0) {
-    return [];
-  }
-
-  // Fetch full product details for the low stock products
-  const productIds = lowStockData.map((item: any) => item.product_id);
-
-  const { data: products, error: productsError } = await supabase
-    .from("products")
-    .select(PRODUCT_WITH_ATTRIBUTES_SELECT)
-    .in("id", productIds);
-
-  if (productsError) {
-    console.error("Error fetching product details:", productsError);
-    throw productsError;
-  }
-
-  if (!products) {
-    return [];
-  }
-
-  // Map products with their current stock from RPC result
-  const lowStockProducts: LowStockProduct[] = products.map((product: any) => {
-    const stockData = lowStockData.find(
-      (item: any) => item.product_id === product.id,
-    );
-    const transformedProduct = transformProductListView(product);
-
-    return {
-      ...transformedProduct,
-      current_stock: Number(stockData?.in_stock_quantity || 0),
-    };
-  });
-
-  return lowStockProducts;
-}
+type PendingQRListViewRaw = Pick<ProductInventory, "pending_qr_units"> & {
+  product: ProductListViewRaw;
+};
 
 /**
  * Fetch products with pending QR code generation
+ * Uses product_inventory_aggregates for efficient querying
  * Limited to 5 products
  */
 export async function getPendingQRProducts(
@@ -162,123 +24,38 @@ export async function getPendingQRProducts(
 ): Promise<PendingQRProduct[]> {
   const supabase = createClient();
 
-  // Get stock units without QR code generated
-  // Using !inner tells Supabase this is a many-to-one relationship (returns single object, not array)
-  const { data: stockUnits, error: stockError } = await supabase
-    .from("stock_units")
+  // Query aggregates table for products with pending QR codes
+  const { data: aggregates, error: aggError } = await supabase
+    .from("product_inventory_aggregates")
     .select(
       `
-				*,
+				pending_qr_units,
 				product:products(
-					id, name, measuring_unit, product_images, sequence_number,
-					product_material_assignments(
-						material:product_materials(*)
-					),
-					product_color_assignments(
-						color:product_colors(*)
-					),
-					product_tag_assignments(
-						tag:product_tags(*)
-					)
+					${PRODUCT_LIST_VIEW_SELECT}
 				)
 		`,
     )
     .eq("warehouse_id", warehouseId)
-    .eq("status", "in_stock")
-    .is("qr_generated_at", null)
-    .is("deleted_at", null);
+    .gt("pending_qr_units", 0)
+    .order("pending_qr_units", { ascending: false })
+    .limit(5);
 
-  if (stockError) {
-    console.error("Error fetching pending QR products:", stockError);
-    throw stockError;
+  if (aggError) {
+    console.error("Error fetching pending QR products:", aggError);
+    throw aggError;
   }
 
-  if (!stockUnits || stockUnits.length === 0) {
+  if (!aggregates || aggregates.length === 0) {
     return [];
   }
 
-  // Group by product and count pending QR codes
-  const productMap = new Map<
-    string,
-    { product: ProductListView; count: number }
-  >();
-
-  for (const unit of stockUnits as any[]) {
-    if (!unit.product) continue;
-
-    const existing = productMap.get(unit.product_id);
-    if (existing) {
-      existing.count += 1;
-    } else {
-      productMap.set(unit.product_id, {
-        product: transformProductListView(unit.product),
-        count: 1,
-      });
-    }
-  }
-
-  // Convert to array and limit to 5
-  const pendingQRProducts: PendingQRProduct[] = Array.from(productMap.values())
-    .map(({ product, count }) => ({
-      ...product,
-      pending_qr_count: count,
-    }))
-    .slice(0, 5);
+  // Transform to PendingQRProduct format
+  const pendingQRProducts: PendingQRProduct[] = (
+    (aggregates as unknown as PendingQRListViewRaw[]) || []
+  ).map((agg) => ({
+    ...transformProductListView(agg.product),
+    pending_qr_count: agg.pending_qr_units || 0,
+  }));
 
   return pendingQRProducts;
-}
-
-/**
- * Fetch recent partners based on last interaction (sales orders, goods inward/outward)
- * Returns customers and suppliers separately, up to 8 each (fetch 8 to check if more exist)
- */
-export async function getRecentPartners(): Promise<{
-  customers: RecentPartner[];
-  suppliers: RecentPartner[];
-}> {
-  const supabase = createClient();
-
-  // Fetch 8 customers (to check if more than 7 exist)
-  const { data: customerData, error: customersError } = await supabase
-    .from("partners")
-    .select("*")
-    .eq("partner_type", "customer")
-    .is("deleted_at", null)
-    .order("last_interaction_at", { ascending: false, nullsFirst: false })
-    .limit(8);
-
-  if (customersError) {
-    console.error("Error fetching customers:", customersError);
-    throw customersError;
-  }
-
-  // Fetch 8 suppliers/vendors (to check if more than 7 exist)
-  const { data: supplierData, error: suppliersError } = await supabase
-    .from("partners")
-    .select("*")
-    .in("partner_type", ["supplier", "vendor"])
-    .is("deleted_at", null)
-    .order("last_interaction_at", { ascending: false, nullsFirst: false })
-    .limit(8);
-
-  if (suppliersError) {
-    console.error("Error fetching suppliers:", suppliersError);
-    throw suppliersError;
-  }
-
-  // Map to RecentPartner type
-  const customers: RecentPartner[] = (customerData || []).map((p) => ({
-    ...p,
-    last_interaction: p.last_interaction_at,
-  }));
-
-  const suppliers: RecentPartner[] = (supplierData || []).map((p) => ({
-    ...p,
-    last_interaction: p.last_interaction_at,
-  }));
-
-  return {
-    customers,
-    suppliers,
-  };
 }

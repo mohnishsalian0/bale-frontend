@@ -1,6 +1,6 @@
 import type { Tables } from "@/types/database/supabase";
 
-type Invite = Tables<"invites">;
+export type Invite = Tables<"invites">;
 
 /**
  * Active invite with details for list views

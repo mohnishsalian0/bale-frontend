@@ -42,8 +42,6 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/invite/") ||
     (pathname.startsWith("/company/") && pathname !== "/company");
 
-  console.log(user, pathname);
-
   // If not authenticated and trying to access protected route
   if (!user && !isPublic) {
     const redirectUrl = request.nextUrl.clone();
@@ -52,8 +50,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  console.log("ispublic", isPublic, pathname);
+  console.log("user", user);
+
   // If authenticated and trying to access auth pages, redirect to warehouse selection
-  if (user && pathname.includes("auth")) {
+  if (user && pathname.includes("auth/login")) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/warehouse";
     return NextResponse.redirect(redirectUrl);

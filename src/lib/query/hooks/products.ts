@@ -14,6 +14,7 @@ import {
   getProductWithInventoryById,
   getProductWithInventoryByNumber,
   getProductTags,
+  getLowStockProducts,
   createProductMaterial,
   createProductColor,
   createProductTag,
@@ -288,4 +289,15 @@ export function useProductImageMutations() {
     deleteImages,
     updateField,
   };
+}
+
+/**
+ * Fetch products with low stock for a warehouse
+ */
+export function useLowStockProducts(warehouseId: string, limit?: number) {
+  return useQuery({
+    queryKey: queryKeys.products.withInventory(warehouseId),
+    queryFn: () => getLowStockProducts(warehouseId, limit),
+    ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.REALTIME),
+  });
 }

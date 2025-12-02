@@ -2,11 +2,11 @@
 
 import { getPartnerName } from "@/lib/utils/partner";
 import { getInitials } from "@/lib/utils/initials";
-import type { RecentPartner } from "@/lib/queries/dashboard";
+import type { PartnerListView } from "@/types/partners.types";
 import ImageWrapper from "./image-wrapper";
 
 interface PartnerButtonProps {
-  partner: RecentPartner;
+  partner: PartnerListView;
   onClick: () => void;
 }
 

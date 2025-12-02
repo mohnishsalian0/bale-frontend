@@ -22,15 +22,13 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { formatStockUnitNumber } from "@/lib/utils/product";
-import type { Tables } from "@/types/database/supabase";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
-import { ProductListView } from "@/types/products.types";
+import { StockUnitWithProductDetailView } from "@/types/stock-units.types";
 
 interface StockUnitQuantitySheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  stockUnit: Tables<"stock_units"> | null;
-  product: ProductListView | null;
+  stockUnit: StockUnitWithProductDetailView | null;
   initialQuantity?: number;
   onConfirm: (quantity: number) => void;
 }
@@ -39,20 +37,19 @@ export function StockUnitQuantitySheet({
   open,
   onOpenChange,
   stockUnit,
-  product,
   initialQuantity = 0,
   onConfirm,
 }: StockUnitQuantitySheetProps) {
   const [quantity, setQuantity] = useState(initialQuantity);
   const isMobile = useIsMobile();
 
-  if (!stockUnit || !product) return null;
+  if (!stockUnit) return null;
 
   const maxQuantity = stockUnit.remaining_quantity;
   const unitAbbreviation = getMeasuringUnitAbbreviation(
-    product.measuring_unit as MeasuringUnit | null,
+    stockUnit.product?.measuring_unit as MeasuringUnit | null,
   );
-  const stockType = product.stock_type as StockType;
+  const stockType = stockUnit.product?.stock_type as StockType;
 
   const handleCancel = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -100,16 +97,16 @@ export function StockUnitQuantitySheet({
           <ImageWrapper
             size="md"
             shape="square"
-            imageUrl={product.product_images?.[0]}
-            alt={product.name}
+            imageUrl={stockUnit.product?.product_images?.[0]}
+            alt={stockUnit.product?.name || "Product Image"}
             placeholderIcon={IconPhoto}
           />
           <div className="flex-1 min-w-0">
             <p
-              title={product.name}
+              title={stockUnit.product?.name}
               className="text-base font-medium text-gray-700 truncate"
             >
-              {product.name}
+              {stockUnit.product?.name}
             </p>
             <p
               title={formatStockUnitNumber(

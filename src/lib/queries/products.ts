@@ -10,6 +10,7 @@ import {
   ProductWithInventoryListView,
   ProductWithInventoryDetailView,
   ProductUpsertData,
+  ProductAttributeAssignmentsRaw,
 } from "@/types/products.types";
 import { uploadProductImage, deleteProductImagesByUrls } from "@/lib/storage";
 
@@ -109,19 +110,6 @@ export const PRODUCT_WITH_ATTRIBUTES_SELECT = `
 // RAW TYPES - For Supabase responses
 // ============================================================================
 
-// Common structure for attribute assignments
-export type ProductAttributeAssignmentsRaw = {
-  product_material_assignments: Array<{
-    material: Pick<ProductMaterial, "id" | "name" | "color_hex"> | null;
-  }>;
-  product_color_assignments: Array<{
-    color: Pick<ProductColor, "id" | "name" | "color_hex"> | null;
-  }>;
-  product_tag_assignments: Array<{
-    tag: Pick<ProductTag, "id" | "name" | "color_hex"> | null;
-  }>;
-};
-
 // Raw type for ProductListView query response
 export type ProductListViewRaw = Pick<
   Tables<"products">,
@@ -161,7 +149,7 @@ type ProductWithInventoryDetailViewRaw = ProductDetailViewRaw & {
 /**
  * Helper to transform attributes from nested assignments
  */
-function transformAttributes(product: ProductAttributeAssignmentsRaw) {
+export function transformAttributes(product: ProductAttributeAssignmentsRaw) {
   const materials = product.product_material_assignments
     .map((a) => a.material)
     .filter((m): m is ProductMaterial => m !== null);
@@ -778,4 +766,38 @@ export async function updateProductImagesField(
     console.error("Error updating product images field:", error);
     throw error;
   }
+}
+
+// ============================================================================
+// LOW STOCK PRODUCTS
+// ============================================================================
+
+/**
+ * Fetch products with low stock (below minimum threshold)
+ * Limited to specified number of products
+ * Uses RPC function that returns complete product data in a single query
+ * Returns products in ProductWithInventoryListView format
+ */
+export async function getLowStockProducts(
+  warehouseId: string,
+  limit: number = 5,
+): Promise<ProductWithInventoryListView[]> {
+  const supabase = createClient();
+
+  // RPC function returns complete product data with materials, colors, tags, and inventory
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { data, error } = await supabase.rpc("get_low_stock_products", {
+    p_warehouse_id: warehouseId,
+    p_limit: limit,
+  });
+
+  if (error) {
+    console.error("Error fetching low stock products:", error);
+    throw error;
+  }
+
+  if (!data) return [];
+
+  // Parse JSONB response directly to ProductWithInventoryListView[]
+  return data as ProductWithInventoryListView[];
 }

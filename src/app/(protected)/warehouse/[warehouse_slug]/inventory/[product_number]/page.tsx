@@ -57,6 +57,8 @@ export default function ProductDetailPage({ params }: PageParams) {
   const { data: stockUnits = [], isLoading: stockUnitsLoading } =
     useStockUnitsWithInward(warehouse.id, { product_id: product?.id });
 
+  console.log("stock units", stockUnits);
+
   // Fetch outward items using new hook
   const { data: outwardItems = [], isLoading: outwardItemsLoading } =
     useOutwardItemsByProduct(product?.id || null);

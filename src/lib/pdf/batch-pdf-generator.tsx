@@ -93,9 +93,10 @@ export async function generateBatchPDF(
         name: product.name,
         sequence_number: product.sequence_number,
         hsn_code: product.hsn_code,
-        stock_type: product.stock_type,
         gsm: product.gsm,
         selling_price_per_unit: product.selling_price_per_unit,
+        stock_type: product.stock_type,
+        measuring_unit: product.measuring_unit,
         // Product data already transformed with materials/colors arrays
         materials: product.materials || [],
         colors: product.colors || [],

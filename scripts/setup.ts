@@ -1496,6 +1496,7 @@ async function createTestPartners() {
   const { data: adminToken, error: adminInviteError } = await supabase.rpc(
     "create_staff_invite",
     {
+      p_all_warehouses_access: true,
       p_company_id: companyId,
       p_company_name: companyName,
       p_role: "admin",
@@ -1516,6 +1517,7 @@ async function createTestPartners() {
   const { data: staffToken, error: staffInviteError } = await supabase.rpc(
     "create_staff_invite",
     {
+      p_all_warehouses_access: false,
       p_company_id: companyId,
       p_company_name: companyName,
       p_role: "staff",

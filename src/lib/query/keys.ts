@@ -47,7 +47,8 @@ export const queryKeys = {
 
   // Sales Orders
   salesOrders: {
-    all: (warehouseId: string | null) => ["sales-orders", warehouseId] as const,
+    all: (warehouseId: string | null, filters?: Record<string, unknown>) =>
+      ["sales-orders", warehouseId, filters] as const,
     detail: (sequenceNumber: string) =>
       ["sales-orders", "detail", sequenceNumber] as const,
     dashboard: (warehouseId: string) =>

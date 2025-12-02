@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
@@ -8,71 +8,51 @@ import {
   getCatalogConfiguration,
   getPublicProducts,
 } from "@/lib/queries/catalog";
-import {
-  createCatalogOrder,
-  getSalesOrderById,
-} from "@/lib/queries/catalog-orders";
 
 /**
- * Fetch company by slug (for public catalog)
+ * Fetch company by slug (public access)
+ * Used in: catalog landing page, public store front
  */
-export function useCatalogCompany(slug: string) {
+export function usePublicCompany(slug: string | null) {
   return useQuery({
-    queryKey: queryKeys.catalog.company(slug),
-    queryFn: () => getCompanyBySlug(slug),
-    ...getQueryOptions(STALE_TIME.CATALOG, GC_TIME.MASTER_DATA),
+    queryKey: queryKeys.catalog.company(slug || ""),
+    queryFn: () => getCompanyBySlug(slug!),
+    ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+    enabled: !!slug,
   });
 }
 
 /**
- * Fetch catalog configuration
+ * Fetch catalog configuration for a company
+ * Used in: catalog pages to check if accepting orders, get branding settings
  */
-export function useCatalogConfiguration(companyId: string) {
+export function usePublicCatalogConfig(companyId: string | null) {
   return useQuery({
-    queryKey: queryKeys.catalog.config(companyId),
-    queryFn: () => getCatalogConfiguration(companyId),
-    ...getQueryOptions(STALE_TIME.CATALOG, GC_TIME.MASTER_DATA),
+    queryKey: queryKeys.catalog.config(companyId || ""),
+    queryFn: () => getCatalogConfiguration(companyId!),
+    ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+    enabled: !!companyId,
   });
 }
 
 /**
  * Fetch public products for catalog
+ * Includes stock status and optional warehouse filtering
+ *
+ * Examples:
+ * - All products across warehouses: usePublicProducts(companyId)
+ * - Products for specific warehouse: usePublicProducts(companyId, warehouseId)
+ *
+ * Used in: catalog product list, shopping cart, checkout
  */
-export function usePublicProducts(companySlug: string) {
+export function usePublicProducts(
+  companyId: string | null,
+  warehouseId?: string,
+) {
   return useQuery({
-    queryKey: queryKeys.catalog.products(companySlug),
-    queryFn: () => getPublicProducts(companySlug),
-    ...getQueryOptions(STALE_TIME.CATALOG, GC_TIME.MASTER_DATA),
+    queryKey: queryKeys.catalog.products(companyId || ""),
+    queryFn: () => getPublicProducts(companyId!, warehouseId),
+    ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+    enabled: !!companyId,
   });
-}
-
-/**
- * Fetch catalog order by ID
- */
-export function useCatalogOrder(companyId: string, orderId: string | null) {
-  return useQuery({
-    queryKey: queryKeys.catalog.order(orderId || ""),
-    queryFn: () => getSalesOrderById(companyId, orderId!),
-    ...getQueryOptions(STALE_TIME.CATALOG, GC_TIME.DEFAULT),
-    enabled: !!orderId,
-  });
-}
-
-/**
- * Catalog order mutations (create order)
- */
-export function useCatalogOrderMutations() {
-  const queryClient = useQueryClient();
-
-  const createOrder = useMutation({
-    mutationFn: createCatalogOrder,
-    onSuccess: () => {
-      // Invalidate relevant queries after order creation
-      queryClient.invalidateQueries({ queryKey: ["catalog"] });
-    },
-  });
-
-  return {
-    createOrder,
-  };
 }

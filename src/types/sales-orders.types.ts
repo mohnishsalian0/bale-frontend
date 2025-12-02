@@ -11,6 +11,17 @@ type Partner = Tables<"partners">;
 type Warehouse = Tables<"warehouses">;
 type Product = Tables<"products">;
 
+// ============================================================================
+// FILTERS
+// ============================================================================
+
+export interface SalesOrderFilters extends Record<string, unknown> {
+  status?: string | string[]; // Support single or array for IN queries
+  limit?: number;
+  order_by?: "order_date" | "expected_delivery_date" | "created_at";
+  order_direction?: "asc" | "desc";
+}
+
 // =====================================================
 // LIST VIEW TYPES (for sales order list pages)
 // =====================================================

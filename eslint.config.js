@@ -39,7 +39,7 @@ export default [
     rules: {
       ...react.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": "warn",
+      "react-refresh/only-export-components": "off",
       "react/react-in-jsx-scope": "off", // Not needed for React 17+ with new JSX transform
       "react/jsx-uses-react": "off", // Not needed for React 17+ with new JSX transform
       "react/prop-types": "off", // Not needed in TypeScript projects
@@ -80,7 +80,7 @@ export default [
       ...tsPlugin.configs["eslint-recommended"].rules, // Disable base ESLint rules that conflict
       ...react.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": "warn",
+      "react-refresh/only-export-components": "off",
       "react/react-in-jsx-scope": "off", // Not needed for React 17+ with new JSX transform
       "react/jsx-uses-react": "off", // Not needed for React 17+ with new JSX transform
       "react/prop-types": "off", // Not needed in TypeScript projects

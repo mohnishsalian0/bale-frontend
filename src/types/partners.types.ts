@@ -8,7 +8,10 @@ type PartnerOrderAggregate = Tables<"partner_order_aggregates">;
 // ============================================================================
 
 export interface PartnerFilters extends Record<string, unknown> {
-  partner_type?: string;
+  partner_type?: string | string[]; // Support single or array for IN queries
+  limit?: number;
+  order_by?: "first_name" | "last_interaction_at";
+  order_direction?: "asc" | "desc";
 }
 
 // ============================================================================

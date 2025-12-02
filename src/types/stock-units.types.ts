@@ -1,6 +1,6 @@
 import type { Tables } from "@/types/database/supabase";
 
-type StockUnit = Tables<"stock_units">;
+export type StockUnit = Tables<"stock_units">;
 type GoodsInward = Tables<"goods_inwards">;
 type Partner = Tables<"partners">;
 type Warehouse = Tables<"warehouses">;

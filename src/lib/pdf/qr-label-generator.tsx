@@ -11,7 +11,8 @@ import QRCode from "qrcode";
 import { formatStockUnitNumber } from "@/lib/utils/product";
 import type { QRTemplateField } from "@/app/(protected)/warehouse/[warehouse_slug]/qr-codes/QRTemplateCustomisationStep";
 import type { Tables } from "@/types/database/supabase";
-import type { StockType } from "@/types/database/enums";
+import type { MeasuringUnit, StockType } from "@/types/database/enums";
+import { getMeasuringUnitAbbreviation } from "../utils/measuring-units";
 
 // Type for product attributes in label data
 interface LabelProductAttribute {
@@ -37,10 +38,12 @@ export type LabelData = Pick<
     | "gsm"
     | "selling_price_per_unit"
     | "stock_type"
+    | "measuring_unit"
   > & {
     materials?: LabelProductAttribute[];
     colors?: LabelProductAttribute[];
   };
+  qrCodeDataUrl?: string;
 };
 
 // Define styles for PDF
@@ -133,7 +136,7 @@ export async function generateQRCodeDataUrl(text: string): Promise<string> {
 
 // Get field value from label data
 function getFieldValue(unit: LabelData, field: QRTemplateField): string {
-  let value: any;
+  let value: string;
 
   // Map fields to correct location (stock unit or product)
   switch (field) {
@@ -141,22 +144,22 @@ function getFieldValue(unit: LabelData, field: QRTemplateField): string {
       value = unit.product.name;
       break;
     case "product_number":
-      value = unit.product.sequence_number;
+      value = String(unit.product.sequence_number);
       break;
     case "hsn_code":
-      value = unit.product.hsn_code;
+      value = unit.product.hsn_code || "-";
       break;
     case "material":
-      value = unit.product.materials?.map((m) => m.name).join(", ") || "";
+      value = unit.product.materials?.map((m) => m.name).join(", ") || "-";
       break;
     case "color":
-      value = unit.product.colors?.map((c) => c.name).join(", ") || "";
+      value = unit.product.colors?.map((c) => c.name).join(", ") || "-";
       break;
     case "gsm":
-      value = unit.product.gsm;
+      value = String(unit.product.gsm ?? "-");
       break;
     case "selling_price_per_unit":
-      value = unit.product.selling_price_per_unit;
+      value = `₹ ${unit.product.selling_price_per_unit}`;
       break;
     case "unit_number":
       return formatStockUnitNumber(
@@ -164,16 +167,18 @@ function getFieldValue(unit: LabelData, field: QRTemplateField): string {
         unit.product.stock_type as StockType,
       );
     case "manufacturing_date":
-      value = unit.manufacturing_date;
+      value = unit.manufacturing_date
+        ? new Date(unit.manufacturing_date).toLocaleDateString()
+        : "-";
       break;
     case "initial_quantity":
-      value = unit.initial_quantity;
+      value = `${unit.initial_quantity} ${getMeasuringUnitAbbreviation(unit.product.measuring_unit as MeasuringUnit)}`;
       break;
     case "quality_grade":
-      value = unit.quality_grade;
+      value = String(unit.quality_grade ?? "-");
       break;
     case "warehouse_location":
-      value = unit.warehouse_location;
+      value = String(unit.warehouse_location ?? "-");
       break;
     default:
       return "";
@@ -183,20 +188,7 @@ function getFieldValue(unit: LabelData, field: QRTemplateField): string {
     return "";
   }
 
-  // Format specific fields
-  if (field === "selling_price_per_unit" && typeof value === "number") {
-    return `₹${value.toFixed(2)}`;
-  }
-
-  if (field === "initial_quantity" && typeof value === "number") {
-    return `${value} mtr`;
-  }
-
-  if (field === "manufacturing_date" && typeof value === "string") {
-    return new Date(value).toLocaleDateString();
-  }
-
-  return String(value);
+  return value;
 }
 
 // Single label component
@@ -251,7 +243,7 @@ export const QRLabelDocument: React.FC<QRLabelDocumentProps> = ({
           <Label
             key={unit.id}
             unit={unit}
-            qrCodeDataUrl={(unit as any).qrCodeDataUrl} // Will be injected before rendering
+            qrCodeDataUrl={unit.qrCodeDataUrl || ""} // Will be injected before rendering
             selectedFields={selectedFields}
             companyLogoUrl={companyLogoUrl}
             isRightColumn={index % 2 === 1} // Even indices = left column, odd = right column

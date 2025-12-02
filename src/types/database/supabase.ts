@@ -1139,6 +1139,7 @@ export type Database = {
           in_stock_units: number | null
           in_stock_value: number | null
           last_updated_at: string | null
+          pending_qr_units: number | null
           product_id: string
           removed_quantity: number | null
           removed_units: number | null
@@ -1158,6 +1159,7 @@ export type Database = {
           in_stock_units?: number | null
           in_stock_value?: number | null
           last_updated_at?: string | null
+          pending_qr_units?: number | null
           product_id: string
           removed_quantity?: number | null
           removed_units?: number | null
@@ -1177,6 +1179,7 @@ export type Database = {
           in_stock_units?: number | null
           in_stock_value?: number | null
           last_updated_at?: string | null
+          pending_qr_units?: number | null
           product_id?: string
           removed_quantity?: number | null
           removed_units?: number | null
@@ -2293,11 +2296,7 @@ export type Database = {
       get_jwt_user_role: { Args: never; Returns: string }
       get_low_stock_products: {
         Args: { p_limit?: number; p_warehouse_id: string }
-        Returns: {
-          in_stock_quantity: number
-          min_stock_threshold: number
-          product_id: string
-        }[]
+        Returns: Json[]
       }
       get_next_sequence: {
         Args: { p_company_id?: string; p_table_name: string }

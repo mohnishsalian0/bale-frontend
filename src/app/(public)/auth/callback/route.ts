@@ -3,6 +3,12 @@ import { Tables } from "@/types/database/supabase";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
+type UserMetadata = {
+  given_name?: string;
+  family_name?: string;
+  name?: string;
+};
+
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
@@ -97,18 +103,14 @@ export async function GET(request: Request) {
       },
     );
 
-    console.log(authUser);
+    const metadata = authUser.user_metadata as UserMetadata;
+    const fullName = metadata.name || "";
+    const nameParts = fullName.split(" ");
 
-    // Extract names from user metadata
-    const firstName =
-      authUser.user_metadata?.given_name ||
-      authUser.user_metadata?.name?.split(" ")?.[0] ||
-      "User";
-    const lastName =
-      authUser.user_metadata?.family_name ||
-      authUser.user_metadata?.name?.split(" ").slice(1).join(" ") ||
-      "";
+    const firstName = metadata.given_name || nameParts[0] || "User";
+    const lastName = metadata.family_name || nameParts.slice(1).join(" ") || "";
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { data: newUserId, error: createError } = await supabaseAdmin.rpc(
       "create_user_from_invite",
       {
@@ -116,7 +118,6 @@ export async function GET(request: Request) {
         p_invite_token: inviteCode,
         p_first_name: firstName,
         p_last_name: lastName,
-        p_all_warehouses_access: invite?.role === "admin",
       },
     );
 

@@ -6,11 +6,11 @@ import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { IconAlertTriangle } from "@tabler/icons-react";
-import type { LowStockProduct } from "@/lib/queries/dashboard";
+import type { ProductWithInventoryListView } from "@/types/products.types";
 import type { StockType, MeasuringUnit } from "@/types/database/enums";
 
 interface LowStockProductsSectionProps {
-  products: LowStockProduct[];
+  products: ProductWithInventoryListView[];
   warehouseSlug: string;
   onNavigate: (path: string) => void;
 }
@@ -71,7 +71,7 @@ export function LowStockProductsSection({
                   <div className="flex items-center gap-1">
                     <IconAlertTriangle className="size-4 text-yellow-700" />
                     <p className="text-base font-bold text-yellow-700">
-                      {product.current_stock}{" "}
+                      {product.inventory.in_stock_quantity}{" "}
                       {getMeasuringUnitAbbreviation(
                         product.measuring_unit as MeasuringUnit | null,
                       )}

@@ -277,10 +277,14 @@ export async function getStockUnitsWithInward(
  */
 export async function getStockUnitWithProductDetail(
   stockUnitId: string,
+  filters?: {
+    warehouseId?: string;
+    status?: string;
+  },
 ): Promise<StockUnitWithProductDetailView> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("stock_units")
     .select(
       `
@@ -289,8 +293,18 @@ export async function getStockUnitWithProductDetail(
     `,
     )
     .eq("id", stockUnitId)
-    .is("deleted_at", null)
-    .single<StockUnitWithProductDetailViewRaw>();
+    .is("deleted_at", null);
+
+  // Apply optional filters
+  if (filters?.warehouseId) {
+    query = query.eq("warehouse_id", filters.warehouseId);
+  }
+
+  if (filters?.status) {
+    query = query.eq("status", filters.status);
+  }
+
+  const { data, error } = await query.single<StockUnitWithProductDetailViewRaw>();
 
   if (error) {
     console.error("Error fetching stock unit with product detail:", error);

@@ -1,26 +1,43 @@
 import { createClient } from "@/lib/supabase/browser";
-import { ProductStockStatus } from "@/types/database/enums";
-import type { Tables } from "@/types/database/supabase";
+import type {
+  PublicProduct,
+  PublicCompany,
+  CatalogConfiguration,
+} from "@/types/catalog.types";
+import { calculateStockStatus } from "@/lib/utils/product";
+import { transformAttributes } from "./products";
+import {
+  Product,
+  ProductAttributeAssignmentsRaw,
+  ProductInventory,
+} from "@/types/products.types";
 
-type Company = Tables<"companies">;
-type Product = Tables<"products">;
-type CatalogConfiguration = Tables<"catalog_configurations">;
-type ProductMaterial = Tables<"product_materials">;
-type ProductColor = Tables<"product_colors">;
-type ProductTag = Tables<"product_tags">;
+// Re-export types for convenience
+export type { PublicProduct } from "@/types/catalog.types";
 
-export interface PublicProduct extends Product {
-  in_stock_quantity: number;
-  stock_status: ProductStockStatus;
-  materials: ProductMaterial[];
-  colors: ProductColor[];
-  tags: ProductTag[];
-}
+// Raw type for ProductListView query response
+export type ProductListViewRaw = Pick<
+  Product,
+  | "id"
+  | "sequence_number"
+  | "name"
+  | "stock_type"
+  | "measuring_unit"
+  | "product_images"
+  | "min_stock_threshold"
+> & {
+  inventory: Array<
+    Pick<
+      ProductInventory,
+      "in_stock_units" | "in_stock_quantity" | "warehouse_id"
+    >
+  >;
+} & ProductAttributeAssignmentsRaw;
 
 /**
  * Get company by slug (public access)
  */
-export async function getCompanyBySlug(slug: string): Promise<Company | null> {
+export async function getCompanyBySlug(slug: string): Promise<PublicCompany> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -28,14 +45,12 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
     .select("*")
     .eq("slug", slug)
     .is("deleted_at", null)
-    .single();
+    .single<PublicCompany>();
 
-  if (error) {
-    console.error("Error fetching company:", error);
-    return null;
-  }
+  if (error) throw error;
+  if (!data) throw new Error("Company not found");
 
-  return data as Company;
+  return data as PublicCompany;
 }
 
 /**
@@ -43,21 +58,19 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
  */
 export async function getCatalogConfiguration(
   companyId: string,
-): Promise<CatalogConfiguration | null> {
+): Promise<CatalogConfiguration> {
   const supabase = createClient();
 
   const { data, error } = await supabase
     .from("catalog_configurations")
     .select("*")
     .eq("company_id", companyId)
-    .single();
+    .single<CatalogConfiguration>();
 
-  if (error) {
-    console.error("Error fetching catalog configuration:", error);
-    return null;
-  }
+  if (error) throw error;
+  if (!data) throw new Error("Catalog configuration not found");
 
-  return data as CatalogConfiguration;
+  return data;
 }
 
 /**
@@ -77,19 +90,26 @@ export async function getPublicProducts(
     .from("products")
     .select(
       `
-			*,
-			inventory_agg:product_inventory_aggregates!product_id(
+			id,
+			sequence_number,
+			name,
+			stock_type,
+			measuring_unit,
+			product_images,
+			min_stock_threshold,
+			inventory:product_inventory_aggregates!product_id(
+				in_stock_units,
 				in_stock_quantity,
 				warehouse_id
 			),
 			product_material_assignments(
-				material:product_materials(*)
+				material:product_materials(id, name, color_hex)
 			),
 			product_color_assignments(
-				color:product_colors(*)
+				color:product_colors(id, name, color_hex)
 			),
 			product_tag_assignments(
-				tag:product_tags(*)
+				tag:product_tags(id, name, color_hex)
 			)
 		`,
     )
@@ -100,74 +120,59 @@ export async function getPublicProducts(
 
   console.log("Products query result:", { products, productsError });
 
-  if (productsError) {
+  if (productsError || !products) {
     console.error("Error fetching public products:", productsError);
     return [];
   }
 
   // Transform products with stock status and flatten attributes
-  const publicProducts: PublicProduct[] = (products || []).map(
-    (product: any) => {
-      // Find inventory for the specified warehouse, or sum across all warehouses
-      let totalStock = 0;
-      if (product.inventory_agg && Array.isArray(product.inventory_agg)) {
-        if (warehouseId) {
-          const warehouseInventory = product.inventory_agg.find(
-            (inv: any) => inv.warehouse_id === warehouseId,
-          );
-          totalStock = Number(warehouseInventory?.in_stock_quantity || 0);
-        } else {
-          // Sum across all warehouses
-          totalStock = product.inventory_agg.reduce(
-            (sum: number, inv: any) => sum + Number(inv.in_stock_quantity || 0),
-            0,
-          );
-        }
-      }
-
-      // Determine stock status based on min_stock_threshold
-      let stockStatus: "in_stock" | "low_stock" | "out_of_stock";
-      if (totalStock === 0) {
-        stockStatus = "out_of_stock";
-      } else if (
-        product.min_stock_threshold &&
-        totalStock <= product.min_stock_threshold
-      ) {
-        stockStatus = "low_stock";
+  const publicProducts: PublicProduct[] = (
+    (products as unknown as ProductListViewRaw[]) || []
+  ).map((product) => {
+    // Find inventory for the specified warehouse, or sum across all warehouses
+    let totalStock = 0;
+    if (product.inventory && Array.isArray(product.inventory)) {
+      if (warehouseId) {
+        const warehouseInventory = product.inventory.find(
+          (inv) => inv.warehouse_id === warehouseId,
+        );
+        totalStock = Number(warehouseInventory?.in_stock_quantity || 0);
       } else {
-        stockStatus = "in_stock";
+        // Sum across all warehouses
+        totalStock = product.inventory.reduce(
+          (sum: number, inv) => sum + Number(inv.in_stock_quantity || 0),
+          0,
+        );
       }
+    }
 
-      // Extract materials, colors, and tags from nested structure
-      const materials = (product.product_material_assignments || [])
-        .map((a: any) => a.material)
-        .filter(Boolean);
-      const colors = (product.product_color_assignments || [])
-        .map((a: any) => a.color)
-        .filter(Boolean);
-      const tags = (product.product_tag_assignments || [])
-        .map((a: any) => a.tag)
-        .filter(Boolean);
+    // Calculate stock status using shared utility
+    const stockStatus = calculateStockStatus(
+      totalStock,
+      product.min_stock_threshold,
+    );
 
-      // Remove the nested assignment fields from the product
-      const {
-        product_material_assignments: _materials,
-        product_color_assignments: _colors,
-        product_tag_assignments: _tags,
-        inventory_agg: _agg,
-        ...rest
-      } = product;
+    // Transform attributes using shared utility
+    const { materials, colors, tags } = transformAttributes(product);
 
-      return {
-        ...rest,
-        in_stock_quantity: totalStock,
-        stock_status: stockStatus,
-        materials,
-        colors,
-        tags,
-      };
-    },
-  );
+    // Remove the nested assignment fields from the product
+    const {
+      product_material_assignments: _materials,
+      product_color_assignments: _colors,
+      product_tag_assignments: _tags,
+      inventory: _inventory,
+      ...rest
+    } = product;
+
+    return {
+      ...rest,
+      in_stock_quantity: totalStock,
+      stock_status: stockStatus,
+      materials,
+      colors,
+      tags,
+    };
+  });
 
   return publicProducts;
 }

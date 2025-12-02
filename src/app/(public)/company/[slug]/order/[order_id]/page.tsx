@@ -28,7 +28,8 @@ import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getFormattedAddress, getPartnerName } from "@/lib/utils/partner";
 import { DisplayStatus, getOrderDisplayStatus } from "@/lib/utils/sales-order";
 import { CatalogOrderStatusBadge } from "@/components/ui/catalog-order-status-badge";
-import { useCatalogCompany, useCatalogOrder } from "@/lib/query/hooks/catalog";
+import { usePublicCompany } from "@/lib/query/hooks/catalog";
+import { usePublicOrder } from "@/lib/query/hooks/catalog-orders";
 
 export default function OrderConfirmationPage() {
   const params = useParams();
@@ -39,9 +40,9 @@ export default function OrderConfirmationPage() {
   const [downloading, setDownloading] = useState(false);
 
   // Fetch data using TanStack Query
-  const { data: company, isLoading: companyLoading } = useCatalogCompany(slug);
-  const { data: order, isLoading: orderLoading } = useCatalogOrder(
-    company?.id || "",
+  const { data: company, isLoading: companyLoading } = usePublicCompany(slug);
+  const { data: order, isLoading: orderLoading } = usePublicOrder(
+    company?.id || null,
     orderId,
   );
 

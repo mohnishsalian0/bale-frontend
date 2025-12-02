@@ -121,23 +121,22 @@ export function QRTemplateSelectionStep({
   const supabase = createClient();
 
   useEffect(() => {
+    const loadCompanyLogo = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("companies")
+          .select("logo_url")
+          .eq("id", user.company_id)
+          .single<{ logo_url: string }>();
+
+        if (error) throw error;
+        setCompanyLogoUrl(data?.logo_url || null);
+      } catch (error) {
+        console.error("Error loading company logo:", error);
+      }
+    };
     loadCompanyLogo();
-  }, []);
-
-  const loadCompanyLogo = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("companies")
-        .select("logo_url")
-        .eq("id", user.company_id)
-        .single();
-
-      if (error) throw error;
-      setCompanyLogoUrl(data?.logo_url || null);
-    } catch (error) {
-      console.error("Error loading company logo:", error);
-    }
-  };
+  }, [supabase, user]);
 
   const handleFieldToggle = (fieldId: QRTemplateField, checked: boolean) => {
     if (checked) {

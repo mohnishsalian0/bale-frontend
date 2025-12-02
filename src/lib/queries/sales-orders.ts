@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/browser";
 import type {
   SalesOrderListView,
   SalesOrderDetailView,
+  SalesOrderFilters,
   CreateSalesOrderData,
   CreateSalesOrderLineItem,
 } from "@/types/sales-orders.types";
@@ -10,15 +11,23 @@ import type {
 export type {
   SalesOrderListView,
   SalesOrderDetailView,
+  SalesOrderFilters,
   CreateSalesOrderData,
   CreateSalesOrderLineItem,
 };
 
 /**
- * Fetch all sales orders for a warehouse
+ * Fetch sales orders for a warehouse with optional filters
+ *
+ * Examples:
+ * - All orders: getSalesOrders(warehouseId)
+ * - Pending orders: getSalesOrders(warehouseId, { status: 'approval_pending' })
+ * - Active orders: getSalesOrders(warehouseId, { status: ['approval_pending', 'in_progress'] })
+ * - Recent orders: getSalesOrders(warehouseId, { order_by: 'order_date', order_direction: 'desc', limit: 5 })
  */
 export async function getSalesOrders(
   warehouseId: string | null,
+  filters?: SalesOrderFilters,
 ): Promise<SalesOrderListView[]> {
   const supabase = createClient();
 
@@ -41,11 +50,30 @@ export async function getSalesOrders(
         )
       `,
     )
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false });
+    .is("deleted_at", null);
 
+  // Apply warehouse filter
   if (warehouseId) {
     query = query.or(`warehouse_id.eq.${warehouseId},warehouse_id.is.null`);
+  }
+
+  // Apply status filter (supports single value or array)
+  if (filters?.status) {
+    if (Array.isArray(filters.status)) {
+      query = query.in("status", filters.status);
+    } else {
+      query = query.eq("status", filters.status);
+    }
+  }
+
+  // Apply ordering (defaults to order_date descending)
+  const orderBy = filters?.order_by || "order_date";
+  const ascending = filters?.order_direction !== "desc";
+  query = query.order(orderBy, { ascending });
+
+  // Apply limit
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
   }
 
   const { data, error } = await query;

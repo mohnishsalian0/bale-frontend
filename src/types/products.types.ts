@@ -4,10 +4,11 @@ import type {
   TablesUpdate,
 } from "@/types/database/supabase";
 
-type Product = Tables<"products">;
+export type Product = Tables<"products">;
 type ProductMaterialRaw = Tables<"product_materials">;
 type ProductColorRaw = Tables<"product_colors">;
 type ProductTagRaw = Tables<"product_tags">;
+
 export type ProductInventory = Tables<"product_inventory_aggregates">;
 
 // Mutation types
@@ -27,6 +28,19 @@ export type ProductMaterial = Pick<
 >;
 export type ProductColor = Pick<ProductColorRaw, "id" | "name" | "color_hex">;
 export type ProductTag = Pick<ProductTagRaw, "id" | "name" | "color_hex">;
+
+// Common structure for attribute assignments
+export type ProductAttributeAssignmentsRaw = {
+  product_material_assignments: Array<{
+    material: ProductMaterial | null;
+  }>;
+  product_color_assignments: Array<{
+    color: ProductColor | null;
+  }>;
+  product_tag_assignments: Array<{
+    tag: ProductTag | null;
+  }>;
+};
 
 /**
  * Product with minimal details for list views

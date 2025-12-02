@@ -2,15 +2,13 @@
 
 import { useState } from "react";
 import { IconBolt, IconTrash, IconPhoto } from "@tabler/icons-react";
-import { Scanner } from "@yudiel/react-qr-scanner";
+import { IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { SelectInventorySheet } from "./SelectInventorySheet";
 import { StockUnitQuantitySheet } from "./StockUnitQuantitySheet";
-import { createClient } from "@/lib/supabase/browser";
 import { formatStockUnitNumber } from "@/lib/utils/product";
-import type { Tables } from "@/types/database/supabase";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import {
   getMeasuringUnitAbbreviation,
@@ -18,12 +16,13 @@ import {
 } from "@/lib/utils/measuring-units";
 import { useSession } from "@/contexts/session-context";
 import { ProductListView } from "@/types/products.types";
+import { getStockUnitWithProductDetail } from "@/lib/queries/stock-units";
+import { StockUnitWithProductDetailView } from "@/types/stock-units.types";
 
 const SCAN_DELAY: number = 1200;
 
 export interface ScannedStockUnit {
-  stockUnit: Tables<"stock_units">;
-  product: ProductListView;
+  stockUnit: StockUnitWithProductDetailView;
   quantity: number; // User-entered quantity to dispatch
 }
 
@@ -43,14 +42,12 @@ export function QRScannerStep({
   const [showInventorySheet, setShowInventorySheet] = useState(false);
   const [showQuantitySheet, setShowQuantitySheet] = useState(false);
   const [pendingStockUnit, setPendingStockUnit] = useState<{
-    stockUnit: Tables<"stock_units">;
-    product: ProductListView;
+    stockUnit: StockUnitWithProductDetailView;
     editingIndex?: number;
     initialQuantity?: number;
   } | null>(null);
-  const supabase = createClient();
 
-  const handleScan = async (detectedCodes: any[]) => {
+  const handleScan = async (detectedCodes: IDetectedBarcode[]) => {
     if (paused || detectedCodes.length === 0) return;
 
     // Pause scanning temporarily to process
@@ -59,32 +56,13 @@ export function QRScannerStep({
     const decodedText = detectedCodes[0].rawValue;
 
     try {
-      // Fetch stock unit from database by ID
-      const { data: stockUnit, error: stockError } = await supabase
-        .from("stock_units")
-        .select("*")
-        .eq("id", decodedText)
-        .eq("warehouse_id", warehouse.id)
-        .eq("status", "in_stock")
-        .single();
+      // Fetch stock unit with product details in single query
+      const stockUnitWithProduct = await getStockUnitWithProductDetail(
+        decodedText,
+        { warehouseId: warehouse.id, status: "in_stock" },
+      );
 
-      if (stockError || !stockUnit) {
-        setError("Stock unit no longer in inventory");
-        setTimeout(() => {
-          setError(null);
-          setPaused(false);
-        }, SCAN_DELAY);
-        return;
-      }
-
-      // Fetch product details
-      const { data: product, error: productError } = await supabase
-        .from("products")
-        .select("*")
-        .eq("id", stockUnit.product_id)
-        .single();
-
-      if (productError || !product) {
+      if (!stockUnitWithProduct.product) {
         setError("Product not found");
         setTimeout(() => {
           setError(null);
@@ -93,7 +71,7 @@ export function QRScannerStep({
         return;
       }
 
-      const stockType = product.stock_type as StockType;
+      const stockType = stockUnitWithProduct.product.stock_type as StockType;
 
       // Check if already scanned
       const existingIndex = scannedUnits.findIndex(
@@ -126,8 +104,7 @@ export function QRScannerStep({
 
         // For roll/batch: reopen modal with current quantity
         setPendingStockUnit({
-          stockUnit,
-          product,
+          stockUnit: stockUnitWithProduct,
           editingIndex: existingIndex,
           initialQuantity: scannedUnits[existingIndex].quantity,
         });
@@ -141,8 +118,7 @@ export function QRScannerStep({
         onScannedUnitsChange([
           ...scannedUnits,
           {
-            stockUnit,
-            product,
+            stockUnit: stockUnitWithProduct,
             quantity: 1,
           },
         ]);
@@ -154,7 +130,7 @@ export function QRScannerStep({
       }
 
       // For roll/batch: Open quantity sheet to select quantity
-      setPendingStockUnit({ stockUnit, product });
+      setPendingStockUnit({ stockUnit: stockUnitWithProduct });
       setShowQuantitySheet(true);
       // Scanner remains paused until quantity sheet is closed
     } catch (err) {
@@ -167,12 +143,14 @@ export function QRScannerStep({
     }
   };
 
-  const handleError = (err: any) => {
+  const handleError = (err: unknown) => {
     console.error("Scanner error:", err);
-    if (err?.name === "NotAllowedError") {
-      setError("Camera permission denied");
-    } else if (err?.name === "NotFoundError") {
-      setError("No camera found");
+    if (err instanceof Error) {
+      if (err?.name === "NotAllowedError") {
+        setError("Camera permission denied");
+      } else if (err?.name === "NotFoundError") {
+        setError("No camera found");
+      }
     }
   };
 
@@ -193,7 +171,6 @@ export function QRScannerStep({
           ...scannedUnits,
           {
             stockUnit: pendingStockUnit.stockUnit,
-            product: pendingStockUnit.product,
             quantity,
           },
         ]);
@@ -225,7 +202,6 @@ export function QRScannerStep({
     const item = scannedUnits[index];
     setPendingStockUnit({
       stockUnit: item.stockUnit,
-      product: item.product,
       editingIndex: index,
       initialQuantity: item.quantity,
     });
@@ -327,16 +303,16 @@ export function QRScannerStep({
         ) : (
           <div className="flex flex-col">
             {scannedUnits.map((item, index) => {
-              const imageUrl = item.product.product_images?.[0];
+              const imageUrl = item.stockUnit.product?.product_images?.[0];
               const maxQuantity = item.stockUnit.remaining_quantity;
               const unitAbbreviation = getMeasuringUnitAbbreviation(
-                item.product.measuring_unit as MeasuringUnit | null,
+                item.stockUnit.product?.measuring_unit as MeasuringUnit | null,
               );
               const pluralizedUnit = pluralizeMeasuringUnitAbbreviation(
                 item.quantity,
                 unitAbbreviation,
               );
-              const stockType = item.product.stock_type as StockType;
+              const stockType = item.stockUnit.product?.stock_type as StockType;
               const stockUnitNumber = formatStockUnitNumber(
                 item.stockUnit.sequence_number,
                 stockType,
@@ -352,17 +328,17 @@ export function QRScannerStep({
                     size="md"
                     shape="square"
                     imageUrl={imageUrl}
-                    alt={item.product.name}
+                    alt={item.stockUnit.product?.name || "Product image"}
                     placeholderIcon={IconPhoto}
                   />
 
                   {/* Product Info */}
                   <div className="flex-1 min-w-0">
                     <p
-                      title={item.product.name}
+                      title={item.stockUnit.product?.name}
                       className="text-base font-medium text-gray-900 truncate"
                     >
-                      {item.product.name}
+                      {item.stockUnit.product?.name}
                     </p>
                     <p
                       title={stockUnitNumber}
@@ -416,7 +392,6 @@ export function QRScannerStep({
           open={showQuantitySheet}
           onOpenChange={handleQuantitySheetClose}
           stockUnit={pendingStockUnit?.stockUnit || null}
-          product={pendingStockUnit?.product || null}
           initialQuantity={pendingStockUnit?.initialQuantity || 0}
           onConfirm={handleQuantityConfirm}
         />

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PartnerButton } from "@/components/ui/partner-button";
 import { IconPlus, IconUsers } from "@tabler/icons-react";
-import type { RecentPartner } from "@/lib/queries/dashboard";
+import type { PartnerListView } from "@/types/partners.types";
 import { PartnerFormSheet } from "../partners/PartnerFormSheet";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/contexts/session-context";
@@ -14,7 +14,7 @@ interface PartnersSectionProps {
   title: string;
   newButtonLabel: string;
   partnerType: PartnerType;
-  partners: RecentPartner[];
+  partners: PartnerListView[];
 }
 
 export function PartnersSection({
