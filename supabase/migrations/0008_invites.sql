@@ -14,6 +14,7 @@ CREATE TABLE invites (
 
     -- Invitation details
     role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'staff')),
+    all_warehouses_access BOOLEAN DEFAULT FALSE NOT NULL,
 
     -- Usage tracking
     used_at TIMESTAMPTZ,

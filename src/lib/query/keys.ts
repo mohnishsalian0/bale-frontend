@@ -124,12 +124,16 @@ export const queryKeys = {
 
   // Users
   users: {
+    all: () => ["users"] as const,
+    detail: (userId: string) => ["users", "detail", userId] as const,
     current: () => ["users", "current"] as const,
     permissions: () => ["users", "permissions"] as const,
   },
 
   // Invites
   invites: {
+    all: () => ["invites"] as const,
+    active: () => ["invites", "active"] as const,
     byCode: (code: string) => ["invites", "code", code] as const,
   },
 } as const;

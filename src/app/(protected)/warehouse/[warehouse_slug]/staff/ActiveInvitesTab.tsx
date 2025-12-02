@@ -12,44 +12,36 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatExpiryDate } from "@/lib/utils/date";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/browser";
-import type { UserRole } from "@/types/database/enums";
 import { RoleBadge } from "@/components/ui/role-badge";
-
-interface ActiveInvite {
-  id: string;
-  role: UserRole;
-  warehouseNames: string[];
-  companyName: string;
-  token: string;
-  expiresAt: string;
-  createdAt: string;
-}
+import type { InviteListView } from "@/types/invites.types";
+import { useInviteMutations } from "@/lib/query/hooks/invites";
+import { UserRole } from "@/types/database/enums";
 
 interface ActiveInvitesTabProps {
-  invites: ActiveInvite[];
-  onInviteDeleted: () => void;
+  invites: InviteListView[];
 }
 
-export function ActiveInvitesTab({
-  invites,
-  onInviteDeleted,
-}: ActiveInvitesTabProps) {
+export function ActiveInvitesTab({ invites }: ActiveInvitesTabProps) {
   const [deletingInviteId, setDeletingInviteId] = useState<string | null>(null);
-  const supabase = createClient();
+  const { delete: deleteInvite } = useInviteMutations();
 
-  const handleShareWhatsApp = (invite: ActiveInvite) => {
+  const handleShareWhatsApp = (invite: InviteListView) => {
     const inviteUrl = `${window.location.origin}/invite/${invite.token}`;
-    const warehouseText =
-      invite.warehouseNames.length > 0 ? invite.warehouseNames.join(", ") : "";
-    const systemDescription =
-      invite.role === "staff" && warehouseText
-        ? `${warehouseText} inventory system`
-        : "our inventory system";
+    const systemDescription = invite.all_warehouses_access
+      ? "our inventory system with access to all warehouses"
+      : (() => {
+          const warehouseText =
+            invite.warehouse_names.length > 0
+              ? invite.warehouse_names.join(", ")
+              : "";
+          return warehouseText
+            ? `${warehouseText} inventory system`
+            : "our inventory system";
+        })();
 
     const whatsappMessage = `Hi,
 
-You've been invited to join ${invite.companyName} and get access to ${systemDescription} as ${invite.role === "admin" ? "Admin" : "Staff"}.
+You've been invited to join ${invite.company_name} and get access to ${systemDescription} as ${invite.role === "admin" ? "Admin" : "Staff"}.
 
 Here's your invite link:
 🔗 ${inviteUrl}
@@ -81,19 +73,17 @@ The Bale Team`;
   };
 
   const handleConfirmDelete = async (id: string) => {
-    try {
-      const { error } = await supabase.from("invites").delete().eq("id", id);
-
-      if (error) throw error;
-
-      toast.success("Invite revoked successfully");
-      setDeletingInviteId(null);
-      onInviteDeleted();
-    } catch (err) {
-      console.error("Error revoking invite:", err);
-      toast.error("Failed to revoke invite");
-      setDeletingInviteId(null);
-    }
+    await deleteInvite.mutateAsync(id, {
+      onSuccess: () => {
+        toast.success("Invite revoked successfully");
+        setDeletingInviteId(null);
+      },
+      onError: (error) => {
+        console.error("Error revoking invite:", error);
+        toast.error("Failed to revoke invite");
+        setDeletingInviteId(null);
+      },
+    });
   };
 
   const handleCancelDelete = () => {
@@ -111,7 +101,7 @@ The Bale Team`;
         </div>
       ) : (
         invites.map((invite) => {
-          const expiry = formatExpiryDate(invite.expiresAt);
+          const expiry = formatExpiryDate(invite.expires_at);
           return (
             <Card key={invite.id}>
               <CardContent className="p-4 flex flex-col gap-6 h-full">
@@ -126,20 +116,23 @@ The Bale Team`;
 
                   {/* Warehouse & Expiry Info */}
                   <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-                    {/* Warehouse (only for staff) */}
-                    {invite.role === "staff" &&
-                    invite.warehouseNames.length > 0 ? (
+                    {/* Warehouse info */}
+                    {invite.all_warehouses_access ? (
+                      <p className="text-gray-900 font-medium">
+                        All warehouses
+                      </p>
+                    ) : invite.warehouse_names.length > 0 ? (
                       <p
-                        title={invite.warehouseNames.join(", ")}
+                        title={invite.warehouse_names.join(", ")}
                         className="text-gray-900 truncate font-medium"
                       >
-                        {invite.warehouseNames.length === 1
-                          ? invite.warehouseNames[0]
-                          : `${invite.warehouseNames[0]}, +${invite.warehouseNames.length - 1} more`}
+                        {invite.warehouse_names.length === 1
+                          ? invite.warehouse_names[0]
+                          : `${invite.warehouse_names[0]}, +${invite.warehouse_names.length - 1} more`}
                       </p>
                     ) : (
                       <p className="text-gray-900 font-medium">
-                        {invite.companyName}
+                        {invite.company_name}
                       </p>
                     )}
 
@@ -161,7 +154,7 @@ The Bale Team`;
                   </div>
 
                   {/* Role Badge */}
-                  <RoleBadge role={invite.role} />
+                  <RoleBadge role={invite.role as UserRole} />
                 </div>
 
                 {/* Action Buttons */}

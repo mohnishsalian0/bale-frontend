@@ -19,26 +19,24 @@ import { createClient } from "@/lib/supabase/browser";
 import type { UserRole } from "@/types/database/enums";
 import { useSession } from "@/contexts/session-context";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
+import { useInviteMutations } from "@/lib/query/hooks/invites";
 
 interface InviteFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onStaffAdded?: () => void;
 }
 
 interface InviteFormData {
   role: UserRole;
+  warehouseAccessMode: "all" | "select";
   warehouseIds: string[];
 }
 
-export function InviteFormSheet({
-  open,
-  onOpenChange,
-  onStaffAdded,
-}: InviteFormSheetProps) {
+export function InviteFormSheet({ open, onOpenChange }: InviteFormSheetProps) {
   const { user } = useSession();
   const [formData, setFormData] = useState<InviteFormData>({
     role: "staff",
+    warehouseAccessMode: "select",
     warehouseIds: [],
   });
 
@@ -46,6 +44,7 @@ export function InviteFormSheet({
   const [sendError, setSendError] = useState<string | null>(null);
 
   const { data: warehouses = [], isLoading: loading } = useWarehouses();
+  const { create: createInvite } = useInviteMutations();
 
   const handleWarehouseToggle = (warehouseId: string) => {
     setFormData((prev) => ({
@@ -64,8 +63,11 @@ export function InviteFormSheet({
     try {
       const supabase = createClient();
 
-      // Validate warehouse assignment for staff role
-      if (formData.role === "staff" && formData.warehouseIds.length === 0) {
+      // Validate warehouse assignment when specific selection is required
+      if (
+        formData.warehouseAccessMode === "select" &&
+        formData.warehouseIds.length === 0
+      ) {
         throw new Error("Please select at least one warehouse");
       }
 
@@ -83,37 +85,37 @@ export function InviteFormSheet({
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
 
-      // Create invite using RPC function
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const { data: token, error: inviteError } = await supabase.rpc(
-        "create_staff_invite",
-        {
-          p_company_id: user.company_id,
-          p_company_name: company.name,
-          p_role: formData.role,
-          p_warehouse_ids:
-            formData.role === "staff" ? formData.warehouseIds : null,
-          p_expires_at: expiresAt.toISOString(),
-        },
-      );
-
-      if (inviteError || !token) {
-        throw new Error("Failed to create invite");
-      }
+      // Create invite using mutation
+      const token = await createInvite.mutateAsync({
+        companyId: user.company_id,
+        companyName: company.name,
+        role: formData.role,
+        allWarehousesAccess: formData.warehouseAccessMode === "all",
+        warehouseIds:
+          formData.warehouseAccessMode === "select"
+            ? formData.warehouseIds
+            : [],
+        expiresAt: expiresAt.toISOString(),
+      });
 
       // Generate invite link
       const inviteUrl = `${window.location.origin}/invite/${token}`;
 
       // Get warehouse names for message
-      const selectedWarehouses = warehouses.filter((w) =>
-        formData.warehouseIds.includes(w.id),
-      );
-      const warehouseNames = selectedWarehouses.map((w) => w.name).join(", ");
-
       const systemDescription =
-        formData.role === "staff" && warehouseNames
-          ? `${warehouseNames} inventory system`
-          : "our inventory system";
+        formData.warehouseAccessMode === "all"
+          ? "our inventory system with access to all warehouses"
+          : (() => {
+              const selectedWarehouses = warehouses.filter((w) =>
+                formData.warehouseIds.includes(w.id),
+              );
+              const warehouseNames = selectedWarehouses
+                .map((w) => w.name)
+                .join(", ");
+              return warehouseNames
+                ? `${warehouseNames} inventory system`
+                : "our inventory system";
+            })();
 
       const whatsappMessage = `Hi,
 
@@ -140,11 +142,8 @@ The Bale Team`;
       const encodedMessage = encodeURIComponent(whatsappMessage);
       window.open(`https://wa.me/?text=${encodedMessage}`, "_blank");
 
-      // Success! Close sheet and notify parent
+      // Success! Close sheet
       handleCancel();
-      if (onStaffAdded) {
-        onStaffAdded();
-      }
     } catch (error) {
       console.error("Error sending invite:", error);
       setSendError(
@@ -159,6 +158,7 @@ The Bale Team`;
     // Reset form
     setFormData({
       role: "staff",
+      warehouseAccessMode: "select",
       warehouseIds: [],
     });
     setSendError(null);
@@ -185,8 +185,6 @@ The Bale Team`;
                     setFormData({
                       ...formData,
                       role: value as UserRole,
-                      warehouseIds:
-                        value === "admin" ? [] : formData.warehouseIds,
                     })
                   }
                   name="role"
@@ -196,10 +194,34 @@ The Bale Team`;
                 </RadioGroupPills>
               </div>
 
-              {/* Warehouse Assignment (only for staff) */}
-              {formData.role === "staff" && (
+              {/* Warehouse Access Mode */}
+              <div className="flex flex-col gap-2">
+                <Label>Warehouse access</Label>
+                <RadioGroupPills
+                  value={formData.warehouseAccessMode}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      warehouseAccessMode: value as "all" | "select",
+                      warehouseIds:
+                        value === "all" ? [] : formData.warehouseIds,
+                    })
+                  }
+                  name="warehouseAccessMode"
+                >
+                  <RadioGroupItemPills value="all">
+                    All warehouses
+                  </RadioGroupItemPills>
+                  <RadioGroupItemPills value="select">
+                    Select warehouses
+                  </RadioGroupItemPills>
+                </RadioGroupPills>
+              </div>
+
+              {/* Warehouse Assignment (only when select mode) */}
+              {formData.warehouseAccessMode === "select" && (
                 <div className="flex flex-col gap-3">
-                  <Label>Assign warehouses</Label>
+                  <Label>Select warehouses</Label>
                   {loading ? (
                     <p className="text-sm text-gray-500">
                       Loading warehouses...

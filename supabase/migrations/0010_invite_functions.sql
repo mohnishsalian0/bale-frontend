@@ -8,6 +8,7 @@ CREATE OR REPLACE FUNCTION create_staff_invite(
     p_company_id UUID,
     p_company_name TEXT,
     p_role TEXT,
+    p_all_warehouses_access BOOLEAN,
     p_warehouse_ids UUID[],
     p_expires_at TIMESTAMPTZ
 )
@@ -27,8 +28,9 @@ BEGIN
     END IF;
 
     -- Validate warehouse assignment for staff role
-    IF p_role = 'staff' AND (p_warehouse_ids IS NULL OR array_length(p_warehouse_ids, 1) = 0) THEN
-        RAISE EXCEPTION 'Staff role requires at least one warehouse assignment';
+    -- If not all_warehouses_access, must have specific warehouse assignments
+    IF p_role = 'staff' AND NOT p_all_warehouses_access AND (p_warehouse_ids IS NULL OR array_length(p_warehouse_ids, 1) = 0) THEN
+        RAISE EXCEPTION 'Staff role requires either all_warehouses_access or at least one warehouse assignment';
     END IF;
 
     -- Generate unique token
@@ -39,12 +41,14 @@ BEGIN
         company_id,
         company_name,
         role,
+        all_warehouses_access,
         expires_at,
         token
     ) VALUES (
         p_company_id,
         p_company_name,
         p_role,
+        p_all_warehouses_access,
         p_expires_at,
         v_token
     ) RETURNING id INTO v_invite_id;
@@ -68,7 +72,7 @@ CREATE OR REPLACE FUNCTION create_user_from_invite(
     p_invite_token TEXT,
     p_first_name TEXT,
     p_last_name TEXT,
-    p_all_warehouses_access BOOLEAN
+    p_profile_image_url TEXT DEFAULT NULL
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -91,13 +95,14 @@ BEGIN
         RAISE EXCEPTION 'Invalid or expired invite token';
     END IF;
 
-    -- Create user record
+    -- Create user record (use all_warehouses_access from invite)
     INSERT INTO users (
         company_id,
         first_name,
         last_name,
         role,
         all_warehouses_access,
+        profile_image_url,
         auth_user_id,
         created_by
     ) VALUES (
@@ -105,7 +110,8 @@ BEGIN
         p_first_name,
         p_last_name,
         v_invite_record.role,
-        p_all_warehouses_access,
+        v_invite_record.all_warehouses_access,
+        p_profile_image_url,
         p_auth_user_id,
         v_invite_record.created_by
     ) RETURNING id INTO v_new_user_id;

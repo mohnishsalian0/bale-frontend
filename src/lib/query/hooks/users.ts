@@ -8,6 +8,8 @@ import {
   updateUserWarehouse,
   updateUser,
   getUserPermissions,
+  getStaffMembers,
+  getStaffMemberById,
 } from "@/lib/queries/users";
 import type { TablesUpdate } from "@/types/database/supabase";
 
@@ -74,4 +76,27 @@ export function useUserMutations() {
     updateWarehouse,
     updateProfile,
   };
+}
+
+/**
+ * Fetch all staff members with warehouse assignments
+ */
+export function useStaffMembers() {
+  return useQuery({
+    queryKey: queryKeys.users.all(),
+    queryFn: () => getStaffMembers(),
+    ...getQueryOptions(STALE_TIME.USER, GC_TIME.MASTER_DATA),
+  });
+}
+
+/**
+ * Fetch a single staff member by ID with warehouse assignments
+ */
+export function useStaffMemberById(userId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.users.detail(userId || ""),
+    queryFn: () => getStaffMemberById(userId!),
+    ...getQueryOptions(STALE_TIME.USER, GC_TIME.MASTER_DATA),
+    enabled: !!userId,
+  });
 }

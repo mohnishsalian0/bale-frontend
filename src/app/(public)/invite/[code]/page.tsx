@@ -1,7 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import InviteAcceptance from "./InviteAcceptance";
-import type { Tables } from "@/types/database/supabase";
+import { useInvite } from "@/lib/query/hooks/invites";
+import { LoadingState } from "@/components/layouts/loading-state";
+import { use, useEffect } from "react";
+import { createClient } from "@/lib/supabase/browser";
+import { getUser } from "@/lib/queries/users";
 
 interface InvitePageProps {
   params: Promise<{
@@ -9,16 +12,36 @@ interface InvitePageProps {
   }>;
 }
 
-export default async function InvitePage({ params }: InvitePageProps) {
-  const { code } = await params;
-  const supabase = await createClient();
+export default function InvitePage({ params }: InvitePageProps) {
+  const { code } = use(params);
+  const supabase = createClient();
 
   // Check if invite is valid
-  const { data: invite, error } = await supabase
-    .from("invites")
-    .select("*")
-    .eq("token", code)
-    .single<Tables<"invites">>();
+  const { data: invite, isLoading: loading, isError: error } = useInvite(code);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      // Check if user is already logged in
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+
+      if (authUser) {
+        // Check if user profile exists
+        const currentUser = await getUser();
+
+        if (currentUser) {
+          redirect("/warehouse");
+        }
+      }
+    };
+
+    checkUser();
+  }, [supabase]);
+
+  if (loading) {
+    return <LoadingState message="Loading invite..." />;
+  }
 
   if (error || !invite) {
     return (
@@ -75,25 +98,6 @@ export default async function InvitePage({ params }: InvitePageProps) {
         </div>
       </div>
     );
-  }
-
-  // Check if user is already logged in
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-
-  if (authUser) {
-    // User is already logged in - check if they have a profile
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("id")
-      .eq("auth_user_id", authUser.id)
-      .single();
-
-    if (existingUser) {
-      // Already registered - redirect to warehouse selection
-      redirect("/warehouse");
-    }
   }
 
   // Valid invite - show acceptance page

@@ -153,6 +153,10 @@ function transformOutwardDetailView(
   };
 }
 
+// ============================================================================
+// QUERY FUNCTIONS
+// ============================================================================
+
 /**
  * Fetch goods inwards for a warehouse with optional filters
  */
