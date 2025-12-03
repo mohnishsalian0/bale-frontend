@@ -39,7 +39,7 @@ export function QRStockUnitSelectionStep({
   const { data: stockUnitsData = [], isLoading: loading } =
     useStockUnitsWithInward(warehouse.id, {
       product_id: productId,
-      status: "in_stock",
+      status: ["full", "partial"],
     });
 
   // Group stock units by goods inward
@@ -224,10 +224,7 @@ export function QRStockUnitSelectionStep({
                 {/* Stock Units List */}
                 <div className="flex flex-col">
                   {inward.stock_units.map((unit) => (
-                    <div
-                      key={unit.id}
-                      className="flex items-center gap-3 py-3 hover:bg-gray-50"
-                    >
+                    <div key={unit.id} className="flex items-center gap-3 py-3">
                       <Checkbox
                         checked={selectedStockUnitIds.includes(unit.id)}
                         onCheckedChange={(checked) =>
@@ -261,10 +258,8 @@ export function QRStockUnitSelectionStep({
                           </div>
                         </div>
                         <Badge
-                          color={unit.qr_generated_at ? "blue" : "green"}
-                          variant={
-                            unit.qr_generated_at ? "outline" : "secondary"
-                          }
+                          color={unit.qr_generated_at ? "gray" : "green"}
+                          variant="secondary"
                           className="text-xs"
                         >
                           {getQRStatus(unit)}

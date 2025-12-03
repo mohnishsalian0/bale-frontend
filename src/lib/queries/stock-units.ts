@@ -19,6 +19,7 @@ import type {
   ProductTag,
 } from "@/types/products.types";
 import type { InwardWithPartnerListView } from "@/types/stock-units.types";
+import { StockUnitStatus } from "@/types/database/enums";
 
 // ============================================================================
 // RAW TYPES - For Supabase responses
@@ -288,7 +289,7 @@ export async function getStockUnitWithProductDetail(
   stockUnitId: string,
   filters?: {
     warehouseId?: string;
-    status?: string | string[];
+    status?: StockUnitStatus | StockUnitStatus[];
   },
 ): Promise<StockUnitWithProductDetailView> {
   const supabase = createClient();

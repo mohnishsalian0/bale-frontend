@@ -14,11 +14,12 @@ CREATE TABLE goods_inwards (
     sequence_number INTEGER NOT NULL,
 
     -- Inward type
-    inward_type VARCHAR(20) NOT NULL CHECK (inward_type IN ('job_work', 'sales_return', 'other')),
+    inward_type VARCHAR(20) NOT NULL CHECK (inward_type IN ('job_work', 'sales_return', 'purchase_order', 'other')),
 
     -- Linking (optional, for reference)
     sales_order_id UUID REFERENCES sales_orders(id), -- When inward_type = 'sales_return'
     job_work_id UUID REFERENCES job_works(id), -- When inward_type = 'job_work'
+    purchase_order_number VARCHAR(100), -- When inward_type = 'purchase_order'
     other_reason TEXT, -- Required when inward_type = 'other'
 
     -- Senders
@@ -53,6 +54,7 @@ CREATE TABLE goods_inwards (
         CHECK (
 						(inward_type = 'job_work' AND job_work_id IS NOT NULL) OR
 						(inward_type = 'sales_return' AND sales_order_id IS NOT NULL) OR
+						(inward_type = 'purchase_order' AND purchase_order_number IS NOT NULL) OR
 						(inward_type = 'other' AND other_reason IS NOT NULL)
         ),
 

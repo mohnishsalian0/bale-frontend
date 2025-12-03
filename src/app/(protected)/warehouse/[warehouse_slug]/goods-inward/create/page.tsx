@@ -12,8 +12,11 @@ import {
 import { StockUnitFormSheet } from "../StockUnitFormSheet";
 import { AllSpecificationsSheet } from "../AllSpecificationsSheet";
 import { PieceQuantitySheet } from "../PieceQuantitySheet";
+import { PartnerSelectionStep } from "@/components/stock-flow/PartnerSelectionStep";
+import { InwardLinkToStep, InwardLinkToData } from "../InwardLinkToStep";
 import { InwardDetailsStep } from "../InwardDetailsStep";
 import { ProductFormSheet } from "../../inventory/ProductFormSheet";
+import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useProducts, useProductAttributes } from "@/lib/query/hooks/products";
 import { useStockFlowMutations } from "@/lib/query/hooks/stock-flow";
 import type { TablesInsert } from "@/types/database/supabase";
@@ -24,17 +27,13 @@ import { ProductListView } from "@/types/products.types";
 import { StockUnitStatus } from "@/types/database/enums";
 
 interface DetailsFormData {
-  receivedFromType: "partner" | "warehouse";
-  receivedFromId: string;
-  linkToType: "purchase_order" | "job_work" | "sales_return" | "other";
-  linkToValue: string;
-  invoiceNumber: string;
   inwardDate: string;
+  invoiceNumber: string;
   notes: string;
   documentFile: File | null;
 }
 
-type FormStep = "products" | "details";
+type FormStep = "products" | "partner" | "linkTo" | "details";
 
 export default function CreateGoodsInwardPage() {
   const router = useRouter();
@@ -83,17 +82,34 @@ export default function CreateGoodsInwardPage() {
   const [showAllSpecsSheet, setShowAllSpecsSheet] = useState(false);
   const [showPieceQuantitySheet, setShowPieceQuantitySheet] = useState(false);
   const [showCreateProduct, setShowCreateProduct] = useState(false);
+  const [showCreatePartner, setShowCreatePartner] = useState(false);
   const [selectedProduct, setSelectedProduct] =
     useState<ProductListView | null>(null);
 
+  // Partner/Warehouse selection state
+  const [receivedFromType, setReceivedFromType] = useState<
+    "partner" | "warehouse"
+  >("partner");
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(
+    null,
+  );
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string | null>(
+    null,
+  );
+
+  // Link to state
+  const [linkToData, setLinkToData] = useState<InwardLinkToData>({
+    linkToType: "purchase_order",
+    sales_order_id: null,
+    purchase_order_number: null,
+    other_reason: null,
+    job_work_id: null,
+  });
+
   // Details form state
   const [detailsFormData, setDetailsFormData] = useState<DetailsFormData>({
-    receivedFromType: "partner",
-    receivedFromId: "",
-    linkToType: "purchase_order",
-    linkToValue: "",
-    invoiceNumber: "",
     inwardDate: "",
+    invoiceNumber: "",
     notes: "",
     documentFile: null,
   });
@@ -203,28 +219,79 @@ export default function CreateGoodsInwardPage() {
     }));
   };
 
-  // Check if user can proceed to step 2
-  const canProceed = useMemo(
+  // Partner selection handlers
+  const handleSelectPartner = (partnerId: string) => {
+    setSelectedPartnerId(partnerId);
+    // Auto-advance to next step after selection
+    setTimeout(() => {
+      setCurrentStep("linkTo");
+    }, 300);
+  };
+
+  const handleSelectWarehouse = (warehouseId: string) => {
+    setSelectedWarehouseId(warehouseId);
+    // Auto-advance to next step after selection
+    setTimeout(() => {
+      setCurrentStep("linkTo");
+    }, 300);
+  };
+
+  const handlePartnerTypeChange = (type: "partner" | "warehouse") => {
+    setReceivedFromType(type);
+    setSelectedPartnerId(null);
+    setSelectedWarehouseId(null);
+  };
+
+  // Validation for each step
+  const canProceedFromProducts = useMemo(
     () => products.some((p) => p.units.length > 0),
     [products],
   );
 
-  // Check if form is valid for submission
+  const canProceedFromPartner = useMemo(
+    () =>
+      (receivedFromType === "partner" && selectedPartnerId !== null) ||
+      (receivedFromType === "warehouse" && selectedWarehouseId !== null),
+    [receivedFromType, selectedPartnerId, selectedWarehouseId],
+  );
+
+  const canProceedFromLinkTo = useMemo(() => {
+    switch (linkToData.linkToType) {
+      case "purchase_order":
+        return !!linkToData.purchase_order_number?.trim();
+      case "sales_return":
+        return !!linkToData.sales_order_id;
+      case "other":
+        return !!linkToData.other_reason?.trim();
+      default:
+        return false;
+    }
+  }, [linkToData]);
+
   const canSubmit = useMemo(
     () =>
-      detailsFormData.receivedFromId !== "" &&
-      products.some((p) => p.units.length > 0),
-    [detailsFormData.receivedFromId, products],
+      canProceedFromProducts && canProceedFromPartner && canProceedFromLinkTo,
+    [canProceedFromProducts, canProceedFromPartner, canProceedFromLinkTo],
   );
 
   const handleNext = () => {
-    if (canProceed) {
+    if (currentStep === "products" && canProceedFromProducts) {
+      setCurrentStep("partner");
+    } else if (currentStep === "partner" && canProceedFromPartner) {
+      setCurrentStep("linkTo");
+    } else if (currentStep === "linkTo" && canProceedFromLinkTo) {
       setCurrentStep("details");
     }
   };
 
   const handleBack = () => {
-    setCurrentStep("products");
+    if (currentStep === "details") {
+      setCurrentStep("linkTo");
+    } else if (currentStep === "linkTo") {
+      setCurrentStep("partner");
+    } else if (currentStep === "partner") {
+      setCurrentStep("products");
+    }
   };
 
   const handleCancel = () => {
@@ -235,47 +302,29 @@ export default function CreateGoodsInwardPage() {
     if (!canSubmit) return;
     setSaving(true);
 
-    // Map linkToType to inward_type
-    const inwardTypeMap: Record<typeof detailsFormData.linkToType, string> = {
-      purchase_order: "other",
-      job_work: "job_work",
-      sales_return: "sales_return",
-      other: "other",
-    };
-
-    // Prepare inward data
+    // Prepare inward data - direct field mapping with aligned enums
     const inwardData: Omit<
       TablesInsert<"goods_inwards">,
       "created_by" | "sequence_number"
     > = {
       warehouse_id: warehouse.id,
-      inward_type: inwardTypeMap[detailsFormData.linkToType] as
-        | "job_work"
+      inward_type: linkToData.linkToType as
+        | "purchase_order"
         | "sales_return"
         | "other",
       inward_date: detailsFormData.inwardDate || undefined,
       transport_reference_number: detailsFormData.invoiceNumber || undefined,
       partner_id:
-        detailsFormData.receivedFromType === "partner"
-          ? detailsFormData.receivedFromId
+        receivedFromType === "partner"
+          ? selectedPartnerId || undefined
           : undefined,
       from_warehouse_id:
-        detailsFormData.receivedFromType === "warehouse"
-          ? detailsFormData.receivedFromId
+        receivedFromType === "warehouse"
+          ? selectedWarehouseId || undefined
           : undefined,
-      job_work_id:
-        detailsFormData.linkToType === "job_work" && detailsFormData.linkToValue
-          ? detailsFormData.linkToValue
-          : undefined,
-      sales_order_id:
-        detailsFormData.linkToType === "sales_return" &&
-        detailsFormData.linkToValue
-          ? detailsFormData.linkToValue
-          : undefined,
-      other_reason:
-        detailsFormData.linkToType === "other" && detailsFormData.linkToValue
-          ? detailsFormData.linkToValue
-          : undefined,
+      sales_order_id: linkToData.sales_order_id || undefined,
+      purchase_order_number: linkToData.purchase_order_number || undefined,
+      other_reason: linkToData.other_reason || undefined,
       notes: detailsFormData.notes || undefined,
     };
 
@@ -348,11 +397,19 @@ export default function CreateGoodsInwardPage() {
               <IconArrowLeft className="size-5" />
             </Button>
             <div className="flex-1">
-              <h1 className="text-xl font-semibold text-gray-900">
-                Create goods inward
+              <h1 className="text-xl font-semibold text-gray-900 truncate">
+                New Goods Inward
               </h1>
               <p className="text-sm text-gray-500">
-                Step {currentStep === "products" ? "1" : "2"} of 2
+                Step{" "}
+                {currentStep === "products"
+                  ? "1"
+                  : currentStep === "partner"
+                    ? "2"
+                    : currentStep === "linkTo"
+                      ? "3"
+                      : "4"}{" "}
+                of 4
               </p>
             </div>
           </div>
@@ -361,14 +418,23 @@ export default function CreateGoodsInwardPage() {
           <div className="h-1 bg-gray-200">
             <div
               className="h-full bg-primary-500 transition-all duration-300"
-              style={{ width: currentStep === "products" ? "50%" : "100%" }}
+              style={{
+                width:
+                  currentStep === "products"
+                    ? "25%"
+                    : currentStep === "partner"
+                      ? "50%"
+                      : currentStep === "linkTo"
+                        ? "75%"
+                        : "100%",
+              }}
             />
           </div>
         </div>
 
-        {/* Main Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto flex flex-col">
-          {currentStep === "products" ? (
+        {/* Step Content - Scrollable */}
+        <div className="flex-1 flex-col overflow-y-auto flex">
+          {currentStep === "products" && (
             <ProductSelectionStep
               products={products}
               materials={materials}
@@ -378,105 +444,145 @@ export default function CreateGoodsInwardPage() {
               onOpenUnitSheet={handleOpenUnitSheet}
               onAddNewProduct={() => setShowCreateProduct(true)}
             />
-          ) : (
+          )}
+
+          {currentStep === "partner" && (
+            <PartnerSelectionStep
+              partnerTypes={["supplier", "vendor"]}
+              selectedType={receivedFromType}
+              selectedPartnerId={selectedPartnerId}
+              selectedWarehouseId={selectedWarehouseId}
+              currentWarehouseId={warehouse.id}
+              onTypeChange={handlePartnerTypeChange}
+              onSelectPartner={handleSelectPartner}
+              onSelectWarehouse={handleSelectWarehouse}
+              onAddNewPartner={() => setShowCreatePartner(true)}
+              title="Received from"
+              buttonLabel="New supplier"
+            />
+          )}
+
+          {currentStep === "linkTo" && (
+            <InwardLinkToStep
+              warehouseId={warehouse.id}
+              linkToData={linkToData}
+              onLinkToChange={setLinkToData}
+            />
+          )}
+
+          {currentStep === "details" && (
             <InwardDetailsStep
               formData={detailsFormData}
-              onChange={(updates) =>
-                setDetailsFormData((prev) => ({ ...prev, ...updates }))
+              onChange={(data) =>
+                setDetailsFormData((prev) => ({ ...prev, ...data }))
               }
             />
           )}
         </div>
 
-        {/* Footer - Fixed at bottom */}
-        <div className="shrink-0 border-t border-gray-200 bg-background p-4 flex">
-          <div className="w-full flex gap-3">
-            {currentStep === "products" ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={saving}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleNext}
-                  disabled={!canProceed || saving}
-                  className="flex-1"
-                >
-                  Next
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleBack}
-                  disabled={saving}
-                  className="flex-1"
-                >
-                  Back
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!canSubmit || saving}
-                  className="flex-1"
-                >
-                  {saving ? "Saving..." : "Submit"}
-                </Button>
-              </>
-            )}
-          </div>
+        {/* Bottom Action Bar - Fixed at bottom */}
+        <div className="border-t border-gray-200 p-4 flex gap-3 bg-background">
+          {currentStep !== "products" && (
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={saving}
+              className="flex-1"
+            >
+              Back
+            </Button>
+          )}
+          {currentStep === "products" && (
+            <Button
+              onClick={handleNext}
+              disabled={!canProceedFromProducts || saving}
+              className="flex-1"
+            >
+              Continue
+            </Button>
+          )}
+          {currentStep === "partner" && (
+            <Button
+              onClick={handleNext}
+              disabled={!canProceedFromPartner || saving}
+              className="flex-1"
+            >
+              Continue
+            </Button>
+          )}
+          {currentStep === "linkTo" && (
+            <Button
+              onClick={handleNext}
+              disabled={!canProceedFromLinkTo || saving}
+              className="flex-1"
+            >
+              Continue
+            </Button>
+          )}
+          {currentStep === "details" && (
+            <Button
+              onClick={handleSubmit}
+              disabled={!canSubmit || saving}
+              className="flex-1"
+            >
+              {saving ? "Creating..." : "Create Inward"}
+            </Button>
+          )}
         </div>
-
-        {/* Stock Unit Entry Sheet */}
-        {showUnitEntrySheet && (
-          <StockUnitFormSheet
-            open={showUnitEntrySheet}
-            onOpenChange={setShowUnitEntrySheet}
-            product={selectedProduct}
-            onConfirm={handleAddUnit}
-          />
-        )}
-
-        {/* All Specifications Sheet */}
-        {showAllSpecsSheet && (
-          <AllSpecificationsSheet
-            open={showAllSpecsSheet}
-            onOpenChange={setShowAllSpecsSheet}
-            product={selectedProduct}
-            units={currentProductUnits}
-            onIncrementUnit={handleIncrementUnit}
-            onDecrementUnit={handleDecrementUnit}
-            onUpdateUnitCount={handleUpdateUnitCount}
-            onDeleteUnit={handleDeleteUnit}
-            onAddNewUnit={handleAddNewUnitFromAllSpecs}
-          />
-        )}
-
-        {/* Piece Quantity Sheet */}
-        {showPieceQuantitySheet && selectedProduct && (
-          <PieceQuantitySheet
-            key={selectedProduct.id}
-            open={showPieceQuantitySheet}
-            onOpenChange={setShowPieceQuantitySheet}
-            product={selectedProduct}
-            initialQuantity={currentProductUnits[0]?.quantity || 0}
-            onConfirm={handlePieceQuantityConfirm}
-          />
-        )}
-
-        {/* Add Product Sheet */}
-        {showCreateProduct && (
-          <ProductFormSheet
-            key="new"
-            open={showCreateProduct}
-            onOpenChange={setShowCreateProduct}
-          />
-        )}
       </div>
+
+      {/* Sheets */}
+      {showUnitEntrySheet && selectedProduct && (
+        <StockUnitFormSheet
+          open={showUnitEntrySheet}
+          onOpenChange={setShowUnitEntrySheet}
+          product={selectedProduct}
+          onConfirm={handleAddUnit}
+        />
+      )}
+
+      {showAllSpecsSheet && selectedProduct && (
+        <AllSpecificationsSheet
+          open={showAllSpecsSheet}
+          onOpenChange={setShowAllSpecsSheet}
+          product={selectedProduct}
+          units={currentProductUnits}
+          onIncrementUnit={handleIncrementUnit}
+          onDecrementUnit={handleDecrementUnit}
+          onUpdateUnitCount={handleUpdateUnitCount}
+          onDeleteUnit={handleDeleteUnit}
+          onAddNewUnit={handleAddNewUnitFromAllSpecs}
+        />
+      )}
+
+      {showPieceQuantitySheet && selectedProduct && (
+        <PieceQuantitySheet
+          open={showPieceQuantitySheet}
+          onOpenChange={setShowPieceQuantitySheet}
+          product={selectedProduct}
+          initialQuantity={
+            currentProductUnits.length > 0
+              ? currentProductUnits[0].quantity
+              : undefined
+          }
+          onConfirm={handlePieceQuantityConfirm}
+        />
+      )}
+
+      {showCreateProduct && (
+        <ProductFormSheet
+          open={showCreateProduct}
+          onOpenChange={setShowCreateProduct}
+        />
+      )}
+
+      {showCreatePartner && (
+        <PartnerFormSheet
+          open={showCreatePartner}
+          onOpenChange={setShowCreatePartner}
+          partnerType="supplier"
+        />
+      )}
     </div>
   );
 }

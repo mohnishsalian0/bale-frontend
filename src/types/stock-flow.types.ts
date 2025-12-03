@@ -2,8 +2,8 @@ import type { Tables } from "./database/supabase";
 import { StockUnitWithProductDetailView } from "./stock-units.types";
 import type { ProductListView } from "./products.types";
 
-type GoodsInward = Tables<"goods_inwards">;
-type GoodsOutward = Tables<"goods_outwards">;
+export type GoodsInward = Tables<"goods_inwards">;
+export type GoodsOutward = Tables<"goods_outwards">;
 type GoodsOutwardItem = Tables<"goods_outward_items">;
 type Partner = Tables<"partners">;
 type Warehouse = Tables<"warehouses">;

@@ -1,4 +1,5 @@
 import type { SalesOrderStatus } from "@/types/database/enums";
+import { SalesOrderItemListView } from "@/types/sales-orders.types";
 
 export type DisplayStatus = SalesOrderStatus | "overdue";
 
@@ -65,4 +66,14 @@ export function getProductSummary(
   }
   const remaining = products.length - 2;
   return `${products[0].name} x${products[0].quantity}, ${products[1].name} x${products[1].quantity}, ${remaining} more`;
+}
+
+/**
+ * Comma separated products along with their quantities
+ * Example: Designer Silk Fabric x22, Cotton Denim x11
+ */
+export function getFullProductInfo(items: SalesOrderItemListView[]): string {
+  return items
+    .map((item) => `${item.product?.name} x${item.required_quantity}`)
+    .join(", ");
 }

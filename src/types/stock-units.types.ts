@@ -11,7 +11,7 @@ type Warehouse = Tables<"warehouses">;
 
 export interface StockUnitFilters extends Record<string, unknown> {
   product_id?: string;
-  status?: string | string[];
+  status?: StockUnitStatus | StockUnitStatus[];
   qr_generated_at?: "null" | "not_null";
   created_from_inward_id?: string | null;
 }
@@ -21,6 +21,7 @@ export interface StockUnitFilters extends Record<string, unknown> {
 // ============================================================================
 
 import { ProductDetailView, ProductListView } from "./products.types";
+import { StockUnitStatus } from "./database/enums";
 
 /**
  * Minimal inward view for list items

@@ -89,7 +89,7 @@ export function QRProductSelectionStep({
   return (
     <>
       {/* Filters Section */}
-      <div className="flex flex-col gap-3 p-4 shrink-0">
+      <div className="flex flex-col gap-3 p-4 shrink-0 border-b border-border">
         <h3 className="text-lg font-semibold text-gray-900">Select product</h3>
 
         {/* Search */}

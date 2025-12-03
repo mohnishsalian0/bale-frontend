@@ -4,6 +4,7 @@ import {
   ProductTag,
 } from "@/types/products.types";
 import type { Tables } from "./database/supabase";
+import { SalesOrderStatus } from "./database/enums";
 
 type SalesOrder = Tables<"sales_orders">;
 type SalesOrderItem = Tables<"sales_order_items">;
@@ -16,7 +17,7 @@ type Product = Tables<"products">;
 // ============================================================================
 
 export interface SalesOrderFilters extends Record<string, unknown> {
-  status?: string | string[]; // Support single or array for IN queries
+  status?: SalesOrderStatus | SalesOrderStatus[]; // Support single or array for IN queries
   limit?: number;
   order_by?: "order_date" | "expected_delivery_date" | "created_at";
   order_direction?: "asc" | "desc";

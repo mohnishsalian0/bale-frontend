@@ -39,8 +39,6 @@ export default function CreateQRBatchPage() {
   );
   const [saving, setSaving] = useState(false);
 
-  const supabase = createClient();
-
   // Fetch data using TanStack Query
   const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: attributeLists, isLoading: productAttributesLoading } =
@@ -104,6 +102,9 @@ export default function CreateQRBatchPage() {
         pdf_url: null,
       };
 
+      console.log(batchData);
+      console.log(selectedStockUnitIds);
+
       // Create batch using mutation hook
       const batchId = await createBatch.mutateAsync({
         batchData,
@@ -115,6 +116,8 @@ export default function CreateQRBatchPage() {
       if (!batch) {
         throw new Error("Failed to fetch batch details");
       }
+
+      const supabase = createClient();
 
       // Fetch company logo
       const { data: companyData, error: companyError } = await supabase

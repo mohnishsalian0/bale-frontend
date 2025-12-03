@@ -54,12 +54,13 @@ export function QRScannerStep({
     setPaused(true);
 
     const decodedText = detectedCodes[0].rawValue;
+    console.log(decodedText);
 
     try {
       // Fetch stock unit with product details in single query
       const stockUnitWithProduct = await getStockUnitWithProductDetail(
         decodedText,
-        { warehouseId: warehouse.id, status: "in_stock" },
+        { warehouseId: warehouse.id, status: ["full", "partial"] },
       );
 
       if (!stockUnitWithProduct.product) {

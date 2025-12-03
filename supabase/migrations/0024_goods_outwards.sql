@@ -15,11 +15,12 @@ CREATE TABLE goods_outwards (
     sequence_number INTEGER NOT NULL,
 
     -- Outward type
-    outward_type VARCHAR(20) NOT NULL CHECK (outward_type IN ('sales', 'job_work', 'other')),
+    outward_type VARCHAR(20) NOT NULL CHECK (outward_type IN ('sales', 'job_work', 'purchase_return', 'other')),
 
     -- Linking (optional, for reference)
     sales_order_id UUID REFERENCES sales_orders(id), -- When outward_type = 'sales'
     job_work_id UUID REFERENCES job_works(id), -- When outward_type = 'job_work'
+    purchase_order_number VARCHAR(100), -- When outward_type = 'purchase_return'
     other_reason TEXT, -- When outward_type = 'other'
 
     -- Recipients
@@ -60,6 +61,7 @@ CREATE TABLE goods_outwards (
         CHECK (
 						(outward_type = 'sales' AND sales_order_id IS NOT NULL) OR
 						(outward_type = 'job_work' AND job_work_id IS NOT NULL) OR
+						(outward_type = 'purchase_return' AND purchase_order_number IS NOT NULL) OR
 						(outward_type = 'other' AND other_reason IS NOT NULL)
         ),
 

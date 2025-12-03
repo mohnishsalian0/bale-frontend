@@ -78,18 +78,16 @@ export type JobWorkStatus =
   | "completed"
   | "cancelled";
 
-export type DispatchType =
-  | "sales"
-  | "job_work"
-  | "purchase_return"
-  | "warehouse_transfer"
-  | "other";
-
-export type ReceiptType =
-  | "purchase"
+export type InwardLinkToType =
+  | "purchase_order"
   | "job_work"
   | "sales_return"
-  | "warehouse_transfer"
+  | "other";
+
+export type OutwardLinkToType =
+  | "sales_order"
+  | "job_work"
+  | "purchase_return"
   | "other";
 
 export type JobWorkItemType = "raw_material" | "finished_goods";

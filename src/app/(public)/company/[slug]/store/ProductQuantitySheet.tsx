@@ -136,7 +136,7 @@ export function ProductQuantitySheet({
             type="button"
             variant="outline"
             size="sm"
-            className="border-border shadow-gray-sm"
+            className="border-border shadow-gray-sm text-foreground"
             onClick={() => handlePresetAdd(amount)}
           >
             <IconPlus />

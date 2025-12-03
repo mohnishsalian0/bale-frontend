@@ -9,6 +9,7 @@ import { ErrorState } from "@/components/layouts/error-state";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
 import { useCurrentUser, useUserMutations } from "@/lib/query/hooks/users";
 import { Warehouse } from "@/types/warehouses.types";
+import { getWarehouseFormattedAddress } from "@/lib/utils/warehouse";
 
 export default function WarehouseSelectionPage() {
   const router = useRouter();
@@ -103,16 +104,7 @@ export default function WarehouseSelectionPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {warehouses.map((warehouse) => {
-              // Build address string
-              const addressParts = [
-                warehouse.address_line1,
-                warehouse.address_line2,
-                warehouse.city && warehouse.state
-                  ? `${warehouse.city}, ${warehouse.state}`
-                  : warehouse.city || warehouse.state,
-                warehouse.pin_code,
-              ].filter(Boolean);
-              const addressString = addressParts.join(", ") || "No address";
+              const formattedAddress = getWarehouseFormattedAddress(warehouse);
 
               return (
                 <div
@@ -135,9 +127,9 @@ export default function WarehouseSelectionPage() {
                     </div>
                     <div
                       className="text-sm text-gray-500 truncate"
-                      title={addressString}
+                      title={formattedAddress}
                     >
-                      {addressString}
+                      {formattedAddress}
                     </div>
                   </div>
                 </div>
