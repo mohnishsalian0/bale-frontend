@@ -23,6 +23,7 @@ export const PARTNER_LIST_VIEW_SELECT = `
   last_name,
   company_name,
   partner_type,
+  is_active,
   phone_number,
   email,
   city,
@@ -230,4 +231,24 @@ export async function deletePartner(partnerId: string): Promise<void> {
     .eq("id", partnerId);
 
   if (error) throw error;
+}
+
+/**
+ * Update partner active status
+ */
+export async function updatePartnerActiveStatus(
+  partnerId: string,
+  value: boolean,
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("partners")
+    .update({ is_active: value })
+    .eq("id", partnerId);
+
+  if (error) {
+    console.error("Error updating partner active status:", error);
+    throw error;
+  }
 }

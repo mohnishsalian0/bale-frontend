@@ -73,7 +73,7 @@ export default function TopBar({
                 imageUrl={user.profile_image_url || undefined}
                 alt={user.first_name + user.last_name}
                 placeholderInitials={getInitials(
-                  user.first_name + user.last_name,
+                  user.first_name + " " + user.last_name,
                 )}
               />
             </Button>

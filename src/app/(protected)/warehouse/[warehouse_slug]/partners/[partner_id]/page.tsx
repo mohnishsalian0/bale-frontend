@@ -33,8 +33,13 @@ import { SummaryTab } from "./SummaryTab";
 import { OrdersTab } from "./OrdersTab";
 import { PartnerFormSheet } from "../PartnerFormSheet";
 import type { PartnerType, SalesOrderStatus } from "@/types/database/enums";
-import { usePartnerWithOrderStats } from "@/lib/query/hooks/partners";
+import {
+  usePartnerWithOrderStats,
+  usePartnerMutations,
+} from "@/lib/query/hooks/partners";
 import { useSalesOrdersByCustomer } from "@/lib/query/hooks/sales-orders";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import { toast } from "sonner";
 
 interface PageParams {
   params: Promise<{
@@ -64,6 +69,10 @@ export default function PartnerDetailPage({ params }: PageParams) {
   const { warehouse } = useSession();
   const [activeTab, setActiveTab] = useState<"summary" | "orders">("summary");
   const [showEditPartner, setShowEditPartner] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  // Initialize mutations
+  const { deletePartner, updateActiveStatus } = usePartnerMutations();
 
   // Fetch partner with order stats using TanStack Query
   const {
@@ -89,6 +98,41 @@ export default function PartnerDetailPage({ params }: PageParams) {
 
   const loading = partnerLoading || ordersLoading;
 
+  // Handler for mark inactive action
+  const handleMarkInactive = () => {
+    if (!partner) return;
+
+    updateActiveStatus.mutate(
+      { partnerId: partner.id, value: false },
+      {
+        onSuccess: () => {
+          toast.success("Partner marked as inactive");
+          setShowDeleteDialog(false);
+          router.push(`/warehouse/${warehouse.slug}/partners`);
+        },
+        onError: (error: Error) => {
+          toast.error(`Failed to mark partner as inactive: ${error.message}`);
+        },
+      },
+    );
+  };
+
+  // Handler for delete action
+  const handleDeleteConfirm = () => {
+    if (!partner) return;
+
+    deletePartner.mutate(partner.id, {
+      onSuccess: () => {
+        toast.success("Partner deleted successfully");
+        setShowDeleteDialog(false);
+        router.push(`/warehouse/${warehouse.slug}/partners`);
+      },
+      onError: (error: Error) => {
+        toast.error(`Failed to delete partner: ${error.message}`);
+      },
+    });
+  };
+
   if (loading) {
     return <LoadingState message="Loading partner details..." />;
   }
@@ -103,6 +147,9 @@ export default function PartnerDetailPage({ params }: PageParams) {
       />
     );
   }
+
+  // Determine if partner has orders
+  const hasOrders = (partner.order_stats?.total_orders ?? 0) > 0;
 
   const partnerName = getPartnerName(partner);
   const partnerType = partner.partner_type as PartnerType;
@@ -257,7 +304,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
             <DropdownMenuContent align="start" side="top" sideOffset={8}>
               <DropdownMenuItem
                 variant="destructive"
-                onClick={() => console.log("Delete partner")}
+                onClick={() => setShowDeleteDialog(true)}
               >
                 <IconTrash />
                 Delete
@@ -307,6 +354,42 @@ export default function PartnerDetailPage({ params }: PageParams) {
             partnerToEdit={partner}
           />
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <ResponsiveDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          title={hasOrders ? "Cannot delete partner" : "Delete partner"}
+          description={
+            hasOrders
+              ? "This partner has order history and cannot be deleted. You can mark them as inactive to hide them from active lists."
+              : "Are you sure you want to delete this partner? This action cannot be undone."
+          }
+          footer={
+            <div className="flex gap-3 w-full">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={hasOrders ? handleMarkInactive : handleDeleteConfirm}
+                className="flex-1"
+              >
+                {hasOrders ? "Mark as inactive" : "Confirm delete"}
+              </Button>
+            </div>
+          }
+        >
+          {hasOrders && (
+            <p className="text-sm text-gray-500">
+              Total orders: <b>{partner?.order_stats?.total_orders || 0}</b>
+            </p>
+          )}
+        </ResponsiveDialog>
       </div>
     </div>
   );

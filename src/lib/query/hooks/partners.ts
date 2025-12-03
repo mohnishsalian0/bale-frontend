@@ -10,6 +10,7 @@ import {
   createPartner,
   updatePartner,
   deletePartner,
+  updatePartnerActiveStatus,
 } from "@/lib/queries/partners";
 import type { PartnerFilters, PartnerUpdate } from "@/types/partners.types";
 
@@ -99,9 +100,21 @@ export function usePartnerMutations() {
     },
   });
 
+  const updateActiveStatus = useMutation({
+    mutationFn: ({ partnerId, value }: { partnerId: string; value: boolean }) =>
+      updatePartnerActiveStatus(partnerId, value),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.partners.detail(variables.partnerId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.partners.all() });
+    },
+  });
+
   return {
     createPartner: createPartnerMutation,
     updatePartner: updatePartnerMutation,
     deletePartner: deletePartnerMutation,
+    updateActiveStatus,
   };
 }

@@ -19,6 +19,7 @@ CREATE TABLE partners (
     -- Partner type
     partner_type VARCHAR(20) NOT NULL
         CHECK (partner_type IN ('customer', 'supplier', 'vendor', 'agent')),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
     -- Source tracking
     source VARCHAR(50) DEFAULT 'manual' NOT NULL,
@@ -65,6 +66,9 @@ CREATE INDEX idx_partners_company_id ON partners(company_id);
 
 -- Partner type filtering (common query pattern)
 CREATE INDEX idx_partners_type ON partners(company_id, partner_type);
+
+-- Active status filtering
+CREATE INDEX idx_partners_active_status ON partners(company_id, is_active);
 
 -- Phone number lookup within company
 CREATE INDEX idx_partners_phone ON partners(company_id, phone_number);

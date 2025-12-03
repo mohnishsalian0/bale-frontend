@@ -953,6 +953,7 @@ export type Database = {
           gst_number: string | null
           id: string
           image_url: string | null
+          is_active: boolean
           is_guest: boolean | null
           last_interaction_at: string | null
           last_name: string
@@ -982,6 +983,7 @@ export type Database = {
           gst_number?: string | null
           id?: string
           image_url?: string | null
+          is_active?: boolean
           is_guest?: boolean | null
           last_interaction_at?: string | null
           last_name: string
@@ -1011,6 +1013,7 @@ export type Database = {
           gst_number?: string | null
           id?: string
           image_url?: string | null
+          is_active?: boolean
           is_guest?: boolean | null
           last_interaction_at?: string | null
           last_name?: string

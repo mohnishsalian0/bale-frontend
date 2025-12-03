@@ -29,6 +29,7 @@ export type PartnerListView = Pick<
   | "last_name"
   | "company_name"
   | "partner_type"
+  | "is_active"
   | "phone_number"
   | "email"
   | "city"
