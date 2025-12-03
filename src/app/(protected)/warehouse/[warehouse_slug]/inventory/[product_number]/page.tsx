@@ -3,9 +3,9 @@
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  IconBasket,
+  IconBasketOff,
   IconBuildingWarehouse,
-  IconEye,
-  IconEyeOff,
   IconShare,
   IconTrash,
 } from "@tabler/icons-react";
@@ -60,9 +60,9 @@ export default function ProductDetailPage({ params }: PageParams) {
 
   // Initialize mutations
   const {
-    toggleCatalogVisibility,
+    updateCatalogVisibility,
     delete: deleteProduct,
-    markInactive,
+    updateActiveStatus,
   } = useProductMutations();
 
   // Fetch product using TanStack Query
@@ -86,10 +86,10 @@ export default function ProductDetailPage({ params }: PageParams) {
   const handleToggleCatalogVisibility = () => {
     if (!product) return;
 
-    toggleCatalogVisibility.mutate(
+    updateCatalogVisibility.mutate(
       {
         productId: product.id,
-        currentValue: product.show_on_catalog || false,
+        value: !product.show_on_catalog,
       },
       {
         onSuccess: () => {
@@ -110,16 +110,19 @@ export default function ProductDetailPage({ params }: PageParams) {
   const handleMarkInactive = () => {
     if (!product) return;
 
-    markInactive.mutate(product.id, {
-      onSuccess: () => {
-        toast.success("Product marked as inactive");
-        setShowDeleteDialog(false);
-        router.push(`/warehouse/${warehouse.slug}/inventory`);
+    updateActiveStatus.mutate(
+      { productId: product.id, value: false },
+      {
+        onSuccess: () => {
+          toast.success("Product marked as inactive");
+          setShowDeleteDialog(false);
+          router.push(`/warehouse/${warehouse.slug}/inventory`);
+        },
+        onError: (error: Error) => {
+          toast.error(`Failed to mark product as inactive: ${error.message}`);
+        },
       },
-      onError: (error: Error) => {
-        toast.error(`Failed to mark product as inactive: ${error.message}`);
-      },
-    });
+    );
   };
 
   // Handler for delete action
@@ -236,7 +239,9 @@ export default function ProductDetailPage({ params }: PageParams) {
           <div className="col-span-2 sm:col-span-1 border border-gray-200 rounded-lg p-4">
             <div className="flex gap-2 mb-2">
               <IconBuildingWarehouse className="size-4 text-gray-500" />
-              <span className="text-xs text-gray-500">Total stock</span>
+              <span className="text-xs text-gray-500">
+                Total stock in inventory
+              </span>
             </div>
             <p className="text-lg font-bold text-gray-700 whitespace-pre">
               {`${product.inventory.in_stock_quantity?.toFixed(2) || 0} ${unitAbbr}  •  ₹ ${formatCurrency(product.inventory.in_stock_value || 0)}`}
@@ -247,7 +252,9 @@ export default function ProductDetailPage({ params }: PageParams) {
           <div className="col-span-2 sm:col-span-1 border border-gray-200 rounded-lg p-4">
             <div className="flex gap-2 mb-2">
               <IconStore className="size-4 fill-gray-500" />
-              <span className="text-xs text-gray-500">Order request</span>
+              <span className="text-xs text-gray-500">
+                Order request quantity
+              </span>
             </div>
             <p className="text-lg font-bold text-gray-700 whitespace-pre">
               {`0 ${unitAbbr}  •  ₹ 0`}
@@ -293,7 +300,7 @@ export default function ProductDetailPage({ params }: PageParams) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="top" sideOffset={8}>
               <DropdownMenuItem onClick={handleToggleCatalogVisibility}>
-                {product.show_on_catalog ? <IconEyeOff /> : <IconEye />}
+                {product.show_on_catalog ? <IconBasketOff /> : <IconBasket />}
                 {product.show_on_catalog
                   ? "Hide from catalog"
                   : "Show on catalog"}

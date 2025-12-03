@@ -774,15 +774,15 @@ export async function updateProductImagesField(
 /**
  * Toggle product catalog visibility
  */
-export async function toggleProductCatalogVisibility(
+export async function updateProductCatalogVisibility(
   productId: string,
-  currentValue: boolean,
+  value: boolean,
 ): Promise<void> {
   const supabase = createClient();
 
   const { error } = await supabase
     .from("products")
-    .update({ show_on_catalog: !currentValue })
+    .update({ show_on_catalog: value })
     .eq("id", productId);
 
   if (error) {
@@ -811,12 +811,15 @@ export async function deleteProduct(productId: string): Promise<void> {
 /**
  * Mark a product as inactive
  */
-export async function markProductInactive(productId: string): Promise<void> {
+export async function updateProductActiveStatus(
+  productId: string,
+  value: boolean,
+): Promise<void> {
   const supabase = createClient();
 
   const { error } = await supabase
     .from("products")
-    .update({ is_active: false })
+    .update({ is_active: value })
     .eq("id", productId);
 
   if (error) {

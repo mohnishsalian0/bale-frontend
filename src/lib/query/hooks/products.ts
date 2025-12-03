@@ -23,9 +23,9 @@ import {
   uploadProductImages,
   deleteProductImages,
   updateProductImagesField,
-  toggleProductCatalogVisibility,
   deleteProduct,
-  markProductInactive,
+  updateProductActiveStatus,
+  updateProductCatalogVisibility,
 } from "@/lib/queries/products";
 import { ProductUpsertData } from "@/types/products.types";
 
@@ -249,14 +249,9 @@ export function useProductMutations() {
     },
   });
 
-  const toggleCatalogVisibility = useMutation({
-    mutationFn: ({
-      productId,
-      currentValue,
-    }: {
-      productId: string;
-      currentValue: boolean;
-    }) => toggleProductCatalogVisibility(productId, currentValue),
+  const updateCatalogVisibility = useMutation({
+    mutationFn: ({ productId, value }: { productId: string; value: boolean }) =>
+      updateProductCatalogVisibility(productId, value),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.products.byId(variables.productId),
@@ -275,11 +270,12 @@ export function useProductMutations() {
     },
   });
 
-  const markInactive = useMutation({
-    mutationFn: (productId: string) => markProductInactive(productId),
-    onSuccess: (_, productId) => {
+  const updateActiveStatus = useMutation({
+    mutationFn: ({ productId, value }: { productId: string; value: boolean }) =>
+      updateProductActiveStatus(productId, value),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.products.byId(productId),
+        queryKey: queryKeys.products.byId(variables.productId),
       });
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
     },
@@ -288,9 +284,9 @@ export function useProductMutations() {
   return {
     create,
     update,
-    toggleCatalogVisibility,
+    updateCatalogVisibility,
     delete: deleteProductMutation,
-    markInactive,
+    updateActiveStatus,
   };
 }
 
