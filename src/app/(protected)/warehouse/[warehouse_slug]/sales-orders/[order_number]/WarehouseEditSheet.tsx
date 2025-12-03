@@ -3,30 +3,16 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { createClient } from "@/lib/supabase/browser";
 import { toast } from "sonner";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 interface WarehouseEditSheetProps {
   open: boolean;
@@ -46,7 +32,6 @@ export function WarehouseEditSheet({
   const [selectedWarehouseId, setSelectedWarehouseId] =
     useState(currentWarehouseId);
   const [loading, setLoading] = useState(false);
-  const isMobile = useIsMobile();
 
   // Fetch warehouses using TanStack Query
   const { data: warehouses = [], isLoading: fetchingWarehouses } =
@@ -152,29 +137,14 @@ export function WarehouseEditSheet({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Warehouse</DrawerTitle>
-          </DrawerHeader>
-          {formContent}
-          <DrawerFooter>{footerButtons}</DrawerFooter>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Warehouse</DialogTitle>
-        </DialogHeader>
-        {formContent}
-        <DialogFooter>{footerButtons}</DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Warehouse"
+      footer={footerButtons}
+    >
+      {formContent}
+    </ResponsiveDialog>
   );
 }

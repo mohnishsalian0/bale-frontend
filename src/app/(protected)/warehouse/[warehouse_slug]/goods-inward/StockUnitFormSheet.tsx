@@ -13,26 +13,11 @@ import { Button } from "@/components/ui/button";
 import { InputWithIcon } from "@/components/ui/input-with-icon";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useIsMobile } from "@/hooks/use-mobile";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import type { ProductListView } from "@/types/products.types";
@@ -40,6 +25,7 @@ import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import type { StockUnitSpec } from "./ProductSelectionStep";
 import { Input } from "@/components/ui/input";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 interface StockUnitFormSheetProps {
   open: boolean;
@@ -75,7 +61,6 @@ export function StockUnitFormSheet({
   });
 
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
-  const isMobile = useIsMobile();
 
   const handleCancel = () => {
     // Reset form
@@ -320,29 +305,14 @@ export function StockUnitFormSheet({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Stock unit</DrawerTitle>
-          </DrawerHeader>
-          {formContent}
-          <DrawerFooter>{footerButtons}</DrawerFooter>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Stock unit</DialogTitle>
-        </DialogHeader>
-        {formContent}
-        <DialogFooter>{footerButtons}</DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Stock unit"
+      footer={footerButtons}
+    >
+      {formContent}
+    </ResponsiveDialog>
   );
 }

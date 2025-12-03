@@ -10,18 +10,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useCart, type CartItem } from "@/contexts/cart-context";
-import { getCompanyBySlug } from "@/lib/queries/catalog";
+import { getCompanyBySlug, type PublicCompany } from "@/lib/queries/catalog";
 import { createCatalogOrder } from "@/lib/queries/catalog-orders";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ProductQuantitySheet } from "../ProductQuantitySheet";
-import type { Tables } from "@/types/database/supabase";
 import { toast } from "sonner";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
-
-type Company = Tables<"companies">;
 
 interface CheckoutFormData {
   firstName: string;
@@ -45,7 +42,7 @@ export default function CheckoutPage() {
   const slug = params.slug as string;
   const { items: cartItems, clearCart, updateQuantity, removeItem } = useCart();
 
-  const [company, setCompany] = useState<Company | null>(null);
+  const [company, setCompany] = useState<PublicCompany | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 

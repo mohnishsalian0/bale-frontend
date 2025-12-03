@@ -486,6 +486,7 @@ export function ProductFormSheet({
                   }
                   className="flex-1"
                   step="0.01"
+                  min="0"
                 />
                 <Input
                   type="number"
@@ -499,6 +500,7 @@ export function ProductFormSheet({
                   }
                   className="flex-1"
                   step="0.01"
+                  min="0"
                 />
               </div>
 

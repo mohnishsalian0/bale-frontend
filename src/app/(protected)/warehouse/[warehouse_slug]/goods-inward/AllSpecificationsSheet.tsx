@@ -3,23 +3,9 @@
 import { IconMinus, IconPlus, IconTrash } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { useIsMobile } from "@/hooks/use-mobile";
 import type { StockUnitSpec } from "./ProductSelectionStep";
 import { ProductListView } from "@/types/products.types";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 interface AllSpecificationsSheetProps {
   open: boolean;
@@ -44,8 +30,6 @@ export function AllSpecificationsSheet({
   onDeleteUnit,
   onAddNewUnit,
 }: AllSpecificationsSheetProps) {
-  const isMobile = useIsMobile();
-
   if (!product) return null;
 
   const handleCancel = () => {
@@ -67,7 +51,7 @@ export function AllSpecificationsSheet({
   const today = formatDate(new Date());
 
   const formContent = (
-    <div className="flex flex-col gap-0 my-4 border-t border-gray-200">
+    <div className="flex flex-col gap-2 my-4">
       {units.length === 0 ? (
         <div className="flex items-center justify-center py-12 text-center">
           <p className="text-sm text-gray-500">No units added yet</p>
@@ -83,7 +67,7 @@ export function AllSpecificationsSheet({
           return (
             <div
               key={unit.id}
-              className="flex items-center gap-3 px-4 py-3 border-b border-gray-200"
+              className="flex items-center gap-3 px-4 py-3 border border-gray-200 rounded-md"
             >
               {/* Unit Info */}
               <div className="flex-1 min-w-0">
@@ -162,29 +146,14 @@ export function AllSpecificationsSheet({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="px-0">
-          <DrawerHeader>
-            <DrawerTitle>All stock units</DrawerTitle>
-          </DrawerHeader>
-          {formContent}
-          <DrawerFooter>{footerButtons}</DrawerFooter>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md px-0">
-        <DialogHeader className="px-4">
-          <DialogTitle>All stock units</DialogTitle>
-        </DialogHeader>
-        {formContent}
-        <DialogFooter className="px-4">{footerButtons}</DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="All stock units"
+      footer={footerButtons}
+    >
+      {formContent}
+    </ResponsiveDialog>
   );
 }

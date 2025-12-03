@@ -13,7 +13,8 @@ CREATE TABLE products (
     sequence_number INTEGER NOT NULL,
     name VARCHAR(200) NOT NULL,
     show_on_catalog BOOLEAN DEFAULT TRUE,
-    
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+
     -- Fabric specifications
     gsm INTEGER CHECK (gsm BETWEEN 50 AND 500),
     thread_count_cm INTEGER,
@@ -63,6 +64,9 @@ CREATE INDEX idx_products_name ON products(company_id, name);
 
 -- Catalog visibility
 CREATE INDEX idx_products_catalog_visibility ON products(company_id, show_on_catalog);
+
+-- Active status filtering
+CREATE INDEX idx_products_active_status ON products(company_id, is_active);
 
 -- Price range queries
 CREATE INDEX idx_products_selling_price ON products(company_id, selling_price_per_unit);

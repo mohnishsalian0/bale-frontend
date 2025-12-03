@@ -24,6 +24,7 @@ export const PRODUCT_LIST_VIEW_SELECT = `
 	sequence_number,
 	name,
 	show_on_catalog,
+	is_active,
 	stock_type,
 	measuring_unit,
 	product_images,
@@ -58,6 +59,7 @@ export const PRODUCT_WITH_INVENTORY_LIST_VIEW_SELECT = `
 	sequence_number,
 	name,
 	show_on_catalog,
+	is_active,
 	stock_type,
 	measuring_unit,
 	product_images,
@@ -117,6 +119,7 @@ export type ProductListViewRaw = Pick<
   | "sequence_number"
   | "name"
   | "show_on_catalog"
+  | "is_active"
   | "stock_type"
   | "measuring_unit"
   | "product_images"
@@ -764,6 +767,60 @@ export async function updateProductImagesField(
 
   if (error) {
     console.error("Error updating product images field:", error);
+    throw error;
+  }
+}
+
+/**
+ * Toggle product catalog visibility
+ */
+export async function toggleProductCatalogVisibility(
+  productId: string,
+  currentValue: boolean,
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("products")
+    .update({ show_on_catalog: !currentValue })
+    .eq("id", productId);
+
+  if (error) {
+    console.error("Error toggling catalog visibility:", error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a product (soft delete by setting deleted_at)
+ */
+export async function deleteProduct(productId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("products")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", productId);
+
+  if (error) {
+    console.error("Error deleting product:", error);
+    throw error;
+  }
+}
+
+/**
+ * Mark a product as inactive
+ */
+export async function markProductInactive(productId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("products")
+    .update({ is_active: false })
+    .eq("id", productId);
+
+  if (error) {
+    console.error("Error marking product as inactive:", error);
     throw error;
   }
 }

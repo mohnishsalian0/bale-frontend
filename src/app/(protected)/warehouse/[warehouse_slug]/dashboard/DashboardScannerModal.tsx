@@ -1,27 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { StockStatusBadge } from "@/components/ui/stock-status-badge";
 import { QRScannerOverlay } from "@/components/ui/qr-scanner-overlay";
 import { StockUnitDetailsContent } from "@/components/layouts/stock-unit-details-content";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { formatStockUnitNumber } from "@/lib/utils/product";
 import { useSession } from "@/contexts/session-context";
 import type { StockType, StockUnitStatus } from "@/types/database/enums";
 import { useStockUnitWithProductDetail } from "@/lib/query/hooks/stock-units";
 import { IDetectedBarcode } from "@yudiel/react-qr-scanner";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 const SCAN_DELAY = 1200;
 
@@ -35,7 +23,6 @@ export function DashboardScannerModal({
   onOpenChange,
 }: DashboardScannerModalProps) {
   const { warehouse } = useSession();
-  const isMobile = useIsMobile();
 
   const [torch, setTorch] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -154,55 +141,27 @@ export function DashboardScannerModal({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={handleClose}>
-        <DrawerContent className="h-[90vh]">
-          <DrawerHeader>
-            <DrawerTitle>
-              {scannedStockUnit ? (
-                <>
-                  {formatStockUnitNumber(
-                    scannedStockUnit.sequence_number,
-                    scannedStockUnit.product?.stock_type as StockType,
-                  )}
-                  <StockStatusBadge
-                    status={scannedStockUnit.status as StockUnitStatus}
-                  />
-                </>
-              ) : (
-                "Scan Stock Unit"
-              )}
-            </DrawerTitle>
-          </DrawerHeader>
-          {content}
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>
-            {scannedStockUnit ? (
-              <>
-                {formatStockUnitNumber(
-                  scannedStockUnit.sequence_number,
-                  scannedStockUnit.product?.stock_type as StockType,
-                )}
-                <StockStatusBadge
-                  status={scannedStockUnit.status as StockUnitStatus}
-                />
-              </>
-            ) : (
-              "Scan Stock Unit"
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={handleClose}
+      title={
+        scannedStockUnit ? (
+          <>
+            {formatStockUnitNumber(
+              scannedStockUnit.sequence_number,
+              scannedStockUnit.product?.stock_type as StockType,
             )}
-          </DialogTitle>
-        </DialogHeader>
-        {content}
-      </DialogContent>
-    </Dialog>
+            <StockStatusBadge
+              status={scannedStockUnit.status as StockUnitStatus}
+            />
+          </>
+        ) : (
+          "Scan Stock Unit"
+        )
+      }
+    >
+      {content}
+    </ResponsiveDialog>
   );
 }

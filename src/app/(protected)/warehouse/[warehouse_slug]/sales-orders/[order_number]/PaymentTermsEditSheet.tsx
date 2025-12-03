@@ -4,25 +4,11 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { createClient } from "@/lib/supabase/browser";
 import { toast } from "sonner";
 import type { DiscountType } from "@/types/database/enums";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 interface PaymentTermsEditSheetProps {
   open: boolean;
@@ -48,7 +34,6 @@ export function PaymentTermsEditSheet({
   const [discountType, setDiscountType] = useState<DiscountType>("none");
   const [discountValue, setDiscountValue] = useState(0);
   const [loading, setLoading] = useState(false);
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (open) {
@@ -208,29 +193,14 @@ export function PaymentTermsEditSheet({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Payment terms</DrawerTitle>
-          </DrawerHeader>
-          {formContent}
-          <DrawerFooter>{footerButtons}</DrawerFooter>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Payment terms</DialogTitle>
-        </DialogHeader>
-        {formContent}
-        <DialogFooter>{footerButtons}</DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Payment terms"
+      footer={footerButtons}
+    >
+      {formContent}
+    </ResponsiveDialog>
   );
 }

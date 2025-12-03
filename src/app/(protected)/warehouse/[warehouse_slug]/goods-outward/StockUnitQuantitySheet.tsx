@@ -4,26 +4,12 @@ import { useState } from "react";
 import { IconMinus, IconPlus, IconPhoto } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { useIsMobile } from "@/hooks/use-mobile";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { formatStockUnitNumber } from "@/lib/utils/product";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import { StockUnitWithProductDetailView } from "@/types/stock-units.types";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 interface StockUnitQuantitySheetProps {
   open: boolean;
@@ -41,7 +27,6 @@ export function StockUnitQuantitySheet({
   onConfirm,
 }: StockUnitQuantitySheetProps) {
   const [quantity, setQuantity] = useState(initialQuantity);
-  const isMobile = useIsMobile();
 
   if (!stockUnit) return null;
 
@@ -216,29 +201,14 @@ export function StockUnitQuantitySheet({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Set dispatch quantity</DrawerTitle>
-          </DrawerHeader>
-          {formContent}
-          <DrawerFooter>{footerButtons}</DrawerFooter>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Set dispatch quantity</DialogTitle>
-        </DialogHeader>
-        {formContent}
-        <DialogFooter>{footerButtons}</DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Set dispatch quantity"
+      footer={footerButtons}
+    >
+      {formContent}
+    </ResponsiveDialog>
   );
 }

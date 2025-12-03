@@ -10,8 +10,10 @@ export function GlowIndicator({
   return (
     <div className={className}>
       <div
-        className={`size-3 rounded-full ${
-          isActive ? "bg-green-500" : "bg-gray-400"
+        className={`size-3 rounded-full border ${
+          isActive
+            ? "bg-green-500 border-green-600"
+            : "bg-gray-400 border-gray-500"
         }`}
         style={{
           boxShadow: isActive

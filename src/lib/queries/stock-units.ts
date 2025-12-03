@@ -32,6 +32,7 @@ type StockUnitWithProductListViewRaw = StockUnitListView & {
         | "sequence_number"
         | "name"
         | "show_on_catalog"
+        | "is_active"
         | "stock_type"
         | "measuring_unit"
         | "product_images"

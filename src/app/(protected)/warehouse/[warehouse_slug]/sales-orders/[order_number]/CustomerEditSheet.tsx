@@ -3,31 +3,17 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { createClient } from "@/lib/supabase/browser";
 import { getPartnerName } from "@/lib/utils/partner";
 import { toast } from "sonner";
 import { usePartners } from "@/lib/query/hooks/partners";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 interface CustomerEditSheetProps {
   open: boolean;
@@ -45,7 +31,6 @@ export function CustomerEditSheet({
   const [selectedCustomerId, setSelectedCustomerId] =
     useState(currentCustomerId);
   const [loading, setLoading] = useState(false);
-  const isMobile = useIsMobile();
 
   // Fetch customers using TanStack Query
   const { data: customers = [], isLoading: fetchingCustomers } = usePartners({
@@ -134,29 +119,14 @@ export function CustomerEditSheet({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Customer</DrawerTitle>
-          </DrawerHeader>
-          {formContent}
-          <DrawerFooter>{footerButtons}</DrawerFooter>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Customer</DialogTitle>
-        </DialogHeader>
-        {formContent}
-        <DialogFooter>{footerButtons}</DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Customer"
+      footer={footerButtons}
+    >
+      {formContent}
+    </ResponsiveDialog>
   );
 }

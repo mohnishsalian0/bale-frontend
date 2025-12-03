@@ -2,7 +2,13 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconBuildingWarehouse, IconShare } from "@tabler/icons-react";
+import {
+  IconBuildingWarehouse,
+  IconEye,
+  IconEyeOff,
+  IconShare,
+  IconTrash,
+} from "@tabler/icons-react";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { TabUnderline } from "@/components/ui/tab-underline";
@@ -26,9 +32,14 @@ import { StockFlowTab } from "./StockFlowTab";
 import { ProductFormSheet } from "../ProductFormSheet";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import IconStore from "@/components/icons/IconStore";
-import { useProductWithInventoryByNumber } from "@/lib/query/hooks/products";
+import {
+  useProductWithInventoryByNumber,
+  useProductMutations,
+} from "@/lib/query/hooks/products";
 import { useStockUnitsWithInward } from "@/lib/query/hooks/stock-units";
 import { useOutwardItemsByProduct } from "@/lib/query/hooks/stock-flow";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import { toast } from "sonner";
 
 interface PageParams {
   params: Promise<{
@@ -45,6 +56,14 @@ export default function ProductDetailPage({ params }: PageParams) {
     "summary" | "stock_units" | "stock_flow"
   >("summary");
   const [showEditProduct, setShowEditProduct] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  // Initialize mutations
+  const {
+    toggleCatalogVisibility,
+    delete: deleteProduct,
+    markInactive,
+  } = useProductMutations();
 
   // Fetch product using TanStack Query
   const {
@@ -62,6 +81,65 @@ export default function ProductDetailPage({ params }: PageParams) {
     useOutwardItemsByProduct(product?.id || null);
 
   const loading = productLoading || stockUnitsLoading || outwardItemsLoading;
+
+  // Handler for catalog visibility toggle
+  const handleToggleCatalogVisibility = () => {
+    if (!product) return;
+
+    toggleCatalogVisibility.mutate(
+      {
+        productId: product.id,
+        currentValue: product.show_on_catalog || false,
+      },
+      {
+        onSuccess: () => {
+          toast.success(
+            product.show_on_catalog
+              ? "Product hidden from catalog"
+              : "Product visible on catalog",
+          );
+        },
+        onError: (error: Error) => {
+          toast.error(`Failed to update catalog visibility: ${error.message}`);
+        },
+      },
+    );
+  };
+
+  // Handler for mark inactive action
+  const handleMarkInactive = () => {
+    if (!product) return;
+
+    markInactive.mutate(product.id, {
+      onSuccess: () => {
+        toast.success("Product marked as inactive");
+        setShowDeleteDialog(false);
+        router.push(`/warehouse/${warehouse.slug}/inventory`);
+      },
+      onError: (error: Error) => {
+        toast.error(`Failed to mark product as inactive: ${error.message}`);
+      },
+    });
+  };
+
+  // Handler for delete action
+  const handleDeleteConfirm = () => {
+    if (!product) return;
+
+    deleteProduct.mutate(product.id, {
+      onSuccess: () => {
+        toast.success("Product deleted successfully");
+        setShowDeleteDialog(false);
+        router.push(`/warehouse/${warehouse.slug}/inventory`);
+      },
+      onError: (error: Error) => {
+        toast.error(`Failed to delete product: ${error.message}`);
+      },
+    });
+  };
+
+  // Determine if product has stock units
+  const hasStockUnits = (product?.inventory?.total_units_received ?? 0) > 0;
 
   if (loading) {
     return <LoadingState message="Loading product details..." />;
@@ -214,17 +292,17 @@ export default function ProductDetailPage({ params }: PageParams) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="top" sideOffset={8}>
-              <DropdownMenuItem
-                onClick={() => console.log("Toggle catalog visibility")}
-              >
+              <DropdownMenuItem onClick={handleToggleCatalogVisibility}>
+                {product.show_on_catalog ? <IconEyeOff /> : <IconEye />}
                 {product.show_on_catalog
                   ? "Hide from catalog"
                   : "Show on catalog"}
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
-                onClick={() => console.log("Delete product")}
+                onClick={() => setShowDeleteDialog(true)}
               >
+                <IconTrash />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -257,6 +335,45 @@ export default function ProductDetailPage({ params }: PageParams) {
             productToEdit={product}
           />
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <ResponsiveDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          title={hasStockUnits ? "Cannot delete product" : "Delete product"}
+          description={
+            hasStockUnits
+              ? "This product has inventory history and cannot be deleted. You can mark it as inactive to hide it from active lists."
+              : "Are you sure you want to delete this product? This action cannot be undone."
+          }
+          footer={
+            <div className="flex gap-3 w-full">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={
+                  hasStockUnits ? handleMarkInactive : handleDeleteConfirm
+                }
+                className="flex-1"
+              >
+                {hasStockUnits ? "Mark as inactive" : "Confirm delete"}
+              </Button>
+            </div>
+          }
+        >
+          {hasStockUnits && (
+            <p className="text-sm text-gray-500">
+              Total units received:{" "}
+              <b>{product?.inventory?.total_units_received || 0}</b>
+            </p>
+          )}
+        </ResponsiveDialog>
       </div>
     </div>
   );

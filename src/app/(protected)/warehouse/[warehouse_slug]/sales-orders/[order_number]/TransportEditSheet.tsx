@@ -3,24 +3,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { createClient } from "@/lib/supabase/browser";
 import { toast } from "sonner";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 interface TransportEditSheetProps {
   open: boolean;
@@ -39,7 +25,6 @@ export function TransportEditSheet({
     Date | undefined
   >(undefined);
   const [loading, setLoading] = useState(false);
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (open) {
@@ -134,29 +119,14 @@ export function TransportEditSheet({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Expected delivery</DrawerTitle>
-          </DrawerHeader>
-          {formContent}
-          <DrawerFooter>{footerButtons}</DrawerFooter>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Expected delivery</DialogTitle>
-        </DialogHeader>
-        {formContent}
-        <DialogFooter>{footerButtons}</DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Expected delivery"
+      footer={footerButtons}
+    >
+      {formContent}
+    </ResponsiveDialog>
   );
 }

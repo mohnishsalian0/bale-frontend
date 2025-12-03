@@ -4,21 +4,6 @@ import { useState } from "react";
 import { IconMinus, IconPlus } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { useIsMobile } from "@/hooks/use-mobile";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import {
@@ -27,6 +12,7 @@ import {
 } from "@/lib/utils/measuring-units";
 import type { ProductListView } from "@/types/products.types";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 interface PieceQuantitySheetProps {
   open: boolean;
@@ -46,7 +32,6 @@ export function PieceQuantitySheet({
   onConfirm,
 }: PieceQuantitySheetProps) {
   const [quantity, setQuantity] = useState(initialQuantity);
-  const isMobile = useIsMobile();
 
   const handleCancel = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -206,29 +191,14 @@ export function PieceQuantitySheet({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Add quantity</DrawerTitle>
-          </DrawerHeader>
-          {formContent}
-          <DrawerFooter>{footerButtons}</DrawerFooter>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Add quantity</DialogTitle>
-        </DialogHeader>
-        {formContent}
-        <DialogFooter>{footerButtons}</DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Add quantity"
+      footer={footerButtons}
+    >
+      {formContent}
+    </ResponsiveDialog>
   );
 }

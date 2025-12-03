@@ -23,6 +23,9 @@ import {
   uploadProductImages,
   deleteProductImages,
   updateProductImagesField,
+  toggleProductCatalogVisibility,
+  deleteProduct,
+  markProductInactive,
 } from "@/lib/queries/products";
 import { ProductUpsertData } from "@/types/products.types";
 
@@ -246,9 +249,48 @@ export function useProductMutations() {
     },
   });
 
+  const toggleCatalogVisibility = useMutation({
+    mutationFn: ({
+      productId,
+      currentValue,
+    }: {
+      productId: string;
+      currentValue: boolean;
+    }) => toggleProductCatalogVisibility(productId, currentValue),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.products.byId(variables.productId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
+    },
+  });
+
+  const deleteProductMutation = useMutation({
+    mutationFn: (productId: string) => deleteProduct(productId),
+    onSuccess: (_, productId) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
+      queryClient.removeQueries({
+        queryKey: queryKeys.products.byId(productId),
+      });
+    },
+  });
+
+  const markInactive = useMutation({
+    mutationFn: (productId: string) => markProductInactive(productId),
+    onSuccess: (_, productId) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.products.byId(productId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
+    },
+  });
+
   return {
     create,
     update,
+    toggleCatalogVisibility,
+    delete: deleteProductMutation,
+    markInactive,
   };
 }
 

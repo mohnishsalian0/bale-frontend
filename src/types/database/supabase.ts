@@ -1433,6 +1433,7 @@ export type Database = {
           gsm: number | null
           hsn_code: string | null
           id: string
+          is_active: boolean
           measuring_unit: string | null
           min_stock_alert: boolean | null
           min_stock_threshold: number | null
@@ -1456,6 +1457,7 @@ export type Database = {
           gsm?: number | null
           hsn_code?: string | null
           id?: string
+          is_active?: boolean
           measuring_unit?: string | null
           min_stock_alert?: boolean | null
           min_stock_threshold?: number | null
@@ -1479,6 +1481,7 @@ export type Database = {
           gsm?: number | null
           hsn_code?: string | null
           id?: string
+          is_active?: boolean
           measuring_unit?: string | null
           min_stock_alert?: boolean | null
           min_stock_threshold?: number | null

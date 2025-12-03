@@ -13,7 +13,7 @@ import {
 } from "@/types/products.types";
 
 // Re-export types for convenience
-export type { PublicProduct } from "@/types/catalog.types";
+export type { PublicProduct, PublicCompany } from "@/types/catalog.types";
 
 // Raw type for ProductListView query response
 export type ProductListViewRaw = Pick<
