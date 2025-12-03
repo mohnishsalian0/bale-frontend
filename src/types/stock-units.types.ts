@@ -11,7 +11,7 @@ type Warehouse = Tables<"warehouses">;
 
 export interface StockUnitFilters extends Record<string, unknown> {
   product_id?: string;
-  status?: string;
+  status?: string | string[];
   qr_generated_at?: "null" | "not_null";
   created_from_inward_id?: string | null;
 }

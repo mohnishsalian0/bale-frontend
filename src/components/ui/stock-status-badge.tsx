@@ -15,10 +15,12 @@ interface StockStatusConfig {
 
 function getStatusConfig(status: StockUnitStatus): StockStatusConfig {
   switch (status) {
-    case "in_stock":
-      return { color: "blue", variant: "secondary", label: "In stock" };
-    case "dispatched":
-      return { color: "orange", variant: "secondary", label: "Dispatched" };
+    case "full":
+      return { color: "blue", variant: "default", label: "Full" };
+    case "partial":
+      return { color: "blue", variant: "secondary", label: "Partial" };
+    case "empty":
+      return { color: "orange", variant: "secondary", label: "Empty" };
     case "removed":
       return { color: "gray", variant: "secondary", label: "Removed" };
     default:

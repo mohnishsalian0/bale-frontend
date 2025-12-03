@@ -43,7 +43,8 @@ export default function CreateQRBatchPage() {
 
   // Fetch data using TanStack Query
   const { data: products = [], isLoading: productsLoading } = useProducts();
-  const { data: attributeLists } = useProductAttributes();
+  const { data: attributeLists, isLoading: productAttributesLoading } =
+    useProductAttributes();
   const { create: createBatch } = useQRBatchMutations(warehouse.id);
 
   const materials = attributeLists?.materials || [];
@@ -143,6 +144,7 @@ export default function CreateQRBatchPage() {
             gsm: product.gsm,
             selling_price_per_unit: product.selling_price_per_unit,
             // Product data already transformed with materials/colors arrays
+            measuring_unit: product.measuring_unit,
             materials: product.materials || [],
             colors: product.colors || [],
           },
@@ -225,7 +227,7 @@ export default function CreateQRBatchPage() {
               materials={materials}
               colors={colors}
               tags={tags}
-              loading={productsLoading}
+              loading={productsLoading || productAttributesLoading}
               onProductSelect={handleProductSelect}
             />
           )}

@@ -93,22 +93,12 @@ BEGIN
     FROM stock_units
     WHERE product_id = p_product_id
         AND warehouse_id = p_warehouse_id
-        AND status = 'in_stock'
+        AND status in ('full', 'partial')
         AND deleted_at IS NULL;
 
     v_in_stock_value := v_in_stock_quantity * v_cost_price;
 
-    -- Calculate pending QR units (in_stock units without QR code)
-    SELECT COALESCE(COUNT(*), 0)
-    INTO v_pending_qr_units
-    FROM stock_units
-    WHERE product_id = p_product_id
-        AND warehouse_id = p_warehouse_id
-        AND status = 'in_stock'
-        AND qr_generated_at IS NULL
-        AND deleted_at IS NULL;
-
-    -- Calculate dispatched metrics
+    -- Calculate empty status metrics
     SELECT
         COALESCE(COUNT(*), 0),
         COALESCE(SUM(remaining_quantity), 0)
@@ -116,12 +106,12 @@ BEGIN
     FROM stock_units
     WHERE product_id = p_product_id
         AND warehouse_id = p_warehouse_id
-        AND status = 'dispatched'
+        AND status = 'empty'
         AND deleted_at IS NULL;
 
     v_dispatched_value := v_dispatched_quantity * v_cost_price;
 
-    -- Calculate removed metrics
+    -- Calculate removed status metrics
     SELECT
         COALESCE(COUNT(*), 0),
         COALESCE(SUM(remaining_quantity), 0)
@@ -142,6 +132,16 @@ BEGIN
     FROM stock_units
     WHERE product_id = p_product_id
         AND warehouse_id = p_warehouse_id
+        AND deleted_at IS NULL;
+
+    -- Calculate pending QR units (in_stock units without QR code)
+    SELECT COALESCE(COUNT(*), 0)
+    INTO v_pending_qr_units
+    FROM stock_units
+    WHERE product_id = p_product_id
+        AND warehouse_id = p_warehouse_id
+        AND status in ('full', 'partial')
+        AND qr_generated_at IS NULL
         AND deleted_at IS NULL;
 
     -- Upsert into aggregates table

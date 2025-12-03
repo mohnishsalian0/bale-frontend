@@ -22,8 +22,8 @@ CREATE TABLE stock_units (
     warehouse_location TEXT,
     
     -- Status tracking
-    status VARCHAR(20) NOT NULL DEFAULT 'in_stock'
-        CHECK (status IN ('in_stock', 'dispatched', 'removed')),
+    status VARCHAR(20) NOT NULL DEFAULT 'full'
+        CHECK (status IN ('full', 'partial', 'empty', 'removed')),
     
     -- Dates
     manufacturing_date DATE,
@@ -101,6 +101,32 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_auto_unit_sequence
     BEFORE INSERT ON stock_units
     FOR EACH ROW EXECUTE FUNCTION auto_generate_unit_sequence();
+
+-- Auto-update status based on remaining quantity
+CREATE OR REPLACE FUNCTION auto_update_stock_unit_status()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Don't override 'removed' status (manual action)
+    IF NEW.status = 'removed' THEN
+        RETURN NEW;
+    END IF;
+
+    -- Auto-set status based on remaining quantity
+    IF NEW.remaining_quantity <= 0 THEN
+        NEW.status := 'empty';
+    ELSIF NEW.remaining_quantity >= NEW.initial_quantity THEN
+        NEW.status := 'full';
+    ELSE
+        NEW.status := 'partial';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_auto_stock_unit_status
+    BEFORE INSERT OR UPDATE OF remaining_quantity, initial_quantity ON stock_units
+    FOR EACH ROW EXECUTE FUNCTION auto_update_stock_unit_status();
 
 -- =====================================================
 -- STOCK UNITS TABLE RLS POLICIES

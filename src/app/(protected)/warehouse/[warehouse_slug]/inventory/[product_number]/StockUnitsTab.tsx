@@ -129,12 +129,12 @@ export function StockUnitsTab({ stockUnits, product }: StockUnitsTabProps) {
   return (
     <div className="flex flex-col">
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4 px-4 py-3">
+      <div className="flex items-center justify-between gap-4 px-4 py-4">
         <Select
           value={sortBy}
           onValueChange={(value) => setSortBy(value as SortOption)}
         >
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="max-w-34">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
@@ -245,7 +245,7 @@ export function StockUnitsTab({ stockUnits, product }: StockUnitsTabProps) {
                     </div>
 
                     <div className="shrink-0 text-right">
-                      <span className="text-base font-semibold text-gray-900">
+                      <span className="text-sm font-bold text-gray-900">
                         {unit.remaining_quantity} {unitAbbr}
                       </span>
                     </div>

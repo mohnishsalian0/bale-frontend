@@ -149,7 +149,7 @@ export function StockFlowTab({
             <p className="text-base font-medium text-gray-900">
               {flow.type === "inward" ? "GI" : "GO"}-{flow.sequence_number}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs text-left text-gray-600">
               {formatAbsoluteDate(flow.date)} • {flow.receiver}
             </p>
           </div>

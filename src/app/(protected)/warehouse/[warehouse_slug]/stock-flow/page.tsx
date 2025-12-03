@@ -432,7 +432,7 @@ export default function StockFlowPage() {
                   </div>
                   <div className="flex flex-col items-end justify-center">
                     <p
-                      className={`text-base font-bold ${
+                      className={`text-sm font-bold ${
                         item.type === "inward"
                           ? "text-teal-700"
                           : "text-yellow-700"

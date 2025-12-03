@@ -110,7 +110,6 @@ BEGIN
                     created_from_inward_id,
                     remaining_quantity,
                     initial_quantity,
-                    status,
                     quality_grade,
                     created_by
                 )
@@ -121,7 +120,6 @@ BEGIN
                     v_inward_id,
                     v_quantity,
                     v_quantity,
-                    'in_stock',
                     COALESCE(v_unit->>'quality_grade', 'A'),
                     COALESCE((v_unit->>'created_by')::UUID, auth.uid())
                 );
@@ -265,7 +263,6 @@ BEGIN
             UPDATE stock_units
             SET
                 remaining_quantity = 0,
-                status = 'dispatched',
                 updated_at = NOW()
             WHERE id = v_stock_unit_id;
         ELSE

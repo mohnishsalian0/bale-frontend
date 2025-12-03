@@ -889,7 +889,7 @@ async function createTestPartners() {
         .from("stock_units")
         .select("id")
         .eq("company_id", companyId)
-        .eq("status", "in_stock")
+        .in("status", ["full", "partial"])
         .limit(15);
 
       if (stockError || !stockUnits || stockUnits.length === 0) {
@@ -1297,7 +1297,7 @@ async function createTestPartners() {
     .select("id")
     .eq("company_id", companyId)
     .eq("warehouse_id", warehouseId)
-    .eq("status", "in_stock")
+    .in("status", ["full", "partial"])
     .limit(20);
 
   if (

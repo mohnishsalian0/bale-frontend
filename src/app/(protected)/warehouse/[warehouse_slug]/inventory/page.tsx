@@ -229,7 +229,7 @@ export default function InventoryPage() {
                 <CardContent className="p-4 flex gap-4 items-center">
                   {/* Product Image */}
                   <ImageWrapper
-                    size="lg"
+                    size="md"
                     shape="square"
                     imageUrl={imageUrl}
                     alt={product.name}
@@ -250,7 +250,7 @@ export default function InventoryPage() {
 
                   {/* Quantity */}
                   <div className="flex flex-col items-end">
-                    <p className="text-base font-bold text-gray-900">
+                    <p className="text-sm font-bold text-gray-900">
                       {totalQuantity} {unitAbbreviation}
                     </p>
                   </div>

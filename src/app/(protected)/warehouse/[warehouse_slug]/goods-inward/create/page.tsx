@@ -21,6 +21,7 @@ import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import { ProductListView } from "@/types/products.types";
+import { StockUnitStatus } from "@/types/database/enums";
 
 interface DetailsFormData {
   receivedFromType: "partner" | "warehouse";
@@ -291,6 +292,7 @@ export default function CreateGoodsInwardPage() {
         // For piece type: only one unit with total quantity
         // For non-piece type: multiple stock units based on count
         const unitCount = product.stock_type === "piece" ? 1 : unit.count;
+        const stockStatus: StockUnitStatus = "full";
 
         for (let i = 0; i < unitCount; i++) {
           stockUnits.push({
@@ -298,7 +300,7 @@ export default function CreateGoodsInwardPage() {
             product_id: product.id,
             initial_quantity: unit.quantity,
             remaining_quantity: unit.quantity,
-            status: "in_stock",
+            status: stockStatus,
             quality_grade: unit.grade || null,
             supplier_number: unit.supplier_number || null,
             warehouse_location: unit.location || null,

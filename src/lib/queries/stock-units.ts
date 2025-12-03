@@ -155,7 +155,11 @@ export async function getStockUnits(
   }
 
   if (filters?.status) {
-    query = query.eq("status", filters.status);
+    if (Array.isArray(filters.status)) {
+      query = query.in("status", filters.status);
+    } else {
+      query = query.eq("status", filters.status);
+    }
   }
 
   if (filters?.qr_generated_at === "null") {
@@ -237,7 +241,11 @@ export async function getStockUnitsWithInward(
   }
 
   if (filters?.status) {
-    query = query.eq("status", filters.status);
+    if (Array.isArray(filters.status)) {
+      query = query.in("status", filters.status);
+    } else {
+      query = query.eq("status", filters.status);
+    }
   }
 
   if (filters?.qr_generated_at === "null") {
@@ -279,7 +287,7 @@ export async function getStockUnitWithProductDetail(
   stockUnitId: string,
   filters?: {
     warehouseId?: string;
-    status?: string;
+    status?: string | string[];
   },
 ): Promise<StockUnitWithProductDetailView> {
   const supabase = createClient();
@@ -301,10 +309,15 @@ export async function getStockUnitWithProductDetail(
   }
 
   if (filters?.status) {
-    query = query.eq("status", filters.status);
+    if (Array.isArray(filters.status)) {
+      query = query.in("status", filters.status);
+    } else {
+      query = query.eq("status", filters.status);
+    }
   }
 
-  const { data, error } = await query.single<StockUnitWithProductDetailViewRaw>();
+  const { data, error } =
+    await query.single<StockUnitWithProductDetailViewRaw>();
 
   if (error) {
     console.error("Error fetching stock unit with product detail:", error);

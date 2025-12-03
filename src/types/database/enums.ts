@@ -62,7 +62,7 @@ export type StockType = "roll" | "batch" | "piece";
 
 export type MeasuringUnit = "metre" | "yard" | "kilogram" | "unit";
 
-export type StockUnitStatus = "in_stock" | "dispatched" | "removed";
+export type StockUnitStatus = "full" | "partial" | "empty" | "removed";
 
 export type SalesOrderStatus =
   | "approval_pending"

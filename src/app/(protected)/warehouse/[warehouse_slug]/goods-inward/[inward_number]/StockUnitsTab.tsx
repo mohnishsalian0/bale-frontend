@@ -68,7 +68,7 @@ export function StockUnitsTab({ stockUnits }: StockUnitsTabProps) {
                 >
                   {productName}
                 </h3>
-                <span className="shrink-0 text-sm font-semibold text-gray-700">
+                <span className="shrink-0 text-sm font-bold text-gray-700">
                   {item.initial_quantity} {unitAbbreviation}
                 </span>
               </div>

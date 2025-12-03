@@ -122,7 +122,7 @@ export function StockUnitsTab({ items }: StockUnitsTabProps) {
 
               {/* Quantity */}
               <div className="text-right shrink-0">
-                <p className="font-semibold text-gray-700">
+                <p className="text-sm font-bold text-gray-700">
                   {item.quantity_dispatched}{" "}
                   {getMeasuringUnitAbbreviation(measuringUnit)}
                 </p>
