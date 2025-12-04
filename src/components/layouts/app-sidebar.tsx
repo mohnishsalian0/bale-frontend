@@ -5,7 +5,6 @@ import type { ComponentType } from "react";
 import {
   IconChartBar,
   IconIdBadge2,
-  IconPhotoScan,
   IconQrcode,
   IconUsers,
 } from "@tabler/icons-react";
@@ -22,6 +21,7 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
+import Logo from "../icons/Logo";
 
 type NavItem = {
   label: string;
@@ -100,7 +100,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton asChild size="lg" onClick={handleClick}>
               <Link href="#">
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg -ml-1">
-                  <IconPhotoScan className="size-5" />
+                  <Logo className="size-6" />
                 </div>
                 <div className="flex flex-col leading-none">
                   <span className="pl-1 text-lg font-medium text-nowrap">
