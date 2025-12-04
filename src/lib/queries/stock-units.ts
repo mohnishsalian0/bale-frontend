@@ -37,6 +37,8 @@ type StockUnitWithProductListViewRaw = StockUnitListView & {
         | "stock_type"
         | "measuring_unit"
         | "product_images"
+        | "min_stock_alert"
+        | "min_stock_threshold"
       > & {
         product_material_assignments: Array<{
           material: Pick<ProductMaterial, "id" | "name" | "color_hex"> | null;

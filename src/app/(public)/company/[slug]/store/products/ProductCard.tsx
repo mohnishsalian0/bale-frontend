@@ -41,7 +41,6 @@ export function ProductCard({
       return;
     }
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrent(api.selectedScrollSnap());
 
     api.on("select", () => {

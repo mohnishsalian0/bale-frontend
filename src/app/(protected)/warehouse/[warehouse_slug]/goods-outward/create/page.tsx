@@ -14,6 +14,7 @@ import type { TablesInsert } from "@/types/database/supabase";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
+import { dateToISOString } from "@/lib/utils/date";
 
 interface DetailsFormData {
   outwardDate: string;
@@ -66,7 +67,7 @@ export default function CreateGoodsOutwardPage() {
 
   // Details form state
   const [detailsFormData, setDetailsFormData] = useState<DetailsFormData>({
-    outwardDate: "",
+    outwardDate: dateToISOString(new Date()),
     dueDate: "",
     invoiceNumber: "",
     transportDetails: "",

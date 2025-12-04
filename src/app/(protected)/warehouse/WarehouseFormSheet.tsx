@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/collapsible";
 import { useWarehouseMutations } from "@/lib/query/hooks/warehouses";
 import { Warehouse, WarehouseInsert } from "@/types/warehouses.types";
+import { InputWithIcon } from "@/components/ui/input-with-icon";
 
 interface WarehouseFormSheetProps {
   open: boolean;
@@ -145,8 +146,9 @@ export function WarehouseFormSheet({
             {/* Basic Info */}
             <div className="flex flex-col gap-5 px-4 py-5">
               {/* Warehouse Name */}
-              <Input
-                placeholder="Warehouse name"
+              <InputWithIcon
+                label="Warehouse name"
+                placeholder="Enter a name"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, name: e.target.value }))

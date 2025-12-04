@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   IconCheck,
@@ -26,10 +26,14 @@ import {
 } from "@/types/database/enums";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getFormattedAddress, getPartnerName } from "@/lib/utils/partner";
-import { DisplayStatus, getOrderDisplayStatus } from "@/lib/utils/sales-order";
+import {
+  calculateCompletionPercentage,
+  getOrderDisplayStatus,
+} from "@/lib/utils/sales-order";
 import { CatalogOrderStatusBadge } from "@/components/ui/catalog-order-status-badge";
 import { usePublicCompany } from "@/lib/query/hooks/catalog";
 import { usePublicOrder } from "@/lib/query/hooks/catalog-orders";
+import { Progress } from "@/components/ui/progress";
 
 export default function OrderConfirmationPage() {
   const params = useParams();
@@ -48,17 +52,17 @@ export default function OrderConfirmationPage() {
 
   const loading = companyLoading || orderLoading;
 
-  // Handle redirects
-  if (!companyLoading && !company) {
-    router.push("/");
-    return null;
-  }
+  useEffect(() => {
+    // Handle redirects
+    if (!companyLoading && !company) {
+      router.push("/");
+    }
 
-  if (!orderLoading && company && !order) {
-    toast.error("Order not found");
-    router.push(`/company/${slug}/store/products`);
-    return null;
-  }
+    if (!orderLoading && company && !order) {
+      toast.error("Order not found");
+      router.push(`/company/${slug}/store/products`);
+    }
+  }, [slug, router, companyLoading, orderLoading, company, order]);
 
   const handleDownloadPDF = async () => {
     if (!company || !order) return;
@@ -87,6 +91,11 @@ export default function OrderConfirmationPage() {
     }
   };
 
+  // Calculate completion percentage using utility
+  const completionPercentage = calculateCompletionPercentage(
+    order?.sales_order_items || [],
+  );
+
   if (loading) {
     return <LoadingState message="Loading order details..." />;
   }
@@ -96,10 +105,15 @@ export default function OrderConfirmationPage() {
   }
 
   // Compute display status (includes 'overdue' logic) using utility
-  const displayStatus: DisplayStatus = getOrderDisplayStatus(
+  const displayStatus = getOrderDisplayStatus(
     order.status as SalesOrderStatus,
     order.expected_delivery_date,
   );
+
+  const showProgressBar =
+    displayStatus === "in_progress" || displayStatus === "overdue";
+
+  const progressColor = order.status === "overdue" ? "yellow" : "blue";
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-6">
@@ -108,11 +122,9 @@ export default function OrderConfirmationPage() {
         <div className="inline-flex items-center justify-center size-20 bg-green-100 rounded-full mb-4">
           <IconCheck className="size-12 text-green-600" />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Order Confirmed!
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Order placed!</h1>
         <p className="text-gray-500">
-          Thank you for your order. We&apos;ll get back to you soon.
+          Thank you for the purchase. You may track the progress here.
         </p>
         <div className="flex items-center justify-center gap-3 mt-4">
           <h2 className="text-lg font-semibold text-gray-900">
@@ -120,6 +132,13 @@ export default function OrderConfirmationPage() {
           </h2>
           <CatalogOrderStatusBadge status={displayStatus} />
         </div>
+
+        {/* Progress Bar */}
+        {showProgressBar && (
+          <div className="mx-auto max-w-100 mt-4">
+            <Progress color={progressColor} value={completionPercentage} />
+          </div>
+        )}
       </div>
 
       {/* Order Details */}
@@ -130,7 +149,7 @@ export default function OrderConfirmationPage() {
           subtitle={`${order.sales_order_items?.length || 0} item(s)`}
           icon={IconPackage}
         >
-          <div className="space-y-3">
+          <div className="space-y-6 pt-2">
             {order.sales_order_items?.map((item) => (
               <div key={item.id} className="flex gap-3">
                 <ImageWrapper
@@ -147,12 +166,12 @@ export default function OrderConfirmationPage() {
                     PROD-{item.product?.sequence_number}
                   </p>
                   <p
-                    className="text-lg font-medium text-gray-700 truncate"
+                    className="font-medium text-gray-700 truncate mt-1"
                     title={item.product?.name}
                   >
                     {item.product?.name}
                   </p>
-                  <p className="text-sm font-medium text-gray-700 mt-0.5">
+                  <p className="text-sm font-medium text-gray-500 mt-1">
                     Qty: {item.required_quantity}{" "}
                     {getMeasuringUnitAbbreviation(
                       item.product?.measuring_unit as MeasuringUnit,

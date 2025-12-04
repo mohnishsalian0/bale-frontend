@@ -24,7 +24,7 @@ function getStatusConfig(
         label: "Waiting for Confirmation",
       };
     case "in_progress":
-      return { color: "blue", variant: "secondary", label: "Order Accepted" };
+      return { color: "blue", variant: "secondary", label: "Order accepted" };
     case "overdue":
       return { color: "orange", variant: "secondary", label: "Overdue" };
     case "completed":

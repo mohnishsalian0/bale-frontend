@@ -380,13 +380,11 @@ export default function StockFlowPage() {
             </p>
           </div>
         ) : (
-          filteredGroups.map((group, groupIndex) => (
+          filteredGroups.map((group) => (
             <div key={group.monthYear} className="flex flex-col">
               {/* Month Header */}
               <div
-                className={`sticky top-0 z-10 flex items-center justify-between px-4 py-2 border-t border-dashed border-gray-300 ${
-                  groupIndex % 2 === 0 ? "bg-green-100" : "bg-orange-100"
-                }`}
+                className={`sticky top-0 z-10 flex items-center justify-between px-4 py-2 border-t border-dashed border-gray-300 bg-gray-100`}
               >
                 <p className="text-xs font-semibold text-gray-700">
                   {group.month}

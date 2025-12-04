@@ -349,7 +349,7 @@ export default function OrdersPage() {
           filteredGroups.map((group) => (
             <div key={group.monthYear} className="flex flex-col">
               {/* Month Header */}
-              <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 border-t border-dashed border-gray-300 bg-gray-200">
+              <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 border-t border-dashed border-gray-300 bg-gray-100">
                 <p className="text-xs font-semibold text-gray-700">
                   {group.month}
                 </p>
@@ -370,7 +370,7 @@ export default function OrdersPage() {
                         `/warehouse/${warehouse.slug}/sales-orders/${order.orderNumber}`,
                       )
                     }
-                    className="flex flex-col gap-2 p-4 border-t border-dashed border-gray-300 hover:bg-gray-50 transition-colors"
+                    className="flex flex-col gap-2 p-4 border-t border-dashed border-gray-300 hover:bg-gray-100 transition-colors"
                   >
                     {/* Title and Status Badge */}
                     <div>

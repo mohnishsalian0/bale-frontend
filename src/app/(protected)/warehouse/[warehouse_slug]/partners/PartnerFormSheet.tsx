@@ -37,6 +37,7 @@ import type {
   PartnerUpdate,
 } from "@/types/partners.types";
 import { useSession } from "@/contexts/session-context";
+import { InputWithIcon } from "@/components/ui/input-with-icon";
 
 interface PartnerFormSheetProps {
   open: boolean;
@@ -329,8 +330,9 @@ export function PartnerFormSheet({
 
               {/* Name Fields */}
               <div className="flex gap-4">
-                <Input
-                  placeholder="First name"
+                <InputWithIcon
+                  label="First name"
+                  placeholder="Enter first name"
                   value={formData.firstName}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -339,9 +341,11 @@ export function PartnerFormSheet({
                     }))
                   }
                   required
+                  className="flex-1"
                 />
-                <Input
-                  placeholder="Last name"
+                <InputWithIcon
+                  label="Last name"
+                  placeholder="Enter last name"
                   value={formData.lastName}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -350,25 +354,23 @@ export function PartnerFormSheet({
                     }))
                   }
                   required
+                  className="flex-1"
                 />
               </div>
 
               {/* Phone Number */}
-              <div className="relative">
-                <IconPhone className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-                <Input
-                  type="tel"
-                  placeholder="Phone number"
-                  value={formData.phoneNumber}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      phoneNumber: e.target.value,
-                    }))
-                  }
-                  className="pl-12"
-                />
-              </div>
+              <InputWithIcon
+                icon={<IconPhone />}
+                type="tel"
+                placeholder="Phone number"
+                value={formData.phoneNumber}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    phoneNumber: e.target.value,
+                  }))
+                }
+              />
             </div>
 
             {/* Business Details Section */}

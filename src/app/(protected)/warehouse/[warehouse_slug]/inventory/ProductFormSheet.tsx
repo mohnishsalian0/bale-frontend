@@ -2,7 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { IconChevronDown, IconX, IconPhoto } from "@tabler/icons-react";
+import {
+  IconChevronDown,
+  IconX,
+  IconPhoto,
+  IconCurrencyRupee,
+} from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +45,7 @@ import {
   useCreateProductTag,
   useProductImageMutations,
 } from "@/lib/query/hooks/products";
+import { InputWithIcon } from "@/components/ui/input-with-icon";
 
 interface ProductFormSheetProps {
   open: boolean;
@@ -412,8 +418,9 @@ export function ProductFormSheet({
             {/* Basic Info */}
             <div className="flex flex-col gap-6 px-4 py-5">
               {/* Product Name */}
-              <Input
-                placeholder="Product name"
+              <InputWithIcon
+                label="Product name"
+                placeholder="Enter a name"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, name: e.target.value }))
@@ -474,10 +481,11 @@ export function ProductFormSheet({
 
               {/* Purchase & Sale Price */}
               <div className="flex gap-4">
-                <Input
+                <InputWithIcon
                   type="number"
                   placeholder="Purchase price"
                   value={formData.costPrice}
+                  icon={<IconCurrencyRupee />}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
@@ -488,10 +496,11 @@ export function ProductFormSheet({
                   step="0.01"
                   min="0"
                 />
-                <Input
+                <InputWithIcon
                   type="number"
                   placeholder="Sale price"
                   value={formData.sellingPrice}
+                  icon={<IconCurrencyRupee />}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
@@ -719,7 +728,7 @@ export function ProductFormSheet({
                   <div className="flex items-start justify-between">
                     <div className="flex flex-col">
                       <Label>Show on catalog</Label>
-                      <span className="text-sm font-light text-gray-500">
+                      <span className="text-xs font-light text-gray-500 mt-1">
                         Display this product on your public sales catalog
                       </span>
                     </div>

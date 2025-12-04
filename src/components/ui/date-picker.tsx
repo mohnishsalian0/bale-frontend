@@ -42,9 +42,9 @@ export function DatePicker({
   }, [value]);
 
   return (
-    <div className={`flex flex-col gap-1 ${className || ""}`}>
+    <div className={`${className || ""}`}>
       {label && (
-        <Label htmlFor="date-picker" className="px-1">
+        <Label htmlFor={label} className="pl-1 mb-1.5" required={required}>
           {label}
         </Label>
       )}
@@ -52,7 +52,7 @@ export function DatePicker({
         <PopoverTrigger asChild>
           <div className="relative">
             <Input
-              id="date-picker"
+              id={label}
               type="text"
               value={displayValue}
               placeholder={placeholder}

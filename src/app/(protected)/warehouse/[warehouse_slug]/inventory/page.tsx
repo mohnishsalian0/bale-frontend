@@ -24,14 +24,16 @@ import {
 } from "@/lib/query/hooks/products";
 import { useSession } from "@/contexts/session-context";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
-import { Button } from "@/components/ui/button";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
+import { Toggle } from "@/components/ui/toggle";
+import { GlowIndicator } from "@/components/ui/glow-indicator";
 
 export default function InventoryPage() {
   const router = useRouter();
   const { warehouse } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
+  const [lowStockFilter, setLowStockFilter] = useState<boolean>(false);
   const [materialFilter, setMaterialFilter] = useState<string>("all");
   const [colorFilter, setColorFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
@@ -63,6 +65,15 @@ export default function InventoryPage() {
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.sequence_number.toString().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
+
+    if (
+      lowStockFilter &&
+      (!product.min_stock_alert ||
+        (product.min_stock_threshold ?? 0) <
+          (product.inventory.in_stock_quantity ?? 0))
+    ) {
+      return false;
+    }
 
     // Material filter
     if (
@@ -152,9 +163,14 @@ export default function InventoryPage() {
 
       {/* Filters */}
       <div className="flex gap-3 p-4 overflow-x-auto shrink-0">
-        <Button variant="outline" size="icon" className="shrink-0 size-10">
+        <Toggle
+          aria-label="Low stock filter"
+          variant="outline"
+          pressed={lowStockFilter}
+          onPressedChange={setLowStockFilter}
+        >
           <IconAlertTriangle className="size-5" />
-        </Button>
+        </Toggle>
         <Select value={materialFilter} onValueChange={setMaterialFilter}>
           <SelectTrigger className="max-w-34 h-10 shrink-0">
             <SelectValue placeholder="Material" />
@@ -215,11 +231,15 @@ export default function InventoryPage() {
             const unitAbbreviation = getMeasuringUnitAbbreviation(
               product.measuring_unit as MeasuringUnit | null,
             );
+            const lowStock =
+              product.min_stock_alert &&
+              (product.min_stock_threshold ?? 0) >=
+                (product.inventory.in_stock_quantity ?? 0);
 
             return (
               <Card
                 key={product.id}
-                className="border-2 border-border shadow-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
+                className="relative border-2 border-border shadow-none bg-transparent cursor-pointer hover:bg-gray-100 transition-colors"
                 onClick={() =>
                   router.push(
                     `/warehouse/${warehouse.slug}/inventory/${product.sequence_number}`,
@@ -249,10 +269,25 @@ export default function InventoryPage() {
                   </div>
 
                   {/* Quantity */}
-                  <div className="flex flex-col items-end">
-                    <p className="text-sm font-bold text-gray-900">
+                  <div className="flex flex-inline gap-1 items-center">
+                    {lowStock && (
+                      <IconAlertTriangle
+                        size="16"
+                        className="text-yellow-700"
+                      />
+                    )}
+                    <p
+                      className={`text-sm font-bold ${lowStock ? "text-yellow-700" : "text-gray-900"}`}
+                    >
                       {totalQuantity} {unitAbbreviation}
                     </p>
+                  </div>
+
+                  <div className="absolute top-4 left-4">
+                    <GlowIndicator
+                      size="sm"
+                      isActive={!!product.show_on_catalog}
+                    />
                   </div>
                 </CardContent>
               </Card>

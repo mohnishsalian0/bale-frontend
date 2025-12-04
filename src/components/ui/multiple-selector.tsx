@@ -238,7 +238,6 @@ const MultipleSelector = React.forwardRef<
     }, [open]);
 
     useEffect(() => {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (value) setSelected(value);
     }, [value]);
 
@@ -246,7 +245,6 @@ const MultipleSelector = React.forwardRef<
       if (!arrayOptions || onSearch) return;
       const newOption = transToGroupOption(arrayOptions || [], groupBy);
       if (JSON.stringify(newOption) !== JSON.stringify(options)) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setOptions(newOption);
       }
     }, [arrayDefaultOptions, arrayOptions, groupBy, onSearch, options]);

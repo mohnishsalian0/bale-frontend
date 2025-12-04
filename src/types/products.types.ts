@@ -68,6 +68,8 @@ export interface ProductListView extends Pick<
   | "stock_type"
   | "measuring_unit"
   | "product_images"
+  | "min_stock_alert"
+  | "min_stock_threshold"
 > {
   materials: ProductMaterial[];
   colors: ProductColor[];

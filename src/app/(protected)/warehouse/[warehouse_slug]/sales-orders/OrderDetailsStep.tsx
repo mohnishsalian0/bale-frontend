@@ -107,7 +107,7 @@ export function OrderDetailsStep({
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Main Fields */}
-      <div className="flex flex-col gap-5 px-4 py-5">
+      <div className="flex flex-col gap-5 px-4 py-6">
         {/* Warehouse Dropdown */}
         <Select
           value={formData.warehouseId}
@@ -152,7 +152,8 @@ export function OrderDetailsStep({
         <div className="flex gap-3">
           {/* Order Date */}
           <DatePicker
-            placeholder="Order date"
+            label="Order date"
+            placeholder="Pick a date"
             value={
               formData.orderDate ? new Date(formData.orderDate) : undefined
             }
@@ -168,7 +169,8 @@ export function OrderDetailsStep({
 
           {/* Expected Date */}
           <DatePicker
-            placeholder="Expected date"
+            label="Expected date"
+            placeholder="Pick a date"
             value={
               formData.expectedDate
                 ? new Date(formData.expectedDate)

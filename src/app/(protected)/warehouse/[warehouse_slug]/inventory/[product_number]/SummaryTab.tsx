@@ -1,7 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { IconTrendingUp, IconInfoCircle, IconBox } from "@tabler/icons-react";
+import {
+  IconTrendingUp,
+  IconInfoCircle,
+  IconBox,
+  IconNote,
+} from "@tabler/icons-react";
 import { Section } from "@/components/layouts/section";
 import { formatCurrency } from "@/lib/utils/financial";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
@@ -137,6 +142,14 @@ export function SummaryTab({ product }: SummaryTabProps) {
           )}
         </div>
       </Section>
+
+      {/* Notes Section */}
+      <Section
+        title="Inward notes"
+        subtitle={product.notes || "No note added"}
+        onEdit={() => {}}
+        icon={() => <IconNote className="size-5" />}
+      />
     </div>
   );
 }

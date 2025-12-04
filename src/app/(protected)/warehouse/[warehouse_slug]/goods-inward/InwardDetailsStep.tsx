@@ -36,10 +36,11 @@ export function InwardDetailsStep({ formData, onChange }: DetailsStepProps) {
 
   return (
     <div className="flex-1 overflow-y-auto flex flex-col gap-5 py-4">
-      <div className="flex flex-col gap-2 px-4">
+      <div className="flex flex-col gap-2 px-4 py-2">
         {/* Inward Date */}
         <DatePicker
-          placeholder="Inward date"
+          label="Inward date"
+          placeholder="Pick a date"
           value={
             formData.inwardDate ? new Date(formData.inwardDate) : undefined
           }
@@ -48,6 +49,7 @@ export function InwardDetailsStep({ formData, onChange }: DetailsStepProps) {
               inwardDate: date ? dateToISOString(date) : "",
             })
           }
+          required
         />
       </div>
 

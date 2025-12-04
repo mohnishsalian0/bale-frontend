@@ -26,6 +26,11 @@ BEGIN
         get_jwt_company_id()
     );
 
+    -- Validate business rules
+    IF array_length(p_line_items, 1) IS NULL OR array_length(p_line_items, 1) = 0 THEN
+        RAISE EXCEPTION 'At least one product is required to create an order';
+    END IF;
+
     -- Extract warehouse_id (can be NULL for catalog orders)
     v_warehouse_id := (p_order_data->>'warehouse_id')::UUID;
 
@@ -123,22 +128,9 @@ BEGIN
         RAISE EXCEPTION 'Sales order not found';
     END IF;
 
-    -- Check if order can be approved (must be in approval_pending status)
+    -- Validate business rules
     IF v_current_status != 'approval_pending' THEN
         RAISE EXCEPTION 'Order cannot be approved - current status is %', v_current_status;
-    END IF;
-
-    -- Validate required fields
-    IF (p_order_data->>'warehouse_id') IS NULL OR (p_order_data->>'warehouse_id') = '' THEN
-        RAISE EXCEPTION 'Warehouse is required for approval';
-    END IF;
-
-    IF (p_order_data->>'customer_id') IS NULL OR (p_order_data->>'customer_id') = '' THEN
-        RAISE EXCEPTION 'Customer is required for approval';
-    END IF;
-
-    IF (p_order_data->>'order_date') IS NULL OR (p_order_data->>'order_date') = '' THEN
-        RAISE EXCEPTION 'Order date is required for approval';
     END IF;
 
     IF array_length(p_line_items, 1) IS NULL OR array_length(p_line_items, 1) = 0 THEN

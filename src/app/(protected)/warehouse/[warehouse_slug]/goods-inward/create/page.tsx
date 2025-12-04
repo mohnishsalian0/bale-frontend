@@ -25,6 +25,7 @@ import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import { ProductListView } from "@/types/products.types";
 import { StockUnitStatus } from "@/types/database/enums";
+import { dateToISOString } from "@/lib/utils/date";
 
 interface DetailsFormData {
   inwardDate: string;
@@ -110,7 +111,7 @@ export default function CreateGoodsInwardPage() {
 
   // Details form state
   const [detailsFormData, setDetailsFormData] = useState<DetailsFormData>({
-    inwardDate: "",
+    inwardDate: dateToISOString(new Date()),
     invoiceNumber: "",
     notes: "",
     documentFile: null,

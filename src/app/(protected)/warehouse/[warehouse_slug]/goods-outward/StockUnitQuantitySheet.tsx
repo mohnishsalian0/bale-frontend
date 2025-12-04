@@ -126,7 +126,7 @@ export function StockUnitQuantitySheet({
                 value={quantity}
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => handleQuantityChange(e.target.value)}
-                className="text-center text-lg font-medium max-w-30 pr-10"
+                className="text-center text-lg font-medium max-w-25 pr-10"
                 min="0"
                 max={maxQuantity}
                 step={stockType === "roll" ? "0.1" : "1"}

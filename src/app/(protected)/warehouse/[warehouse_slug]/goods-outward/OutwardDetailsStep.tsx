@@ -47,11 +47,12 @@ export function OutwardDetailsStep({
   return (
     <div className="flex-1 overflow-y-auto flex flex-col gap-5 py-4">
       {/* Date Fields */}
-      <div className="flex flex-col gap-2 px-4">
+      <div className="flex flex-col gap-2 px-4 py-2">
         <div className="grid grid-cols-2 gap-3">
           {/* Outward Date */}
           <DatePicker
-            placeholder="Outward date"
+            label="Outward date"
+            placeholder="Pick a date"
             value={
               formData.outwardDate ? new Date(formData.outwardDate) : undefined
             }
@@ -60,11 +61,13 @@ export function OutwardDetailsStep({
                 outwardDate: date ? dateToISOString(date) : "",
               })
             }
+            required
           />
 
           {/* Due Date */}
           <DatePicker
-            placeholder="Due date"
+            label="Delivery date"
+            placeholder="Pick a date"
             value={formData.dueDate ? new Date(formData.dueDate) : undefined}
             onChange={(date) =>
               onChange({

@@ -29,6 +29,8 @@ export const PRODUCT_LIST_VIEW_SELECT = `
 	stock_type,
 	measuring_unit,
 	product_images,
+  min_stock_alert,
+  min_stock_threshold,
 	product_material_assignments(
 		material:product_materials(id, name, color_hex)
 	),
@@ -56,23 +58,7 @@ export const PRODUCT_DETAIL_VIEW_SELECT = `
 
 // Select query for ProductWithInventoryListView
 export const PRODUCT_WITH_INVENTORY_LIST_VIEW_SELECT = `
-	id,
-	sequence_number,
-	name,
-	show_on_catalog,
-	is_active,
-	stock_type,
-	measuring_unit,
-	product_images,
-	product_material_assignments(
-		material:product_materials(id, name, color_hex)
-	),
-	product_color_assignments(
-		color:product_colors(id, name, color_hex)
-	),
-	product_tag_assignments(
-		tag:product_tags(id, name, color_hex)
-	),
+	${PRODUCT_LIST_VIEW_SELECT},
 	product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value)
 `;
 
@@ -124,6 +110,8 @@ export type ProductListViewRaw = Pick<
   | "stock_type"
   | "measuring_unit"
   | "product_images"
+  | "min_stock_alert"
+  | "min_stock_threshold"
 > &
   ProductAttributeAssignmentsRaw;
 
