@@ -33,7 +33,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { IconDotsVertical } from "@tabler/icons-react";
-import { useSalesOrderByNumber } from "@/lib/query/hooks/sales-orders";
+import {
+  useSalesOrderByNumber,
+  useSalesOrderMutations,
+} from "@/lib/query/hooks/sales-orders";
+import { CancelOrderDialog } from "./CancelOrderDialog";
+import { CompleteOrderDialog } from "./CompleteOrderDialog";
+import { toast } from "sonner";
 
 interface PageParams {
   params: Promise<{
@@ -56,12 +62,20 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
   const [showTransportEdit, setShowTransportEdit] = useState(false);
   const [showNotesEdit, setShowNotesEdit] = useState(false);
 
+  // Dialog states
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+
   // Fetch sales order using TanStack Query
   const {
     data: order,
     isLoading: loading,
     isError: error,
   } = useSalesOrderByNumber(order_number);
+
+  // Sales order mutations
+  const { cancel: cancelOrder, complete: completeOrder } =
+    useSalesOrderMutations(warehouse?.id || null);
 
   // Calculate financials
   const financials = useMemo(() => {
@@ -95,13 +109,59 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
     );
   }, [order]);
 
+  // Handler functions
+  const handleApprove = () => {
+    if (!order) return;
+    router.push(
+      `/warehouse/${warehouse.slug}/sales-orders/${order.sequence_number}/approve`,
+    );
+  };
+
+  const handleComplete = (notes?: string) => {
+    if (!order) return;
+    completeOrder.mutate(
+      { orderId: order.id, completeData: { notes } },
+      {
+        onSuccess: () => {
+          toast.success("Order marked as complete");
+          setShowCompleteDialog(false);
+        },
+        onError: (error) => {
+          console.error("Error completing order:", error);
+          toast.error(
+            error instanceof Error ? error.message : "Failed to complete order",
+          );
+        },
+      },
+    );
+  };
+
+  const handleCancel = (reason: string) => {
+    if (!order) return;
+    cancelOrder.mutate(
+      { orderId: order.id, cancelData: { reason } },
+      {
+        onSuccess: () => {
+          toast.success("Order cancelled");
+          setShowCancelDialog(false);
+        },
+        onError: (error) => {
+          console.error("Error cancelling order:", error);
+          toast.error(
+            error instanceof Error ? error.message : "Failed to cancel order",
+          );
+        },
+      },
+    );
+  };
+
   // Primary CTA logic
   const getPrimaryCTA = () => {
     if (!order) return null;
 
     if (order.status === "approval_pending") {
       return (
-        <Button onClick={() => console.log("Approve")} className="flex-1">
+        <Button onClick={handleApprove} className="flex-1">
           Approve order
         </Button>
       );
@@ -217,9 +277,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
               {(order.status === "in_progress" ||
                 displayStatus === "overdue") && (
                 <>
-                  <DropdownMenuItem
-                    onClick={() => console.log("Mark as complete")}
-                  >
+                  <DropdownMenuItem onClick={() => setShowCompleteDialog(true)}>
                     Mark as complete
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -234,7 +292,8 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
-                onClick={() => console.log("Cancel order")}
+                onClick={() => setShowCancelDialog(true)}
+                disabled={order.status === "cancelled"}
               >
                 Cancel order
               </DropdownMenuItem>
@@ -293,6 +352,20 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
               onOpenChange={setShowNotesEdit}
               orderId={order.id}
               initialNotes={order.notes}
+            />
+
+            <CancelOrderDialog
+              open={showCancelDialog}
+              onOpenChange={setShowCancelDialog}
+              onConfirm={handleCancel}
+              loading={cancelOrder.isPending}
+            />
+
+            <CompleteOrderDialog
+              open={showCompleteDialog}
+              onOpenChange={setShowCompleteDialog}
+              onConfirm={handleComplete}
+              loading={completeOrder.isPending}
             />
           </>
         )}

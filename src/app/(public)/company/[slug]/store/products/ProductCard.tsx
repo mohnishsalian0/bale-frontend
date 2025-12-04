@@ -60,7 +60,7 @@ export function ProductCard({
   );
 
   return (
-    <Card className="border-none shadow-none">
+    <Card className="border-none shadow-none bg-transparent">
       <CardContent className="p-0">
         {/* Image Carousel */}
         {images.length > 0 ? (
@@ -133,10 +133,7 @@ export function ProductCard({
 
           {/* Add to Cart / Quantity Button */}
           {quantity > 0 ? (
-            <div className="flex items-center gap-2">
-              <Button onClick={handleAddToCart} className="flex-1" size="sm">
-                {quantity} {unitAbbreviation}
-              </Button>
+            <div className="flex items-center justify-end gap-2">
               <Button
                 variant="destructive"
                 size="icon"
@@ -144,11 +141,18 @@ export function ProductCard({
               >
                 <IconTrash />
               </Button>
+              <Button
+                onClick={handleAddToCart}
+                className="flex-1 max-w-60"
+                size="sm"
+              >
+                {quantity} {unitAbbreviation}
+              </Button>
             </div>
           ) : (
             <Button
               onClick={handleAddToCart}
-              className="w-full"
+              className="w-full max-w-60 ml-auto"
               variant="outline"
               size="sm"
             >

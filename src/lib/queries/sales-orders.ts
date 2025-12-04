@@ -5,6 +5,9 @@ import type {
   SalesOrderFilters,
   CreateSalesOrderData,
   CreateSalesOrderLineItem,
+  UpdateSalesOrderData,
+  CancelSalesOrderData,
+  CompleteSalesOrderData,
 } from "@/types/sales-orders.types";
 
 // Re-export types for convenience
@@ -14,6 +17,9 @@ export type {
   SalesOrderFilters,
   CreateSalesOrderData,
   CreateSalesOrderLineItem,
+  UpdateSalesOrderData,
+  CancelSalesOrderData,
+  CompleteSalesOrderData,
 };
 
 /**
@@ -191,4 +197,84 @@ export async function createSalesOrder(
   if (!orderId) throw new Error("No order ID returned");
 
   return orderId as string;
+}
+
+/**
+ * Approve and update a sales order with new data and line items
+ * Uses RPC function for atomic transaction with validation
+ */
+export async function approveSalesOrder(
+  orderId: string,
+  orderData: UpdateSalesOrderData,
+  lineItems: CreateSalesOrderLineItem[],
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase.rpc("approve_sales_order_with_items", {
+    p_order_id: orderId,
+    p_order_data: orderData,
+    p_line_items: lineItems,
+  });
+
+  if (error) throw error;
+}
+
+/**
+ * Cancel a sales order with reason
+ */
+export async function cancelSalesOrder(
+  orderId: string,
+  cancelData: CancelSalesOrderData,
+): Promise<void> {
+  const supabase = createClient();
+
+  if (!cancelData.reason || cancelData.reason.trim() === "") {
+    throw new Error("Cancellation reason is required");
+  }
+
+  // Get current user ID for status tracking
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated");
+
+  const { error } = await supabase
+    .from("sales_orders")
+    .update({
+      status: "cancelled",
+      status_notes: cancelData.reason,
+      status_changed_at: new Date().toISOString(),
+      status_changed_by: user.id,
+    })
+    .eq("id", orderId);
+
+  if (error) throw error;
+}
+
+/**
+ * Complete a sales order with optional notes
+ */
+export async function completeSalesOrder(
+  orderId: string,
+  completeData: CompleteSalesOrderData,
+): Promise<void> {
+  const supabase = createClient();
+
+  // Get current user ID for status tracking
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated");
+
+  const { error } = await supabase
+    .from("sales_orders")
+    .update({
+      status: "completed",
+      status_notes: completeData.notes || null,
+      status_changed_at: new Date().toISOString(),
+      status_changed_by: user.id,
+    })
+    .eq("id", orderId);
+
+  if (error) throw error;
 }

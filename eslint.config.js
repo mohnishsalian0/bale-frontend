@@ -81,6 +81,8 @@ export default [
       ...react.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "react-hooks/set-state-in-effect": "off",
       "react/react-in-jsx-scope": "off", // Not needed for React 17+ with new JSX transform
       "react/jsx-uses-react": "off", // Not needed for React 17+ with new JSX transform
       "react/prop-types": "off", // Not needed in TypeScript projects

@@ -91,3 +91,108 @@ END;
 $$;
 
 COMMENT ON FUNCTION create_sales_order_with_items IS 'Atomically create sales order with line items. Handles both catalog orders (no warehouse) and protected orders (with warehouse).';
+
+-- =====================================================
+-- SALES ORDER APPROVAL FUNCTION
+-- =====================================================
+
+-- Function to approve sales order with updated data and line items atomically
+-- Updates all order fields, replaces line items, and changes status to 'in_progress'
+CREATE OR REPLACE FUNCTION approve_sales_order_with_items(
+    p_order_id UUID,
+    p_order_data JSONB,
+    p_line_items JSONB[]
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_company_id UUID;
+    v_warehouse_id UUID;
+    v_current_status VARCHAR(20);
+BEGIN
+    -- Get current order status and company_id
+    SELECT status, company_id, warehouse_id
+    INTO v_current_status, v_company_id, v_warehouse_id
+    FROM sales_orders
+    WHERE id = p_order_id;
+
+    -- Check if order exists
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Sales order not found';
+    END IF;
+
+    -- Check if order can be approved (must be in approval_pending status)
+    IF v_current_status != 'approval_pending' THEN
+        RAISE EXCEPTION 'Order cannot be approved - current status is %', v_current_status;
+    END IF;
+
+    -- Validate required fields
+    IF (p_order_data->>'warehouse_id') IS NULL OR (p_order_data->>'warehouse_id') = '' THEN
+        RAISE EXCEPTION 'Warehouse is required for approval';
+    END IF;
+
+    IF (p_order_data->>'customer_id') IS NULL OR (p_order_data->>'customer_id') = '' THEN
+        RAISE EXCEPTION 'Customer is required for approval';
+    END IF;
+
+    IF (p_order_data->>'order_date') IS NULL OR (p_order_data->>'order_date') = '' THEN
+        RAISE EXCEPTION 'Order date is required for approval';
+    END IF;
+
+    IF array_length(p_line_items, 1) IS NULL OR array_length(p_line_items, 1) = 0 THEN
+        RAISE EXCEPTION 'At least one product is required for approval';
+    END IF;
+
+    -- Extract warehouse_id from order data
+    v_warehouse_id := (p_order_data->>'warehouse_id')::UUID;
+
+    -- Update sales order
+    UPDATE sales_orders
+    SET
+        warehouse_id = v_warehouse_id,
+        customer_id = (p_order_data->>'customer_id')::UUID,
+        agent_id = NULLIF((p_order_data->>'agent_id'), '')::UUID,
+        order_date = (p_order_data->>'order_date')::DATE,
+        expected_delivery_date = NULLIF((p_order_data->>'expected_delivery_date'), '')::DATE,
+        advance_amount = COALESCE((p_order_data->>'advance_amount')::DECIMAL, 0),
+        discount_type = COALESCE(p_order_data->>'discount_type', 'none')::discount_type_enum,
+        discount_value = COALESCE((p_order_data->>'discount_value')::DECIMAL, 0),
+        notes = NULLIF(p_order_data->>'notes', ''),
+        attachments = COALESCE(
+            ARRAY(SELECT jsonb_array_elements_text(p_order_data->'attachments')),
+            ARRAY[]::TEXT[]
+        ),
+        status = 'in_progress',
+        status_changed_at = NOW(),
+        status_changed_by = auth.uid(),
+        updated_at = NOW(),
+        modified_by = auth.uid()
+    WHERE id = p_order_id;
+
+    -- Delete existing line items
+    DELETE FROM sales_order_items
+    WHERE sales_order_id = p_order_id;
+
+    -- Insert new line items
+    INSERT INTO sales_order_items (
+        company_id,
+        warehouse_id,
+        sales_order_id,
+        product_id,
+        required_quantity,
+        unit_rate
+    )
+    SELECT
+        v_company_id,
+        v_warehouse_id,
+        p_order_id,
+        (item->>'product_id')::UUID,
+        (item->>'required_quantity')::DECIMAL,
+        COALESCE((item->>'unit_rate')::DECIMAL, 0)
+    FROM unnest(p_line_items) AS item;
+END;
+$$;
+
+COMMENT ON FUNCTION approve_sales_order_with_items IS 'Atomically approve sales order with updated data and line items. Updates all order fields, replaces line items, and changes status to in_progress. Validates required fields before approval.';

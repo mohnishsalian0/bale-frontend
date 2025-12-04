@@ -123,3 +123,37 @@ export interface CreateSalesOrderLineItem {
   required_quantity: number;
   unit_rate: number;
 }
+
+/**
+ * Data for updating/approving a sales order
+ * Used in: approve sales order flow
+ */
+export interface UpdateSalesOrderData {
+  warehouse_id: string;
+  customer_id: string;
+  agent_id: string | null;
+  order_date: string;
+  expected_delivery_date: string | null;
+  advance_amount: number;
+  discount_type: string;
+  discount_value: number;
+  notes: string | null;
+  attachments: string[];
+  status: string;
+}
+
+/**
+ * Data for cancelling a sales order
+ * Used in: cancel sales order flow
+ */
+export interface CancelSalesOrderData {
+  reason: string;
+}
+
+/**
+ * Data for completing a sales order
+ * Used in: complete sales order flow
+ */
+export interface CompleteSalesOrderData {
+  notes?: string | null;
+}

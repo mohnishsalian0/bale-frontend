@@ -8,9 +8,15 @@ import {
   getSalesOrderByNumber,
   getSalesOrdersByCustomer,
   createSalesOrder,
+  approveSalesOrder,
+  cancelSalesOrder,
+  completeSalesOrder,
   type SalesOrderFilters,
   type CreateSalesOrderData,
   type CreateSalesOrderLineItem,
+  type UpdateSalesOrderData,
+  type CancelSalesOrderData,
+  type CompleteSalesOrderData,
 } from "@/lib/queries/sales-orders";
 
 /**
@@ -82,7 +88,60 @@ export function useSalesOrderMutations(warehouseId: string | null) {
     },
   });
 
+  const approve = useMutation({
+    mutationFn: ({
+      orderId,
+      orderData,
+      lineItems,
+    }: {
+      orderId: string;
+      orderData: UpdateSalesOrderData;
+      lineItems: CreateSalesOrderLineItem[];
+    }) => approveSalesOrder(orderId, orderData, lineItems),
+    onSuccess: () => {
+      // Invalidate all sales order queries
+      queryClient.invalidateQueries({
+        queryKey: ["sales-orders"],
+      });
+    },
+  });
+
+  const cancel = useMutation({
+    mutationFn: ({
+      orderId,
+      cancelData,
+    }: {
+      orderId: string;
+      cancelData: CancelSalesOrderData;
+    }) => cancelSalesOrder(orderId, cancelData),
+    onSuccess: () => {
+      // Invalidate all sales order queries
+      queryClient.invalidateQueries({
+        queryKey: ["sales-orders"],
+      });
+    },
+  });
+
+  const complete = useMutation({
+    mutationFn: ({
+      orderId,
+      completeData,
+    }: {
+      orderId: string;
+      completeData: CompleteSalesOrderData;
+    }) => completeSalesOrder(orderId, completeData),
+    onSuccess: () => {
+      // Invalidate all sales order queries
+      queryClient.invalidateQueries({
+        queryKey: ["sales-orders"],
+      });
+    },
+  });
+
   return {
     create,
+    approve,
+    cancel,
+    complete,
   };
 }

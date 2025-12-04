@@ -22,6 +22,8 @@ import { getPartnerName } from "@/lib/utils/partner";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import type { SalesOrderListView } from "@/types/sales-orders.types";
 import type { SalesOrderStatus } from "@/types/database/enums";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/contexts/session-context";
 
 interface ActiveSalesOrdersSectionProps {
   orders: SalesOrderListView[];
@@ -34,6 +36,9 @@ export function ActiveSalesOrdersSection({
   warehouseSlug,
   onNavigate,
 }: ActiveSalesOrdersSectionProps) {
+  const router = useRouter();
+  const { warehouse } = useSession();
+
   return (
     <div className="flex flex-col mt-6">
       <div className="flex items-center justify-between px-4 py-2">
@@ -136,7 +141,9 @@ export function ActiveSalesOrdersSection({
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          console.log("Approve order");
+                          router.push(
+                            `/warehouse/${warehouse.slug}/sales-orders/${order.sequence_number}/approve`,
+                          );
                         }}
                       >
                         Approve order
