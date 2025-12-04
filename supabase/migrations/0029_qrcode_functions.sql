@@ -10,14 +10,13 @@ CREATE OR REPLACE FUNCTION create_qr_batch_with_items(
     p_batch_data JSONB,
     p_stock_unit_ids UUID[]
 )
-RETURNS JSONB
+RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
     v_batch_id UUID;
     v_stock_unit_id UUID;
-    v_result JSONB;
     v_company_id UUID;
 BEGIN
     -- Derive company_id from JWT if not provided

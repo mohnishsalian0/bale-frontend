@@ -68,14 +68,12 @@ export default function OrdersPage() {
     isLoading: ordersLoading,
     isError: ordersError,
   } = useSalesOrders(warehouse.id);
-  const {
-    data: customers = [],
-    isLoading: customersLoading,
-  } = usePartners({ partner_type: "customer" });
-  const {
-    data: products = [],
-    isLoading: productsLoading,
-  } = useProducts();
+  const { data: customers = [], isLoading: customersLoading } = usePartners({
+    partner_type: "customer",
+  });
+  const { data: products = [], isLoading: productsLoading } = useProducts({
+    is_active: true,
+  });
 
   const loading = ordersLoading || customersLoading || productsLoading;
   const error = ordersError;

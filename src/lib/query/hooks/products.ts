@@ -27,15 +27,15 @@ import {
   updateProductActiveStatus,
   updateProductCatalogVisibility,
 } from "@/lib/queries/products";
-import { ProductUpsertData } from "@/types/products.types";
+import { ProductFilters, ProductUpsertData } from "@/types/products.types";
 
 /**
  * Fetch all products with attributes
  */
-export function useProducts() {
+export function useProducts(filters?: ProductFilters) {
   return useQuery({
-    queryKey: queryKeys.products.all(),
-    queryFn: getProducts,
+    queryKey: queryKeys.products.all(filters),
+    queryFn: () => getProducts(filters),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
   });
 }
@@ -67,10 +67,13 @@ export function useProductByNumber(sequenceNumber: string | null) {
 /**
  * Fetch products with inventory for a warehouse
  */
-export function useProductsWithInventory(warehouseId: string | null) {
+export function useProductsWithInventory(
+  warehouseId: string | null,
+  filters?: ProductFilters,
+) {
   return useQuery({
-    queryKey: queryKeys.products.withInventory(warehouseId || ""),
-    queryFn: () => getProductsWithInventory(warehouseId!),
+    queryKey: queryKeys.products.withInventory(warehouseId || "", filters),
+    queryFn: () => getProductsWithInventory(warehouseId!, filters),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
     enabled: !!warehouseId,
   });

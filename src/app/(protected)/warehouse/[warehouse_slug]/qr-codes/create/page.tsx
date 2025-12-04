@@ -40,7 +40,9 @@ export default function CreateQRBatchPage() {
   const [saving, setSaving] = useState(false);
 
   // Fetch data using TanStack Query
-  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const { data: products = [], isLoading: productsLoading } = useProducts({
+    is_active: true,
+  });
   const { data: attributeLists, isLoading: productAttributesLoading } =
     useProductAttributes();
   const { create: createBatch } = useQRBatchMutations(warehouse.id);
@@ -102,7 +104,7 @@ export default function CreateQRBatchPage() {
         pdf_url: null,
       };
 
-      console.log(batchData);
+      console.log(JSON.stringify(batchData));
       console.log(selectedStockUnitIds);
 
       // Create batch using mutation hook

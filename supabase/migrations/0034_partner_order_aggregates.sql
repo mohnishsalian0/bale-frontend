@@ -41,7 +41,10 @@ CREATE TABLE partner_order_aggregates (
 CREATE INDEX idx_partner_order_agg_partner ON partner_order_aggregates(partner_id);
 CREATE INDEX idx_partner_order_agg_company ON partner_order_aggregates(company_id);
 
--- RLS Policies
+-- =====================================================
+-- RLS POLICIES
+-- =====================================================
+
 ALTER TABLE partner_order_aggregates ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Authorized users can view partner order aggregates"
@@ -253,7 +256,7 @@ BEGIN
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Create trigger on partners table to initialize aggregates
 CREATE TRIGGER trg_create_partner_order_aggregates

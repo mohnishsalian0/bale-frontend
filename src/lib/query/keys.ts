@@ -17,15 +17,17 @@
  *   queryClient.invalidateQueries({ queryKey: queryKeys.products.detail(id) })
  */
 
+import { ProductFilters } from "@/types/products.types";
+
 export const queryKeys = {
   // Products (companyId removed - RLS handles scoping, user in single company)
   products: {
-    all: () => ["products"] as const,
+    all: (filters?: ProductFilters) => ["products", filters] as const,
     byId: (productId: string) => ["products", "detail", productId] as const,
     byNumber: (sequenceNumber: string) =>
       ["products", "sequence", sequenceNumber] as const,
-    withInventory: (warehouseId: string) =>
-      ["products", "inventory", warehouseId] as const,
+    withInventory: (warehouseId: string, filters?: ProductFilters) =>
+      ["products", "inventory", warehouseId, filters] as const,
     withInventoryById: (productId: string, warehouseId: string) =>
       ["products", "inventory", "detail", productId, warehouseId] as const,
     withInventoryByNumber: (sequenceNumber: string, warehouseId: string) =>

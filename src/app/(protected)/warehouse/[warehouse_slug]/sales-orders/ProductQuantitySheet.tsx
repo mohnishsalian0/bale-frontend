@@ -112,7 +112,7 @@ export function ProductQuantitySheet({
               }
               className="text-center text-lg font-medium max-w-25 pr-10"
               min="0"
-              step="0.01"
+              step={product.stock_type === "roll" ? "0.1" : "1"}
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
               {unitAbbreviation}

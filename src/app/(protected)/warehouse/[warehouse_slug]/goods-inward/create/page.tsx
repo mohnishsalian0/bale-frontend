@@ -45,7 +45,9 @@ export default function CreateGoodsInwardPage() {
   const { createInwardWithUnits } = useStockFlowMutations(warehouse.id);
 
   // Fetch products and attributes using TanStack Query
-  const { data: productsData = [], isLoading: productsLoading } = useProducts();
+  const { data: productsData = [], isLoading: productsLoading } = useProducts({
+    is_active: true,
+  });
   const { data: attributesData, isLoading: attributesLoading } =
     useProductAttributes();
 

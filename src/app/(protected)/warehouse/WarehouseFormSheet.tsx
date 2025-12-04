@@ -85,7 +85,6 @@ export function WarehouseFormSheet({
 
     const warehouseData: WarehouseInsert = {
       name: formData.name,
-      slug: "",
       contact_name: formData.contactName || null,
       contact_number: formData.contactNumber || null,
       address_line1: formData.addressLine1 || null,

@@ -43,7 +43,7 @@ export default function InventoryPage() {
     isLoading: productsLoading,
     isError: productsError,
     refetch: refetchProducts,
-  } = useProductsWithInventory(warehouse.id);
+  } = useProductsWithInventory(warehouse.id, { is_active: true });
   const {
     data: attributeLists,
     isLoading: attributesLoading,

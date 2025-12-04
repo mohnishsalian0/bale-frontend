@@ -66,7 +66,7 @@ export function ResponsiveDialog({
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        <div className="overflow-y-auto">{children}</div>
+        <div className="p-3 overflow-y-auto">{children}</div>
         {footer && <DialogFooter>{footer}</DialogFooter>}
       </DialogContent>
     </Dialog>

@@ -15,7 +15,7 @@ CREATE TABLE goods_outwards (
     sequence_number INTEGER NOT NULL,
 
     -- Outward type
-    outward_type VARCHAR(20) NOT NULL CHECK (outward_type IN ('sales', 'job_work', 'purchase_return', 'other')),
+    outward_type VARCHAR(20) NOT NULL CHECK (outward_type IN ('sales_order', 'job_work', 'purchase_return', 'other')),
 
     -- Linking (optional, for reference)
     sales_order_id UUID REFERENCES sales_orders(id), -- When outward_type = 'sales'
@@ -59,7 +59,7 @@ CREATE TABLE goods_outwards (
         ),
     CONSTRAINT check_outward_type_requirement
         CHECK (
-						(outward_type = 'sales' AND sales_order_id IS NOT NULL) OR
+						(outward_type = 'sales_order' AND sales_order_id IS NOT NULL) OR
 						(outward_type = 'job_work' AND job_work_id IS NOT NULL) OR
 						(outward_type = 'purchase_return' AND purchase_order_number IS NOT NULL) OR
 						(outward_type = 'other' AND other_reason IS NOT NULL)

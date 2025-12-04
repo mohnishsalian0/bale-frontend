@@ -42,6 +42,18 @@ export type ProductAttributeAssignmentsRaw = {
   }>;
 };
 
+// ============================================================================
+// FILTERS
+// ============================================================================
+
+export interface ProductFilters extends Record<string, unknown> {
+  is_active?: boolean;
+}
+
+// ============================================================================
+// MAIN TYPES
+// ============================================================================
+
 /**
  * Product with minimal details for list views
  * Used in: product list page, sales order item selection

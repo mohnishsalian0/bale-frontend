@@ -48,7 +48,7 @@ export default function CreateSalesOrderPage() {
 
   // Fetch products and attributes using TanStack Query
   const { data: productsData = [], isLoading: productsLoading } =
-    useProductsWithInventory(warehouse.id);
+    useProductsWithInventory(warehouse.id, { is_active: true });
   const { data: attributesData, isLoading: attributesLoading } =
     useProductAttributes();
 

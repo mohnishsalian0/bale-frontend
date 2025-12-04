@@ -183,16 +183,17 @@ export function StockUnitDetailsContent({
           <Button
             type="button"
             variant="outline"
-            size="icon"
             onClick={handleEdit}
+            className="flex-1"
           >
             <IconEdit />
+            Edit
           </Button>
           <Button
             type="button"
             variant="outline"
             onClick={handleWastage}
-            className="flex-1"
+            className="flex-2"
           >
             <IconPlus />
             Wastage

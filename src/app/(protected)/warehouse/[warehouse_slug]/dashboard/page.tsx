@@ -177,17 +177,21 @@ export default function DashboardPage() {
       />
 
       {/* Add Product Sheet */}
-      <ProductFormSheet
-        key="new"
-        open={showCreateProduct}
-        onOpenChange={setShowCreateProduct}
-      />
+      {showCreateProduct && (
+        <ProductFormSheet
+          key="new"
+          open={showCreateProduct}
+          onOpenChange={setShowCreateProduct}
+        />
+      )}
 
       {/* Scanner Modal */}
-      <DashboardScannerModal
-        open={showScannerModal}
-        onOpenChange={setShowScannerModal}
-      />
+      {showScannerModal && (
+        <DashboardScannerModal
+          open={showScannerModal}
+          onOpenChange={setShowScannerModal}
+        />
+      )}
 
       {/* FAB */}
       <Fab

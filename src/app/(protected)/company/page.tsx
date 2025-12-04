@@ -206,7 +206,7 @@ export default function CompanyPage() {
           )}
 
           {/* Warehouses Section */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 mt-6">
             {/* Header */}
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900">Warehouses</h2>
@@ -229,7 +229,7 @@ export default function CompanyPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid sm:grid-cols-2 gap-3">
                 {warehouses.map((warehouse) => (
                   <Card
                     key={warehouse.id}

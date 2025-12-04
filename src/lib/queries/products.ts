@@ -11,6 +11,7 @@ import {
   ProductWithInventoryDetailView,
   ProductUpsertData,
   ProductAttributeAssignmentsRaw,
+  ProductFilters,
 } from "@/types/products.types";
 import { uploadProductImage, deleteProductImagesByUrls } from "@/lib/storage";
 
@@ -271,14 +272,23 @@ export function transformProductWithInventoryDetailView(
 /**
  * Get all products (list view with minimal fields)
  */
-export async function getProducts(): Promise<ProductListView[]> {
+export async function getProducts(
+  filters?: ProductFilters,
+): Promise<ProductListView[]> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("products")
     .select(PRODUCT_LIST_VIEW_SELECT)
     .is("deleted_at", null)
     .order("name", { ascending: true });
+
+  // Apply is active
+  if (filters?.is_active) {
+    query = query.is("is_active", filters.is_active);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   if (!data) return [];
@@ -335,15 +345,23 @@ export async function getProductByNumber(
  */
 export async function getProductsWithInventory(
   warehouseId: string,
+  filters?: ProductFilters,
 ): Promise<ProductWithInventoryListView[]> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("products")
     .select(PRODUCT_WITH_INVENTORY_LIST_VIEW_SELECT)
     .eq("product_inventory_aggregates.warehouse_id", warehouseId)
     .is("deleted_at", null)
     .order("name", { ascending: true });
+
+  // Apply is active
+  if (filters?.is_active) {
+    query = query.is("is_active", filters.is_active);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   if (!data) return [];

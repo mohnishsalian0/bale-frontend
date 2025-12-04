@@ -4,7 +4,7 @@ import type { MeasuringUnit } from "@/types/database/enums";
  * Map measuring units to their abbreviated forms
  */
 export const MEASURING_UNIT_ABBREVIATIONS: Record<MeasuringUnit, string> = {
-  metre: "m",
+  metre: "mtr",
   yard: "yd",
   kilogram: "kg",
   unit: "unit",

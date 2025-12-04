@@ -126,7 +126,7 @@ export function StockUnitQuantitySheet({
                 className="text-center text-lg font-medium max-w-25 pr-10"
                 min="0"
                 max={maxQuantity}
-                step="0.01"
+                step={stockType === "roll" ? "0.1" : "1"}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
                 {unitAbbreviation}
@@ -170,7 +170,7 @@ export function StockUnitQuantitySheet({
           type="button"
           variant="outline"
           size="sm"
-          className="border-border shadow-gray-sm"
+          className="border-border shadow-gray-sm text-foreground"
           onClick={handleFullQuantity}
           disabled={quantity >= maxQuantity}
         >

@@ -42,7 +42,11 @@ CREATE INDEX idx_product_inventory_agg_warehouse ON product_inventory_aggregates
 CREATE INDEX idx_product_inventory_agg_company ON product_inventory_aggregates(company_id);
 CREATE INDEX idx_product_inventory_agg_pending_qr ON product_inventory_aggregates(warehouse_id, pending_qr_units DESC) WHERE pending_qr_units > 0;
 
--- RLS Policies
+
+-- =====================================================
+-- RLS POLICIES
+-- =====================================================
+
 ALTER TABLE product_inventory_aggregates ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Authorized users can view product inventory aggregates"
@@ -196,7 +200,7 @@ BEGIN
         pending_qr_units = EXCLUDED.pending_qr_units,
         last_updated_at = NOW();
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger function to update aggregates when stock units change
 CREATE OR REPLACE FUNCTION trigger_update_product_inventory_aggregates()
@@ -269,7 +273,7 @@ BEGIN
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Create trigger on products table to initialize aggregates
 CREATE TRIGGER trg_create_product_inventory_aggregates
