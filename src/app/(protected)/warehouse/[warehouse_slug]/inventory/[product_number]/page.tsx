@@ -214,6 +214,7 @@ export default function ProductDetailPage({ params }: PageParams) {
 
                 {/* Visible on catalog */}
                 <GlowIndicator
+                  size="md"
                   className="mt-2 mr-2"
                   isActive={product.show_on_catalog || false}
                 />
