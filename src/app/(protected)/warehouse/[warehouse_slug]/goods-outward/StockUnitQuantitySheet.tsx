@@ -30,11 +30,14 @@ export function StockUnitQuantitySheet({
 
   if (!stockUnit) return null;
 
-  const maxQuantity = stockUnit.remaining_quantity;
+  let maxQuantity = stockUnit.remaining_quantity;
   const unitAbbreviation = getMeasuringUnitAbbreviation(
     stockUnit.product?.measuring_unit as MeasuringUnit | null,
   );
   const stockType = stockUnit.product?.stock_type as StockType;
+  if (stockType !== "roll") {
+    maxQuantity = Math.floor(maxQuantity);
+  }
 
   const handleCancel = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -123,7 +126,7 @@ export function StockUnitQuantitySheet({
                 value={quantity}
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => handleQuantityChange(e.target.value)}
-                className="text-center text-lg font-medium max-w-25 pr-10"
+                className="text-center text-lg font-medium max-w-30 pr-10"
                 min="0"
                 max={maxQuantity}
                 step={stockType === "roll" ? "0.1" : "1"}

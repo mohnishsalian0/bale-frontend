@@ -220,7 +220,7 @@ export function QRScannerStep({
   };
 
   return (
-    <div className="flex flex-col h-full flex-1">
+    <div className="flex flex-col h-full flex-1 overflow-auto">
       {/* Camera Section */}
       <div className="relative w-full aspect-square shrink-0 bg-gray-900 overflow-hidden">
         {/* QR Scanner */}
@@ -296,7 +296,7 @@ export function QRScannerStep({
       </div>
 
       {/* Scanned Products List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1">
         {scannedUnits.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-gray-500">Scan QR codes to add items</p>
@@ -305,7 +305,7 @@ export function QRScannerStep({
           <div className="flex flex-col">
             {scannedUnits.map((item, index) => {
               const imageUrl = item.stockUnit.product?.product_images?.[0];
-              const maxQuantity = item.stockUnit.remaining_quantity;
+              let maxQuantity = item.stockUnit.remaining_quantity;
               const unitAbbreviation = getMeasuringUnitAbbreviation(
                 item.stockUnit.product?.measuring_unit as MeasuringUnit | null,
               );
@@ -318,6 +318,9 @@ export function QRScannerStep({
                 item.stockUnit.sequence_number,
                 stockType,
               );
+              if (stockType !== "roll") {
+                maxQuantity = Math.floor(maxQuantity);
+              }
 
               return (
                 <div
