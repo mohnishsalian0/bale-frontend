@@ -51,7 +51,7 @@ export async function getSalesOrders(
         sales_order_items(
           *,
           product:product_id(
-            id, name, measuring_unit, product_images, sequence_number
+            id, name, stock_type, measuring_unit, product_images, sequence_number
           )
         )
       `,
@@ -111,7 +111,7 @@ export async function getSalesOrdersByCustomer(
 			),
 			sales_order_items(
 				*,
-				product:product_id(id, name, measuring_unit, product_images, sequence_number)
+				product:product_id(id, name, stock_type, measuring_unit, product_images, sequence_number)
 			)
 		`,
     )
@@ -148,10 +148,10 @@ export async function getSalesOrderByNumber(
 				product:product_id(
 					id,
 					name,
+					stock_type,
 					measuring_unit,
 					product_images,
 					sequence_number,
-					stock_type,
 					materials:product_material_assignments(
 						material:material_id(*)
 					),

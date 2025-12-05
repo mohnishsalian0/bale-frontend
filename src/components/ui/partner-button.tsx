@@ -15,7 +15,7 @@ export function PartnerButton({ partner, onClick }: PartnerButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+      className="max-w-30 flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
     >
       <ImageWrapper
         size="md"

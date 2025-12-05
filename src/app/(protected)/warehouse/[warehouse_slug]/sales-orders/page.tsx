@@ -27,8 +27,12 @@ import {
   getOrderDisplayStatus,
   getProductSummary,
 } from "@/lib/utils/sales-order";
-import type { SalesOrderStatus } from "@/types/database/enums";
+import type { SalesOrderStatus, MeasuringUnit } from "@/types/database/enums";
 import { formatAbsoluteDate } from "@/lib/utils/date";
+import {
+  formatMeasuringUnitQuantities,
+  getMeasuringUnit,
+} from "@/lib/utils/measuring-units";
 
 interface OrderListItem {
   id: string;
@@ -94,98 +98,108 @@ export default function OrdersPage() {
   );
 
   // Process orders data using useMemo
-  const { monthGroups, totalOrdered, totalSales } = useMemo(() => {
-    if (!orders.length) {
-      return {
-        monthGroups: [],
-        totalOrdered: 0,
-        totalSales: 0,
-      };
-    }
-
-    // Transform orders
-    const orderItems: OrderListItem[] = orders.map((order) => {
-      const customerName = getPartnerName(order.customer);
-
-      // Calculate products with quantities
-      const products = (order.sales_order_items || []).map((item) => ({
-        name: item.product?.name || "Unknown Product",
-        quantity: item.required_quantity,
-      }));
-
-      // Calculate completion percentage using utility
-      const completionPercentage = calculateCompletionPercentage(
-        order.sales_order_items || [],
-      );
-
-      // Determine status (including overdue) using utility
-      const status = getOrderDisplayStatus(
-        order.status as SalesOrderStatus,
-        order.expected_delivery_date,
-      );
-
-      return {
-        id: order.id,
-        orderNumber: order.sequence_number,
-        customerId: order.customer_id,
-        customerName,
-        products,
-        dueDate: order.expected_delivery_date,
-        orderDate: order.order_date,
-        status,
-        completionPercentage,
-        totalAmount: order.total_amount || 0,
-      };
-    });
-
-    // Group by month (based on order creation date)
-    const groups: { [key: string]: MonthGroup } = {};
-
-    orderItems.forEach((order) => {
-      const date = new Date(order.orderDate);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      const monthName = date.toLocaleString("en-US", { month: "long" });
-      const year = date.getFullYear();
-
-      if (!groups[monthKey]) {
-        groups[monthKey] = {
-          month: monthName,
-          monthYear: `${monthName} ${year}`,
-          orders: [],
+  const { monthGroups, pendingOrdersCount, pendingQuantitiesByUnit } =
+    useMemo(() => {
+      if (!orders.length) {
+        return {
+          monthGroups: [],
+          pendingOrdersCount: 0,
+          pendingQuantitiesByUnit: "0",
         };
       }
 
-      groups[monthKey].orders.push(order);
-    });
+      // Transform orders
+      const orderItems: OrderListItem[] = orders.map((order) => {
+        const customerName = getPartnerName(order.customer);
 
-    const monthGroups = Object.values(groups).sort((a, b) => {
-      const [monthA, yearA] = a.monthYear.split(" ");
-      const [monthB, yearB] = b.monthYear.split(" ");
-      const dateA = new Date(`${monthA} 1, ${yearA}`);
-      const dateB = new Date(`${monthB} 1, ${yearB}`);
-      return dateB.getTime() - dateA.getTime();
-    });
+        // Calculate products with quantities
+        const products = (order.sales_order_items || []).map((item) => ({
+          name: item.product?.name || "Unknown Product",
+          quantity: item.required_quantity,
+        }));
 
-    // Calculate totals for past month (based on order date)
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        // Calculate completion percentage using utility
+        const completionPercentage = calculateCompletionPercentage(
+          order.sales_order_items || [],
+        );
 
-    const recentOrders = orderItems.filter(
-      (order) => new Date(order.orderDate) >= oneMonthAgo,
-    );
-    const totalOrdered = recentOrders.reduce((sum, order) => {
-      return sum + order.products.reduce((pSum, p) => pSum + p.quantity, 0);
-    }, 0);
-    const totalSales = Math.round(
-      recentOrders.reduce((sum, order) => sum + order.totalAmount, 0),
-    );
+        // Determine status (including overdue) using utility
+        const status = getOrderDisplayStatus(
+          order.status as SalesOrderStatus,
+          order.expected_delivery_date,
+        );
 
-    return {
-      monthGroups,
-      totalOrdered,
-      totalSales,
-    };
-  }, [orders]);
+        return {
+          id: order.id,
+          orderNumber: order.sequence_number,
+          customerId: order.customer_id,
+          customerName,
+          products,
+          dueDate: order.expected_delivery_date,
+          orderDate: order.order_date,
+          status,
+          completionPercentage,
+          totalAmount: order.total_amount || 0,
+        };
+      });
+
+      // Group by month (based on order creation date)
+      const groups: { [key: string]: MonthGroup } = {};
+
+      orderItems.forEach((order) => {
+        const date = new Date(order.orderDate);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        const monthName = date.toLocaleString("en-US", { month: "long" });
+        const year = date.getFullYear();
+
+        if (!groups[monthKey]) {
+          groups[monthKey] = {
+            month: monthName,
+            monthYear: `${monthName} ${year}`,
+            orders: [],
+          };
+        }
+
+        groups[monthKey].orders.push(order);
+      });
+
+      const monthGroups = Object.values(groups).sort((a, b) => {
+        const [monthA, yearA] = a.monthYear.split(" ");
+        const [monthB, yearB] = b.monthYear.split(" ");
+        const dateA = new Date(`${monthA} 1, ${yearA}`);
+        const dateB = new Date(`${monthB} 1, ${yearB}`);
+        return dateB.getTime() - dateA.getTime();
+      });
+
+      // Calculate pending orders stats (approval_pending OR in_progress)
+      const pendingOrders = orders.filter(
+        (order) =>
+          order.status === "approval_pending" || order.status === "in_progress",
+      );
+
+      const pendingOrdersCount = pendingOrders.length;
+
+      // Aggregate remaining quantities by measuring unit
+      const unitMap = new Map<MeasuringUnit, number>();
+
+      pendingOrders.forEach((order) => {
+        (order.sales_order_items || []).forEach((item) => {
+          const unit = getMeasuringUnit(item.product);
+          const remainingQty =
+            item.required_quantity - (item.dispatched_quantity || 0);
+
+          unitMap.set(unit, (unitMap.get(unit) || 0) + remainingQty);
+        });
+      });
+
+      const pendingQuantitiesByUnit = formatMeasuringUnitQuantities(unitMap);
+
+      return {
+        monthGroups,
+        pendingOrdersCount,
+        pendingQuantitiesByUnit,
+      };
+    }, [orders]);
 
   // Filter groups using useMemo
   const filteredGroups = useMemo(() => {
@@ -251,13 +265,14 @@ export default function OrdersPage() {
             <h1 className="text-3xl font-bold text-gray-900">Sales orders</h1>
             <p className="text-sm text-gray-500">
               <span className="text-teal-700 font-medium">
-                {totalOrdered} mtr ordered
+                {pendingOrdersCount}
               </span>
-              <span> & </span>
+              <span> active orders</span>
+              <span> • </span>
               <span className="text-teal-700 font-medium">
-                ₹{totalSales.toLocaleString()} in sales
+                {pendingQuantitiesByUnit}
               </span>
-              <span> in past month</span>
+              <span className="text-gray-500"> pending to fulfill</span>
             </p>
           </div>
 

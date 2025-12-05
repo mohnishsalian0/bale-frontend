@@ -26,10 +26,11 @@ import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
 import {
-  aggregateQuantitiesByUnit,
-  formatQuantitiesByUnit,
+  formatMeasuringUnitQuantities,
+  getMeasuringUnit,
 } from "@/lib/utils/measuring-units";
 import { getPartnerName } from "@/lib/utils/partner";
+import type { MeasuringUnit } from "@/types/database/enums";
 import {
   useGoodsInwards,
   useGoodsOutwards,
@@ -43,8 +44,7 @@ interface StockFlowItem {
   partnerId: string | null;
   partnerName: string;
   date: string;
-  quantity: number;
-  unit: string;
+  quantities: Map<MeasuringUnit, number>;
   billNumber: string;
   sequence_number: number;
 }
@@ -52,8 +52,8 @@ interface StockFlowItem {
 interface MonthGroup {
   month: string;
   monthYear: string;
-  inCount: Map<string, number>;
-  outCount: Map<string, number>;
+  inCount: Map<MeasuringUnit, number>;
+  outCount: Map<MeasuringUnit, number>;
   items: StockFlowItem[];
 }
 
@@ -111,11 +111,16 @@ export default function StockFlowPage() {
           ? `${firstProduct?.name || "Unknown Product"}, ${productCount - 1} more`
           : firstProduct?.name || "Unknown Product";
 
-      const totalQty = stockUnits.reduce(
-        (sum: number, unit) => sum + (Number(unit.initial_quantity) || 0),
-        0,
-      );
-      const unit = firstProduct?.measuring_unit || "m";
+      // Aggregate quantities by measuring unit
+      const quantitiesMap = new Map<MeasuringUnit, number>();
+      stockUnits.forEach((unit) => {
+        const measuringUnit = getMeasuringUnit(unit.product);
+        const qty = Number(unit.initial_quantity) || 0;
+        quantitiesMap.set(
+          measuringUnit,
+          (quantitiesMap.get(measuringUnit) || 0) + qty,
+        );
+      });
 
       return {
         id: r.id,
@@ -124,8 +129,7 @@ export default function StockFlowPage() {
         partnerId: r.partner_id,
         partnerName,
         date: r.inward_date,
-        quantity: totalQty,
-        unit,
+        quantities: quantitiesMap,
         billNumber: `GI-${r.sequence_number}`,
         sequence_number: r.sequence_number,
       };
@@ -151,11 +155,18 @@ export default function StockFlowPage() {
           ? `${firstProduct?.name || "Unknown Product"}, ${productCount - 1} more`
           : firstProduct?.name || "Unknown Product";
 
-      const totalQty = items.reduce(
-        (sum: number, item) => sum + (Number(item.quantity_dispatched) || 0),
-        0,
-      );
-      const unit = firstProduct?.measuring_unit || "m";
+      // Aggregate quantities by measuring unit
+      const quantitiesMap = new Map<MeasuringUnit, number>();
+      items.forEach((item) => {
+        const measuringUnit = getMeasuringUnit(
+          item.stock_unit?.product || null,
+        );
+        const qty = Number(item.quantity_dispatched) || 0;
+        quantitiesMap.set(
+          measuringUnit,
+          (quantitiesMap.get(measuringUnit) || 0) + qty,
+        );
+      });
 
       return {
         id: d.id,
@@ -164,8 +175,7 @@ export default function StockFlowPage() {
         partnerId: d.partner_id,
         partnerName,
         date: d.outward_date,
-        quantity: totalQty,
-        unit,
+        quantities: quantitiesMap,
         billNumber: `GO-${d.sequence_number}`,
         sequence_number: d.sequence_number,
       };
@@ -189,21 +199,24 @@ export default function StockFlowPage() {
         groups[monthKey] = {
           month: monthName,
           monthYear: `${monthName} ${year}`,
-          inCount: new Map<string, number>(),
-          outCount: new Map<string, number>(),
+          inCount: new Map<MeasuringUnit, number>(),
+          outCount: new Map<MeasuringUnit, number>(),
           items: [],
         };
       }
 
       groups[monthKey].items.push(item);
 
-      if (item.type === "inward") {
-        const currentIn = groups[monthKey].inCount.get(item.unit) || 0;
-        groups[monthKey].inCount.set(item.unit, currentIn + item.quantity);
-      } else {
-        const currentOut = groups[monthKey].outCount.get(item.unit) || 0;
-        groups[monthKey].outCount.set(item.unit, currentOut + item.quantity);
-      }
+      // Aggregate quantities by unit for month totals
+      item.quantities.forEach((qty, unit) => {
+        if (item.type === "inward") {
+          const currentIn = groups[monthKey].inCount.get(unit) || 0;
+          groups[monthKey].inCount.set(unit, currentIn + qty);
+        } else {
+          const currentOut = groups[monthKey].outCount.get(unit) || 0;
+          groups[monthKey].outCount.set(unit, currentOut + qty);
+        }
+      });
     });
 
     const sortedGroups = Object.values(groups).sort((a, b) => {
@@ -225,8 +238,20 @@ export default function StockFlowPage() {
       (item) => new Date(item.date) >= oneMonthAgo,
     );
 
-    const inwardByUnit = aggregateQuantitiesByUnit(recentInwardItems);
-    const outwardByUnit = aggregateQuantitiesByUnit(recentOutwardItems);
+    // Aggregate past month totals
+    const inwardByUnit = new Map<MeasuringUnit, number>();
+    recentInwardItems.forEach((item) => {
+      item.quantities.forEach((qty, unit) => {
+        inwardByUnit.set(unit, (inwardByUnit.get(unit) || 0) + qty);
+      });
+    });
+
+    const outwardByUnit = new Map<MeasuringUnit, number>();
+    recentOutwardItems.forEach((item) => {
+      item.quantities.forEach((qty, unit) => {
+        outwardByUnit.set(unit, (outwardByUnit.get(unit) || 0) + qty);
+      });
+    });
 
     return {
       monthGroups: sortedGroups,
@@ -298,13 +323,13 @@ export default function StockFlowPage() {
         <div className="flex-1 flex flex-col gap-2">
           <div className="flex flex-col gap-1">
             <h1 className="text-3xl font-bold text-gray-900">Stock flow</h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm font-medium text-gray-500">
               <span className="text-teal-700">
-                {formatQuantitiesByUnit(totalReceived)} received
+                {formatMeasuringUnitQuantities(totalReceived)} received
               </span>
               <span> & </span>
               <span className="text-yellow-700">
-                {formatQuantitiesByUnit(totalOutwarded)} dispatched
+                {formatMeasuringUnitQuantities(totalOutwarded)} dispatched
               </span>
               <span> in past month</span>
             </p>
@@ -391,12 +416,12 @@ export default function StockFlowPage() {
                 </p>
                 <p className="text-sm font-bold text-right max-w-2/3">
                   <span className="text-teal-700">
-                    {formatQuantitiesByUnit(group.inCount)}{" "}
+                    {formatMeasuringUnitQuantities(group.inCount)}{" "}
                   </span>
                   <span className="text-teal-700 font-normal">In</span>
                   <span>, </span>
                   <span className="text-yellow-700">
-                    {formatQuantitiesByUnit(group.outCount)}{" "}
+                    {formatMeasuringUnitQuantities(group.outCount)}{" "}
                   </span>
                   <span className="text-yellow-700 font-normal">Out</span>
                 </p>
@@ -436,7 +461,7 @@ export default function StockFlowPage() {
                           : "text-yellow-700"
                       }`}
                     >
-                      {item.quantity.toFixed(2)} {item.unit}
+                      {formatMeasuringUnitQuantities(item.quantities)}
                     </p>
                     <p className="text-xs text-gray-500">
                       {item.type === "inward" ? "In" : "Out"}

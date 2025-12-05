@@ -60,7 +60,7 @@ export type MaterialType =
 
 export type StockType = "roll" | "batch" | "piece";
 
-export type MeasuringUnit = "metre" | "yard" | "kilogram" | "unit";
+export type MeasuringUnit = "metre" | "yard" | "kilogram" | "unit" | "piece";
 
 export type StockUnitStatus = "full" | "partial" | "empty" | "removed";
 

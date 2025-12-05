@@ -65,7 +65,7 @@ export function PartnersSection({
             {newButtonLabel}
           </Button>
         </div>
-        <div className="px-1">
+        <div className="px-2">
           <div className="grid grid-cols-4 md:grid-cols-6">
             {displayPartners.map((partner) => (
               <PartnerButton

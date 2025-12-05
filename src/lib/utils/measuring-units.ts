@@ -1,4 +1,5 @@
-import type { MeasuringUnit } from "@/types/database/enums";
+import type { MeasuringUnit, StockType } from "@/types/database/enums";
+import { Product } from "@/types/products.types";
 
 /**
  * Map measuring units to their abbreviated forms
@@ -8,7 +9,24 @@ export const MEASURING_UNIT_ABBREVIATIONS: Record<MeasuringUnit, string> = {
   yard: "yd",
   kilogram: "kg",
   unit: "unit",
+  piece: "pc",
 };
+/**
+ * Get the abbreviated form of a measuring unit
+ */
+export function getMeasuringUnit(
+  product: Pick<Product, "stock_type" | "measuring_unit"> | null,
+): MeasuringUnit {
+  const stock_type = (product?.stock_type || "piece") as StockType;
+  const measuring_unit = (product?.measuring_unit || "piece") as MeasuringUnit;
+  if (stock_type === "piece") {
+    return "piece";
+  } else if (stock_type === "batch") {
+    return "unit";
+  } else {
+    return measuring_unit as MeasuringUnit;
+  }
+}
 
 /**
  * Get the abbreviated form of a measuring unit
@@ -62,18 +80,34 @@ export function aggregateQuantitiesByUnit(
 }
 
 /**
- * Format a Map of unit quantities as a string with "+" separator
- * Example: "100 m + 50 kg + 20 pc"
- * @param unitMap - Map of unit -> quantity
- * @param hideZeros - Whether to hide units with zero quantity (default: true)
+ * Format quantities Map with full MeasuringUnit enum keys
+ * Converts to abbreviated display format: "100 mtr + 50 kg"
  */
-export function formatQuantitiesByUnit(
-  unitMap: Map<string, number>,
-  hideZeros: boolean = true,
+export function formatMeasuringUnitQuantities(
+  unitMap: Map<MeasuringUnit, number>,
 ): string {
-  const entries = Array.from(unitMap.entries())
-    .filter(([_, qty]) => !hideZeros || qty > 0) // Hide zero values if requested
-    .map(([unit, qty]) => `${qty.toFixed(0)} ${unit}`);
+  const unitOrder: MeasuringUnit[] = [
+    "metre",
+    "yard",
+    "kilogram",
+    "unit",
+    "piece",
+  ];
 
-  return entries.length > 0 ? entries.join(" + ") : "0";
+  const sortedUnits = Array.from(unitMap.entries())
+    .filter(([_, qty]) => qty > 0)
+    .sort(([a], [b]) => {
+      const indexA = unitOrder.indexOf(a);
+      const indexB = unitOrder.indexOf(b);
+      return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+    });
+
+  const formatted = sortedUnits
+    .map(
+      ([unit, qty]) =>
+        `${qty.toFixed(0)} ${getMeasuringUnitAbbreviation(unit)}`,
+    )
+    .join(" + ");
+
+  return formatted || "0";
 }

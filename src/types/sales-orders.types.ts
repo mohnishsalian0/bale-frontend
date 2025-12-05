@@ -35,7 +35,12 @@ export interface SalesOrderFilters extends Record<string, unknown> {
 export interface SalesOrderItemListView extends SalesOrderItem {
   product: Pick<
     Product,
-    "id" | "name" | "measuring_unit" | "product_images" | "sequence_number"
+    | "id"
+    | "name"
+    | "stock_type"
+    | "measuring_unit"
+    | "product_images"
+    | "sequence_number"
   > | null;
 }
 
@@ -69,6 +74,7 @@ export interface SalesOrderItemDetailView extends SalesOrderItem {
         Product,
         | "id"
         | "name"
+        | "stock_type"
         | "measuring_unit"
         | "product_images"
         | "sequence_number"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { IconSearch, IconAlertTriangle } from "@tabler/icons-react";
@@ -24,7 +24,11 @@ import {
 } from "@/lib/query/hooks/products";
 import { useSession } from "@/contexts/session-context";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
-import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
+import {
+  formatMeasuringUnitQuantities,
+  getMeasuringUnit,
+  getMeasuringUnitAbbreviation,
+} from "@/lib/utils/measuring-units";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import { Toggle } from "@/components/ui/toggle";
 import { GlowIndicator } from "@/components/ui/glow-indicator";
@@ -99,6 +103,40 @@ export default function InventoryPage() {
     return true;
   });
 
+  // Calculate stats from filtered products
+  const stats = useMemo(() => {
+    const availableProducts = filteredProducts.filter(
+      (p) => (p.inventory?.in_stock_quantity ?? 0) > 0,
+    ).length;
+
+    const liveProducts = filteredProducts.filter(
+      (p) => p.show_on_catalog,
+    ).length;
+
+    const lowStockProducts = filteredProducts.filter(
+      (p) =>
+        p.min_stock_alert &&
+        (p.min_stock_threshold ?? 0) >= (p.inventory?.in_stock_quantity ?? 0),
+    ).length;
+
+    // Aggregate quantities by measuring unit
+    const unitMap = new Map<MeasuringUnit, number>();
+    filteredProducts.forEach((product) => {
+      const unit = getMeasuringUnit(product);
+      const quantity = product.inventory?.in_stock_quantity ?? 0;
+      unitMap.set(unit, (unitMap.get(unit) || 0) + quantity);
+    });
+
+    const quantitiesByUnit = formatMeasuringUnitQuantities(unitMap);
+
+    return {
+      availableProducts,
+      liveProducts,
+      lowStockProducts,
+      quantitiesByUnit,
+    };
+  }, [filteredProducts]);
+
   // Loading state
   if (loading) {
     return <LoadingState message="Loading inventory..." />;
@@ -125,14 +163,18 @@ export default function InventoryPage() {
           <div className="flex flex-col gap-1">
             <h1 className="text-3xl font-bold text-gray-900">Inventory</h1>
             <p className="text-sm text-gray-500">
-              <span>3000 items • </span>
+              <span>{stats.availableProducts} available products</span>
+              <span> • </span>
               <span className="text-teal-700 font-medium">
-                200 order request
+                {stats.liveProducts} live products
               </span>
               <span> • </span>
               <span className="text-yellow-700 font-medium">
-                5 low stock products
+                {stats.lowStockProducts} low stock
               </span>
+            </p>
+            <p className="text-sm text-gray-500">
+              {stats.quantitiesByUnit} in stock
             </p>
           </div>
 

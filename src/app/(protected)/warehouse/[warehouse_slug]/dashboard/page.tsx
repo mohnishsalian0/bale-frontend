@@ -119,7 +119,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-4 md:grid-cols-6 px-1 mt-6">
+      <div className="grid grid-cols-4 md:grid-cols-6 px-2 mt-6">
         {quickActions.map((action) => (
           <QuickActionButton
             key={action.label}
