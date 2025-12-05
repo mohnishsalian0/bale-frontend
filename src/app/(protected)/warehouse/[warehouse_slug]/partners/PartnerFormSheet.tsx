@@ -157,7 +157,8 @@ export function PartnerFormSheet({
         handleCancel();
       },
       onError: (error: Error) => {
-        toast.error(error.message);
+        console.error("Failed to create partner: ", error.message);
+        toast.error("Failed to create partner");
       },
     };
 
@@ -308,7 +309,7 @@ export function PartnerFormSheet({
 
               {/* Partner Type */}
               <div className="flex flex-col gap-2">
-                <Label>Partner type</Label>
+                <Label required>Partner type</Label>
                 <RadioGroup
                   value={formData.partnerType}
                   onValueChange={(value) =>
@@ -360,10 +361,12 @@ export function PartnerFormSheet({
 
               {/* Phone Number */}
               <InputWithIcon
-                icon={<IconPhone />}
                 type="tel"
-                placeholder="Phone number"
+                label="Phone number"
+                icon={<IconPhone />}
+                placeholder="Enter phone number"
                 value={formData.phoneNumber}
+                required
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
