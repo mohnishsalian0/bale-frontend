@@ -204,7 +204,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 p-4 overflow-x-auto shrink-0">
+      <div className="flex gap-3 px-4 py-6 overflow-x-auto shrink-0">
         <Toggle
           aria-label="Low stock filter"
           variant="outline"
@@ -255,7 +255,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Product List */}
-      <div className="flex flex-col gap-3 p-4 pt-0">
+      <div>
         {filteredProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-gray-600 mb-2">No products found</p>
@@ -281,7 +281,7 @@ export default function InventoryPage() {
             return (
               <Card
                 key={product.id}
-                className="relative border-2 border-border shadow-none bg-transparent cursor-pointer hover:bg-gray-100 transition-colors"
+                className="relative rounded-none border-x-0 border-b-0 shadow-none bg-transparent cursor-pointer hover:bg-gray-100 transition-colors"
                 onClick={() =>
                   router.push(
                     `/warehouse/${warehouse.slug}/inventory/${product.sequence_number}`,
@@ -322,7 +322,7 @@ export default function InventoryPage() {
                     </p>
                   </div>
 
-                  <div className="absolute top-4 left-4">
+                  <div className="absolute top-2 left-2">
                     <GlowIndicator
                       size="sm"
                       isActive={!!product.show_on_catalog}

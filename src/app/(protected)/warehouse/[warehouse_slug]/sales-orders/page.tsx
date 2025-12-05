@@ -163,13 +163,23 @@ export default function OrdersPage() {
         groups[monthKey].orders.push(order);
       });
 
-      const monthGroups = Object.values(groups).sort((a, b) => {
-        const [monthA, yearA] = a.monthYear.split(" ");
-        const [monthB, yearB] = b.monthYear.split(" ");
-        const dateA = new Date(`${monthA} 1, ${yearA}`);
-        const dateB = new Date(`${monthB} 1, ${yearB}`);
-        return dateB.getTime() - dateA.getTime();
-      });
+      const monthGroups = Object.values(groups)
+        .map((group) => ({
+          ...group,
+          orders: group.orders.sort((a, b) => {
+            // Sort orders within each month from newest to oldest
+            return (
+              new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+            );
+          }),
+        }))
+        .sort((a, b) => {
+          const [monthA, yearA] = a.monthYear.split(" ");
+          const [monthB, yearB] = b.monthYear.split(" ");
+          const dateA = new Date(`${monthA} 1, ${yearA}`);
+          const dateB = new Date(`${monthB} 1, ${yearB}`);
+          return dateB.getTime() - dateA.getTime();
+        });
 
       // Calculate pending orders stats (approval_pending OR in_progress)
       const pendingOrders = orders.filter(
@@ -302,7 +312,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 p-4 overflow-x-auto shrink-0">
+      <div className="flex gap-3 px-4 py-6 overflow-x-auto shrink-0">
         {/* Status Filter */}
         <Select value={selectedStatus} onValueChange={setSelectedStatus}>
           <SelectTrigger className="flex-shrink-0 h-10 max-w-34">

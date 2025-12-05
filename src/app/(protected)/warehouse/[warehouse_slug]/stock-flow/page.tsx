@@ -319,7 +319,7 @@ export default function StockFlowPage() {
   return (
     <div className="relative flex flex-col flex-1 overflow-y-auto">
       {/* Header */}
-      <div className="flex items-end justify-between gap-4 p-4">
+      <div className="flex items-end justify-between gap-4 p-4 pb-0">
         <div className="flex-1 flex flex-col gap-2">
           <div className="flex flex-col gap-1">
             <h1 className="text-3xl font-bold text-gray-900">Stock flow</h1>
@@ -363,7 +363,7 @@ export default function StockFlowPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4 px-4 py-3">
+      <div className="flex gap-4 px-4 py-6">
         {/* Tab Pills */}
         <TabPills
           options={[
@@ -442,14 +442,16 @@ export default function StockFlowPage() {
                       );
                     }
                   }}
-                  className="flex items-center gap-4 px-4 py-3 border-t border-dashed border-gray-300 hover:bg-gray-100 hover:cursor-pointer transition-colors"
+                  className="flex items-center gap-4 p-4 border-t border-dashed border-gray-300 hover:bg-gray-100 hover:cursor-pointer transition-colors"
                 >
-                  <div className="flex-1 flex flex-col items-start">
+                  <div className="flex-1 text-left">
                     <p className="text-base font-medium text-gray-900">
                       {item.productName}
                     </p>
-                    <p className="text-xs text-gray-500">{item.partnerName}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 mt-1">
+                      {item.partnerName}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
                       Goods {item.type} on {formatDate(item.date)}
                     </p>
                   </div>
