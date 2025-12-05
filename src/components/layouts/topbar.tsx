@@ -15,6 +15,7 @@ import { getInitials } from "@/lib/utils/initials";
 import ImageWrapper from "../ui/image-wrapper";
 import Logo from "../icons/Logo";
 import { useIsMobile } from "@/hooks/use-mobile";
+import Link from "next/link";
 
 interface TopBarProps {
   onWarehouseClick?: () => void;
@@ -53,9 +54,12 @@ export default function TopBar({
         {/* <SidebarTrigger className='size-10 text-gray-700' /> */}
         <div className="flex items-center gap-2">
           {isMobile && (
-            <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg">
+            <Link
+              href={`/warehouse/${warehouse.slug}/dashboard`}
+              className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg"
+            >
               <Logo className="size-8" />
-            </div>
+            </Link>
           )}
 
           {/* Warehouse Selector */}

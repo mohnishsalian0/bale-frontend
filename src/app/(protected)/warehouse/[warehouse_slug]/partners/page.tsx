@@ -97,14 +97,14 @@ export default function PartnersPage() {
         <div className="flex-1">
           <div className="mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Partners</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              <span className="text-teal-700 font-medium">₹40,000 sales</span>
-              {" • "}
-              <span className="text-yellow-700 font-medium">
-                ₹20,000 purchase
-              </span>
-              {" in past month"}
-            </p>
+            {/* <p className="text-sm text-gray-500 mt-1"> */}
+            {/*   <span className="text-teal-700 font-medium">₹40,000 sales</span> */}
+            {/*   {" • "} */}
+            {/*   <span className="text-yellow-700 font-medium"> */}
+            {/*     ₹20,000 purchase */}
+            {/*   </span> */}
+            {/*   {" in past month"} */}
+            {/* </p> */}
           </div>
 
           {/* Search */}

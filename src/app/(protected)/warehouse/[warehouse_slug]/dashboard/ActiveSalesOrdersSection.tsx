@@ -107,7 +107,7 @@ export function ActiveSalesOrdersSection({
                       </div>
 
                       {/* Subtexts spanning full width */}
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 mt-2">
                         {getProductSummary(products)}
                       </p>
                       <div className="flex items-center justify-between mt-1">
