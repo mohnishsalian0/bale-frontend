@@ -70,7 +70,7 @@ export function LowStockProductsSection({
                 <div className="flex flex-col items-end gap-1">
                   <div className="flex items-center gap-1">
                     <IconAlertTriangle className="size-4 text-yellow-700" />
-                    <p className="text-base font-bold text-yellow-700">
+                    <p className="text-sm font-bold text-yellow-700">
                       {product.inventory.in_stock_quantity}{" "}
                       {getMeasuringUnitAbbreviation(
                         product.measuring_unit as MeasuringUnit | null,

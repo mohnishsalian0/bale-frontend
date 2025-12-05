@@ -73,7 +73,7 @@ export function formatQuantitiesByUnit(
 ): string {
   const entries = Array.from(unitMap.entries())
     .filter(([_, qty]) => !hideZeros || qty > 0) // Hide zero values if requested
-    .map(([unit, qty]) => `${qty.toFixed(2)} ${unit}`);
+    .map(([unit, qty]) => `${qty.toFixed(0)} ${unit}`);
 
   return entries.length > 0 ? entries.join(" + ") : "0";
 }

@@ -271,10 +271,7 @@ export default function InventoryPage() {
                   {/* Quantity */}
                   <div className="flex flex-inline gap-1 items-center">
                     {lowStock && (
-                      <IconAlertTriangle
-                        size="16"
-                        className="text-yellow-700"
-                      />
+                      <IconAlertTriangle className="size-4 text-yellow-700" />
                     )}
                     <p
                       className={`text-sm font-bold ${lowStock ? "text-yellow-700" : "text-gray-900"}`}
