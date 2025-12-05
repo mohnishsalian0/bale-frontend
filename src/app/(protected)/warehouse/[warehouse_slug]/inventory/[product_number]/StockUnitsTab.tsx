@@ -216,8 +216,8 @@ export function StockUnitsTab({ stockUnits, product }: StockUnitsTabProps) {
                       <p
                         className={`text-xs mt-0.5 ${
                           unit.qr_generated_at
-                            ? "text-green-700"
-                            : "text-gray-500"
+                            ? "text-gray-500"
+                            : "text-green-700"
                         }`}
                         title={
                           unit.qr_generated_at

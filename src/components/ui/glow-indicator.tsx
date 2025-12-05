@@ -32,9 +32,11 @@ export function GlowIndicator({
       <div
         className={variants({ size, isActive })}
         style={{
-          boxShadow: isActive
-            ? "0 0 12px 4px rgba(34, 197, 94, 0.6)"
-            : "0 0 8px 2px rgba(156, 163, 175, 0.4)",
+          boxShadow: !isActive
+            ? "0 0 8px 2px rgba(156, 163, 175, 0.4)"
+            : size === "sm"
+              ? "0 0 8px 2px rgba(34, 197, 94, 0.6)"
+              : "0 0 12px 4px rgba(34, 197, 94, 0.6)",
         }}
       />
     </div>

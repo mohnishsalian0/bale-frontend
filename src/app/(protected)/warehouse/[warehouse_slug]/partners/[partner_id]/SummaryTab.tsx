@@ -4,9 +4,9 @@ import {
   IconPhone,
   IconMail,
   IconMapPin,
-  IconReceipt,
   IconNotes,
   IconUser,
+  IconCurrencyRupee,
 } from "@tabler/icons-react";
 import { Section } from "@/components/layouts/section";
 import { getFormattedAddress } from "@/lib/utils/partner";
@@ -90,7 +90,7 @@ export function SummaryTab({ partner, onEdit }: SummaryTabProps) {
         title="Financial information"
         subtitle=""
         onEdit={onEdit}
-        icon={() => <IconReceipt className="size-5" />}
+        icon={() => <IconCurrencyRupee className="size-5" />}
       >
         <div className="space-y-3">
           {/* GST Number */}

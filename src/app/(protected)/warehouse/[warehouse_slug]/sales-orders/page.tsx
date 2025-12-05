@@ -260,10 +260,10 @@ export default function OrdersPage() {
     <div className="relative flex flex-col flex-1 overflow-y-auto">
       {/* Header */}
       <div className="flex items-end justify-between gap-4 p-4 pb-0">
-        <div className="flex-1 flex flex-col gap-2">
-          <div className="flex flex-col gap-1">
+        <div className="flex-1">
+          <div className="mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Sales orders</h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 mt-1">
               <span className="text-teal-700 font-medium">
                 {pendingOrdersCount}
               </span>

@@ -7,11 +7,11 @@ import {
   IconMail,
   IconWorld,
   IconMapPin,
-  IconReceipt,
   IconPencil,
   IconBuilding,
   IconPlus,
   IconBuildingWarehouse,
+  IconCurrencyRupee,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -181,7 +181,7 @@ export default function CompanyPage() {
             <Section
               title="Financial information"
               subtitle="Tax and business registration details"
-              icon={() => <IconReceipt className="size-5" />}
+              icon={() => <IconCurrencyRupee className="size-5" />}
             >
               <div className="space-y-3">
                 {company.gst_number && (
