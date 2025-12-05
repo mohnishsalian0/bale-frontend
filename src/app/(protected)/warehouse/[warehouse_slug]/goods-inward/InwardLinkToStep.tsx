@@ -41,8 +41,10 @@ export function InwardLinkToStep({
   const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch sales orders for sales return selection
-  const { data: salesOrders = [], isLoading: salesOrdersLoading } =
+  const { data: salesOrdersResponse, isLoading: salesOrdersLoading } =
     useSalesOrders(warehouseId, { status: ["in_progress"] });
+
+  const salesOrders = salesOrdersResponse?.data || [];
 
   // Filter sales orders based on search
   const filteredSalesOrders = salesOrders.filter((order) => {

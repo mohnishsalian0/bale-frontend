@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
@@ -70,11 +70,14 @@ export function useProductByNumber(sequenceNumber: string | null) {
 export function useProductsWithInventory(
   warehouseId: string | null,
   filters?: ProductFilters,
+  page: number = 1,
+  pageSize: number = 25,
 ) {
   return useQuery({
-    queryKey: queryKeys.products.withInventory(warehouseId || "", filters),
-    queryFn: () => getProductsWithInventory(warehouseId!, filters),
+    queryKey: queryKeys.products.withInventory(warehouseId || "", filters, page),
+    queryFn: () => getProductsWithInventory(warehouseId!, filters, page, pageSize),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+    placeholderData: keepPreviousData,
     enabled: !!warehouseId,
   });
 }

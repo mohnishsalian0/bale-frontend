@@ -1,6 +1,11 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
@@ -26,16 +31,19 @@ import {
  * - All orders: useSalesOrders(warehouseId)
  * - Pending orders: useSalesOrders(warehouseId, { status: 'approval_pending' })
  * - Active orders: useSalesOrders(warehouseId, { status: ['approval_pending', 'in_progress'] })
- * - Recent orders: useSalesOrders(warehouseId, { limit: 5 })
+ * - Paginated orders: useSalesOrders(warehouseId, filters, page, pageSize)
  */
 export function useSalesOrders(
   warehouseId: string | null,
   filters?: SalesOrderFilters,
+  page: number = 1,
+  pageSize: number = 25,
 ) {
   return useQuery({
-    queryKey: queryKeys.salesOrders.all(warehouseId, filters),
-    queryFn: () => getSalesOrders(warehouseId, filters),
+    queryKey: queryKeys.salesOrders.all(warehouseId, filters, page),
+    queryFn: () => getSalesOrders(warehouseId, filters, page, pageSize),
     ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
+    placeholderData: keepPreviousData,
   });
 }
 

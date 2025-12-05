@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { IconSearch } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PaginationWrapper } from "@/components/ui/pagination-wrapper";
 import { Fab } from "@/components/ui/fab";
 import { SalesStatusBadge } from "@/components/ui/sales-status-badge";
 import { LoadingState } from "@/components/layouts/loading-state";
@@ -22,6 +23,7 @@ import { useSalesOrders } from "@/lib/query/hooks/sales-orders";
 import { usePartners } from "@/lib/query/hooks/partners";
 import { useProducts } from "@/lib/query/hooks/products";
 import { getPartnerName } from "@/lib/utils/partner";
+import { formatMonthHeader } from "@/lib/utils/date";
 import {
   calculateCompletionPercentage,
   getOrderDisplayStatus,
@@ -60,18 +62,23 @@ interface MonthGroup {
 
 export default function OrdersPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { warehouse } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState("all");
   const [selectedCustomer, setSelectedCustomer] = useState("all");
 
-  // Fetch orders, customers, and products using TanStack Query
+  // Get current page from URL (default to 1)
+  const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  const PAGE_SIZE = 25;
+
+  // Fetch orders, customers, and products using TanStack Query with pagination
   const {
-    data: orders = [],
+    data: ordersResponse,
     isLoading: ordersLoading,
     isError: ordersError,
-  } = useSalesOrders(warehouse.id);
+  } = useSalesOrders(warehouse.id, {}, currentPage, PAGE_SIZE);
   const { data: customers = [], isLoading: customersLoading } = usePartners({
     partner_type: "customer",
   });
@@ -81,6 +88,22 @@ export default function OrdersPage() {
 
   const loading = ordersLoading || customersLoading || productsLoading;
   const error = ordersError;
+
+  const orders = ordersResponse?.data || [];
+  const totalCount = ordersResponse?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (currentPage !== 1) {
+      router.push(`/warehouse/${warehouse.slug}/sales-orders?page=1`);
+    }
+  }, [searchQuery, selectedStatus, selectedProduct, selectedCustomer]);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    router.push(`/warehouse/${warehouse.slug}/sales-orders?page=${page}`);
+  };
 
   // Transform products and customers for filters
   const availableProducts = useMemo(
@@ -149,13 +172,12 @@ export default function OrdersPage() {
       orderItems.forEach((order) => {
         const date = new Date(order.orderDate);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-        const monthName = date.toLocaleString("en-US", { month: "long" });
-        const year = date.getFullYear();
+        const monthDisplay = formatMonthHeader(date);
 
         if (!groups[monthKey]) {
           groups[monthKey] = {
-            month: monthName,
-            monthYear: `${monthName} ${year}`,
+            month: monthDisplay,
+            monthYear: monthKey,
             orders: [],
           };
         }
@@ -439,6 +461,13 @@ export default function OrdersPage() {
           ))
         )}
       </div>
+
+      {/* Pagination */}
+      <PaginationWrapper
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
 
       {/* Floating Action Button */}
       <Fab

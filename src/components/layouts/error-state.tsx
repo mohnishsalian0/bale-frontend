@@ -23,12 +23,16 @@ export function ErrorState({
         height={200}
         priority
       />
-      <div>
+      <div className="w-full flex flex-col items-center">
         <h2 className="text-xl font-semibold text-gray-900 text-center">
           {title}
         </h2>
         <p className="text-sm text-gray-500 text-center mt-1">{message}</p>
-        {onRetry && <Button onClick={onRetry}>{actionText}</Button>}
+        {onRetry && (
+          <Button className="mx-auto mt-4" onClick={onRetry}>
+            {actionText}
+          </Button>
+        )}
       </div>
     </div>
   );

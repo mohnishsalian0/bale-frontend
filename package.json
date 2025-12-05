@@ -13,7 +13,8 @@
     "db:types": "npx supabase gen types typescript --local > src/types/database/supabase.ts",
     "setup:test": "npx tsx scripts/setup.ts local",
     "setup:staging": "npx tsx scripts/setup.ts staging",
-    "setup:company": "npx tsx scripts/setup-production-company.ts"
+    "setup:company": "npx tsx scripts/setup-production-company.ts",
+    "load-setup:test": "npx tsx scripts/load-setup.ts local"
   },
   "repository": {
     "type": "git",

@@ -34,8 +34,14 @@ export type {
 export async function getSalesOrders(
   warehouseId: string | null,
   filters?: SalesOrderFilters,
-): Promise<SalesOrderListView[]> {
+  page: number = 1,
+  pageSize: number = 25,
+): Promise<{ data: SalesOrderListView[]; totalCount: number }> {
   const supabase = createClient();
+
+  // Calculate pagination range
+  const offset = (page - 1) * pageSize;
+  const limit = pageSize;
 
   let query = supabase
     .from("sales_orders")
@@ -55,6 +61,7 @@ export async function getSalesOrders(
           )
         )
       `,
+      { count: "exact" },
     )
     .is("deleted_at", null);
 
@@ -77,17 +84,17 @@ export async function getSalesOrders(
   const ascending = filters?.order_direction !== "desc";
   query = query.order(orderBy, { ascending });
 
-  // Apply limit
-  if (filters?.limit) {
-    query = query.limit(filters.limit);
-  }
+  // Apply pagination (ignore filters.limit if provided, use page-based pagination)
+  query = query.range(offset, offset + limit - 1);
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) throw error;
-  if (!data) throw new Error("No data returned");
 
-  return data as SalesOrderListView[];
+  return {
+    data: (data as SalesOrderListView[]) || [],
+    totalCount: count || 0,
+  };
 }
 
 /**

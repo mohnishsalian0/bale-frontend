@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { IconSearch, IconAlertTriangle } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PaginationWrapper } from "@/components/ui/pagination-wrapper";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import ImageWrapper from "@/components/ui/image-wrapper";
@@ -35,6 +36,7 @@ import { GlowIndicator } from "@/components/ui/glow-indicator";
 
 export default function InventoryPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { warehouse } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
   const [lowStockFilter, setLowStockFilter] = useState<boolean>(false);
@@ -43,13 +45,22 @@ export default function InventoryPage() {
   const [tagFilter, setTagFilter] = useState<string>("all");
   const [showCreateProduct, setShowCreateProduct] = useState(false);
 
-  // Fetch products with inventory using TanStack Query
+  // Get current page from URL (default to 1)
+  const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  const PAGE_SIZE = 25;
+
+  // Fetch products with inventory using TanStack Query with pagination
   const {
-    data: productsData = [],
+    data: productsResponse,
     isLoading: productsLoading,
     isError: productsError,
     refetch: refetchProducts,
-  } = useProductsWithInventory(warehouse.id, { is_active: true });
+  } = useProductsWithInventory(
+    warehouse.id,
+    { is_active: true },
+    currentPage,
+    PAGE_SIZE,
+  );
   const {
     data: attributeLists,
     isLoading: attributesLoading,
@@ -63,6 +74,18 @@ export default function InventoryPage() {
   const colors = attributeLists?.colors || [];
   const tags = attributeLists?.tags || [];
 
+  const productsData = productsResponse?.data || [];
+  const totalCount = productsResponse?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (currentPage !== 1) {
+      router.push(`/warehouse/${warehouse.slug}/inventory?page=1`);
+    }
+  }, [searchQuery, lowStockFilter, materialFilter, colorFilter, tagFilter]);
+
+  // Client-side filtering for current page only
   const filteredProducts = productsData.filter((product) => {
     // Search filter
     const matchesSearch =
@@ -103,7 +126,7 @@ export default function InventoryPage() {
     return true;
   });
 
-  // Calculate stats from filtered products
+  // Calculate stats from current page filtered products
   const stats = useMemo(() => {
     const availableProducts = filteredProducts.filter(
       (p) => (p.inventory?.in_stock_quantity ?? 0) > 0,
@@ -137,6 +160,11 @@ export default function InventoryPage() {
     };
   }, [filteredProducts]);
 
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    router.push(`/warehouse/${warehouse.slug}/inventory?page=${page}`);
+  };
+
   // Loading state
   if (loading) {
     return <LoadingState message="Loading inventory..." />;
@@ -162,18 +190,18 @@ export default function InventoryPage() {
         <div className="flex-1">
           <div className="mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Inventory</h1>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm font-medium text-gray-500 mt-2">
               <span>{stats.availableProducts} available products</span>
               <span> • </span>
-              <span className="text-teal-700 font-medium">
+              <span className="text-teal-700">
                 {stats.liveProducts} live products
               </span>
               <span> • </span>
-              <span className="text-yellow-700 font-medium">
+              <span className="text-yellow-700">
                 {stats.lowStockProducts} low stock
               </span>
             </p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm font-medium text-gray-500 mt-1">
               {stats.quantitiesByUnit} in stock
             </p>
           </div>
@@ -255,7 +283,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Product List */}
-      <div>
+      <div className="flex-1">
         {filteredProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-gray-600 mb-2">No products found</p>
@@ -334,6 +362,13 @@ export default function InventoryPage() {
           })
         )}
       </div>
+
+      {/* Pagination */}
+      <PaginationWrapper
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
 
       {/* Floating Action Button */}
       <Fab

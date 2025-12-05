@@ -47,10 +47,12 @@ export default function CreateSalesOrderPage() {
   const [currentStep, setCurrentStep] = useState<FormStep>("products");
 
   // Fetch products and attributes using TanStack Query
-  const { data: productsData = [], isLoading: productsLoading } =
+  const { data: productsResponse, isLoading: productsLoading } =
     useProductsWithInventory(warehouse.id, { is_active: true });
   const { data: attributesData, isLoading: attributesLoading } =
     useProductAttributes();
+
+  const productsData = productsResponse?.data || [];
 
   // Sales order mutations
   const { create: createOrder } = useSalesOrderMutations(warehouse.id);

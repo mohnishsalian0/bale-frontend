@@ -112,3 +112,25 @@ export function formatExpiryDate(expiryDate: Date | string): {
 
   return { text: `Expires in ${diffDays} days`, status: "normal" };
 }
+
+/**
+ * Format month header for pagination month grouping
+ * Shows only month name if within 12 months from today, else "Month Year"
+ * Examples: "December" (recent), "December 2023" (older than 12 months)
+ */
+export function formatMonthHeader(date: Date | string): string {
+  const dateObj = typeof date === "string" ? new Date(date) : date;
+  const now = new Date();
+
+  // Calculate 12 months ago from today
+  const twelveMonthsAgo = new Date(now);
+  twelveMonthsAgo.setMonth(now.getMonth() - 12);
+
+  // If date is within 12 months, show only month name
+  if (dateObj >= twelveMonthsAgo) {
+    return format(dateObj, "MMMM");
+  }
+
+  // Otherwise, show "Month Year"
+  return format(dateObj, "MMMM yyyy");
+}

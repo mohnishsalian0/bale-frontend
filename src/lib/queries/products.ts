@@ -334,29 +334,40 @@ export async function getProductByNumber(
 export async function getProductsWithInventory(
   warehouseId: string,
   filters?: ProductFilters,
-): Promise<ProductWithInventoryListView[]> {
+  page: number = 1,
+  pageSize: number = 25,
+): Promise<{ data: ProductWithInventoryListView[]; totalCount: number }> {
   const supabase = createClient();
+
+  // Calculate pagination range
+  const offset = (page - 1) * pageSize;
+  const limit = pageSize;
 
   let query = supabase
     .from("products")
-    .select(PRODUCT_WITH_INVENTORY_LIST_VIEW_SELECT)
+    .select(PRODUCT_WITH_INVENTORY_LIST_VIEW_SELECT, { count: "exact" })
     .eq("product_inventory_aggregates.warehouse_id", warehouseId)
     .is("deleted_at", null)
-    .order("name", { ascending: true });
+    .order("name", { ascending: true })
+    .range(offset, offset + limit - 1);
 
-  // Apply is active
-  if (filters?.is_active) {
-    query = query.is("is_active", filters.is_active);
+  // Apply is active filter
+  if (filters?.is_active !== undefined) {
+    query = query.eq("is_active", filters.is_active);
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) throw error;
-  if (!data) return [];
 
-  return ((data as unknown as ProductWithInventoryListViewRaw[]) || []).map(
+  const transformedData = ((data as unknown as ProductWithInventoryListViewRaw[]) || []).map(
     transformProductWithInventoryListView,
   );
+
+  return {
+    data: transformedData,
+    totalCount: count || 0,
+  };
 }
 
 /**

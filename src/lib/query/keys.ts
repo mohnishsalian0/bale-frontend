@@ -26,8 +26,8 @@ export const queryKeys = {
     byId: (productId: string) => ["products", "detail", productId] as const,
     byNumber: (sequenceNumber: string) =>
       ["products", "sequence", sequenceNumber] as const,
-    withInventory: (warehouseId: string, filters?: ProductFilters) =>
-      ["products", "inventory", warehouseId, filters] as const,
+    withInventory: (warehouseId: string, filters?: ProductFilters, page?: number) =>
+      ["products", "inventory", warehouseId, filters, page] as const,
     withInventoryById: (productId: string, warehouseId: string) =>
       ["products", "inventory", "detail", productId, warehouseId] as const,
     withInventoryByNumber: (sequenceNumber: string, warehouseId: string) =>
@@ -49,8 +49,8 @@ export const queryKeys = {
 
   // Sales Orders
   salesOrders: {
-    all: (warehouseId: string | null, filters?: Record<string, unknown>) =>
-      ["sales-orders", warehouseId, filters] as const,
+    all: (warehouseId: string | null, filters?: Record<string, unknown>, page?: number) =>
+      ["sales-orders", warehouseId, filters, page] as const,
     detail: (sequenceNumber: string) =>
       ["sales-orders", "detail", sequenceNumber] as const,
     dashboard: (warehouseId: string) =>
@@ -77,10 +77,10 @@ export const queryKeys = {
 
   // Stock Flow (Goods Inward/Outward)
   stockFlow: {
-    inwards: (warehouseId: string, filters?: Record<string, unknown>) =>
-      ["stock-flow", "inwards", warehouseId, filters] as const,
-    outwards: (warehouseId: string, filters?: Record<string, unknown>) =>
-      ["stock-flow", "outwards", warehouseId, filters] as const,
+    inwards: (warehouseId: string, filters?: Record<string, unknown>, page?: number) =>
+      ["stock-flow", "inwards", warehouseId, filters, page] as const,
+    outwards: (warehouseId: string, filters?: Record<string, unknown>, page?: number) =>
+      ["stock-flow", "outwards", warehouseId, filters, page] as const,
     inwardDetail: (sequenceNumber: string) =>
       ["stock-flow", "inward", "detail", sequenceNumber] as const,
     outwardDetail: (sequenceNumber: string) =>

@@ -43,8 +43,10 @@ export function OutwardLinkToStep({
   const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch all sales orders for the warehouse
-  const { data: allSalesOrders = [], isLoading: salesOrdersLoading } =
+  const { data: salesOrdersResponse, isLoading: salesOrdersLoading } =
     useSalesOrders(warehouseId, { status: ["in_progress"] });
+
+  const allSalesOrders = salesOrdersResponse?.data || [];
 
   // Filter sales orders by selected partner and search query
   const filteredSalesOrders = allSalesOrders.filter((order) => {

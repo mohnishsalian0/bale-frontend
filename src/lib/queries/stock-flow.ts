@@ -163,8 +163,14 @@ function transformOutwardDetailView(
 export async function getGoodsInwards(
   warehouseId: string,
   filters?: InwardFilters,
-): Promise<InwardWithStockUnitListView[]> {
+  page: number = 1,
+  pageSize: number = 25,
+): Promise<{ data: InwardWithStockUnitListView[]; totalCount: number }> {
   const supabase = createClient();
+
+  // Calculate pagination range
+  const offset = (page - 1) * pageSize;
+  const limit = pageSize;
 
   let query = supabase
     .from("goods_inwards")
@@ -177,9 +183,11 @@ export async function getGoodsInwards(
         initial_quantity
       )
     `,
+      { count: "exact" }
     )
     .eq("warehouse_id", warehouseId)
-    .order("inward_date", { ascending: false });
+    .order("inward_date", { ascending: false })
+    .range(offset, offset + limit - 1);
 
   // Apply filters
   if (filters?.partner_id) {
@@ -194,18 +202,23 @@ export async function getGoodsInwards(
     query = query.lte("inward_date", filters.date_to);
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) {
     console.error("Error fetching goods inwards:", error);
     throw error;
   }
 
-  return (
+  const transformedData = (
     (data as unknown as InwardWithStockUnitListViewRaw[])?.map(
       transformInwardWithStockUnitListView,
     ) || []
   );
+
+  return {
+    data: transformedData,
+    totalCount: count || 0,
+  };
 }
 
 /**
@@ -214,8 +227,14 @@ export async function getGoodsInwards(
 export async function getGoodsOutwards(
   warehouseId: string,
   filters?: OutwardFilters,
-): Promise<OutwardWithOutwardItemListView[]> {
+  page: number = 1,
+  pageSize: number = 25,
+): Promise<{ data: OutwardWithOutwardItemListView[]; totalCount: number }> {
   const supabase = createClient();
+
+  // Calculate pagination range
+  const offset = (page - 1) * pageSize;
+  const limit = pageSize;
 
   let query = supabase
     .from("goods_outwards")
@@ -230,9 +249,11 @@ export async function getGoodsOutwards(
         )
       )
     `,
+      { count: "exact" }
     )
     .eq("warehouse_id", warehouseId)
-    .order("outward_date", { ascending: false });
+    .order("outward_date", { ascending: false })
+    .range(offset, offset + limit - 1);
 
   // Apply filters
   if (filters?.partner_id) {
@@ -247,18 +268,23 @@ export async function getGoodsOutwards(
     query = query.lte("outward_date", filters.date_to);
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) {
     console.error("Error fetching goods outwards:", error);
     throw error;
   }
 
-  return (
+  const transformedData = (
     (data as unknown as OutwardWithOutwardItemListViewRaw[])?.map(
       transformOutwardWithItemListView,
     ) || []
   );
+
+  return {
+    data: transformedData,
+    totalCount: count || 0,
+  };
 }
 
 /**

@@ -53,7 +53,7 @@ export function useDashboardData(warehouseId: string) {
 
   return {
     data: {
-      salesOrders: salesOrders.data || [],
+      salesOrders: salesOrders.data?.data || [],
       lowStockProducts: lowStock.data || [],
       pendingQRProducts: pendingQR.data || [],
       recentCustomers: recentCustomers.data || [],

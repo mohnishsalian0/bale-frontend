@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { IconSearch } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import IconGoodsInward from "@/components/icons/IconGoodsInward";
 import IconGoodsOutward from "@/components/icons/IconGoodsOutward";
+import { PaginationWrapper } from "@/components/ui/pagination-wrapper";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
@@ -30,6 +31,7 @@ import {
   getMeasuringUnit,
 } from "@/lib/utils/measuring-units";
 import { getPartnerName } from "@/lib/utils/partner";
+import { formatMonthHeader } from "@/lib/utils/date";
 import type { MeasuringUnit } from "@/types/database/enums";
 import {
   useGoodsInwards,
@@ -59,30 +61,72 @@ interface MonthGroup {
 
 export default function StockFlowPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { warehouse } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<
-    "all" | "outward" | "inward"
-  >("all");
+    "outward" | "inward"
+  >("inward");
   const [selectedPartner, setSelectedPartner] = useState("all");
 
-  // Fetch data using TanStack Query
+  // Get current page from URL (default to 1)
+  const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  const PAGE_SIZE = 25;
+
+  // Determine which view is active
+  const isInwardView = selectedFilter === "inward";
+
+  // Fetch data based on selected filter (only one type at a time)
+  // Use 'enabled' to prevent the unused query from running
   const {
-    data: inwards = [],
+    data: inwardsResponse,
     isLoading: inwardsLoading,
     isError: inwardsError,
     refetch: refetchInwards,
-  } = useGoodsInwards(warehouse.id);
+  } = useGoodsInwards(
+    warehouse.id,
+    {},
+    isInwardView ? currentPage : 1,
+    PAGE_SIZE,
+  );
   const {
-    data: outwards = [],
+    data: outwardsResponse,
     isLoading: outwardsLoading,
     isError: outwardsError,
     refetch: refetchOutwards,
-  } = useGoodsOutwards(warehouse.id);
+  } = useGoodsOutwards(
+    warehouse.id,
+    {},
+    !isInwardView ? currentPage : 1,
+    PAGE_SIZE,
+  );
   const { data: partners = [], isLoading: partnersLoading } = usePartners();
 
-  const loading = inwardsLoading || outwardsLoading || partnersLoading;
-  const error = inwardsError || outwardsError;
+  // Use only the selected filter's data
+  const loading = isInwardView
+    ? inwardsLoading || partnersLoading
+    : outwardsLoading || partnersLoading;
+  const error = isInwardView ? inwardsError : outwardsError;
+
+  const inwards = isInwardView ? inwardsResponse?.data || [] : [];
+  const outwards = isInwardView ? [] : outwardsResponse?.data || [];
+
+  const totalCount = isInwardView
+    ? inwardsResponse?.totalCount || 0
+    : outwardsResponse?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (currentPage !== 1) {
+      router.push(`/warehouse/${warehouse.slug}/stock-flow?page=1`);
+    }
+  }, [searchQuery, selectedFilter, selectedPartner]);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    router.push(`/warehouse/${warehouse.slug}/stock-flow?page=${page}`);
+  };
 
   // Transform partners for filter dropdown
   const availablePartners = useMemo(() => {
@@ -192,13 +236,12 @@ export default function StockFlowPage() {
     allItems.forEach((item) => {
       const date = new Date(item.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      const monthName = date.toLocaleString("en-US", { month: "long" });
-      const year = date.getFullYear();
+      const monthDisplay = formatMonthHeader(date);
 
       if (!groups[monthKey]) {
         groups[monthKey] = {
-          month: monthName,
-          monthYear: `${monthName} ${year}`,
+          month: monthDisplay,
+          monthYear: monthKey,
           inCount: new Map<MeasuringUnit, number>(),
           outCount: new Map<MeasuringUnit, number>(),
           items: [],
@@ -220,11 +263,8 @@ export default function StockFlowPage() {
     });
 
     const sortedGroups = Object.values(groups).sort((a, b) => {
-      const [yearA, monthA] = a.monthYear.split(" ");
-      const [yearB, monthB] = b.monthYear.split(" ");
-      const dateA = new Date(`${monthA} 1, ${yearA}`);
-      const dateB = new Date(`${monthB} 1, ${yearB}`);
-      return dateB.getTime() - dateA.getTime();
+      // monthYear is now in format "YYYY-MM"
+      return b.monthYear.localeCompare(a.monthYear);
     });
 
     // Calculate totals for past month, aggregated by unit
@@ -269,10 +309,8 @@ export default function StockFlowPage() {
           item.partnerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
           item.productName.toLowerCase().includes(searchQuery.toLowerCase());
 
-        const matchesFilter =
-          selectedFilter === "all" ||
-          (selectedFilter === "outward" && item.type === "outward") ||
-          (selectedFilter === "inward" && item.type === "inward");
+        // Filter is already applied by only fetching one type, so no need to filter again
+        const matchesFilter = true;
 
         const matchesPartner =
           selectedPartner === "all" || item.partnerId === selectedPartner;
@@ -309,8 +347,11 @@ export default function StockFlowPage() {
         title="Failed to load stock flow"
         message="Unable to fetch stock flow"
         onRetry={() => {
-          refetchInwards();
-          refetchOutwards();
+          if (isInwardView) {
+            refetchInwards();
+          } else {
+            refetchOutwards();
+          }
         }}
       />
     );
@@ -367,13 +408,12 @@ export default function StockFlowPage() {
         {/* Tab Pills */}
         <TabPills
           options={[
-            { value: "all", label: "All" },
             { value: "inward", label: "Inward" },
             { value: "outward", label: "Outward" },
           ]}
           value={selectedFilter}
           onValueChange={(value) =>
-            setSelectedFilter(value as "all" | "outward" | "inward")
+            setSelectedFilter(value as "outward" | "inward")
           }
         />
 
@@ -475,6 +515,13 @@ export default function StockFlowPage() {
           ))
         )}
       </div>
+
+      {/* Pagination */}
+      <PaginationWrapper
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
 
       {/* Floating Action Button */}
       <DropdownMenu>

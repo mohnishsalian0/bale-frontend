@@ -67,10 +67,12 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
   } = useSalesOrderByNumber(order_number);
 
   // Fetch products and attributes using TanStack Query
-  const { data: productsData = [], isLoading: productsLoading } =
+  const { data: productsResponse, isLoading: productsLoading } =
     useProductsWithInventory(warehouse.id, { is_active: true });
   const { data: attributesData, isLoading: attributesLoading } =
     useProductAttributes();
+
+  const productsData = productsResponse?.data || [];
 
   // Sales order mutations
   const { approve: approveOrder } = useSalesOrderMutations(warehouse.id);

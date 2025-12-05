@@ -1,6 +1,11 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
@@ -19,11 +24,17 @@ import type { TablesInsert } from "@/types/database/supabase";
 /**
  * Fetch goods inwards for a warehouse
  */
-export function useGoodsInwards(warehouseId: string, filters?: InwardFilters) {
+export function useGoodsInwards(
+  warehouseId: string,
+  filters?: InwardFilters,
+  page: number = 1,
+  pageSize: number = 25,
+) {
   return useQuery({
-    queryKey: queryKeys.stockFlow.inwards(warehouseId, filters),
-    queryFn: () => getGoodsInwards(warehouseId, filters),
+    queryKey: queryKeys.stockFlow.inwards(warehouseId, filters, page),
+    queryFn: () => getGoodsInwards(warehouseId, filters, page, pageSize),
     ...getQueryOptions(STALE_TIME.STOCK_FLOW, GC_TIME.TRANSACTIONAL),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -33,11 +44,14 @@ export function useGoodsInwards(warehouseId: string, filters?: InwardFilters) {
 export function useGoodsOutwards(
   warehouseId: string,
   filters?: OutwardFilters,
+  page: number = 1,
+  pageSize: number = 25,
 ) {
   return useQuery({
-    queryKey: queryKeys.stockFlow.outwards(warehouseId, filters),
-    queryFn: () => getGoodsOutwards(warehouseId, filters),
+    queryKey: queryKeys.stockFlow.outwards(warehouseId, filters, page),
+    queryFn: () => getGoodsOutwards(warehouseId, filters, page, pageSize),
     ...getQueryOptions(STALE_TIME.STOCK_FLOW, GC_TIME.TRANSACTIONAL),
+    placeholderData: keepPreviousData,
   });
 }
 
