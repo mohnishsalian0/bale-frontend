@@ -38,6 +38,7 @@ import {
   useGoodsOutwards,
 } from "@/lib/query/hooks/stock-flow";
 import { usePartners } from "@/lib/query/hooks/partners";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface StockFlowItem {
   id: string;
@@ -63,6 +64,7 @@ export default function StockFlowPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { warehouse } = useSession();
+  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<"outward" | "inward">(
     "inward",
@@ -360,8 +362,10 @@ export default function StockFlowPage() {
   return (
     <div className="relative flex flex-col flex-1 overflow-y-auto">
       {/* Header */}
-      <div className="flex items-end justify-between gap-4 p-4 pb-0">
-        <div className="flex-1">
+      <div
+        className={`flex items-end justify-between gap-4 p-4 pb-0 ${isMobile && "flex-col-reverse items-start"}`}
+      >
+        <div className={`${isMobile ? "w-full" : "flex-1"}`}>
           <div className="mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Stock flow</h1>
             <p className="text-sm font-medium text-gray-500 mt-2">
@@ -404,7 +408,7 @@ export default function StockFlowPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4 px-4 py-6">
+      <div className="flex gap-4 px-4 py-4">
         {/* Tab Pills */}
         <TabPills
           options={[

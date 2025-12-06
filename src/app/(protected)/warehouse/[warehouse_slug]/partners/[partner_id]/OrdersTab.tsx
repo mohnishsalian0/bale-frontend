@@ -89,7 +89,7 @@ export function OrdersTab({ orders, warehouseSlug }: OrdersTabProps) {
       {monthGroups.map((group) => (
         <div key={group.monthYear}>
           {/* Month Header */}
-          <div className="sticky top-13 z-10 flex items-center justify-between px-4 py-2 border-t border-dashed border-gray-300 bg-gray-200">
+          <div className="sticky top-11 z-10 flex items-center justify-between px-4 py-2 border-t border-dashed border-gray-300 bg-gray-200">
             <p className="text-xs font-semibold text-gray-700">{group.month}</p>
           </div>
 

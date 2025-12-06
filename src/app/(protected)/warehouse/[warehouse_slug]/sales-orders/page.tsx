@@ -35,6 +35,7 @@ import {
   formatMeasuringUnitQuantities,
   getMeasuringUnit,
 } from "@/lib/utils/measuring-units";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface OrderListItem {
   id: string;
@@ -64,6 +65,7 @@ export default function OrdersPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { warehouse } = useSession();
+  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState("all");
@@ -291,11 +293,13 @@ export default function OrdersPage() {
   return (
     <div className="relative flex flex-col flex-1 overflow-y-auto">
       {/* Header */}
-      <div className="flex items-end justify-between gap-4 p-4 pb-0">
-        <div className="flex-1">
+      <div
+        className={`flex items-end justify-between gap-4 p-4 pb-0 ${isMobile && "flex-col-reverse items-start"}`}
+      >
+        <div className={`${isMobile ? "w-full" : "flex-1"}`}>
           <div className="mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Sales orders</h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 mt-2">
               <span className="text-teal-700 font-medium">
                 {pendingOrdersCount}
               </span>
@@ -334,7 +338,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 px-4 py-6 overflow-x-auto shrink-0">
+      <div className="flex gap-3 px-4 py-4 overflow-x-auto scrollbar-hide shrink-0">
         {/* Status Filter */}
         <Select value={selectedStatus} onValueChange={setSelectedStatus}>
           <SelectTrigger className="flex-shrink-0 h-10 max-w-34">

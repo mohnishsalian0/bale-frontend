@@ -183,7 +183,7 @@ export async function getGoodsInwards(
         initial_quantity
       )
     `,
-      { count: "exact" }
+      { count: "exact" },
     )
     .eq("warehouse_id", warehouseId)
     .order("inward_date", { ascending: false })
@@ -209,11 +209,10 @@ export async function getGoodsInwards(
     throw error;
   }
 
-  const transformedData = (
+  const transformedData =
     (data as unknown as InwardWithStockUnitListViewRaw[])?.map(
       transformInwardWithStockUnitListView,
-    ) || []
-  );
+    ) || [];
 
   return {
     data: transformedData,
@@ -249,7 +248,7 @@ export async function getGoodsOutwards(
         )
       )
     `,
-      { count: "exact" }
+      { count: "exact" },
     )
     .eq("warehouse_id", warehouseId)
     .order("outward_date", { ascending: false })
@@ -275,11 +274,10 @@ export async function getGoodsOutwards(
     throw error;
   }
 
-  const transformedData = (
+  const transformedData =
     (data as unknown as OutwardWithOutwardItemListViewRaw[])?.map(
       transformOutwardWithItemListView,
-    ) || []
-  );
+    ) || [];
 
   return {
     data: transformedData,
@@ -364,10 +362,16 @@ export async function getGoodsOutwardByNumber(
  */
 export async function getOutwardItemsByProduct(
   productId: string,
-): Promise<OutwardItemWithOutwardDetailView[]> {
+  page: number = 1,
+  pageSize: number = 20,
+): Promise<{ data: OutwardItemWithOutwardDetailView[]; totalCount: number }> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  // Calculate pagination range
+  const offset = (page - 1) * pageSize;
+  const limit = pageSize;
+
+  const { data, error, count } = await supabase
     .from("goods_outward_items")
     .select(
       `
@@ -383,17 +387,21 @@ export async function getOutwardItemsByProduct(
         )
       )
     `,
+      { count: "exact" },
     )
     .eq("stock_unit.product_id", productId)
     .order("created_at", { ascending: false })
-    .limit(50);
+    .range(offset, offset + limit - 1);
 
   if (error) {
     console.error("Error fetching outward items by product:", error);
     throw error;
   }
 
-  return (data as OutwardItemWithOutwardDetailView[]) || [];
+  return {
+    data: (data as OutwardItemWithOutwardDetailView[]) || [],
+    totalCount: count || 0,
+  };
 }
 
 /**

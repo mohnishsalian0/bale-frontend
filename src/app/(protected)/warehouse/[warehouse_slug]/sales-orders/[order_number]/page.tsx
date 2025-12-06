@@ -269,7 +269,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
         <div className="sticky bottom-0 p-4 bg-background border-t border-border flex gap-3 z-10">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon-sm">
                 <IconDotsVertical className="size-5" />
               </Button>
             </DropdownMenuTrigger>
@@ -299,7 +299,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" disabled className="flex-1">
+          <Button size="sm" variant="outline" disabled className="flex-1">
             Make invoice
           </Button>
           {getPrimaryCTA()}

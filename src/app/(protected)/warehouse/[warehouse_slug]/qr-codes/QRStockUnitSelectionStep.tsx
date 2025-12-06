@@ -36,11 +36,13 @@ export function QRStockUnitSelectionStep({
   const { warehouse } = useSession();
 
   // Fetch stock units using TanStack Query
-  const { data: stockUnitsData = [], isLoading: loading } =
+  const { data: stockUnitsResponse, isLoading: loading } =
     useStockUnitsWithInward(warehouse.id, {
       product_id: productId,
       status: ["full", "partial"],
     });
+
+  const stockUnitsData = stockUnitsResponse?.data || [];
 
   // Group stock units by goods inward
   const goodsInwards: GoodsInward[] = useMemo(() => {

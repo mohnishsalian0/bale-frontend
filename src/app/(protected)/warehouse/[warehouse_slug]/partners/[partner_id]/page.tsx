@@ -192,7 +192,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-3 px-4 pb-6">
+        <div className="grid grid-cols-2 gap-3 px-4 pb-4">
           {/* Total Orders Card */}
           <div className="col-span-2 sm:col-span-1 border border-border rounded-lg p-4">
             <div className="flex gap-2 mb-2">
@@ -200,10 +200,74 @@ export default function PartnerDetailPage({ params }: PageParams) {
               <span className="text-xs text-gray-500">Total orders</span>
             </div>
             <p className="text-base font-bold text-gray-700">
-              {totalOrders} orders &nbsp;•&nbsp; ₹{" "}
-              {formatCurrency(totalOrderValue)}
+              {totalOrders} orders • ₹{formatCurrency(totalOrderValue)}
             </p>
           </div>
+
+          {/* Pending Orders Section */}
+          {pendingOrdersCount > 0 &&
+            pendingOrder &&
+            (() => {
+              const displayStatus = getOrderDisplayStatus(
+                pendingOrder.status as SalesOrderStatus,
+                pendingOrder.expected_delivery_date,
+              );
+              const completionPercentage = calculateCompletionPercentage(
+                pendingOrder.sales_order_items,
+              );
+              const showProgressBar =
+                displayStatus === "in_progress" || displayStatus === "overdue";
+              const progressColor =
+                displayStatus === "overdue" ? "yellow" : "blue";
+
+              return (
+                <button
+                  onClick={() =>
+                    router.push(
+                      `/warehouse/${warehouse.slug}/sales-orders/${pendingOrder.sequence_number}`,
+                    )
+                  }
+                  className="col-span-2 border border-border rounded-lg p-4 hover:bg-gray-50 hover:cursor-pointer transition-colors text-left"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex gap-2">
+                      <IconClockHour8 className="size-4 text-gray-500" />
+                      <span className="text-xs text-gray-500">
+                        {pendingOrdersCount} pending{" "}
+                        {pendingOrdersCount === 1 ? "order" : "orders"}
+                      </span>
+                    </div>
+                    <SalesStatusBadge status={displayStatus} />
+                  </div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {pendingOrder.sales_order_items
+                      .map((item) => item.product?.name)
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .join(", ")}
+                    {pendingOrder.sales_order_items.length > 2 &&
+                      ` +${pendingOrder.sales_order_items.length - 2} more`}
+                  </p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-xs text-gray-500">
+                      SO-{pendingOrder.sequence_number}
+                    </p>
+                    {displayStatus !== "approval_pending" && (
+                      <p className="text-xs text-gray-500">
+                        {completionPercentage}% completed
+                      </p>
+                    )}
+                  </div>
+                  {showProgressBar && (
+                    <Progress
+                      color={progressColor}
+                      value={completionPercentage}
+                      className="mt-2"
+                    />
+                  )}
+                </button>
+              );
+            })()}
         </div>
 
         {/* Tabs */}
@@ -233,7 +297,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
         <div className="sticky bottom-0 p-4 bg-background border-t border-border flex gap-3 z-10">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon-sm">
                 •••
               </Button>
             </DropdownMenuTrigger>
@@ -249,6 +313,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
           </DropdownMenu>
 
           <Button
+            size="sm"
             variant="outline"
             onClick={() => setShowEditPartner(true)}
             className="flex-1"
@@ -258,6 +323,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
 
           {isCustomer && (
             <Button
+              size="sm"
               onClick={() =>
                 router.push(`/warehouse/${warehouse.slug}/sales-orders/create`)
               }
@@ -270,6 +336,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
 
           {isSupplier && (
             <Button
+              size="sm"
               onClick={() =>
                 router.push(`/warehouse/${warehouse.slug}/goods-inward/create`)
               }

@@ -23,6 +23,7 @@ import { useSession } from "@/contexts/session-context";
 import { getInitials } from "@/lib/utils/initials";
 import type { PartnerType } from "@/types/database/enums";
 import { getFormattedAddress, getPartnerName } from "@/lib/utils/partner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const PARTNER_TYPES: { value: PartnerType | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -47,6 +48,7 @@ function getActionLabel(type: PartnerType): string {
 export default function PartnersPage() {
   const router = useRouter();
   const { warehouse } = useSession();
+  const isMobile = useIsMobile();
   const [selectedType, setSelectedType] = useState<PartnerType | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreatePartner, setShowCreatePartner] = useState(false);
@@ -93,8 +95,10 @@ export default function PartnersPage() {
   return (
     <div className="relative flex flex-col flex-1 overflow-y-auto">
       {/* Header */}
-      <div className="flex items-end justify-between gap-4 p-4">
-        <div className="flex-1">
+      <div
+        className={`flex items-end justify-between gap-4 p-4 pb-0 ${isMobile && "flex-col-reverse items-start"}`}
+      >
+        <div className={`${isMobile ? "w-full" : "flex-1"}`}>
           <div className="mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Partners</h1>
             {/* <p className="text-sm text-gray-500 mt-1"> */}
@@ -133,7 +137,7 @@ export default function PartnersPage() {
       </div>
 
       {/* Filter */}
-      <div className="px-4 py-2">
+      <div className="px-4 py-4">
         <TabPills
           options={PARTNER_TYPES}
           value={selectedType}
@@ -144,7 +148,7 @@ export default function PartnersPage() {
       </div>
 
       {/* Partner Cards */}
-      <li className="grid grid-cols-1 lg:grid-cols-2 3xl:grid-cols-3 gap-4 items-stretch p-4">
+      <li className="grid grid-cols-1 lg:grid-cols-2 3xl:grid-cols-3 gap-4 items-stretch px-4">
         {filteredPartners.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-gray-600 mb-2">No partners found</p>

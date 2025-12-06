@@ -1,6 +1,11 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
@@ -36,11 +41,15 @@ export function useStockUnits(warehouseId: string, filters?: StockUnitFilters) {
 export function useStockUnitsWithInward(
   warehouseId: string,
   filters?: StockUnitFilters,
+  page: number = 1,
+  pageSize: number = 20,
 ) {
   return useQuery({
-    queryKey: queryKeys.stockUnits.all(warehouseId, filters),
-    queryFn: () => getStockUnitsWithInward(warehouseId, filters),
+    queryKey: queryKeys.stockUnits.all(warehouseId, filters, page),
+    queryFn: () =>
+      getStockUnitsWithInward(warehouseId, filters, page, pageSize),
     ...getQueryOptions(STALE_TIME.STOCK_UNITS, GC_TIME.TRANSACTIONAL),
+    placeholderData: keepPreviousData,
   });
 }
 

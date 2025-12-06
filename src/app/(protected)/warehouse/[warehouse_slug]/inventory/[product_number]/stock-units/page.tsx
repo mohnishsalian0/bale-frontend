@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { use, useState, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { IconBox } from "@tabler/icons-react";
 import {
   Select,
@@ -11,24 +12,38 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { PaginationWrapper } from "@/components/ui/pagination-wrapper";
+import { LoadingState } from "@/components/layouts/loading-state";
+import { ErrorState } from "@/components/layouts/error-state";
 import { StockUnitDetailsModal } from "@/components/layouts/stock-unit-modal";
 import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { formatStockUnitNumber } from "@/lib/utils/product";
+import { useSession } from "@/contexts/session-context";
+import { useProductWithInventoryByNumber } from "@/lib/query/hooks/products";
+import {
+  useStockUnitsWithInward,
+  useStockUnitWithProductDetail,
+} from "@/lib/query/hooks/stock-units";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
-import type { ProductListView } from "@/types/products.types";
-import { StockUnitWithInwardListView } from "@/types/stock-units.types";
-import { useStockUnitWithProductDetail } from "@/lib/query/hooks/stock-units";
+import type { StockUnitWithInwardListView } from "@/types/stock-units.types";
 import type { InwardWithPartnerListView } from "@/types/stock-flow.types";
 
-interface StockUnitsTabProps {
-  stockUnits: StockUnitWithInwardListView[];
-  product: ProductListView;
+interface PageParams {
+  params: Promise<{
+    warehouse_slug: string;
+    product_number: string;
+  }>;
 }
 
 type SortOption = "latest" | "oldest" | "quantity_high" | "quantity_low";
 
-export function StockUnitsTab({ stockUnits, product }: StockUnitsTabProps) {
+export default function StockUnitsPage({ params }: PageParams) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { product_number, warehouse_slug } = use(params);
+  const { warehouse } = useSession();
+
   const [sortBy, setSortBy] = useState<SortOption>("latest");
   const [qrPendingOnly, setQrPendingOnly] = useState(false);
   const [selectedStockUnitId, setSelectedStockUnitId] = useState<string | null>(
@@ -36,9 +51,37 @@ export function StockUnitsTab({ stockUnits, product }: StockUnitsTabProps) {
   );
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
+  // Get current page from URL (default to 1)
+  const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  const PAGE_SIZE = 25;
+
+  // Fetch product (will use cached data from layout)
+  const { data: product, isLoading: productLoading } =
+    useProductWithInventoryByNumber(product_number, warehouse.id);
+
+  // Fetch stock units with pagination
+  const {
+    data: stockUnitsResponse,
+    isLoading: stockUnitsLoading,
+    isError: stockUnitsError,
+    refetch: refetchStockUnits,
+  } = useStockUnitsWithInward(
+    warehouse.id,
+    { product_id: product?.id, status: ["full", "partial"] },
+    currentPage,
+    PAGE_SIZE,
+  );
+
   // Fetch stock unit detail when selected
   const { data: stockUnitDetail } =
     useStockUnitWithProductDetail(selectedStockUnitId);
+
+  const loading = productLoading || stockUnitsLoading;
+  const error = stockUnitsError;
+
+  const stockUnits = stockUnitsResponse?.data || [];
+  const totalCount = stockUnitsResponse?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const handleStockUnitClick = (stockUnitId: string) => {
     setSelectedStockUnitId(stockUnitId);
@@ -50,11 +93,17 @@ export function StockUnitsTab({ stockUnits, product }: StockUnitsTabProps) {
     setSelectedStockUnitId(null);
   };
 
-  const unitAbbr = getMeasuringUnitAbbreviation(
-    product.measuring_unit as MeasuringUnit,
-  );
+  const handlePageChange = (page: number) => {
+    router.push(
+      `/warehouse/${warehouse_slug}/inventory/${product_number}/stock-units?page=${page}`,
+    );
+  };
 
-  // Filter and sort stock units
+  const unitAbbr = product
+    ? getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit)
+    : "";
+
+  // Filter and sort stock units (client-side for current page)
   const filteredAndSortedUnits = useMemo(() => {
     let units = [...stockUnits];
 
@@ -112,7 +161,21 @@ export function StockUnitsTab({ stockUnits, product }: StockUnitsTabProps) {
     return Array.from(groups.values());
   }, [filteredAndSortedUnits]);
 
-  if (stockUnits.length === 0) {
+  if (loading) {
+    return <LoadingState message="Loading stock units..." />;
+  }
+
+  if (error) {
+    return (
+      <ErrorState
+        title="Failed to load stock units"
+        message="Unable to fetch stock units"
+        onRetry={() => refetchStockUnits()}
+      />
+    );
+  }
+
+  if (stockUnits.length === 0 && currentPage === 1) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4">
         <IconBox className="size-12 text-gray-400 mb-3" />
@@ -127,7 +190,7 @@ export function StockUnitsTab({ stockUnits, product }: StockUnitsTabProps) {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col flex-1">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-4 px-4 py-4">
         <Select
@@ -163,7 +226,7 @@ export function StockUnitsTab({ stockUnits, product }: StockUnitsTabProps) {
       </div>
 
       {/* Grouped List */}
-      <div className="flex flex-col">
+      <div className="flex-1 overflow-y-auto">
         {filteredAndSortedUnits.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4">
             <IconBox className="size-12 text-gray-400 mb-3" />
@@ -202,13 +265,13 @@ export function StockUnitsTab({ stockUnits, product }: StockUnitsTabProps) {
                   <button
                     key={unit.id}
                     onClick={() => handleStockUnitClick(unit.id)}
-                    className="flex items-start justify-between gap-4 px-4 py-3 border-t border-dashed border-gray-200 hover:bg-gray-50 transition-colors w-full text-left cursor-pointer"
+                    className="flex items-start justify-between gap-4 px-4 py-4 border-t border-dashed border-gray-200 hover:bg-gray-50 transition-colors w-full text-left cursor-pointer"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-base font-medium text-gray-900">
                         {formatStockUnitNumber(
                           unit.sequence_number,
-                          product.stock_type as StockType,
+                          product!.stock_type as StockType,
                         )}
                       </p>
 
@@ -256,6 +319,15 @@ export function StockUnitsTab({ stockUnits, product }: StockUnitsTabProps) {
           ))
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <PaginationWrapper
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      )}
 
       {/* Stock Unit Details Modal */}
       <StockUnitDetailsModal

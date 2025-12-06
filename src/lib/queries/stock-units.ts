@@ -204,8 +204,14 @@ export async function getStockUnits(
 export async function getStockUnitsWithInward(
   warehouseId: string,
   filters?: StockUnitFilters,
-): Promise<StockUnitWithInwardListView[]> {
+  page: number = 1,
+  pageSize: number = 20,
+): Promise<{ data: StockUnitWithInwardListView[]; totalCount: number }> {
   const supabase = createClient();
+
+  // Calculate pagination range
+  const offset = (page - 1) * pageSize;
+  const limit = pageSize;
 
   let query = supabase
     .from("stock_units")
@@ -234,10 +240,12 @@ export async function getStockUnitsWithInward(
         )
       )
     `,
+      { count: "exact" },
     )
     .eq("warehouse_id", warehouseId)
     .is("deleted_at", null)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
 
   // Apply filters
   if (filters?.product_id) {
@@ -269,18 +277,23 @@ export async function getStockUnitsWithInward(
     }
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) {
     console.error("Error fetching stock units with inward details:", error);
     throw error;
   }
 
-  return (
+  const transformedData = (
     (data as unknown as StockUnitWithInwardListViewRaw[])?.map(
       transformStockUnitWithInwardListView,
     ) || []
   );
+
+  return {
+    data: transformedData,
+    totalCount: count || 0,
+  };
 }
 
 /**

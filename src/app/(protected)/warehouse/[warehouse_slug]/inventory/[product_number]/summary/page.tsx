@@ -1,5 +1,6 @@
 "use client";
 
+import { use } from "react";
 import Image from "next/image";
 import {
   IconTrendingUp,
@@ -11,16 +12,32 @@ import { Section } from "@/components/layouts/section";
 import { formatCurrency } from "@/lib/utils/financial";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getStockTypeDisplay } from "@/lib/utils/product";
-import type { Tables } from "@/types/database/supabase";
 import type { MeasuringUnit } from "@/types/database/enums";
+import { useProductWithInventoryByNumber } from "@/lib/query/hooks/products";
+import { useSession } from "@/contexts/session-context";
+import { LoadingState } from "@/components/layouts/loading-state";
 
-type Product = Tables<"products">;
-
-interface SummaryTabProps {
-  product: Product;
+interface PageParams {
+  params: Promise<{
+    warehouse_slug: string;
+    product_number: string;
+  }>;
 }
 
-export function SummaryTab({ product }: SummaryTabProps) {
+export default function SummaryPage({ params }: PageParams) {
+  const { product_number } = use(params);
+  const { warehouse } = useSession();
+
+  // Fetch product (will use cached data from layout)
+  const { data: product, isLoading } = useProductWithInventoryByNumber(
+    product_number,
+    warehouse.id,
+  );
+
+  if (isLoading || !product) {
+    return <LoadingState message="Loading summary..." />;
+  }
+
   const unitAbbr = getMeasuringUnitAbbreviation(
     product.measuring_unit as MeasuringUnit,
   );

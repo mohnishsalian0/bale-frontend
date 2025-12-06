@@ -27,7 +27,7 @@ export function PaginationWrapper({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex justify-center p-4 border-t border-gray-200">
+    <div className="flex justify-center p-4 border-t border-gray-200 shrink-0 overflow-x-auto scrollbar-hide">
       <Pagination>
         <PaginationContent>
           {/* Previous Button */}

@@ -13,17 +13,15 @@ export function TabUnderline({
   tabs,
 }: TabUnderlineProps) {
   return (
-    <div className="sticky top-0 z-20 flex px-4 pt-2 border-b border-border bg-background overflow-x-auto">
+    <div className="sticky top-0 z-20 flex px-4 pt-2 border-b border-border bg-background overflow-x-auto scrollbar-hide">
       {tabs.map((tab) => (
         <button
           key={tab.value}
           onClick={() => onTabChange(tab.value)}
-          className={`px-6 py-3 text-sm text-nowrap font-medium transition-colors border border-b-0 rounded-t-2xl ${
+          className={`px-6 pt-2.5 pb-1.5 text-sm text-nowrap transition-colors border border-b-0 rounded-t-xl ${
             activeTab === tab.value
-              ? // ? 'text-primary-700 border-b-2 border-primary-700'
-                "text-white bg-primary-600 border-primary-700"
-              : // : 'text-gray-500 hover:text-gray-700'
-                "text-gray-500 bg-background border-border hover:bg-gray-100"
+              ? "text-white bg-primary-600 border-primary-700"
+              : "text-gray-500 bg-background border-border hover:bg-gray-100"
           }`}
         >
           {tab.label}

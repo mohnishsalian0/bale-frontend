@@ -33,11 +33,13 @@ import {
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import { Toggle } from "@/components/ui/toggle";
 import { GlowIndicator } from "@/components/ui/glow-indicator";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function InventoryPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { warehouse } = useSession();
+  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const [lowStockFilter, setLowStockFilter] = useState<boolean>(false);
   const [materialFilter, setMaterialFilter] = useState<string>("all");
@@ -186,23 +188,26 @@ export default function InventoryPage() {
   return (
     <div className="relative flex flex-col flex-1 overflow-y-auto">
       {/* Header */}
-      <div className="flex items-end justify-between gap-4 p-4 pb-0">
-        <div className="flex-1">
+      <div
+        className={`flex items-end justify-between gap-4 p-4 pb-0 ${isMobile && "flex-col-reverse items-start"}`}
+      >
+        <div className={`${isMobile ? "w-full" : "flex-1"}`}>
           <div className="mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Inventory</h1>
             <p className="text-sm font-medium text-gray-500 mt-2">
               <span>{stats.availableProducts} available products</span>
-              <span> • </span>
+              <span> &nbsp;•&nbsp; </span>
               <span className="text-teal-700">
                 {stats.liveProducts} live products
               </span>
-              <span> • </span>
+              <span> &nbsp;•&nbsp; </span>
               <span className="text-yellow-700">
                 {stats.lowStockProducts} low stock
               </span>
-            </p>
-            <p className="text-sm font-medium text-gray-500 mt-2">
-              {stats.quantitiesByUnit} in stock
+              <span> &nbsp;•&nbsp; </span>
+              <span className="text-primary-700">
+                {stats.quantitiesByUnit} in stock
+              </span>
             </p>
           </div>
 
@@ -232,7 +237,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 px-4 py-6 overflow-x-auto shrink-0">
+      <div className="flex gap-3 px-4 py-4 overflow-x-auto scrollbar-hide shrink-0">
         <Toggle
           aria-label="Low stock filter"
           variant="outline"

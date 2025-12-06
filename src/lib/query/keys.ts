@@ -69,8 +69,8 @@ export const queryKeys = {
 
   // Stock Units
   stockUnits: {
-    all: (warehouseId: string, filters?: Record<string, unknown>) =>
-      ["stock-units", warehouseId, filters] as const,
+    all: (warehouseId: string, filters?: Record<string, unknown>, page?: number) =>
+      ["stock-units", warehouseId, filters, page] as const,
     byId: (stockUnitId: string) =>
       ["stock-units", "product", stockUnitId] as const,
   },
@@ -85,8 +85,8 @@ export const queryKeys = {
       ["stock-flow", "inward", "detail", sequenceNumber] as const,
     outwardDetail: (sequenceNumber: string) =>
       ["stock-flow", "outward", "detail", sequenceNumber] as const,
-    outwardItemsByProduct: (productId: string) =>
-      ["stock-flow", "outward-items", "product", productId] as const,
+    outwardItemsByProduct: (productId: string, page?: number) =>
+      ["stock-flow", "outward-items", "product", productId, page] as const,
   },
 
   // QR Batches

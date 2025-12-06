@@ -83,11 +83,16 @@ export function useGoodsOutwardBySequenceNumber(sequenceNumber: string | null) {
  * Fetch outward items for a specific product
  * Useful for product detail page to show outward flow history
  */
-export function useOutwardItemsByProduct(productId: string | null) {
+export function useOutwardItemsByProduct(
+  productId: string | null,
+  page: number = 1,
+  pageSize: number = 20,
+) {
   return useQuery({
-    queryKey: queryKeys.stockFlow.outwardItemsByProduct(productId || ""),
-    queryFn: () => getOutwardItemsByProduct(productId!),
+    queryKey: queryKeys.stockFlow.outwardItemsByProduct(productId || "", page),
+    queryFn: () => getOutwardItemsByProduct(productId!, page, pageSize),
     ...getQueryOptions(STALE_TIME.STOCK_FLOW, GC_TIME.TRANSACTIONAL),
+    placeholderData: keepPreviousData,
     enabled: !!productId,
   });
 }
