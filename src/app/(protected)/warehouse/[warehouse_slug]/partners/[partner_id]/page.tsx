@@ -199,75 +199,11 @@ export default function PartnerDetailPage({ params }: PageParams) {
               <IconShoppingCart className="size-4 text-gray-500" />
               <span className="text-xs text-gray-500">Total orders</span>
             </div>
-            <p className="text-lg font-bold text-gray-700">
-              {totalOrders} orders • ₹{formatCurrency(totalOrderValue)}
+            <p className="text-base font-bold text-gray-700">
+              {totalOrders} orders &nbsp;•&nbsp; ₹{" "}
+              {formatCurrency(totalOrderValue)}
             </p>
           </div>
-
-          {/* Pending Orders Section */}
-          {pendingOrdersCount > 0 &&
-            pendingOrder &&
-            (() => {
-              const displayStatus = getOrderDisplayStatus(
-                pendingOrder.status as SalesOrderStatus,
-                pendingOrder.expected_delivery_date,
-              );
-              const completionPercentage = calculateCompletionPercentage(
-                pendingOrder.sales_order_items,
-              );
-              const showProgressBar =
-                displayStatus === "in_progress" || displayStatus === "overdue";
-              const progressColor =
-                displayStatus === "overdue" ? "yellow" : "blue";
-
-              return (
-                <button
-                  onClick={() =>
-                    router.push(
-                      `/warehouse/${warehouse.slug}/sales-orders/${pendingOrder.sequence_number}`,
-                    )
-                  }
-                  className="col-span-2 border border-border rounded-lg p-4 hover:bg-gray-50 hover:cursor-pointer transition-colors text-left"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex gap-2">
-                      <IconClockHour8 className="size-4 text-gray-500" />
-                      <span className="text-xs text-gray-500">
-                        {pendingOrdersCount} pending{" "}
-                        {pendingOrdersCount === 1 ? "order" : "orders"}
-                      </span>
-                    </div>
-                    <SalesStatusBadge status={displayStatus} />
-                  </div>
-                  <p className="font-medium text-gray-900">
-                    {pendingOrder.sales_order_items
-                      .map((item) => item.product?.name)
-                      .filter(Boolean)
-                      .slice(0, 2)
-                      .join(", ")}
-                    {pendingOrder.sales_order_items.length > 2 &&
-                      ` +${pendingOrder.sales_order_items.length - 2} more`}
-                  </p>
-                  <div className="flex items-center justify-between mt-1">
-                    <p className="text-xs text-gray-500">
-                      SO-{pendingOrder.sequence_number}
-                    </p>
-                    {displayStatus !== "approval_pending" && (
-                      <p className="text-xs text-gray-500">
-                        {completionPercentage}% completed
-                      </p>
-                    )}
-                  </div>
-                  {showProgressBar && (
-                    <Progress
-                      color={progressColor}
-                      value={completionPercentage}
-                      className="mt-2"
-                    />
-                  )}
-                </button>
-              );
-            })()}
         </div>
 
         {/* Tabs */}

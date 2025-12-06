@@ -20,7 +20,7 @@ export interface SalesOrderFilters extends Record<string, unknown> {
   status?: SalesOrderStatus | SalesOrderStatus[]; // Support single or array for IN queries
   limit?: number;
   order_by?: "order_date" | "expected_delivery_date" | "created_at";
-  order_direction?: "asc" | "desc";
+  ascending?: boolean;
 }
 
 // =====================================================

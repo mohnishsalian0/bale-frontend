@@ -155,7 +155,7 @@ export function StockFlowTab({
           </div>
 
           <div>
-            <p className="text-base font-semibold text-gray-900 text-right">
+            <p className="text-sm font-semibold text-gray-900 text-right">
               {flow.quantity.toFixed(2)} {unitAbbr}
             </p>
             <p className="text-xs text-gray-600 text-right">

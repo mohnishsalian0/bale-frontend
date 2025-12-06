@@ -205,12 +205,12 @@ export function StockUnitsTab({ stockUnits, product }: StockUnitsTabProps) {
                     className="flex items-start justify-between gap-4 px-4 py-3 border-t border-dashed border-gray-200 hover:bg-gray-50 transition-colors w-full text-left cursor-pointer"
                   >
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-base font-medium text-gray-900">
+                      <p className="text-base font-medium text-gray-900">
                         {formatStockUnitNumber(
                           unit.sequence_number,
                           product.stock_type as StockType,
                         )}
-                      </h3>
+                      </p>
 
                       {/* QR Status */}
                       <p
@@ -245,7 +245,7 @@ export function StockUnitsTab({ stockUnits, product }: StockUnitsTabProps) {
                     </div>
 
                     <div className="shrink-0 text-right">
-                      <span className="text-sm font-bold text-gray-900">
+                      <span className="text-sm font-semibold text-gray-900">
                         {unit.remaining_quantity} {unitAbbr}
                       </span>
                     </div>

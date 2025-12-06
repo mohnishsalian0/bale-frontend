@@ -64,9 +64,9 @@ export default function StockFlowPage() {
   const searchParams = useSearchParams();
   const { warehouse } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState<
-    "outward" | "inward"
-  >("inward");
+  const [selectedFilter, setSelectedFilter] = useState<"outward" | "inward">(
+    "inward",
+  );
   const [selectedPartner, setSelectedPartner] = useState("all");
 
   // Get current page from URL (default to 1)
@@ -361,10 +361,10 @@ export default function StockFlowPage() {
     <div className="relative flex flex-col flex-1 overflow-y-auto">
       {/* Header */}
       <div className="flex items-end justify-between gap-4 p-4 pb-0">
-        <div className="flex-1 flex flex-col gap-2">
-          <div className="flex flex-col gap-1">
+        <div className="flex-1">
+          <div className="mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Stock flow</h1>
-            <p className="text-sm font-medium text-gray-500">
+            <p className="text-sm font-medium text-gray-500 mt-2">
               <span className="text-teal-700">
                 {formatMeasuringUnitQuantities(totalReceived)} received
               </span>
@@ -454,7 +454,7 @@ export default function StockFlowPage() {
                 <p className="text-xs font-semibold text-gray-700">
                   {group.month}
                 </p>
-                <p className="text-sm font-bold text-right max-w-2/3">
+                <p className="text-sm font-semibold text-right max-w-2/3">
                   <span className="text-teal-700">
                     {formatMeasuringUnitQuantities(group.inCount)}{" "}
                   </span>
@@ -497,7 +497,7 @@ export default function StockFlowPage() {
                   </div>
                   <div className="flex flex-col items-end justify-center">
                     <p
-                      className={`text-sm font-bold ${
+                      className={`text-sm font-semibold ${
                         item.type === "inward"
                           ? "text-teal-700"
                           : "text-yellow-700"

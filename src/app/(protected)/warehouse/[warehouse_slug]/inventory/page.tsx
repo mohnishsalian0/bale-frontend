@@ -201,7 +201,7 @@ export default function InventoryPage() {
                 {stats.lowStockProducts} low stock
               </span>
             </p>
-            <p className="text-sm font-medium text-gray-500 mt-1">
+            <p className="text-sm font-medium text-gray-500 mt-2">
               {stats.quantitiesByUnit} in stock
             </p>
           </div>
@@ -344,7 +344,7 @@ export default function InventoryPage() {
                       <IconAlertTriangle className="size-4 text-yellow-700" />
                     )}
                     <p
-                      className={`text-sm font-bold ${lowStock ? "text-yellow-700" : "text-gray-900"}`}
+                      className={`text-sm font-semibold ${lowStock ? "text-yellow-700" : "text-gray-900"}`}
                     >
                       {totalQuantity} {unitAbbreviation}
                     </p>

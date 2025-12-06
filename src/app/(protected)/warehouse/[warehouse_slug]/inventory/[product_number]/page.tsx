@@ -244,8 +244,8 @@ export default function ProductDetailPage({ params }: PageParams) {
                 Total stock in inventory
               </span>
             </div>
-            <p className="text-lg font-bold text-gray-700 whitespace-pre">
-              {`${product.inventory.in_stock_quantity?.toFixed(2) || 0} ${unitAbbr}  •  ₹ ${formatCurrency(product.inventory.in_stock_value || 0)}`}
+            <p className="text-base font-bold text-gray-700">
+              {`${product.inventory.in_stock_quantity?.toFixed(2) || 0} ${unitAbbr} &nbsp;•&nbsp;  ₹ ${formatCurrency(product.inventory.in_stock_value || 0)}`}
             </p>
           </div>
 
@@ -257,7 +257,7 @@ export default function ProductDetailPage({ params }: PageParams) {
                 Order request quantity
               </span>
             </div>
-            <p className="text-lg font-bold text-gray-700 whitespace-pre">
+            <p className="text-base font-bold text-gray-700 whitespace-pre">
               {`0 ${unitAbbr}  •  ₹ 0`}
             </p>
           </div>

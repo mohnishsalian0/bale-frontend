@@ -39,9 +39,10 @@ export async function getSalesOrders(
 ): Promise<{ data: SalesOrderListView[]; totalCount: number }> {
   const supabase = createClient();
 
-  // Calculate pagination range
+  // Calculate pagination range.
+  // NOTE: Filter limit takes precedence over pageSize
   const offset = (page - 1) * pageSize;
-  const limit = pageSize;
+  const limit = filters?.limit ? filters.limit : pageSize;
 
   let query = supabase
     .from("sales_orders")
@@ -81,7 +82,7 @@ export async function getSalesOrders(
 
   // Apply ordering (defaults to order_date descending)
   const orderBy = filters?.order_by || "order_date";
-  const ascending = filters?.order_direction !== "desc";
+  const ascending = !!filters?.ascending;
   query = query.order(orderBy, { ascending });
 
   // Apply pagination (ignore filters.limit if provided, use page-based pagination)

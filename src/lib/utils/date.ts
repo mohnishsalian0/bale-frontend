@@ -125,6 +125,8 @@ export function formatMonthHeader(date: Date | string): string {
   // Calculate 12 months ago from today
   const twelveMonthsAgo = new Date(now);
   twelveMonthsAgo.setMonth(now.getMonth() - 12);
+  twelveMonthsAgo.setDate(32);
+  twelveMonthsAgo.setHours(0, 0, 0, 0);
 
   // If date is within 12 months, show only month name
   if (dateObj >= twelveMonthsAgo) {
