@@ -261,15 +261,15 @@ export default function StockFlowPage({ params }: PageParams) {
             }}
             className="flex items-center gap-4 p-4 border-t border-dashed border-gray-300 hover:bg-gray-100 hover:cursor-pointer transition-colors"
           >
-            <div className="flex-1 text-left">
-              <p className="text-base font-medium text-gray-900">
+            <div className="flex-3 text-left">
+              <p className="text-base font-medium text-gray-700">
                 {flow.type === "inward" ? "GI" : "GO"}-{flow.sequence_number}
               </p>
               <p className="text-xs text-left text-gray-500">
                 {formatAbsoluteDate(flow.date)} • {flow.receiver}
               </p>
             </div>
-            <div className="flex flex-col items-end justify-center">
+            <div className="flex-1 text-right text-wrap">
               <p
                 className={`text-sm font-semibold ${
                   flow.type === "inward" ? "text-teal-700" : "text-yellow-700"

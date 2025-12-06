@@ -239,7 +239,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
                     </div>
                     <SalesStatusBadge status={displayStatus} />
                   </div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-gray-700">
                     {pendingOrder.sales_order_items
                       .map((item) => item.product?.name)
                       .filter(Boolean)

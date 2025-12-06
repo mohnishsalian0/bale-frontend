@@ -85,7 +85,7 @@ export function StockUnitDetailsContent({
             <div className="flex-1 min-w-0">
               <p
                 title={product.name}
-                className="text-base font-medium text-gray-900 truncate"
+                className="text-base font-medium text-gray-700 truncate"
               >
                 {product.name}
               </p>

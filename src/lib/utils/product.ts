@@ -133,6 +133,7 @@ export function formatProductNumber(sequenceNumber: number): string {
 
 /**
  * Helper function to format available stock text
+ * @returns Formatted string like "100.5 mtr", "100.5 kg", "100.5 yd", "100 units", "100 pc"
  */
 export function getAvailableStockText(
   product: ProductWithInventoryListView,
@@ -145,11 +146,11 @@ export function getAvailableStockText(
   );
 
   if (stockType === "roll") {
-    return `${quantity.toFixed(0)} ${unitAbbreviation} avail.`;
+    return `${quantity.toFixed(0)} ${unitAbbreviation}`;
   } else if (stockType === "batch") {
-    return `${quantity.toFixed(0)} units avail.`;
+    return `${quantity.toFixed(0)} units`;
   } else if (stockType === "piece") {
-    return `${pluralizeStockType(units, stockType)} avail.`;
+    return `${pluralizeStockType(units, stockType)}`;
   } else {
     return "";
   }

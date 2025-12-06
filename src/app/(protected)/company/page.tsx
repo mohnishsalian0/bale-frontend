@@ -249,7 +249,7 @@ export default function CompanyPage() {
                         />
                         <div className="flex-1 min-w-0">
                           <p
-                            className="font-medium text-gray-900 truncate"
+                            className="font-medium text-gray-700 truncate"
                             title={warehouse.name}
                           >
                             {warehouse.name}

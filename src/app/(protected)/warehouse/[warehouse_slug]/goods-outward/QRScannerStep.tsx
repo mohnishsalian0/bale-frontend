@@ -340,7 +340,7 @@ export function QRScannerStep({
                   <div className="flex-1 min-w-0">
                     <p
                       title={item.stockUnit.product?.name}
-                      className="text-base font-medium text-gray-900 truncate"
+                      className="text-base font-medium text-gray-700 truncate"
                     >
                       {item.stockUnit.product?.name}
                     </p>

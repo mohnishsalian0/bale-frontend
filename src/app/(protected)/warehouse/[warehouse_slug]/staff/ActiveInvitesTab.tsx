@@ -118,20 +118,20 @@ The Bale Team`;
                   <div className="flex-1 flex flex-col gap-0.5 min-w-0">
                     {/* Warehouse info */}
                     {invite.all_warehouses_access ? (
-                      <p className="text-gray-900 font-medium">
+                      <p className="text-gray-700 font-medium">
                         All warehouses
                       </p>
                     ) : invite.warehouse_names.length > 0 ? (
                       <p
                         title={invite.warehouse_names.join(", ")}
-                        className="text-gray-900 truncate font-medium"
+                        className="text-gray-700 truncate font-medium"
                       >
                         {invite.warehouse_names.length === 1
                           ? invite.warehouse_names[0]
                           : `${invite.warehouse_names[0]}, +${invite.warehouse_names.length - 1} more`}
                       </p>
                     ) : (
-                      <p className="text-gray-900 font-medium">
+                      <p className="text-gray-700 font-medium">
                         {invite.company_name}
                       </p>
                     )}

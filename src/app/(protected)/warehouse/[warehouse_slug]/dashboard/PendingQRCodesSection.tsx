@@ -59,7 +59,7 @@ export function PendingQRCodesSection({
                 />
 
                 <div className="flex-1 flex flex-col items-start">
-                  <p className="font-medium text-gray-900">
+                  <p className="font-medium text-gray-700">
                     {product.name || "Unknown product"}
                   </p>
                   <p className="text-xs text-gray-500">
@@ -68,7 +68,7 @@ export function PendingQRCodesSection({
                 </div>
 
                 <div className="flex flex-col items-end">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-gray-700">
                     {product.pending_qr_count} QR codes
                   </p>
                   <p className="text-xs text-gray-500">pending</p>

@@ -212,7 +212,7 @@ export function QRStockUnitSelectionStep({
                   }
                 />
                 <CollapsibleTrigger className="flex items-center justify-between w-full">
-                  <span className="flex-1 text-sm font-medium text-gray-900 text-start">
+                  <span className="flex-1 text-sm font-medium text-gray-700 text-start">
                     GI-{inward.sequence_number} ({selectedInwardCount}/
                     {inward.stock_units.length} selected)
                   </span>
@@ -235,7 +235,7 @@ export function QRStockUnitSelectionStep({
                       />
                       <div className="flex items-center gap-3 flex-1">
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-gray-900">
+                          <p className="text-xs font-medium text-gray-700">
                             {formatStockUnitNumber(
                               unit.sequence_number,
                               unit.product?.stock_type as StockType,

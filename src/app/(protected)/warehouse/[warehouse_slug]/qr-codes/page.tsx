@@ -200,11 +200,12 @@ export default function QRCodesPage() {
 
                 {/* Batch Info */}
                 <div className="flex-1 flex flex-col items-start">
-                  <p className="text-base font-medium text-gray-900">
+                  <p className="text-base font-medium text-gray-700">
                     {batch.batch_name}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {batch.item_count} {batch.item_count === 1 ? "code" : "codes"}
+                    {batch.item_count}{" "}
+                    {batch.item_count === 1 ? "code" : "codes"}
                   </p>
                   <p
                     className="text-xs text-gray-500"

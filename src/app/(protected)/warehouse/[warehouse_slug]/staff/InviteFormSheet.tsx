@@ -247,7 +247,7 @@ The Bale Team`;
                             htmlFor={`warehouse-${warehouse.id}`}
                             className="flex flex-col items-start gap-0 cursor-pointer flex-1"
                           >
-                            <span className="text-base font-normal text-gray-900">
+                            <span className="text-base font-normal text-gray-700">
                               {warehouse.name}
                             </span>
                             <span className="text-xs font-normal text-gray-500 leading-relaxed">

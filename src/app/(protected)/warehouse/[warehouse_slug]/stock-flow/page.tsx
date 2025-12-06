@@ -488,8 +488,8 @@ export default function StockFlowPage() {
                   }}
                   className="flex items-center gap-4 p-4 border-t border-dashed border-gray-300 hover:bg-gray-100 hover:cursor-pointer transition-colors"
                 >
-                  <div className="flex-1 text-left">
-                    <p className="text-base font-medium text-gray-900">
+                  <div className="flex-3 text-left">
+                    <p className="text-base font-medium text-gray-700">
                       {item.productName}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
@@ -499,7 +499,7 @@ export default function StockFlowPage() {
                       Goods {item.type} on {formatDate(item.date)}
                     </p>
                   </div>
-                  <div className="flex flex-col items-end justify-center">
+                  <div className="flex-1 items-end justify-center text-right text-wrap">
                     <p
                       className={`text-sm font-semibold ${
                         item.type === "inward"

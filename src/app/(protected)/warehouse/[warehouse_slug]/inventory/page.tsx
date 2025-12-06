@@ -28,9 +28,12 @@ import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import {
   formatMeasuringUnitQuantities,
   getMeasuringUnit,
-  getMeasuringUnitAbbreviation,
 } from "@/lib/utils/measuring-units";
-import { getProductIcon, getProductInfo } from "@/lib/utils/product";
+import {
+  getAvailableStockText,
+  getProductIcon,
+  getProductInfo,
+} from "@/lib/utils/product";
 import { Toggle } from "@/components/ui/toggle";
 import { GlowIndicator } from "@/components/ui/glow-indicator";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -300,12 +303,8 @@ export default function InventoryPage() {
           </div>
         ) : (
           filteredProducts.map((product) => {
-            const totalQuantity = product.inventory?.in_stock_quantity || 0;
             const imageUrl = product.product_images?.[0];
             const productInfoText = getProductInfo(product);
-            const unitAbbreviation = getMeasuringUnitAbbreviation(
-              product.measuring_unit as MeasuringUnit | null,
-            );
             const lowStock =
               product.min_stock_alert &&
               (product.min_stock_threshold ?? 0) >=
@@ -335,7 +334,7 @@ export default function InventoryPage() {
 
                   {/* Product Info */}
                   <div className="flex-1 flex flex-col items-start">
-                    <p className="text-base font-medium text-gray-900">
+                    <p className="text-base font-medium text-gray-700">
                       {product.name}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
@@ -349,9 +348,9 @@ export default function InventoryPage() {
                       <IconAlertTriangle className="size-4 text-yellow-700" />
                     )}
                     <p
-                      className={`text-sm font-semibold ${lowStock ? "text-yellow-700" : "text-gray-900"}`}
+                      className={`text-sm font-semibold ${lowStock ? "text-yellow-700" : "text-gray-700"}`}
                     >
-                      {totalQuantity} {unitAbbreviation}
+                      {getAvailableStockText(product)}
                     </p>
                   </div>
 

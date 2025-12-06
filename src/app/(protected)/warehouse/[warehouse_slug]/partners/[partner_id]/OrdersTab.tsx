@@ -119,7 +119,7 @@ export function OrdersTab({ orders, warehouseSlug }: OrdersTabProps) {
               >
                 {/* Title and Status Badge */}
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-base font-medium text-gray-900 text-left">
+                  <p className="text-base font-medium text-gray-700 text-left">
                     {getProductSummary(order.sales_order_items)}
                   </p>
                   <SalesStatusBadge status={displayStatus} />

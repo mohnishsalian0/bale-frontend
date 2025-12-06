@@ -37,7 +37,7 @@ export function StaffMembersTab({ staff }: StaffMembersTabProps) {
 
                   {/* Details */}
                   <div className="flex flex-col gap-1 items-center w-full">
-                    <p className="text-base font-medium text-gray-900 text-center">
+                    <p className="text-base font-medium text-gray-700 text-center">
                       {fullName}
                     </p>
 

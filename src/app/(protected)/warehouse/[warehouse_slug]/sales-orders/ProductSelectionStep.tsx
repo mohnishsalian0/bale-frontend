@@ -266,7 +266,7 @@ export function ProductSelectionStep({
                       </Button>
                     )}
                     <p className="text-xs text-gray-500">
-                      {getAvailableStockText(product)}
+                      {getAvailableStockText(product)} avail.
                     </p>
                   </div>
                 </div>

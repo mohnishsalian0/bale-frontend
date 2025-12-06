@@ -108,7 +108,7 @@ export default function InviteAcceptance({
 
             {/* Company & Warehouse Info */}
             <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-              <p className="text-base font-medium text-gray-900">
+              <p className="text-base font-medium text-gray-700">
                 {companyName}
               </p>
               <div className="flex items-center gap-1.5 text-gray-500">

@@ -152,7 +152,7 @@ export function OutwardsTab({ orderId, warehouseSlug }: OutwardsTabProps) {
 
                 {/* Product Details */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-gray-700 truncate">
                     {item.stock_unit?.product?.name || "Unknown Product"}
                   </p>
                   <p className="text-xs text-gray-500">
@@ -161,7 +161,7 @@ export function OutwardsTab({ orderId, warehouseSlug }: OutwardsTabProps) {
                 </div>
 
                 {/* Quantity */}
-                <p className="text-sm font-medium text-gray-900 shrink-0">
+                <p className="text-sm font-medium text-gray-700 shrink-0">
                   {item.quantity_dispatched}
                   {getMeasuringUnitAbbreviation(
                     item.stock_unit?.product?.measuring_unit as MeasuringUnit,

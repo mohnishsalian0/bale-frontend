@@ -100,7 +100,7 @@ export function ActiveSalesOrdersSection({
                     {/* Title and Status Badge */}
                     <div>
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-base font-medium text-gray-900">
+                        <p className="text-base font-medium text-gray-700">
                           {customerName}
                         </p>
                         <SalesStatusBadge status={displayStatus} />

@@ -60,12 +60,12 @@ export function getProductSummary(
 ): string {
   if (products.length === 0) return "No products";
   if (products.length === 1)
-    return `${products[0].name} x${products[0].quantity}`;
+    return `${products[0].name} x ${products[0].quantity}`;
   if (products.length === 2) {
-    return `${products[0].name} x${products[0].quantity}, ${products[1].name} x${products[1].quantity}`;
+    return `${products[0].name} x ${products[0].quantity}, ${products[1].name} x ${products[1].quantity}`;
   }
   const remaining = products.length - 2;
-  return `${products[0].name} x${products[0].quantity}, ${products[1].name} x${products[1].quantity}, ${remaining} more`;
+  return `${products[0].name} x ${products[0].quantity}, ${products[1].name} x ${products[1].quantity}, ${remaining} more`;
 }
 
 /**

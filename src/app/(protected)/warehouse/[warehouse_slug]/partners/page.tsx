@@ -188,7 +188,7 @@ export default function PartnersPage() {
                       {/* Details */}
                       <div className="flex-1 flex justify-between py-2">
                         <div className="flex flex-col">
-                          <p className="text-base font-medium text-gray-900">
+                          <p className="text-base font-medium text-gray-700">
                             {name}
                           </p>
                           <p className="text-xs text-gray-500">

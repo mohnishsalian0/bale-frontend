@@ -175,12 +175,12 @@ export default function WarehouseSelector({
 
                         {/* Content */}
                         <div className="flex-1 min-w-0 flex flex-col gap-1">
-                          <div
-                            className="text-base font-medium text-gray-900 truncate"
+                          <p
+                            className="text-base font-medium text-gray-700 truncate"
                             title={warehouse.name}
                           >
                             {warehouse.name}
-                          </div>
+                          </p>
                           <div
                             className="text-sm text-gray-500 line-clamp-2"
                             title={formattedAddress}

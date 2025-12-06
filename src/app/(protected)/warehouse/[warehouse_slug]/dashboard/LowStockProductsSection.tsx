@@ -61,7 +61,7 @@ export function LowStockProductsSection({
                 />
 
                 <div className="flex-1 flex flex-col items-start">
-                  <p className="font-medium text-gray-900">{product.name}</p>
+                  <p className="font-medium text-gray-700">{product.name}</p>
                   <p className="text-xs text-gray-500">
                     {getProductInfo(product) || "No details"}
                   </p>
