@@ -3,7 +3,10 @@
 import { use, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { SalesStatusBadge } from "@/components/ui/sales-status-badge";
+import {
+  getStatusConfig,
+  SalesStatusBadge,
+} from "@/components/ui/sales-status-badge";
 import { Progress } from "@/components/ui/progress";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
@@ -119,6 +122,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
       order.expected_delivery_date,
     );
   }, [order]);
+  const progressBarColor = getStatusConfig(displayStatus).color;
 
   // Handler functions
   const handleApprove = () => {
@@ -258,7 +262,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
   }
 
   return (
-    <div className="flex flex-col flex-1 overflow-y-auto">
+    <div className="flex flex-col grow">
       <div className="relative flex flex-col flex-1">
         {/* Header */}
         <div className="p-4">
@@ -280,10 +284,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
               <p className="text-sm text-gray-700 mb-1">
                 {completionPercentage}% completed
               </p>
-              <Progress
-                color={displayStatus === "overdue" ? "yellow" : "blue"}
-                value={completionPercentage}
-              />
+              <Progress color={progressBarColor} value={completionPercentage} />
             </div>
           )}
         </div>

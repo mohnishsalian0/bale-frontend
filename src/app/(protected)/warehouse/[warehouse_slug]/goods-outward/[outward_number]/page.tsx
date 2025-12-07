@@ -47,7 +47,7 @@ export default function GoodsOutwardDetailPage({ params }: PageParams) {
   }
 
   return (
-    <div className="flex flex-col flex-1 overflow-y-auto">
+    <div className="flex flex-col grow">
       <div className="relative flex flex-col flex-1">
         {/* Header */}
         <div className="p-4">

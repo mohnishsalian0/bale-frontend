@@ -164,7 +164,6 @@ export default function SummaryPage({ params }: PageParams) {
       <Section
         title="Inward notes"
         subtitle={product.notes || "No note added"}
-        onEdit={() => {}}
         icon={() => <IconNote className="size-5" />}
       />
     </div>

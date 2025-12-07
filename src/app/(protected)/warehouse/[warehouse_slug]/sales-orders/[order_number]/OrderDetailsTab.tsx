@@ -20,6 +20,7 @@ import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import { Section } from "@/components/layouts/section";
 import { getProductIcon } from "@/lib/utils/product";
 import type { SalesOrderDetailView } from "@/lib/queries/sales-orders";
+import { getStatusConfig } from "@/components/ui/sales-status-badge";
 
 interface OrderDetailsTabProps {
   order: SalesOrderDetailView;
@@ -49,6 +50,7 @@ export function OrderDetailsTab({
   onEditWarehouse,
   onEditNotes,
 }: OrderDetailsTabProps) {
+  const progressBarColor = getStatusConfig(displayStatus).color;
   return (
     <div className="flex flex-col gap-3 p-4">
       {/* Line Items Section */}
@@ -100,7 +102,7 @@ export function OrderDetailsTab({
                   {displayStatus !== "approval_pending" && (
                     <Progress
                       size="sm"
-                      color={displayStatus === "overdue" ? "yellow" : "blue"}
+                      color={progressBarColor}
                       value={
                         item.required_quantity > 0
                           ? ((item.dispatched_quantity || 0) /

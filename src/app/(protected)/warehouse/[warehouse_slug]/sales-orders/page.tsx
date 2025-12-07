@@ -295,7 +295,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="relative flex flex-col flex-1 overflow-y-auto">
+    <div className="relative flex flex-col grow">
       {/* Header */}
       <div
         className={`flex items-end justify-between gap-4 p-4 pb-0 ${isMobile && "flex-col-reverse items-start"}`}

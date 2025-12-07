@@ -86,7 +86,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="relative flex flex-col flex-1 overflow-y-auto">
+    <div className="relative flex flex-col grow">
       {/* Quote Card */}
       <Card className="mx-4 mt-4">
         <CardContent className="p-4 text-center">

@@ -26,6 +26,24 @@ export function PaginationWrapper({
   // Don't show pagination if only 1 page
   if (totalPages <= 1) return null;
 
+  // Wrapper function to scroll to top and then change page
+  const handlePageChange = (page: number) => {
+    onPageChange(page);
+
+    // setTimeout(() => {
+    const mainContent = document.getElementById("main-content");
+    console.log(mainContent);
+
+    if (mainContent) {
+      // Scroll the main content container (used in protected layout)
+      mainContent.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      // Fallback to window scroll for pages without the container
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    // }, 300);
+  };
+
   return (
     <div className="flex justify-center p-4 border-t border-gray-200 shrink-0 overflow-x-auto scrollbar-hide">
       <Pagination>
@@ -33,7 +51,9 @@ export function PaginationWrapper({
           {/* Previous Button */}
           <PaginationItem>
             <PaginationPrevious
-              onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
+              onClick={() =>
+                currentPage > 1 && handlePageChange(currentPage - 1)
+              }
               className={
                 currentPage === 1
                   ? "pointer-events-none opacity-50"
@@ -46,7 +66,7 @@ export function PaginationWrapper({
           {currentPage > 2 && (
             <PaginationItem>
               <PaginationLink
-                onClick={() => onPageChange(1)}
+                onClick={() => handlePageChange(1)}
                 className="cursor-pointer"
               >
                 1
@@ -65,7 +85,7 @@ export function PaginationWrapper({
           {currentPage > 1 && (
             <PaginationItem>
               <PaginationLink
-                onClick={() => onPageChange(currentPage - 1)}
+                onClick={() => handlePageChange(currentPage - 1)}
                 className="cursor-pointer"
               >
                 {currentPage - 1}
@@ -84,7 +104,7 @@ export function PaginationWrapper({
           {currentPage < totalPages && (
             <PaginationItem>
               <PaginationLink
-                onClick={() => onPageChange(currentPage + 1)}
+                onClick={() => handlePageChange(currentPage + 1)}
                 className="cursor-pointer"
               >
                 {currentPage + 1}
@@ -103,7 +123,7 @@ export function PaginationWrapper({
           {currentPage < totalPages - 1 && (
             <PaginationItem>
               <PaginationLink
-                onClick={() => onPageChange(totalPages)}
+                onClick={() => handlePageChange(totalPages)}
                 className="cursor-pointer"
               >
                 {totalPages}
@@ -115,7 +135,7 @@ export function PaginationWrapper({
           <PaginationItem>
             <PaginationNext
               onClick={() =>
-                currentPage < totalPages && onPageChange(currentPage + 1)
+                currentPage < totalPages && handlePageChange(currentPage + 1)
               }
               className={
                 currentPage === totalPages

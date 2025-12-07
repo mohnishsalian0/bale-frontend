@@ -1,3 +1,5 @@
+import { Warehouse } from "@/types/warehouses.types";
+
 /**
  * Address fields interface for flexible address formatting
  */
@@ -32,4 +34,18 @@ export function getWarehouseFormattedAddress(
   ].filter(Boolean);
 
   return addressParts.join(", ") || "No address";
+}
+
+export function getWarehouseContactDetails(
+  warehouse: Pick<Warehouse, "contact_name" | "contact_number">,
+): string | null {
+  let contactDetails = warehouse.contact_name;
+  if (warehouse.contact_number) {
+    if (contactDetails) {
+      contactDetails += " • ";
+    }
+    contactDetails += warehouse.contact_number;
+  }
+
+  return contactDetails;
 }

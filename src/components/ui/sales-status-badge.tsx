@@ -13,7 +13,7 @@ interface SalesStatusConfig {
   label: string;
 }
 
-function getStatusConfig(
+export function getStatusConfig(
   status: SalesOrderStatus | "overdue",
 ): SalesStatusConfig {
   switch (status) {

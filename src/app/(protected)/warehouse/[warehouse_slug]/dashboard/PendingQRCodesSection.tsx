@@ -40,7 +40,7 @@ export function PendingQRCodesSection({
           {products.map((product) => (
             <Card
               key={`pending-qr-${product.id}`}
-              className="rounded-none border-x-0 border-b-0 rounded-lg shadow-none bg-transparent cursor-pointer hover:bg-gray-100 transition-colors"
+              className="rounded-none border-x-0 border-b-0 shadow-none bg-transparent cursor-pointer hover:bg-gray-100 transition-colors"
               onClick={() =>
                 onNavigate(
                   `/warehouse/${warehouseSlug}/inventory/${product.sequence_number}`,

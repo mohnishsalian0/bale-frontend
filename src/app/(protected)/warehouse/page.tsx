@@ -77,10 +77,10 @@ export default function WarehouseSelectionPage() {
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center p-4">
+    <div className="h-full flex items-center justify-center py-4">
       <div className="w-full max-w-md">
         {/* Header with illustration */}
-        <div className="flex flex-row items-end justify-between mb-6">
+        <div className="flex flex-row items-end justify-between mb-6 px-4">
           <h1 className="text-3xl font-semibold text-gray-900">
             Select Warehouse
           </h1>
@@ -104,7 +104,7 @@ export default function WarehouseSelectionPage() {
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col border-b border-border">
             {warehouses.map((warehouse) => {
               const formattedAddress = getWarehouseFormattedAddress(warehouse);
 
@@ -112,7 +112,7 @@ export default function WarehouseSelectionPage() {
                 <div
                   key={warehouse.id}
                   onClick={() => handleWarehouseSelect(warehouse)}
-                  className="flex gap-3 p-4 rounded-lg cursor-pointer transition-all bg-background border border-border shadow-gray-md hover:border-primary-500 hover:shadow-primary-md select-none"
+                  className="flex gap-3 p-4 cursor-pointer transition-all bg-background border-t border-border hover:bg-primary-100 select-none"
                 >
                   {/* Icon */}
                   <div className="flex-shrink-0 w-14 h-14 rounded-lg flex items-center justify-center bg-gray-100">
@@ -127,12 +127,12 @@ export default function WarehouseSelectionPage() {
                     >
                       {warehouse.name}
                     </p>
-                    <div
-                      className="text-sm text-gray-500 truncate"
+                    <p
+                      className="text-sm text-gray-500"
                       title={formattedAddress}
                     >
                       {formattedAddress}
-                    </div>
+                    </p>
                   </div>
                 </div>
               );

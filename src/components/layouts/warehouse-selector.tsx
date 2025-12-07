@@ -3,11 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import {
-  IconBuildingWarehouse,
-  IconPencil,
-  IconShare,
-} from "@tabler/icons-react";
+import { IconMapPin, IconPencil, IconShare } from "@tabler/icons-react";
 import { Fab } from "../ui/fab";
 import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
@@ -15,7 +11,10 @@ import { WarehouseFormSheet } from "@/app/(protected)/warehouse/WarehouseFormShe
 import { useSession } from "@/contexts/session-context";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
 import { useUserMutations } from "@/lib/query/hooks/users";
-import { getWarehouseFormattedAddress } from "@/lib/utils/warehouse";
+import {
+  getWarehouseContactDetails,
+  getWarehouseFormattedAddress,
+} from "@/lib/utils/warehouse";
 import { Warehouse } from "@/types/warehouses.types";
 import { PermissionGate } from "../auth/PermissionGate";
 import { toast } from "sonner";
@@ -130,9 +129,9 @@ export default function WarehouseSelector({
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="bottom" className="items-center">
-          <div className="w-full max-w-md px-4">
+          <div className="w-full max-w-md">
             {/* Header with illustration */}
-            <SheetHeader className="flex flex-row flex-1 items-end justify-between mt-10 mb-4 p-0">
+            <SheetHeader className="flex flex-row flex-1 items-end justify-between mt-10 mb-4 py-0">
               <SheetTitle className="text-3xl text-gray-900">
                 Warehouses
               </SheetTitle>
@@ -158,31 +157,20 @@ export default function WarehouseSelector({
                   No warehouses found
                 </p>
               ) : (
-                <div className="flex flex-col gap-3 pb-24 overflow-y-auto">
+                <div className="flex flex-col mb-24 overflow-y-auto border-y border-border">
                   {warehouses.map((warehouse) => {
                     const isSelected = warehouse.id === currentWarehouse;
                     const formattedAddress =
                       getWarehouseFormattedAddress(warehouse);
+                    const contactDetails =
+                      getWarehouseContactDetails(warehouse);
 
                     return (
                       <div
                         key={warehouse.id}
                         onClick={() => handleSelect(warehouse.id)}
-                        className={`flex gap-3 p-4 rounded-lg cursor-pointer select-none transition-all bg-background border ${isSelected ? "border-primary-500 shadow-primary-md" : "border-border shadow-gray-md"}`}
+                        className={`flex gap-3 p-4 cursor-pointer select-none transition-all bg-background border-t border-border ${isSelected && "bg-primary-100 border border-primary-500"}`}
                       >
-                        {/* Icon */}
-                        <div
-                          className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center ${
-                            isSelected ? "bg-primary-100" : "bg-gray-100"
-                          }`}
-                        >
-                          <IconBuildingWarehouse
-                            className={`size-5 ${
-                              isSelected ? "text-primary-700" : "text-gray-500"
-                            }`}
-                          />
-                        </div>
-
                         {/* Content */}
                         <div className="flex-1 min-w-0 flex flex-col gap-1">
                           <p
@@ -191,12 +179,20 @@ export default function WarehouseSelector({
                           >
                             {warehouse.name}
                           </p>
-                          <div
-                            className="text-sm text-gray-500 line-clamp-2"
+                          <p
+                            className="text-sm text-gray-500"
                             title={formattedAddress}
                           >
                             {formattedAddress}
-                          </div>
+                          </p>
+                          {contactDetails && (
+                            <p
+                              className="text-sm font-medium text-gray-500"
+                              title={contactDetails}
+                            >
+                              {contactDetails}
+                            </p>
+                          )}
 
                           {/* Action buttons - Only show for admins */}
                           <div className="flex items-center gap-2 mt-2 text-sm">
@@ -223,6 +219,9 @@ export default function WarehouseSelector({
                             </Button>
                           </div>
                         </div>
+                        {isSelected && (
+                          <IconMapPin className="size-5 text-primary-700" />
+                        )}
                       </div>
                     );
                   })}

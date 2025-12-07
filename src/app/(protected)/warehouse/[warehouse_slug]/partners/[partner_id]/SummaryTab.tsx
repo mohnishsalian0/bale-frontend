@@ -32,7 +32,6 @@ export function SummaryTab({ partner, onEdit }: SummaryTabProps) {
       <Section
         title="Contact information"
         subtitle=""
-        onEdit={onEdit}
         icon={() => <IconUser className="size-5" />}
       >
         <div className="space-y-3">
@@ -89,7 +88,6 @@ export function SummaryTab({ partner, onEdit }: SummaryTabProps) {
       <Section
         title="Financial information"
         subtitle=""
-        onEdit={onEdit}
         icon={() => <IconCurrencyRupee className="size-5" />}
       >
         <div className="space-y-3">
