@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useSalesOrdersByCustomer } from "@/lib/query/hooks/sales-orders";
+import { useSalesOrders } from "@/lib/query/hooks/sales-orders";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { getPartnerName } from "@/lib/utils/partner";
 import { SalesStatusBadge } from "@/components/ui/sales-status-badge";
@@ -42,8 +42,15 @@ export function OutwardLinkToStep({
   const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch all sales orders for the warehouse
-  const { data: salesOrders = [], isLoading: salesOrdersLoading } =
-    useSalesOrdersByCustomer(selectedPartnerId, { status: ["in_progress"] });
+  const { data: salesOrdersResponse, isLoading: salesOrdersLoading } =
+    useSalesOrders({
+      filters: {
+        customerId: selectedPartnerId || undefined,
+        status: ["in_progress"],
+      },
+    });
+
+  const salesOrders = salesOrdersResponse?.data || [];
 
   // Filter sales orders by selected partner and search query
   const filteredSalesOrders = salesOrders.filter((order) => {

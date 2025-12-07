@@ -15,7 +15,7 @@ import { getInitials } from "@/lib/utils/initials";
 import { formatCurrency } from "@/lib/utils/financial";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getPartnerName, getFormattedAddress } from "@/lib/utils/partner";
-import type { DisplayStatus } from "@/lib/utils/sales-order";
+import { getAgentName, type DisplayStatus } from "@/lib/utils/sales-order";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import { Section } from "@/components/layouts/section";
 import { getProductIcon } from "@/lib/utils/product";
@@ -180,14 +180,12 @@ export function OrderDetailsTab({
       </Section>
 
       {/* Agent Section (Conditional) */}
-      {order.agent && (
-        <Section
-          title={getPartnerName(order.agent)}
-          subtitle="Agent"
-          onEdit={onEditAgent}
-          icon={() => <>{getInitials(getPartnerName(order.agent))}</>}
-        />
-      )}
+      <Section
+        title={getAgentName(order.agent)}
+        subtitle="Agent"
+        onEdit={onEditAgent}
+        icon={() => <>{getInitials(getPartnerName(order.agent))}</>}
+      />
 
       {/* Payment Terms Section */}
       <Section

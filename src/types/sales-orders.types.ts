@@ -17,7 +17,10 @@ type Product = Tables<"products">;
 // ============================================================================
 
 export interface SalesOrderFilters extends Record<string, unknown> {
+  warehouseId?: string;
   status?: SalesOrderStatus | SalesOrderStatus[]; // Support single or array for IN queries
+  customerId?: string;
+  agentId?: string;
   limit?: number;
   order_by?: "order_date" | "expected_delivery_date" | "created_at";
   ascending?: boolean;

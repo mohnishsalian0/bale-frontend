@@ -1,5 +1,6 @@
 import type { SalesOrderStatus } from "@/types/database/enums";
 import { SalesOrderItemListView } from "@/types/sales-orders.types";
+import { getPartnerName, PartnerNameFields } from "./partner";
 
 export type DisplayStatus = SalesOrderStatus | "overdue";
 
@@ -76,4 +77,12 @@ export function getFullProductInfo(items: SalesOrderItemListView[]): string {
   return items
     .map((item) => `${item.product?.name} x${item.required_quantity}`)
     .join(", ");
+}
+
+/**
+ * Get formatted name for a agent if present, else "No agent assigned"
+ */
+export function getAgentName(agent: PartnerNameFields | null): string {
+  if (!agent) return "No agent assigned";
+  return getPartnerName(agent);
 }

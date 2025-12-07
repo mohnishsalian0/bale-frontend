@@ -80,7 +80,11 @@ export default function OrdersPage() {
     data: ordersResponse,
     isLoading: ordersLoading,
     isError: ordersError,
-  } = useSalesOrders(warehouse.id, {}, currentPage, PAGE_SIZE);
+  } = useSalesOrders({
+    filters: { warehouseId: warehouse.id },
+    page: currentPage,
+    pageSize: PAGE_SIZE,
+  });
   const { data: customers = [], isLoading: customersLoading } = usePartners({
     partner_type: "customer",
   });

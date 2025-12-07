@@ -20,22 +20,23 @@ import {
 } from "@/lib/utils/transport";
 import type { OutwardDetailView } from "@/types/stock-flow.types";
 import type { ComponentType } from "react";
+import { useSession } from "@/contexts/session-context";
 
 interface OutwardDetailsTabProps {
   outward: OutwardDetailView;
 }
 
 export function OutwardDetailsTab({ outward }: OutwardDetailsTabProps) {
+  const { warehouse } = useSession();
   // Determine reason for outward
   let reasonTitle = "Unknown";
   let ReasonIcon: ComponentType<{ className?: string }> = IconNote;
   let reasonLink: string | null = null;
 
-  if (outward.outward_type === "sales" && outward.sales_order) {
+  if (outward.outward_type === "sales_order" && outward.sales_order) {
     reasonTitle = `SO-${outward.sales_order.sequence_number}`;
     ReasonIcon = IconShoppingCart;
-    // TODO: Add warehouse slug to construct proper link
-    // reasonLink = `/warehouse/${warehouseSlug}/sales-orders/${outward.sales_order.sequence_number}`;
+    reasonLink = `/warehouse/${warehouse.slug}/sales-orders/${outward.sales_order.sequence_number}`;
   } else if (outward.outward_type === "job_work" && outward.job_work) {
     reasonTitle = `JW-${outward.job_work.sequence_number}`;
     ReasonIcon = IconJobWork;

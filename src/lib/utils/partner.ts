@@ -5,7 +5,7 @@ type Partner = Tables<"partners">;
 /**
  * Partial partner with only the fields needed for name formatting
  */
-type PartnerNameFields = Pick<
+export type PartnerNameFields = Pick<
   Partner,
   "first_name" | "last_name" | "company_name"
 >;

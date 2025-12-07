@@ -230,7 +230,7 @@ export function QRScannerStep({
           formats={["qr_code"]}
           paused={paused}
           components={{
-            torch: torch,
+            torch,
             finder: false,
           }}
           constraints={{
@@ -278,7 +278,7 @@ export function QRScannerStep({
             variant={`${torch ? "default" : "outline"}`}
             size="icon"
             onClick={() => setTorch((prev) => !prev)}
-            className={`${!torch ? "border-gray-500 shadow-dark-gray-md hover:bg-gray-200 hover:text-gray-700" : ""}`}
+            className={`${!torch ? "text-gray-700 border-gray-500 shadow-dark-gray-md hover:bg-gray-200" : ""}`}
           >
             <IconBolt className="rotate-[270deg]" />
           </Button>
@@ -288,7 +288,7 @@ export function QRScannerStep({
             type="button"
             variant="outline"
             onClick={handleOpenInventory}
-            className="border-gray-500 shadow-dark-gray-md hover:bg-gray-200 hover:text-gray-700"
+            className="text-gray-700 border-gray-500 shadow-dark-gray-md hover:bg-gray-200"
           >
             Select from inventory
           </Button>

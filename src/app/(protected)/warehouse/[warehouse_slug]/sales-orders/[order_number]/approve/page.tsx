@@ -36,7 +36,7 @@ interface OrderFormData {
   customerId: string;
   agentId: string;
   orderDate: string;
-  expectedDate: string;
+  deliveryDate: string;
   advanceAmount: string;
   discount: string;
   notes: string;
@@ -132,7 +132,7 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
     customerId: "",
     agentId: "",
     orderDate: "",
-    expectedDate: "",
+    deliveryDate: "",
     advanceAmount: "",
     discount: "",
     notes: "",
@@ -154,7 +154,7 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
         customerId: existingOrder.customer_id,
         agentId: existingOrder.agent_id || "",
         orderDate: existingOrder.order_date,
-        expectedDate: existingOrder.expected_delivery_date || "",
+        deliveryDate: existingOrder.expected_delivery_date || "",
         advanceAmount: existingOrder.advance_amount?.toString() || "",
         discount: existingOrder.discount_value?.toString() || "",
         notes: existingOrder.notes || "",
@@ -249,7 +249,7 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
       customer_id: formData.customerId,
       agent_id: formData.agentId || null,
       order_date: formData.orderDate,
-      expected_delivery_date: formData.expectedDate || null,
+      expected_delivery_date: formData.deliveryDate || null,
       advance_amount: formData.advanceAmount
         ? parseFloat(formData.advanceAmount)
         : 0,

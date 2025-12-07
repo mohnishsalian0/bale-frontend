@@ -32,7 +32,6 @@ export type {
  * - Recent orders: getSalesOrders(warehouseId, { order_by: 'order_date', order_direction: 'desc', limit: 5 })
  */
 export async function getSalesOrders(
-  warehouseId: string | null,
   filters?: SalesOrderFilters,
   page: number = 1,
   pageSize: number = 25,
@@ -67,8 +66,10 @@ export async function getSalesOrders(
     .is("deleted_at", null);
 
   // Apply warehouse filter
-  if (warehouseId) {
-    query = query.or(`warehouse_id.eq.${warehouseId},warehouse_id.is.null`);
+  if (filters?.warehouseId) {
+    query = query.or(
+      `warehouse_id.eq.${filters.warehouseId},warehouse_id.is.null`,
+    );
   }
 
   // Apply status filter (supports single value or array)
@@ -78,6 +79,16 @@ export async function getSalesOrders(
     } else {
       query = query.eq("status", filters.status);
     }
+  }
+
+  // Filter by customer if provided
+  if (filters?.customerId) {
+    query = query.eq("customer_id", filters.customerId);
+  }
+
+  // Filter by agent if provided
+  if (filters?.agentId) {
+    query = query.eq("agent_id", filters.agentId);
   }
 
   // Apply ordering (defaults to order_date descending)
@@ -96,62 +107,6 @@ export async function getSalesOrders(
     data: (data as SalesOrderListView[]) || [],
     totalCount: count || 0,
   };
-}
-
-/**
- * Fetch sales orders for a customer (for partner detail page)
- */
-export async function getSalesOrdersByCustomer(
-  customerId: string,
-  filters?: SalesOrderFilters,
-): Promise<SalesOrderListView[]> {
-  const supabase = createClient();
-
-  let query = supabase
-    .from("sales_orders")
-    .select(
-      `
-			*,
-			customer:customer_id(
-				id, first_name, last_name, company_name
-			),
-			agent:agent_id(
-				id, first_name, last_name, company_name
-			),
-			sales_order_items(
-				*,
-				product:product_id(id, name, stock_type, measuring_unit, product_images, sequence_number)
-			)
-		`,
-    )
-    .eq("customer_id", customerId)
-    .is("deleted_at", null)
-    .order("order_date", { ascending: false });
-
-  // Apply status filter (supports single value or array)
-  if (filters?.status) {
-    if (Array.isArray(filters.status)) {
-      query = query.in("status", filters.status);
-    } else {
-      query = query.eq("status", filters.status);
-    }
-  }
-
-  // Apply ordering (defaults to order_date descending)
-  const orderBy = filters?.order_by || "order_date";
-  const ascending = !!filters?.ascending;
-  query = query.order(orderBy, { ascending });
-
-  if (filters?.limit) {
-    query = query.limit(filters.limit);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw error;
-  if (!data) return [];
-
-  return data as SalesOrderListView[];
 }
 
 /**

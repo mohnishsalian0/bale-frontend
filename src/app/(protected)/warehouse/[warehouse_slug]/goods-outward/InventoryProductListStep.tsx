@@ -171,7 +171,7 @@ export function InventoryProductListStep({
                   key={product.id}
                   type="button"
                   onClick={() => onProductSelect(product)}
-                  className="flex items-center gap-3 p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors text-left"
+                  className="flex items-center gap-3 p-4 border-t border-gray-200 hover:bg-gray-50 transition-colors text-left"
                 >
                   {/* Product Image */}
                   <ImageWrapper

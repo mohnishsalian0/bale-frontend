@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useSalesOrdersByCustomer } from "@/lib/query/hooks/sales-orders";
+import { useSalesOrders } from "@/lib/query/hooks/sales-orders";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { getPartnerName } from "@/lib/utils/partner";
 import { SalesStatusBadge } from "@/components/ui/sales-status-badge";
@@ -42,8 +42,12 @@ export function InwardLinkToStep({
   console.log(customerId);
 
   // Fetch sales orders for sales return selection
-  const { data: salesOrders = [], isLoading: salesOrdersLoading } =
-    useSalesOrdersByCustomer(customerId, { status: "in_progress" });
+  const { data: salesOrdersResponse, isLoading: salesOrdersLoading } =
+    useSalesOrders({
+      filters: { customerId: customerId || undefined, status: "in_progress" },
+    });
+
+  const salesOrders = salesOrdersResponse?.data || [];
 
   // Filter sales orders based on search
   const filteredSalesOrders = salesOrders.filter((order) => {

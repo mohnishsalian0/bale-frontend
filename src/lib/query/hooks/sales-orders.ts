@@ -11,7 +11,6 @@ import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getSalesOrders,
   getSalesOrderByNumber,
-  getSalesOrdersByCustomer,
   createSalesOrder,
   approveSalesOrder,
   cancelSalesOrder,
@@ -33,17 +32,23 @@ import {
  * - Active orders: useSalesOrders(warehouseId, { status: ['approval_pending', 'in_progress'] })
  * - Paginated orders: useSalesOrders(warehouseId, filters, page, pageSize)
  */
-export function useSalesOrders(
-  warehouseId: string | null,
-  filters?: SalesOrderFilters,
-  page: number = 1,
-  pageSize: number = 25,
-) {
+export function useSalesOrders({
+  filters,
+  page = 1,
+  pageSize = 25,
+  enabled = true,
+}: {
+  filters?: SalesOrderFilters;
+  page?: number;
+  pageSize?: number;
+  enabled?: boolean;
+}) {
   return useQuery({
-    queryKey: queryKeys.salesOrders.all(warehouseId, filters, page),
-    queryFn: () => getSalesOrders(warehouseId, filters, page, pageSize),
+    queryKey: queryKeys.salesOrders.all(filters, page),
+    queryFn: () => getSalesOrders(filters, page, pageSize),
     ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
     placeholderData: keepPreviousData,
+    enabled,
   });
 }
 
@@ -56,22 +61,6 @@ export function useSalesOrderByNumber(sequenceNumber: string | null) {
     queryFn: () => getSalesOrderByNumber(sequenceNumber!),
     ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
     enabled: !!sequenceNumber,
-  });
-}
-
-/**
- * Fetch sales orders for a customer (for partner detail page)
- */
-export function useSalesOrdersByCustomer(
-  customerId: string | null,
-  filters?: SalesOrderFilters,
-  enabled: boolean = true,
-) {
-  return useQuery({
-    queryKey: queryKeys.salesOrders.customer(customerId || ""),
-    queryFn: () => getSalesOrdersByCustomer(customerId!, filters),
-    ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
-    enabled: !!customerId && enabled,
   });
 }
 

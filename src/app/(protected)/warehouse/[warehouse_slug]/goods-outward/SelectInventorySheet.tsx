@@ -63,8 +63,6 @@ export function SelectInventorySheet({
   };
 
   const handleProductSelect = (product: ProductListView) => {
-    // TODO: Open stock units selection for this product
-    console.log("Selected product:", product);
     if (onProductSelect) {
       onProductSelect(product);
     }

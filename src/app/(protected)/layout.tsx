@@ -145,15 +145,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       }
     };
     validateAccess();
-  }, [
-    warehouseSlug,
-    pathname,
-    warehouse,
-    warehouseLoading,
-    user,
-    updateUserWarehouse,
-    router,
-  ]);
+  }, [warehouseSlug, pathname, warehouse, warehouseLoading, user, router]);
 
   const loading =
     authLoading ||

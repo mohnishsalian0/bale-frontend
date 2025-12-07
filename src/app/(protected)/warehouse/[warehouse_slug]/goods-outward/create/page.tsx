@@ -115,11 +115,11 @@ export default function CreateGoodsOutwardPage() {
   const canProceedFromLinkTo = useMemo(() => {
     switch (linkToData.linkToType) {
       case "sales_order":
-        return linkToData.sales_order_id !== null;
+        return !!linkToData.sales_order_id;
       case "purchase_return":
-        return linkToData.purchase_order_number?.trim() !== "";
+        return !!linkToData.purchase_order_number?.trim();
       case "other":
-        return linkToData.other_reason?.trim() !== "";
+        return !!linkToData.other_reason?.trim();
       default:
         return false;
     }

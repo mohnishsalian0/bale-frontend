@@ -18,6 +18,7 @@ import { useUserMutations } from "@/lib/query/hooks/users";
 import { getWarehouseFormattedAddress } from "@/lib/utils/warehouse";
 import { Warehouse } from "@/types/warehouses.types";
 import { PermissionGate } from "../auth/PermissionGate";
+import { toast } from "sonner";
 
 interface WarehouseSelectorProps {
   open: boolean;
@@ -51,11 +52,6 @@ export default function WarehouseSelector({
       return;
     }
 
-    // Prevent multiple simultaneous mutations
-    if (updateUserWarehouse.isPending) {
-      return;
-    }
-
     // Find selected warehouse to get slug
     const selectedWarehouse = warehouses.find((w) => w.id === warehouseId);
     if (!selectedWarehouse) {
@@ -63,35 +59,33 @@ export default function WarehouseSelector({
       return;
     }
 
-    try {
-      // Close sheet immediately to prevent re-clicks
-      onOpenChange(false);
+    // Update user's selected warehouse using mutation
+    updateUserWarehouse.mutate(
+      {
+        userId: user.id,
+        warehouseId: warehouseId,
+      },
+      {
+        onSuccess: () => {
+          let redirectPath = `/warehouse/${selectedWarehouse.slug}/dashboard`;
 
-      // Update user's selected warehouse using mutation
-      updateUserWarehouse.mutate(
-        {
-          userId: user.id,
-          warehouseId: warehouseId,
+          const warehouseRouteMatch = pathname.match(
+            /^\/warehouse\/[^/]+\/(.+)$/,
+          );
+          if (warehouseRouteMatch) {
+            const pagePath = warehouseRouteMatch[1];
+            redirectPath = `/warehouse/${selectedWarehouse.slug}/${pagePath}`;
+          }
+
+          router.push(redirectPath);
+          onOpenChange(false);
         },
-        {
-          onSuccess: () => {
-            let redirectPath = `/warehouse/${selectedWarehouse.slug}/dashboard`;
-
-            const warehouseRouteMatch = pathname.match(
-              /^\/warehouse\/[^/]+\/(.+)$/,
-            );
-            if (warehouseRouteMatch) {
-              const pagePath = warehouseRouteMatch[1];
-              redirectPath = `/warehouse/${selectedWarehouse.slug}/${pagePath}`;
-            }
-
-            router.push(redirectPath);
-          },
+        onError: (error) => {
+          console.log("Error updating warehouse: ", error);
+          toast.error("Failed to update warehouse");
         },
-      );
-    } catch (error) {
-      console.error("Error selecting warehouse:", error);
-    }
+      },
+    );
   };
 
   const handleEdit = (warehouse: Warehouse, e: React.MouseEvent) => {

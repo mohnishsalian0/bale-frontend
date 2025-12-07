@@ -37,7 +37,7 @@ import {
   usePartnerWithOrderStats,
   usePartnerMutations,
 } from "@/lib/query/hooks/partners";
-import { useSalesOrdersByCustomer } from "@/lib/query/hooks/sales-orders";
+import { useSalesOrders } from "@/lib/query/hooks/sales-orders";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { toast } from "sonner";
 
@@ -90,11 +90,13 @@ export default function PartnerDetailPage({ params }: PageParams) {
     (order_stats?.in_progress_count || 0);
 
   // Fetch pending sales orders only when there are pending orders to display
-  const { data: orders = [], isLoading: ordersLoading } =
-    useSalesOrdersByCustomer(
-      partner?.partner_type === "customer" ? partner_id : null,
-      pendingOrdersCount > 0,
-    );
+  const { data: ordersResponse, isLoading: ordersLoading } = useSalesOrders({
+    filters: {
+      customerId: partner?.partner_type === "customer" ? partner_id : undefined,
+    },
+  });
+
+  const orders = ordersResponse?.data || [];
 
   const loading = partnerLoading || ordersLoading;
 

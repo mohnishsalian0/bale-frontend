@@ -25,11 +25,14 @@ export function usePendingQRProducts(warehouseId: string) {
  */
 export function useDashboardData(warehouseId: string) {
   // Fetch active sales orders (approval_pending and in_progress)
-  const salesOrders = useSalesOrders(warehouseId, {
-    status: ["approval_pending", "in_progress"],
-    order_by: "order_date",
-    order_direction: "desc",
-    limit: 5,
+  const salesOrders = useSalesOrders({
+    filters: {
+      warehouseId,
+      status: ["approval_pending", "in_progress"],
+      order_by: "order_date",
+      order_direction: "desc",
+      limit: 5,
+    },
   });
 
   const lowStock = useLowStockProducts(warehouseId);

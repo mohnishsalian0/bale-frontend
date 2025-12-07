@@ -113,7 +113,7 @@ export function ProductSelectionStep({
   return (
     <>
       {/* Header Section */}
-      <div className="flex flex-col gap-3 p-4 shrink-0 border-b border-border">
+      <div className="flex flex-col gap-3 p-4 shrink-0">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">
             Select products
@@ -205,7 +205,7 @@ export function ProductSelectionStep({
               return (
                 <div
                   key={product.id}
-                  className="flex items-center gap-3 p-4 border-b border-gray-200"
+                  className="flex items-center gap-3 p-4 border-t border-gray-200"
                 >
                   {/* Product Image */}
                   <ImageWrapper

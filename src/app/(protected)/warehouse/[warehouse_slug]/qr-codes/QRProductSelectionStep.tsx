@@ -89,7 +89,7 @@ export function QRProductSelectionStep({
   return (
     <>
       {/* Filters Section */}
-      <div className="flex flex-col gap-3 p-4 shrink-0 border-b border-border">
+      <div className="flex flex-col gap-3 p-4 shrink-0">
         <h3 className="text-lg font-semibold text-gray-900">Select product</h3>
 
         {/* Search */}
@@ -171,7 +171,7 @@ export function QRProductSelectionStep({
                   key={product.id}
                   type="button"
                   onClick={() => onProductSelect(product)}
-                  className="flex items-center gap-3 p-4 border-b border-gray-200 hover:bg-gray-100 transition-colors text-left"
+                  className="flex items-center gap-3 p-4 border-t border-gray-200 hover:bg-gray-100 transition-colors text-left"
                 >
                   {/* Product Image */}
                   <ImageWrapper

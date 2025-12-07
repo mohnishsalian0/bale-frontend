@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { usePartners } from "@/lib/query/hooks/partners";
 import { PartnerListView } from "@/types/partners.types";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import { IconX } from "@tabler/icons-react";
 
 interface AgentEditSheetProps {
   open: boolean;
@@ -77,13 +78,13 @@ export function AgentEditSheet({
   };
 
   const formContent = (
-    <div className="flex flex-col gap-4 p-4 md:px-0">
+    <div className="flex flex-col gap-4 md:px-0">
       {fetchingAgents ? (
-        <div className="flex items-center justify-center py-8">
+        <div className="flex items-center justify-center py-4">
           <p className="text-sm text-gray-500">Loading agents...</p>
         </div>
       ) : (
-        <>
+        <div className="flex gap-2">
           <Select
             value={selectedAgentId || "none"}
             onValueChange={(value) =>
@@ -105,14 +106,14 @@ export function AgentEditSheet({
           {selectedAgentId && (
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
+              size="icon-lg"
               onClick={() => setSelectedAgentId(null)}
-              className="w-full"
             >
-              Clear agent
+              <IconX />
             </Button>
           )}
-        </>
+        </div>
       )}
     </div>
   );
