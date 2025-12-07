@@ -9,12 +9,12 @@ import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
-import { getPartnerName } from "@/lib/utils/partner";
 import { useSession } from "@/contexts/session-context";
 import { useProductWithInventoryByNumber } from "@/lib/query/hooks/products";
 import { useStockUnitsWithInward } from "@/lib/query/hooks/stock-units";
 import { useOutwardItemsByProduct } from "@/lib/query/hooks/stock-flow";
 import type { MeasuringUnit } from "@/types/database/enums";
+import { getReceiverName, getSenderName } from "@/lib/utils/stock-flow";
 
 interface PageParams {
   params: Promise<{
@@ -28,7 +28,7 @@ interface InwardFlow {
   id: string;
   sequence_number: number;
   date: string;
-  receiver: string;
+  sender: string;
   quantity: number;
 }
 
@@ -118,11 +118,7 @@ export default function StockFlowPage({ params }: PageParams) {
       .filter((item) => item.goods_inward)
       .forEach((item) => {
         const inward = item.goods_inward!;
-        const sender = inward.from_warehouse
-          ? inward.from_warehouse.name
-          : inward.partner
-            ? getPartnerName(inward.partner)
-            : "Unknown";
+        const sender = getSenderName(inward);
 
         if (inwardMap.has(inward.id)) {
           // Add quantity to existing entry
@@ -135,7 +131,7 @@ export default function StockFlowPage({ params }: PageParams) {
             id: inward.id,
             sequence_number: inward.sequence_number,
             date: inward.inward_date,
-            receiver: sender,
+            sender,
             quantity: item.initial_quantity || 0,
           });
         }
@@ -151,11 +147,7 @@ export default function StockFlowPage({ params }: PageParams) {
       .filter((item) => item.outward)
       .forEach((item) => {
         const outward = item.outward!;
-        const receiver = outward.to_warehouse
-          ? outward.to_warehouse.name
-          : outward.partner
-            ? getPartnerName(outward.partner)
-            : "Unknown";
+        const receiver = getReceiverName(outward);
 
         if (outwardMap.has(outward.id)) {
           // Add quantity to existing entry
@@ -265,8 +257,12 @@ export default function StockFlowPage({ params }: PageParams) {
               <p className="text-base font-medium text-gray-700">
                 {flow.type === "inward" ? "GI" : "GO"}-{flow.sequence_number}
               </p>
-              <p className="text-xs text-left text-gray-500">
-                {formatAbsoluteDate(flow.date)} • {flow.receiver}
+              <p className="text-xs text-left text-gray-500 mt-1">
+                {flow.type === "inward"
+                  ? `From ${flow.sender}`
+                  : `To ${flow.receiver}`}
+                <span> &nbsp;•&nbsp; </span>
+                {formatAbsoluteDate(flow.date)}
               </p>
             </div>
             <div className="flex-1 text-right text-wrap">

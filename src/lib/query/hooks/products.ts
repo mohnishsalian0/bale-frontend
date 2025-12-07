@@ -229,7 +229,8 @@ export function useProductMutations() {
       };
     }) => createProduct(productData, attributeIds),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
+      // Invalidate all product queries (with and without filters)
+      queryClient.invalidateQueries({ queryKey: ["products"] });
     },
   });
 
@@ -247,29 +248,26 @@ export function useProductMutations() {
         tagIds: string[];
       };
     }) => updateProduct(productId, productData, attributeIds),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.products.byId(variables.productId),
-      });
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
+    onSuccess: () => {
+      // Invalidate all product queries (with and without filters)
+      queryClient.invalidateQueries({ queryKey: ["products"] });
     },
   });
 
   const updateCatalogVisibility = useMutation({
     mutationFn: ({ productId, value }: { productId: string; value: boolean }) =>
       updateProductCatalogVisibility(productId, value),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.products.byId(variables.productId),
-      });
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
+    onSuccess: () => {
+      // Invalidate all product queries (with and without filters)
+      queryClient.invalidateQueries({ queryKey: ["products"] });
     },
   });
 
   const deleteProductMutation = useMutation({
     mutationFn: (productId: string) => deleteProduct(productId),
     onSuccess: (_, productId) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
+      // Invalidate all product queries (with and without filters)
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.removeQueries({
         queryKey: queryKeys.products.byId(productId),
       });
@@ -279,11 +277,9 @@ export function useProductMutations() {
   const updateActiveStatus = useMutation({
     mutationFn: ({ productId, value }: { productId: string; value: boolean }) =>
       updateProductActiveStatus(productId, value),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.products.byId(variables.productId),
-      });
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
+    onSuccess: () => {
+      // Invalidate all product queries (with and without filters)
+      queryClient.invalidateQueries({ queryKey: ["products"] });
     },
   });
 

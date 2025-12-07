@@ -9,6 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 interface InviteAcceptanceProps {
   inviteCode: string;
@@ -24,11 +25,9 @@ export default function InviteAcceptance({
   role,
 }: InviteAcceptanceProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const handleAccept = async () => {
     setLoading(true);
-    setError("");
 
     try {
       const supabase = createClient();
@@ -50,11 +49,7 @@ export default function InviteAcceptance({
       // OAuth redirect will happen automatically
     } catch (error) {
       console.error("Error accepting invite:", error);
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("Error accepting invite");
-      }
+      toast.error("Failed to accept invite");
       setLoading(false);
     }
   };
@@ -125,13 +120,6 @@ export default function InviteAcceptance({
             </Badge>
           </div>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 w-full">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
 
         {/* Register Button */}
         <Button onClick={handleAccept} disabled={loading} className="w-full">

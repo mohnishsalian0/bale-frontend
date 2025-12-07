@@ -7,16 +7,15 @@ import { IconBrandGoogleFilled } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 import { LoadingState } from "@/components/layouts/loading-state";
+import { toast } from "sonner";
 
 function LoginForm() {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/warehouse";
 
   const handleLogin = async () => {
     setLoading(true);
-    setError("");
 
     try {
       const supabase = createClient();
@@ -38,11 +37,7 @@ function LoginForm() {
       // OAuth redirect will happen automatically
     } catch (error) {
       console.error("Error logging in:", error);
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("Failed to sign in with Google");
-      }
+      toast.error("Failed to sign in with Google");
       setLoading(false);
     }
   };
@@ -72,13 +67,6 @@ function LoginForm() {
             generation inventory solution.
           </p>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 w-full">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
 
         {/* Login Button */}
         <Button onClick={handleLogin} disabled={loading} className="w-full">

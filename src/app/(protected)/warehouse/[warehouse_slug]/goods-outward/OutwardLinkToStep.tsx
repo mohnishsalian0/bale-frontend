@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useSalesOrders } from "@/lib/query/hooks/sales-orders";
+import { useSalesOrdersByCustomer } from "@/lib/query/hooks/sales-orders";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { getPartnerName } from "@/lib/utils/partner";
 import { SalesStatusBadge } from "@/components/ui/sales-status-badge";
@@ -35,7 +35,6 @@ interface OutwardLinkToStepProps {
 }
 
 export function OutwardLinkToStep({
-  warehouseId,
   selectedPartnerId,
   linkToData,
   onLinkToChange,
@@ -43,18 +42,11 @@ export function OutwardLinkToStep({
   const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch all sales orders for the warehouse
-  const { data: salesOrdersResponse, isLoading: salesOrdersLoading } =
-    useSalesOrders(warehouseId, { status: ["in_progress"] });
-
-  const allSalesOrders = salesOrdersResponse?.data || [];
+  const { data: salesOrders = [], isLoading: salesOrdersLoading } =
+    useSalesOrdersByCustomer(selectedPartnerId, { status: ["in_progress"] });
 
   // Filter sales orders by selected partner and search query
-  const filteredSalesOrders = allSalesOrders.filter((order) => {
-    // Filter by selected partner (customer)
-    if (selectedPartnerId && order.customer_id !== selectedPartnerId) {
-      return false;
-    }
-
+  const filteredSalesOrders = salesOrders.filter((order) => {
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();

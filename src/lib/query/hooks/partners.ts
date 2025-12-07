@@ -66,7 +66,8 @@ export function usePartnerMutations() {
   const createPartnerMutation = useMutation({
     mutationFn: createPartner,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.partners.all() });
+      // Invalidate all partner queries (with and without filters)
+      queryClient.invalidateQueries({ queryKey: ["partners"] });
     },
   });
 
@@ -82,18 +83,16 @@ export function usePartnerMutations() {
       image: File | null;
       companyId: string;
     }) => updatePartner({ partnerId, partnerData, image, companyId }),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.partners.all() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.partners.detail(variables.partnerId),
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["partners"] });
     },
   });
 
   const deletePartnerMutation = useMutation({
     mutationFn: deletePartner,
     onSuccess: (_, partnerId) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.partners.all() });
+      // Invalidate all partner queries (with and without filters)
+      queryClient.invalidateQueries({ queryKey: ["partners"] });
       queryClient.removeQueries({
         queryKey: queryKeys.partners.detail(partnerId),
       });
@@ -103,11 +102,9 @@ export function usePartnerMutations() {
   const updateActiveStatus = useMutation({
     mutationFn: ({ partnerId, value }: { partnerId: string; value: boolean }) =>
       updatePartnerActiveStatus(partnerId, value),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.partners.detail(variables.partnerId),
-      });
-      queryClient.invalidateQueries({ queryKey: queryKeys.partners.all() });
+    onSuccess: () => {
+      // Invalidate all partner queries (with and without filters)
+      queryClient.invalidateQueries({ queryKey: ["partners"] });
     },
   });
 

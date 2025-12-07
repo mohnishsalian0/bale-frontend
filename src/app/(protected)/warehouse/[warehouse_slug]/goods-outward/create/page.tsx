@@ -2,10 +2,9 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { IconArrowLeft } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { QRScannerStep, ScannedStockUnit } from "../QRScannerStep";
-import { PartnerSelectionStep } from "@/components/stock-flow/PartnerSelectionStep";
+import { PartnerSelectionStep } from "@/app/(protected)/warehouse/[warehouse_slug]/stock-flow/PartnerSelectionStep";
 import { OutwardLinkToStep, OutwardLinkToData } from "../OutwardLinkToStep";
 import { OutwardDetailsStep } from "../OutwardDetailsStep";
 import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
@@ -15,6 +14,8 @@ import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import { dateToISOString } from "@/lib/utils/date";
+import FormHeader from "@/components/ui/form-header";
+import FormFooter from "@/components/ui/form-footer";
 
 interface DetailsFormData {
   outwardDate: string;
@@ -204,11 +205,7 @@ export default function CreateGoodsOutwardPage() {
       router.push(`/warehouse/${warehouse.slug}/stock-flow`);
     } catch (error) {
       console.error("Error creating goods outward:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to create goods outward",
-      );
+      toast.error("Failed to create goods outward");
     } finally {
       setSaving(false);
     }
@@ -224,39 +221,17 @@ export default function CreateGoodsOutwardPage() {
           ? 3
           : 4;
 
-  // Calculate progress percentage
-  const progressPercentage = (stepNumber / 4) * 100;
-
   return (
     <div className="h-full flex flex-col items-center">
       <div className="flex-1 flex flex-col w-full overflow-y-hidden">
         {/* Header - Fixed at top */}
-        <div className="shrink-0 border-b border-gray-200 bg-background">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCancel}
-              disabled={saving}
-            >
-              <IconArrowLeft className="size-5" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-xl font-semibold text-gray-900">
-                New Goods Outward
-              </h1>
-              <p className="text-sm text-gray-500">Step {stepNumber} of 4</p>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="h-1 bg-gray-200">
-            <div
-              className="h-full bg-primary-500 transition-all duration-300"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-        </div>
+        <FormHeader
+          title="New Goods Outward"
+          currentStep={stepNumber}
+          totalSteps={4}
+          onCancel={handleCancel}
+          disableCancel={saving}
+        />
 
         {/* Step Content - Scrollable */}
         <div className="flex-1 flex-col overflow-y-auto flex">
@@ -269,7 +244,7 @@ export default function CreateGoodsOutwardPage() {
 
           {currentStep === "partner" && (
             <PartnerSelectionStep
-              partnerTypes="customer"
+              partnerTypes={["supplier", "vendor", "customer"]} // Supplier and vendor for purchase return
               selectedType={dispatchToType}
               selectedPartnerId={selectedPartnerId}
               selectedWarehouseId={selectedWarehouseId}
@@ -303,7 +278,7 @@ export default function CreateGoodsOutwardPage() {
         </div>
 
         {/* Bottom Action Bar - Fixed at bottom */}
-        <div className="border-t border-gray-200 p-4 flex gap-3 bg-background">
+        <FormFooter>
           {currentStep !== "scanner" && (
             <Button
               variant="outline"
@@ -350,7 +325,7 @@ export default function CreateGoodsOutwardPage() {
               {saving ? "Creating..." : "Create Outward"}
             </Button>
           )}
-        </div>
+        </FormFooter>
       </div>
 
       {/* Partner Form Sheet */}

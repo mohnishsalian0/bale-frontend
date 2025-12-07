@@ -51,6 +51,7 @@ export interface InwardWithPartnerListView extends Pick<
  */
 export interface InwardWithStockUnitListView extends GoodsInward {
   partner: Pick<Partner, "first_name" | "last_name" | "company_name"> | null;
+  from_warehouse: Pick<Warehouse, "id" | "name"> | null;
   stock_units: Array<{
     initial_quantity: number;
     product: ProductListView | null;
@@ -63,6 +64,7 @@ export interface InwardWithStockUnitListView extends GoodsInward {
  */
 export interface OutwardWithOutwardItemListView extends GoodsOutward {
   partner: Pick<Partner, "first_name" | "last_name" | "company_name"> | null;
+  to_warehouse: Pick<Warehouse, "id" | "name"> | null;
   goods_outward_items: Array<{
     quantity_dispatched: number;
     stock_unit: {

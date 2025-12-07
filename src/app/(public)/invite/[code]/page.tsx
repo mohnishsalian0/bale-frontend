@@ -3,6 +3,7 @@ import InviteAcceptance from "./InviteAcceptance";
 import { createClient } from "@/lib/supabase/server";
 import { Invite } from "@/types/invites.types";
 import { User } from "@/types/users.types";
+import { ErrorState } from "@/components/layouts/error-state";
 
 interface InvitePageProps {
   params: Promise<{
@@ -45,17 +46,10 @@ export default async function InvitePage({ params }: InvitePageProps) {
 
   if (error || !invite) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-background-100">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">
-            Invalid Invite
-          </h1>
-          <p className="text-gray-600">
-            This invite link is invalid or has expired. Please contact your
-            administrator for a new invite.
-          </p>
-        </div>
-      </div>
+      <ErrorState
+        title="Invite is invalid"
+        message="This invite link is invalid or has expired. Please contact your administrator for a new invite."
+      />
     );
   }
 

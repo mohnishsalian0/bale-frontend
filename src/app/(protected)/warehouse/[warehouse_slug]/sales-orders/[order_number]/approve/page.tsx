@@ -279,11 +279,7 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
         },
         onError: (error) => {
           console.error("Error approving sales order:", error);
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Failed to approve sales order",
-          );
+          toast.error("Failed to approve sales order");
         },
       },
     );

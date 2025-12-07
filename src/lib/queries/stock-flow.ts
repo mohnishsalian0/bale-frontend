@@ -178,6 +178,7 @@ export async function getGoodsInwards(
       `
       *,
       partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, company_name),
+			from_warehouse:warehouses!from_warehouse_id(id, name),
       stock_units(
         product:products(${PRODUCT_LIST_VIEW_SELECT}),
         initial_quantity
@@ -241,6 +242,7 @@ export async function getGoodsOutwards(
       `
       *,
       partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name),
+			from_warehouse:warehouses!to_warehouse_id(id, name),
       goods_outward_items(
         quantity_dispatched,
         stock_unit:stock_units(

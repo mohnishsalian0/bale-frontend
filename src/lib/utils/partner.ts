@@ -18,12 +18,13 @@ export function getPartnerName(partner: PartnerNameFields | null): string {
   if (!partner) return "Unknown Partner";
   return partner.company_name || `${partner.first_name} ${partner.last_name}`;
 }
+
 /**
  * Partial partner with only the fields needed for info
  */
 type PartnerInfoFields = Pick<
   Partner,
-  "first_name" | "last_name" | "phone_number"
+  "first_name" | "last_name" | "phone_number" | "partner_type"
 >;
 
 /**
@@ -33,7 +34,15 @@ type PartnerInfoFields = Pick<
 export function getPartnerInfo(partner: PartnerInfoFields | null): string {
   let partnerInfo: string = "";
 
+  if (partner?.partner_type) {
+    const type = partner.partner_type;
+    partnerInfo += `${type[0].toUpperCase()}${partner.partner_type.slice(1)}`;
+  }
+
   if (partner?.first_name) {
+    if (partnerInfo) {
+      partnerInfo += " • ";
+    }
     partnerInfo += `${partner.first_name}`;
   }
 
@@ -46,7 +55,7 @@ export function getPartnerInfo(partner: PartnerInfoFields | null): string {
 
   if (partner?.phone_number) {
     if (partnerInfo) {
-      partnerInfo += " · ";
+      partnerInfo += " • ";
     }
     partnerInfo += `${partner.phone_number}`;
   }

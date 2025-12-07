@@ -64,11 +64,12 @@ export function useSalesOrderByNumber(sequenceNumber: string | null) {
  */
 export function useSalesOrdersByCustomer(
   customerId: string | null,
+  filters?: SalesOrderFilters,
   enabled: boolean = true,
 ) {
   return useQuery({
     queryKey: queryKeys.salesOrders.customer(customerId || ""),
-    queryFn: () => getSalesOrdersByCustomer(customerId!),
+    queryFn: () => getSalesOrdersByCustomer(customerId!, filters),
     ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
     enabled: !!customerId && enabled,
   });

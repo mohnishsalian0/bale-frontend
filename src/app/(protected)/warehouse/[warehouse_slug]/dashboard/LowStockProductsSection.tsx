@@ -38,11 +38,11 @@ export function LowStockProductsSection({
           <p className="text-sm text-gray-500">No low stock products</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3 px-4">
+        <div className="flex flex-col border-b border-border">
           {products.map((product) => (
             <Card
               key={`low-stock-${product.id}`}
-              className="rounded-none border-2 rounded-lg shadow-none bg-transparent cursor-pointer hover:bg-gray-100 transition-colors"
+              className="rounded-none border-x-0 border-b-0 rounded-lg shadow-none bg-transparent cursor-pointer hover:bg-gray-100 transition-colors"
               onClick={() =>
                 onNavigate(
                   `/warehouse/${warehouseSlug}/inventory/${product.sequence_number}`,
@@ -60,9 +60,11 @@ export function LowStockProductsSection({
                   )}
                 />
 
-                <div className="flex-1 flex flex-col items-start">
-                  <p className="font-medium text-gray-700">{product.name}</p>
-                  <p className="text-xs text-gray-500">
+                <div className="flex-1">
+                  <p className="text-base font-medium text-gray-700">
+                    {product.name}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
                     {getProductInfo(product) || "No details"}
                   </p>
                 </div>
@@ -70,7 +72,7 @@ export function LowStockProductsSection({
                 <div className="flex flex-col items-end gap-1">
                   <div className="flex items-center gap-1">
                     <IconAlertTriangle className="size-4 text-yellow-700" />
-                    <p className="text-sm font-bold text-yellow-700">
+                    <p className="text-sm font-semibold text-yellow-700">
                       {product.inventory.in_stock_quantity}{" "}
                       {getMeasuringUnitAbbreviation(
                         product.measuring_unit as MeasuringUnit | null,

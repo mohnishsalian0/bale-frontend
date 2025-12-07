@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { IconArrowLeft } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/browser";
 import { QRProductSelectionStep } from "../QRProductSelectionStep";
@@ -21,14 +20,16 @@ import type { ProductListView } from "@/types/products.types";
 import { useProducts, useProductAttributes } from "@/lib/query/hooks/products";
 import { useQRBatchMutations } from "@/lib/query/hooks/qr-batches";
 import { getQRBatchById } from "@/lib/queries/qr-batches";
+import FormHeader from "@/components/ui/form-header";
+import FormFooter from "@/components/ui/form-footer";
 
-type FormStep = "product" | "stock-units" | "template";
+type FormStep = "products" | "stockUnits" | "template";
 
 export default function CreateQRBatchPage() {
   const router = useRouter();
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
-  const [currentStep, setCurrentStep] = useState<FormStep>("product");
+  const [currentStep, setCurrentStep] = useState<FormStep>("products");
   const [selectedProduct, setSelectedProduct] =
     useState<ProductListView | null>(null);
   const [selectedStockUnitIds, setSelectedStockUnitIds] = useState<string[]>(
@@ -59,20 +60,20 @@ export default function CreateQRBatchPage() {
 
   const handleProductSelect = (product: ProductListView) => {
     setSelectedProduct(product);
-    setCurrentStep("stock-units");
+    setCurrentStep("stockUnits");
   };
 
   const handleNext = () => {
-    if (currentStep === "stock-units" && selectedStockUnitIds.length > 0) {
+    if (currentStep === "stockUnits" && selectedStockUnitIds.length > 0) {
       setCurrentStep("template");
     }
   };
 
   const handleBack = () => {
     if (currentStep === "template") {
-      setCurrentStep("stock-units");
-    } else if (currentStep === "stock-units") {
-      setCurrentStep("product");
+      setCurrentStep("stockUnits");
+    } else if (currentStep === "stockUnits") {
+      setCurrentStep("products");
       setSelectedProduct(null);
       setSelectedStockUnitIds([]);
     } else {
@@ -182,51 +183,23 @@ export default function CreateQRBatchPage() {
     <div className="h-full flex flex-col items-center">
       <div className="flex-1 flex flex-col w-full overflow-y-hidden">
         {/* Header - Fixed at top */}
-        <div className="shrink-0 border-b border-gray-200 bg-background">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCancel}
-              disabled={saving}
-            >
-              <IconArrowLeft className="size-5" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-xl font-semibold text-gray-900">
-                Create QR codes
-              </h1>
-              <p className="text-sm text-gray-500">
-                Step{" "}
-                {currentStep === "product"
-                  ? "1"
-                  : currentStep === "stock-units"
-                    ? "2"
-                    : "3"}{" "}
-                of 3
-              </p>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="h-1 bg-gray-200">
-            <div
-              className="h-full bg-primary-500 transition-all duration-300"
-              style={{
-                width:
-                  currentStep === "product"
-                    ? "33%"
-                    : currentStep === "stock-units"
-                      ? "66%"
-                      : "100%",
-              }}
-            />
-          </div>
-        </div>
+        <FormHeader
+          title="Create QR Codes"
+          currentStep={
+            currentStep === "products"
+              ? 1
+              : currentStep === "stockUnits"
+                ? 2
+                : 3
+          }
+          totalSteps={3}
+          onCancel={handleCancel}
+          disableCancel={saving}
+        />
 
         {/* Main Content - Scrollable */}
         <div className="flex-1 overflow-y-auto flex flex-col">
-          {currentStep === "product" && (
+          {currentStep === "products" && (
             <QRProductSelectionStep
               products={products}
               materials={materials}
@@ -237,7 +210,7 @@ export default function CreateQRBatchPage() {
             />
           )}
 
-          {currentStep === "stock-units" && selectedProduct && (
+          {currentStep === "stockUnits" && selectedProduct && (
             <QRStockUnitSelectionStep
               productId={selectedProduct.id}
               selectedStockUnitIds={selectedStockUnitIds}
@@ -254,58 +227,56 @@ export default function CreateQRBatchPage() {
         </div>
 
         {/* Footer - Fixed at bottom */}
-        <div className="shrink-0 border-t border-gray-200 bg-background p-4 flex">
-          <div className="w-full flex gap-3">
-            {currentStep === "product" ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={saving}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </>
-            ) : currentStep === "stock-units" ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleBack}
-                  disabled={saving}
-                  className="flex-1"
-                >
-                  Back
-                </Button>
-                <Button
-                  onClick={handleNext}
-                  disabled={!canProceedToTemplate || saving}
-                  className="flex-1"
-                >
-                  Next
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleBack}
-                  disabled={saving}
-                  className="flex-1"
-                >
-                  Back
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={saving}
-                  className="flex-1"
-                >
-                  {saving ? "Creating..." : "Confirm"}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+        <FormFooter>
+          {currentStep === "products" ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleCancel}
+                disabled={saving}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </>
+          ) : currentStep === "stockUnits" ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                disabled={saving}
+                className="flex-1"
+              >
+                Back
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={!canProceedToTemplate || saving}
+                className="flex-1"
+              >
+                Next
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                disabled={saving}
+                className="flex-1"
+              >
+                Back
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={saving}
+                className="flex-1"
+              >
+                {saving ? "Creating..." : "Confirm"}
+              </Button>
+            </>
+          )}
+        </FormFooter>
       </div>
     </div>
   );

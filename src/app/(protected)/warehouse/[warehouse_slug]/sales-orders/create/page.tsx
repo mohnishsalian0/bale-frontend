@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { IconArrowLeft } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { ProductQuantitySheet } from "../ProductQuantitySheet";
 import { ProductSelectionStep } from "../ProductSelectionStep";
@@ -20,6 +19,8 @@ import {
 import { useSalesOrderMutations } from "@/lib/query/hooks/sales-orders";
 import type { ProductWithInventoryListView } from "@/types/products.types";
 import { CreateSalesOrderData } from "@/types/sales-orders.types";
+import FormHeader from "@/components/ui/form-header";
+import FormFooter from "@/components/ui/form-footer";
 
 interface ProductWithSelection extends ProductWithInventoryListView {
   selected: boolean;
@@ -31,7 +32,7 @@ interface OrderFormData {
   customerId: string;
   agentId: string;
   orderDate: string;
-  expectedDate: string;
+  deliveryDate: string;
   advanceAmount: string;
   discount: string;
   notes: string;
@@ -98,7 +99,7 @@ export default function CreateSalesOrderPage() {
     customerId: "",
     agentId: "",
     orderDate: "",
-    expectedDate: "",
+    deliveryDate: "",
     advanceAmount: "",
     discount: "",
     notes: "",
@@ -182,7 +183,7 @@ export default function CreateSalesOrderPage() {
       customer_id: formData.customerId,
       agent_id: formData.agentId || null,
       order_date: formData.orderDate,
-      expected_delivery_date: formData.expectedDate || null,
+      expected_delivery_date: formData.deliveryDate || null,
       advance_amount: formData.advanceAmount
         ? parseFloat(formData.advanceAmount)
         : 0,
@@ -210,11 +211,7 @@ export default function CreateSalesOrderPage() {
         },
         onError: (error) => {
           console.error("Error creating sales order:", error);
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Failed to create sales order",
-          );
+          toast.error("Failed to create sales order");
         },
       },
     );
@@ -224,47 +221,15 @@ export default function CreateSalesOrderPage() {
     <div className="h-full flex flex-col items-center">
       <div className="flex-1 flex flex-col w-full overflow-y-hidden">
         {/* Header - Fixed at top */}
-        <div className="shrink-0 border-b border-gray-200 bg-background">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCancel}
-              disabled={createOrder.isPending}
-            >
-              <IconArrowLeft className="size-5" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-xl font-semibold text-gray-900">
-                Create sales order
-              </h1>
-              <p className="text-sm text-gray-500">
-                Step{" "}
-                {currentStep === "products"
-                  ? "1"
-                  : currentStep === "customer"
-                    ? "2"
-                    : "3"}{" "}
-                of 3
-              </p>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="h-1 bg-gray-200">
-            <div
-              className="h-full bg-primary-500 transition-all duration-300"
-              style={{
-                width:
-                  currentStep === "products"
-                    ? "33%"
-                    : currentStep === "customer"
-                      ? "66%"
-                      : "100%",
-              }}
-            />
-          </div>
-        </div>
+        <FormHeader
+          title="Create sales order"
+          currentStep={
+            currentStep === "products" ? 1 : currentStep === "customer" ? 2 : 3
+          }
+          totalSteps={3}
+          onCancel={handleCancel}
+          disableCancel={createOrder.isPending}
+        />
 
         {/* Main Content - Scrollable */}
         <div className="flex-1 flex-col overflow-y-auto flex">
@@ -296,65 +261,63 @@ export default function CreateSalesOrderPage() {
         </div>
 
         {/* Footer - Fixed at bottom */}
-        <div className="shrink-0 border-t border-gray-200 bg-background p-4 flex">
-          <div className="w-full flex gap-3">
-            {currentStep === "products" ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={createOrder.isPending}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleNext}
-                  disabled={!canProceed || createOrder.isPending}
-                  className="flex-1"
-                >
-                  Next
-                </Button>
-              </>
-            ) : currentStep === "customer" ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleBack}
-                  disabled={createOrder.isPending}
-                  className="flex-1"
-                >
-                  Back
-                </Button>
-                <Button
-                  onClick={handleNext}
-                  disabled={!selectedCustomerId || createOrder.isPending}
-                  className="flex-1"
-                >
-                  Next
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleBack}
-                  disabled={createOrder.isPending}
-                  className="flex-1"
-                >
-                  Back
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!canSubmit || createOrder.isPending}
-                  className="flex-1"
-                >
-                  {createOrder.isPending ? "Saving..." : "Submit"}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+        <FormFooter>
+          {currentStep === "products" ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleCancel}
+                disabled={createOrder.isPending}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={!canProceed || createOrder.isPending}
+                className="flex-1"
+              >
+                Next
+              </Button>
+            </>
+          ) : currentStep === "customer" ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                disabled={createOrder.isPending}
+                className="flex-1"
+              >
+                Back
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={!selectedCustomerId || createOrder.isPending}
+                className="flex-1"
+              >
+                Next
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                disabled={createOrder.isPending}
+                className="flex-1"
+              >
+                Back
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={!canSubmit || createOrder.isPending}
+                className="flex-1"
+              >
+                {createOrder.isPending ? "Saving..." : "Submit"}
+              </Button>
+            </>
+          )}
+        </FormFooter>
 
         {/* Product Quantity Sheet */}
         {showQuantitySheet && selectedProduct && (

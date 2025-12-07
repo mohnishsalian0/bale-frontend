@@ -36,11 +36,11 @@ export function PendingQRCodesSection({
           <p className="text-sm text-gray-500">No pending QR codes</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3 px-4">
+        <div className="flex flex-col border-b border-border">
           {products.map((product) => (
             <Card
               key={`pending-qr-${product.id}`}
-              className="rounded-none border-2 rounded-lg shadow-none bg-transparent cursor-pointer hover:bg-gray-100 transition-colors"
+              className="rounded-none border-x-0 border-b-0 rounded-lg shadow-none bg-transparent cursor-pointer hover:bg-gray-100 transition-colors"
               onClick={() =>
                 onNavigate(
                   `/warehouse/${warehouseSlug}/inventory/${product.sequence_number}`,
@@ -58,18 +58,18 @@ export function PendingQRCodesSection({
                   )}
                 />
 
-                <div className="flex-1 flex flex-col items-start">
-                  <p className="font-medium text-gray-700">
+                <div className="flex-1">
+                  <p className="text-base font-medium text-gray-700">
                     {product.name || "Unknown product"}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 mt-1">
                     {getProductInfo(product) || "No details"}
                   </p>
                 </div>
 
                 <div className="flex flex-col items-end">
-                  <p className="text-sm font-medium text-gray-700">
-                    {product.pending_qr_count} QR codes
+                  <p className="text-sm font-semibold text-gray-700">
+                    {product.pending_qr_count}
                   </p>
                   <p className="text-xs text-gray-500">pending</p>
                 </div>

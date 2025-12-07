@@ -217,7 +217,7 @@ export function ProductSelectionStep({
               return (
                 <div
                   key={product.id}
-                  className="flex items-center gap-3 p-4 border-b border-gray-200"
+                  className="flex items-center gap-3 p-4 border-t border-gray-200"
                 >
                   {/* Product Image */}
                   <ImageWrapper

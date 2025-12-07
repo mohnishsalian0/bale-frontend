@@ -117,7 +117,9 @@ export function PieceQuantitySheet({
               value={quantity}
               onFocus={(e) => e.target.select()}
               onChange={(e) =>
-                setQuantity(Math.max(0, parseFloat(e.target.value) || 0))
+                setQuantity(
+                  Math.max(0, Math.round(parseFloat(e.target.value) || 0)),
+                )
               }
               className="text-center text-lg font-medium max-w-25 pr-10"
               min="0"

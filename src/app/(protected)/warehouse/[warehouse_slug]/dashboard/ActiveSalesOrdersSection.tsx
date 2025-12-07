@@ -62,7 +62,7 @@ export function ActiveSalesOrdersSection({
           </p>
         </div>
       ) : (
-        <div className="px-4 flex flex-col gap-3">
+        <div className="flex flex-col border-b border-border">
           {orders.map((order) => {
             const displayStatus: DisplayStatus = getOrderDisplayStatus(
               order.status as SalesOrderStatus,
@@ -86,7 +86,7 @@ export function ActiveSalesOrdersSection({
             return (
               <Card
                 key={order.id}
-                className="rounded-none border-2 rounded-lg shadow-none bg-transparent hover:bg-gray-100"
+                className="rounded-none border-x-0 border-b-0 shadow-none bg-transparent hover:bg-gray-100"
               >
                 <CardContent className="p-4 flex flex-col gap-3">
                   <button

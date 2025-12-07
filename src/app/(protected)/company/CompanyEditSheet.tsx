@@ -106,7 +106,8 @@ export function CompanyEditSheet({
         toast.success("Company updated successfully");
         handleCancel();
       },
-      onError: () => {
+      onError: (error: Error) => {
+        console.error("Error updating company: ", error.message);
         toast.error("Failed to update company");
       },
     };

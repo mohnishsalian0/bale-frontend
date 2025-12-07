@@ -39,13 +39,14 @@ import {
 } from "@/lib/query/hooks/stock-flow";
 import { usePartners } from "@/lib/query/hooks/partners";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { getReceiverName, getSenderName } from "@/lib/utils/stock-flow";
 
 interface StockFlowItem {
   id: string;
   type: "outward" | "inward";
   productName: string;
   partnerId: string | null;
-  partnerName: string;
+  sender_or_receiver_name: string;
   date: string;
   quantities: Map<MeasuringUnit, number>;
   billNumber: string;
@@ -142,7 +143,7 @@ export default function StockFlowPage() {
   const { monthGroups, totalReceived, totalOutwarded } = useMemo(() => {
     // Transform inwards
     const inwardItems: StockFlowItem[] = inwards.map((r) => {
-      const partnerName = getPartnerName(r.partner);
+      const senderName = getSenderName(r);
 
       const stockUnits = r.stock_units || [];
       const firstProduct = stockUnits[0]?.product;
@@ -173,7 +174,7 @@ export default function StockFlowPage() {
         type: "inward" as const,
         productName,
         partnerId: r.partner_id,
-        partnerName,
+        sender_or_receiver_name: senderName,
         date: r.inward_date,
         quantities: quantitiesMap,
         billNumber: `GI-${r.sequence_number}`,
@@ -183,10 +184,7 @@ export default function StockFlowPage() {
 
     // Transform outwards
     const outwardItems: StockFlowItem[] = outwards.map((d) => {
-      const partnerName = d.partner
-        ? d.partner.company_name ||
-          `${d.partner.first_name} ${d.partner.last_name}`
-        : "Unknown Partner";
+      const receiverName = getReceiverName(d);
 
       const items = d.goods_outward_items || [];
       const firstProduct = items[0]?.stock_unit?.product;
@@ -219,7 +217,7 @@ export default function StockFlowPage() {
         type: "outward" as const,
         productName,
         partnerId: d.partner_id,
-        partnerName,
+        sender_or_receiver_name: receiverName,
         date: d.outward_date,
         quantities: quantitiesMap,
         billNumber: `GO-${d.sequence_number}`,
@@ -308,7 +306,9 @@ export default function StockFlowPage() {
       items: group.items.filter((item) => {
         const matchesSearch =
           item.billNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.partnerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.sender_or_receiver_name
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
           item.productName.toLowerCase().includes(searchQuery.toLowerCase());
 
         // Filter is already applied by only fetching one type, so no need to filter again
@@ -493,10 +493,14 @@ export default function StockFlowPage() {
                       {item.productName}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {item.partnerName}
+                      {item.type === "inward" ? "From" : "To"}{" "}
+                      {item.sender_or_receiver_name}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      Goods {item.type} on {formatDate(item.date)}
+                      {item.type === "inward" ? "GI" : "GO"}-
+                      {item.sequence_number}
+                      <span> &nbsp;•&nbsp; </span>
+                      {formatDate(item.date)}
                     </p>
                   </div>
                   <div className="flex-1 items-end justify-center text-right text-wrap">

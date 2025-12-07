@@ -10,6 +10,7 @@ import { useWarehouses } from "@/lib/query/hooks/warehouses";
 import { useCurrentUser, useUserMutations } from "@/lib/query/hooks/users";
 import { Warehouse } from "@/types/warehouses.types";
 import { getWarehouseFormattedAddress } from "@/lib/utils/warehouse";
+import { toast } from "sonner";
 
 export default function WarehouseSelectionPage() {
   const router = useRouter();
@@ -40,6 +41,7 @@ export default function WarehouseSelectionPage() {
         router.push(`/warehouse/${warehouse.slug}/dashboard`);
       } catch (error) {
         console.error("Error selecting warehouse:", error);
+        toast.error("Failed to load warehouse");
       }
     },
     [router, updateWarehouse, user],

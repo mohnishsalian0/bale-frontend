@@ -111,7 +111,8 @@ export default function PartnerDetailPage({ params }: PageParams) {
           router.push(`/warehouse/${warehouse.slug}/partners`);
         },
         onError: (error: Error) => {
-          toast.error(`Failed to mark partner as inactive: ${error.message}`);
+          console.log("Failed to mark partner as inactive", error.message);
+          toast.error(`Failed to mark partner as inactive`);
         },
       },
     );
@@ -128,7 +129,8 @@ export default function PartnerDetailPage({ params }: PageParams) {
         router.push(`/warehouse/${warehouse.slug}/partners`);
       },
       onError: (error: Error) => {
-        toast.error(`Failed to delete partner: ${error.message}`);
+        console.log("Failed to delete partner", error.message);
+        toast.error(`Failed to delete partner`);
       },
     });
   };

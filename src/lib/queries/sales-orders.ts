@@ -103,10 +103,11 @@ export async function getSalesOrders(
  */
 export async function getSalesOrdersByCustomer(
   customerId: string,
+  filters?: SalesOrderFilters,
 ): Promise<SalesOrderListView[]> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("sales_orders")
     .select(
       `
@@ -126,6 +127,26 @@ export async function getSalesOrdersByCustomer(
     .eq("customer_id", customerId)
     .is("deleted_at", null)
     .order("order_date", { ascending: false });
+
+  // Apply status filter (supports single value or array)
+  if (filters?.status) {
+    if (Array.isArray(filters.status)) {
+      query = query.in("status", filters.status);
+    } else {
+      query = query.eq("status", filters.status);
+    }
+  }
+
+  // Apply ordering (defaults to order_date descending)
+  const orderBy = filters?.order_by || "order_date";
+  const ascending = !!filters?.ascending;
+  query = query.order(orderBy, { ascending });
+
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   if (!data) return [];

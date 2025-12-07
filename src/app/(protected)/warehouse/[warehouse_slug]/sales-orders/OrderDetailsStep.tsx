@@ -31,7 +31,7 @@ interface OrderFormData {
   customerId: string;
   agentId: string;
   orderDate: string;
-  expectedDate: string;
+  deliveryDate: string;
   advanceAmount: string;
   discount: string;
   notes: string;
@@ -167,19 +167,19 @@ export function OrderDetailsStep({
             className="flex-1"
           />
 
-          {/* Expected Date */}
+          {/* Delivery Date */}
           <DatePicker
-            label="Expected date"
+            label="Delivery date"
             placeholder="Pick a date"
             value={
-              formData.expectedDate
-                ? new Date(formData.expectedDate)
+              formData.deliveryDate
+                ? new Date(formData.deliveryDate)
                 : undefined
             }
             onChange={(date) =>
               setFormData({
                 ...formData,
-                expectedDate: date ? dateToISOString(date) : "",
+                deliveryDate: date ? dateToISOString(date) : "",
               })
             }
             required

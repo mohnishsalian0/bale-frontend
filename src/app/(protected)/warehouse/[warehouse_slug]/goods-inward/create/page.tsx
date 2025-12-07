@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { IconArrowLeft } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import {
   ProductSelectionStep,
@@ -12,7 +11,7 @@ import {
 import { StockUnitFormSheet } from "../StockUnitFormSheet";
 import { AllSpecificationsSheet } from "../AllSpecificationsSheet";
 import { PieceQuantitySheet } from "../PieceQuantitySheet";
-import { PartnerSelectionStep } from "@/components/stock-flow/PartnerSelectionStep";
+import { PartnerSelectionStep } from "@/app/(protected)/warehouse/[warehouse_slug]/stock-flow/PartnerSelectionStep";
 import { InwardLinkToStep, InwardLinkToData } from "../InwardLinkToStep";
 import { InwardDetailsStep } from "../InwardDetailsStep";
 import { ProductFormSheet } from "../../inventory/ProductFormSheet";
@@ -26,6 +25,8 @@ import { toast } from "sonner";
 import { ProductListView } from "@/types/products.types";
 import { StockUnitStatus } from "@/types/database/enums";
 import { dateToISOString } from "@/lib/utils/date";
+import FormHeader from "@/components/ui/form-header";
+import FormFooter from "@/components/ui/form-footer";
 
 interface DetailsFormData {
   inwardDate: string;
@@ -48,6 +49,8 @@ export default function CreateGoodsInwardPage() {
   // Fetch products and attributes using TanStack Query
   const { data: productsData = [], isLoading: productsLoading } = useProducts({
     is_active: true,
+    order_by: "created_at",
+    order_direction: "desc",
   });
   const { data: attributesData, isLoading: attributesLoading } =
     useProductAttributes();
@@ -389,51 +392,21 @@ export default function CreateGoodsInwardPage() {
     <div className="h-full flex flex-col items-center">
       <div className="flex-1 flex flex-col w-full overflow-y-hidden">
         {/* Header - Fixed at top */}
-        <div className="border-b border-gray-200 bg-background">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCancel}
-              disabled={saving}
-            >
-              <IconArrowLeft className="size-5" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-xl font-semibold text-gray-900 truncate">
-                New Goods Inward
-              </h1>
-              <p className="text-sm text-gray-500">
-                Step{" "}
-                {currentStep === "products"
-                  ? "1"
-                  : currentStep === "partner"
-                    ? "2"
-                    : currentStep === "linkTo"
-                      ? "3"
-                      : "4"}{" "}
-                of 4
-              </p>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="h-1 bg-gray-200">
-            <div
-              className="h-full bg-primary-500 transition-all duration-300"
-              style={{
-                width:
-                  currentStep === "products"
-                    ? "25%"
-                    : currentStep === "partner"
-                      ? "50%"
-                      : currentStep === "linkTo"
-                        ? "75%"
-                        : "100%",
-              }}
-            />
-          </div>
-        </div>
+        <FormHeader
+          title="New Goods Inward"
+          currentStep={
+            currentStep === "products"
+              ? 1
+              : currentStep === "partner"
+                ? 2
+                : currentStep === "linkTo"
+                  ? 3
+                  : 4
+          }
+          totalSteps={4}
+          onCancel={handleCancel}
+          disableCancel={saving}
+        />
 
         {/* Step Content - Scrollable */}
         <div className="flex-1 flex-col overflow-y-auto flex">
@@ -451,7 +424,7 @@ export default function CreateGoodsInwardPage() {
 
           {currentStep === "partner" && (
             <PartnerSelectionStep
-              partnerTypes={["supplier", "vendor"]}
+              partnerTypes={["supplier", "vendor", "customer"]} // Customer for sales return
               selectedType={receivedFromType}
               selectedPartnerId={selectedPartnerId}
               selectedWarehouseId={selectedWarehouseId}
@@ -467,7 +440,7 @@ export default function CreateGoodsInwardPage() {
 
           {currentStep === "linkTo" && (
             <InwardLinkToStep
-              warehouseId={warehouse.id}
+              customerId={selectedPartnerId}
               linkToData={linkToData}
               onLinkToChange={setLinkToData}
             />
@@ -484,7 +457,7 @@ export default function CreateGoodsInwardPage() {
         </div>
 
         {/* Bottom Action Bar - Fixed at bottom */}
-        <div className="border-t border-gray-200 p-4 flex gap-3 bg-background">
+        <FormFooter>
           {currentStep !== "products" && (
             <Button
               variant="outline"
@@ -531,7 +504,7 @@ export default function CreateGoodsInwardPage() {
               {saving ? "Creating..." : "Create Inward"}
             </Button>
           )}
-        </div>
+        </FormFooter>
       </div>
 
       {/* Sheets */}

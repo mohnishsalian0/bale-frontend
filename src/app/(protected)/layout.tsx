@@ -46,11 +46,7 @@ function ChromeWrapper({
       router.push("/auth/login");
     } catch (error) {
       console.error("Error logging out:", error);
-      if (error instanceof Error) {
-        toast.error("Failed to log out:" + error.message);
-      } else {
-        toast.error("Failed to log out: An unknown error occurred.");
-      }
+      toast.error("Failed to log out");
     }
   };
 

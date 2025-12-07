@@ -55,6 +55,16 @@ export function ProductQuantitySheet({
     setQuantity((prev) => prev + amount);
   };
 
+  const handleQuantityChange = (value: string) => {
+    let quantity = parseFloat(value) || 0;
+    if (product?.stock_type === "roll") {
+      quantity = Math.round(quantity * 100) / 100;
+    } else {
+      quantity = Math.round(quantity);
+    }
+    setQuantity(Math.max(0, quantity));
+  };
+
   const presetAmounts = [5, 10, 25, 50, 100, 250];
 
   if (!product) return null;
@@ -107,9 +117,7 @@ export function ProductQuantitySheet({
             <Input
               type="number"
               value={quantity}
-              onChange={(e) =>
-                setQuantity(Math.max(0, parseFloat(e.target.value) || 0))
-              }
+              onChange={(e) => handleQuantityChange(e.target.value)}
               className="text-center text-lg font-medium max-w-25 pr-10"
               min="0"
               step={product.stock_type === "roll" ? "0.1" : "1"}

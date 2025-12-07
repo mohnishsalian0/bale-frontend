@@ -75,7 +75,8 @@ export function WarehouseFormSheet({
         );
         handleCancel();
       },
-      onError: () => {
+      onError: (error: Error) => {
+        console.error("Error upserting warehouse: ", error.message);
         toast.error(
           warehouse
             ? "Failed to updated warehouse"

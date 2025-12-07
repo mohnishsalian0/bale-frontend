@@ -94,10 +94,7 @@ export default function QRCodesPage() {
         return;
       }
       console.error("Error sharing PDF:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to share PDF",
-        { id: "share-pdf" },
-      );
+      toast.error("Failed to share PDF", { id: "share-pdf" });
     }
   };
 
@@ -112,10 +109,7 @@ export default function QRCodesPage() {
       toast.success("PDF downloaded!", { id: "download-pdf" });
     } catch (error) {
       console.error("Error downloading PDF:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to download PDF",
-        { id: "download-pdf" },
-      );
+      toast.error("Failed to download PDF", { id: "download-pdf" });
     }
   };
 

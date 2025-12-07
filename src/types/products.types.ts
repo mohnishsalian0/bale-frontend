@@ -48,6 +48,8 @@ export type ProductAttributeAssignmentsRaw = {
 
 export interface ProductFilters extends Record<string, unknown> {
   is_active?: boolean;
+  order_by?: "name" | "created_at";
+  order_direction?: "asc" | "desc";
 }
 
 // ============================================================================

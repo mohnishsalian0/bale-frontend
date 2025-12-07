@@ -71,8 +71,13 @@ export function StockUnitQuantitySheet({
   };
 
   const handleQuantityChange = (value: string) => {
-    const parsed = parseFloat(value) || 0;
-    setQuantity(Math.max(0, Math.min(maxQuantity, parsed)));
+    let quantity = parseFloat(value) || 0;
+    if (stockUnit.product?.stock_type === "roll") {
+      quantity = Math.round(quantity * 100) / 100;
+    } else {
+      quantity = Math.round(quantity);
+    }
+    setQuantity(Math.max(0, quantity));
   };
 
   const presetAmounts = [5, 10, 25, 50, 100, 250];

@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useSalesOrders } from "@/lib/query/hooks/sales-orders";
+import { useSalesOrdersByCustomer } from "@/lib/query/hooks/sales-orders";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { getPartnerName } from "@/lib/utils/partner";
 import { SalesStatusBadge } from "@/components/ui/sales-status-badge";
@@ -28,23 +28,22 @@ export interface InwardLinkToData extends Pick<
 }
 
 interface InwardLinkToStepProps {
-  warehouseId: string;
+  customerId: string | null;
   linkToData: InwardLinkToData;
   onLinkToChange: (data: InwardLinkToData) => void;
 }
 
 export function InwardLinkToStep({
-  warehouseId,
+  customerId,
   linkToData,
   onLinkToChange,
 }: InwardLinkToStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  console.log(customerId);
 
   // Fetch sales orders for sales return selection
-  const { data: salesOrdersResponse, isLoading: salesOrdersLoading } =
-    useSalesOrders(warehouseId, { status: ["in_progress"] });
-
-  const salesOrders = salesOrdersResponse?.data || [];
+  const { data: salesOrders = [], isLoading: salesOrdersLoading } =
+    useSalesOrdersByCustomer(customerId, { status: "in_progress" });
 
   // Filter sales orders based on search
   const filteredSalesOrders = salesOrders.filter((order) => {

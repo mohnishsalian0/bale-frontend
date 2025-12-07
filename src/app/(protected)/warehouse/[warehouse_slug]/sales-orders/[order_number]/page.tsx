@@ -32,7 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { IconDotsVertical } from "@tabler/icons-react";
+import { IconDotsVertical, IconDownload, IconShare } from "@tabler/icons-react";
 import {
   useSalesOrderByNumber,
   useSalesOrderMutations,
@@ -40,6 +40,9 @@ import {
 import { CancelOrderDialog } from "./CancelOrderDialog";
 import { CompleteOrderDialog } from "./CompleteOrderDialog";
 import { toast } from "sonner";
+import { useCompany } from "@/lib/query/hooks/company";
+import { OrderConfirmationPDF } from "@/components/pdf/OrderConfirmationPDF";
+import { pdf } from "@react-pdf/renderer";
 
 interface PageParams {
   params: Promise<{
@@ -61,10 +64,18 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
   const [showWarehouseEdit, setShowWarehouseEdit] = useState(false);
   const [showTransportEdit, setShowTransportEdit] = useState(false);
   const [showNotesEdit, setShowNotesEdit] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   // Dialog states
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+
+  // Fetch company and warehouses using TanStack Query hooks
+  const {
+    data: company,
+    isLoading: companyLoading,
+    isError: companyError,
+  } = useCompany();
 
   // Fetch sales order using TanStack Query
   const {
@@ -128,9 +139,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
         },
         onError: (error) => {
           console.error("Error completing order:", error);
-          toast.error(
-            error instanceof Error ? error.message : "Failed to complete order",
-          );
+          toast.error("Failed to complete order");
         },
       },
     );
@@ -147,9 +156,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
         },
         onError: (error) => {
           console.error("Error cancelling order:", error);
-          toast.error(
-            error instanceof Error ? error.message : "Failed to cancel order",
-          );
+          toast.error("Failed to cancel order");
         },
       },
     );
@@ -185,13 +192,61 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
     return null;
   };
 
+  const handleShare = async () => {
+    if (!order || !company) return null;
+
+    // Generate invite link
+    const orderUrl = `${window.location.origin}/company/${company.slug}/order/${order.id}`;
+
+    // Copy to clipboard as fallback
+    try {
+      await navigator.clipboard.writeText(orderUrl);
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err);
+    }
+
+    const orderShareMessage = `Here are the details and live status of order #${order.sequence_number}
+🔗 ${orderUrl}`;
+
+    // Open WhatsApp with message
+    const encodedMessage = encodeURIComponent(orderShareMessage);
+    window.open(`https://wa.me/?text=${encodedMessage}`, "_blank");
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!company || !order) return;
+
+    try {
+      setDownloading(true);
+      const blob = await pdf(
+        <OrderConfirmationPDF company={company} order={order} />,
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `order-${order.sequence_number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("PDF downloaded successfully");
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      toast.error("Failed to download PDF");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   // Loading state
-  if (loading) {
+  if (companyLoading || loading) {
     return <LoadingState message="Loading order..." />;
   }
 
   // Error state
-  if (error || !order) {
+  if (companyError || error || !order) {
     return (
       <ErrorState
         title="Order not found"
@@ -283,11 +338,25 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
                   <DropdownMenuSeparator />
                 </>
               )}
-              <DropdownMenuItem onClick={() => console.log("Share")}>
+              <DropdownMenuItem onClick={handleShare}>
+                <IconShare />
                 Share
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => console.log("Download")}>
-                Download
+              <DropdownMenuItem
+                onClick={handleDownloadPDF}
+                disabled={downloading}
+              >
+                {downloading ? (
+                  <>
+                    <IconDownload className="animate-pulse" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <IconDownload />
+                    Download PDF
+                  </>
+                )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

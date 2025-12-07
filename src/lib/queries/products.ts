@@ -268,13 +268,17 @@ export async function getProducts(
   let query = supabase
     .from("products")
     .select(PRODUCT_LIST_VIEW_SELECT)
-    .is("deleted_at", null)
-    .order("name", { ascending: true });
+    .is("deleted_at", null);
 
   // Apply is active
   if (filters?.is_active) {
     query = query.is("is_active", filters.is_active);
   }
+
+  // Apply ordering (defaults to first_name ascending)
+  const orderBy = filters?.order_by || "name";
+  const ascending = filters?.order_direction !== "desc";
+  query = query.order(orderBy, { ascending });
 
   const { data, error } = await query;
 
@@ -348,7 +352,6 @@ export async function getProductsWithInventory(
     .select(PRODUCT_WITH_INVENTORY_LIST_VIEW_SELECT, { count: "exact" })
     .eq("product_inventory_aggregates.warehouse_id", warehouseId)
     .is("deleted_at", null)
-    .order("name", { ascending: true })
     .range(offset, offset + limit - 1);
 
   // Apply is active filter
@@ -356,13 +359,18 @@ export async function getProductsWithInventory(
     query = query.eq("is_active", filters.is_active);
   }
 
+  // Apply ordering (defaults to first_name ascending)
+  const orderBy = filters?.order_by || "name";
+  const ascending = filters?.order_direction !== "desc";
+  query = query.order(orderBy, { ascending });
+
   const { data, error, count } = await query;
 
   if (error) throw error;
 
-  const transformedData = ((data as unknown as ProductWithInventoryListViewRaw[]) || []).map(
-    transformProductWithInventoryListView,
-  );
+  const transformedData = (
+    (data as unknown as ProductWithInventoryListViewRaw[]) || []
+  ).map(transformProductWithInventoryListView);
 
   return {
     data: transformedData,

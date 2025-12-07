@@ -14,7 +14,8 @@
     "setup:test": "npx tsx scripts/setup.ts local",
     "setup:staging": "npx tsx scripts/setup.ts staging",
     "setup:company": "npx tsx scripts/setup-production-company.ts",
-    "load-setup:test": "npx tsx scripts/load-setup.ts local"
+    "load-setup:test": "npx tsx scripts/load-setup.ts local",
+    "load-setup:staging": "npx tsx scripts/load-setup.ts staging"
   },
   "repository": {
     "type": "git",

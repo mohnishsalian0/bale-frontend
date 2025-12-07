@@ -25,9 +25,14 @@ import {
   useStockUnitsWithInward,
   useStockUnitWithProductDetail,
 } from "@/lib/query/hooks/stock-units";
-import type { MeasuringUnit, StockType } from "@/types/database/enums";
+import type {
+  MeasuringUnit,
+  StockType,
+  StockUnitStatus,
+} from "@/types/database/enums";
 import type { StockUnitWithInwardListView } from "@/types/stock-units.types";
 import type { InwardWithPartnerListView } from "@/types/stock-flow.types";
+import { StockStatusBadge } from "@/components/ui/stock-status-badge";
 
 interface PageParams {
   params: Promise<{
@@ -268,12 +273,19 @@ export default function StockUnitsPage({ params }: PageParams) {
                     className="flex items-start justify-between gap-4 px-4 py-4 border-t border-dashed border-gray-200 hover:bg-gray-50 transition-colors w-full text-left cursor-pointer"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-base font-medium text-gray-700">
-                        {formatStockUnitNumber(
-                          unit.sequence_number,
-                          product!.stock_type as StockType,
-                        )}
-                      </p>
+                      <div className="flex items-center gap-2 text-base font-medium text-gray-700">
+                        <span>
+                          {formatStockUnitNumber(
+                            unit.sequence_number,
+                            product!.stock_type as StockType,
+                          )}
+                        </span>
+                        <span>
+                          <StockStatusBadge
+                            status={unit.status as StockUnitStatus}
+                          />
+                        </span>
+                      </div>
 
                       {/* QR Status */}
                       <p
@@ -294,7 +306,7 @@ export default function StockUnitsPage({ params }: PageParams) {
                       </p>
 
                       {/* Additional Details */}
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-0.5">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-1">
                         {unit.quality_grade && (
                           <span>Grade: {unit.quality_grade}</span>
                         )}

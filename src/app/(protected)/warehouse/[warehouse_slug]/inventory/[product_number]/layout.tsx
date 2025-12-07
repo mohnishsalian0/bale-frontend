@@ -87,7 +87,8 @@ export default function ProductDetailLayout({
           );
         },
         onError: (error: Error) => {
-          toast.error(`Failed to update catalog visibility: ${error.message}`);
+          console.log("Failed to update catalog visibility", error.message);
+          toast.error(`Failed to update catalog visibility`);
         },
       },
     );
@@ -106,7 +107,8 @@ export default function ProductDetailLayout({
           router.push(`/warehouse/${warehouse.slug}/inventory`);
         },
         onError: (error: Error) => {
-          toast.error(`Failed to mark product as inactive: ${error.message}`);
+          console.log("Failed to mark product as inactive", error.message);
+          toast.error(`Failed to mark product as inactive`);
         },
       },
     );
@@ -123,7 +125,8 @@ export default function ProductDetailLayout({
         router.push(`/warehouse/${warehouse.slug}/inventory`);
       },
       onError: (error: Error) => {
-        toast.error(`Failed to delete product: ${error.message}`);
+        console.log("Failed to delete product", error.message);
+        toast.error(`Failed to delete product`);
       },
     });
   };

@@ -15,11 +15,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { createClient } from "@/lib/supabase/browser";
 import type { UserRole } from "@/types/database/enums";
 import { useSession } from "@/contexts/session-context";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
 import { useInviteMutations } from "@/lib/query/hooks/invites";
+import { useCompany } from "@/lib/query/hooks/company";
+import { LoadingState } from "@/components/layouts/loading-state";
 
 interface InviteFormSheetProps {
   open: boolean;
@@ -43,7 +44,9 @@ export function InviteFormSheet({ open, onOpenChange }: InviteFormSheetProps) {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
-  const { data: warehouses = [], isLoading: loading } = useWarehouses();
+  const { data: company, isLoading: companyLoading } = useCompany();
+  const { data: warehouses = [], isLoading: warehouseLoading } =
+    useWarehouses();
   const { create: createInvite } = useInviteMutations();
 
   const handleWarehouseToggle = (warehouseId: string) => {
@@ -61,24 +64,12 @@ export function InviteFormSheet({ open, onOpenChange }: InviteFormSheetProps) {
     setSendError(null);
 
     try {
-      const supabase = createClient();
-
       // Validate warehouse assignment when specific selection is required
       if (
         formData.warehouseAccessMode === "select" &&
         formData.warehouseIds.length === 0
       ) {
         throw new Error("Please select at least one warehouse");
-      }
-
-      // Get company name
-      const { data: company } = await supabase
-        .from("companies")
-        .select("name")
-        .single<{ name: string }>();
-
-      if (!company) {
-        throw new Error("Failed to fetch company details");
       }
 
       // Set expiry to 7 days from now
@@ -88,7 +79,7 @@ export function InviteFormSheet({ open, onOpenChange }: InviteFormSheetProps) {
       // Create invite using mutation
       const token = await createInvite.mutateAsync({
         companyId: user.company_id,
-        companyName: company.name,
+        companyName: company?.name || "Unknown company",
         role: formData.role,
         allWarehousesAccess: formData.warehouseAccessMode === "all",
         warehouseIds:
@@ -119,7 +110,7 @@ export function InviteFormSheet({ open, onOpenChange }: InviteFormSheetProps) {
 
       const whatsappMessage = `Hi,
 
-You've been invited to join ${company.name} and get access to ${systemDescription} as ${formData.role === "admin" ? "Admin" : "Staff"}.
+You've been invited to join ${company?.name || "Unknown company"} and get access to ${systemDescription} as ${formData.role === "admin" ? "Admin" : "Staff"}.
 
 Here's your invite link:
 🔗 ${inviteUrl}
@@ -146,9 +137,7 @@ The Bale Team`;
       handleCancel();
     } catch (error) {
       console.error("Error sending invite:", error);
-      setSendError(
-        error instanceof Error ? error.message : "Failed to send invite",
-      );
+      setSendError("Failed to send invite");
     } finally {
       setSending(false);
     }
@@ -164,6 +153,10 @@ The Bale Team`;
     setSendError(null);
     onOpenChange(false);
   };
+
+  if (companyLoading || warehouseLoading) {
+    return <LoadingState message="Loading..." />;
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -222,42 +215,34 @@ The Bale Team`;
               {formData.warehouseAccessMode === "select" && (
                 <div className="flex flex-col gap-3">
                   <Label>Select warehouses</Label>
-                  {loading ? (
-                    <p className="text-sm text-gray-500">
-                      Loading warehouses...
-                    </p>
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      {warehouses.map((warehouse) => (
-                        <div
-                          key={warehouse.id}
-                          className="flex items-start space-x-2"
+                  <div className="flex flex-col gap-3">
+                    {warehouses.map((warehouse) => (
+                      <div
+                        key={warehouse.id}
+                        className="flex items-start space-x-2"
+                      >
+                        <Checkbox
+                          id={`warehouse-${warehouse.id}`}
+                          checked={formData.warehouseIds.includes(warehouse.id)}
+                          onCheckedChange={() =>
+                            handleWarehouseToggle(warehouse.id)
+                          }
+                          className="mt-1.5"
+                        />
+                        <Label
+                          htmlFor={`warehouse-${warehouse.id}`}
+                          className="flex flex-col items-start gap-0 cursor-pointer flex-1"
                         >
-                          <Checkbox
-                            id={`warehouse-${warehouse.id}`}
-                            checked={formData.warehouseIds.includes(
-                              warehouse.id,
-                            )}
-                            onCheckedChange={() =>
-                              handleWarehouseToggle(warehouse.id)
-                            }
-                            className="mt-1.5"
-                          />
-                          <Label
-                            htmlFor={`warehouse-${warehouse.id}`}
-                            className="flex flex-col items-start gap-0 cursor-pointer flex-1"
-                          >
-                            <span className="text-base font-normal text-gray-700">
-                              {warehouse.name}
-                            </span>
-                            <span className="text-xs font-normal text-gray-500 leading-relaxed">
-                              {warehouse.address_line1 || "No address"}
-                            </span>
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                          <span className="text-base font-normal text-gray-700">
+                            {warehouse.name}
+                          </span>
+                          <span className="text-xs font-normal text-gray-500 leading-relaxed">
+                            {warehouse.address_line1 || "No address"}
+                          </span>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
