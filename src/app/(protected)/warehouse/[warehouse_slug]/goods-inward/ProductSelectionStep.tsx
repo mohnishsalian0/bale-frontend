@@ -48,6 +48,9 @@ interface ProductSelectionStepProps {
     hasExistingUnits: boolean,
   ) => void;
   onAddNewProduct: () => void;
+  fetchNextPage: () => void;
+  hasNextPage?: boolean;
+  isFetchingNextPage: boolean;
 }
 
 export function ProductSelectionStep({
@@ -58,11 +61,25 @@ export function ProductSelectionStep({
   loading,
   onOpenUnitSheet,
   onAddNewProduct,
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
 }: ProductSelectionStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [materialFilter, setMaterialFilter] = useState<string>("all");
   const [colorFilter, setColorFilter] = useState<string>("all");
   const [tagsFilter, setTagsFilter] = useState<string>("all");
+
+  // Handle scroll to trigger infinite loading
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
+
+    // Trigger fetch when scrolled 80% down
+    if (scrollPercentage > 0.8 && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
 
   // Filter and sort products using useMemo
   const filteredProducts = useMemo(() => {
@@ -191,7 +208,7 @@ export function ProductSelectionStep({
       </div>
 
       {/* Product List - Scrollable */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" onScroll={handleScroll}>
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-gray-500">Loading products...</p>
@@ -201,81 +218,103 @@ export function ProductSelectionStep({
             <p className="text-sm text-gray-500">No products found</p>
           </div>
         ) : (
-          <div className="flex flex-col">
-            {filteredProducts.map((product) => {
-              const imageUrl = product.product_images?.[0];
+          <>
+            <div className="flex flex-col">
+              {filteredProducts.map((product) => {
+                const imageUrl = product.product_images?.[0];
 
-              const hasUnits = product.units.length > 0;
+                const hasUnits = product.units.length > 0;
 
-              // For piece type: show total quantity (pieces), for others: show count of units
-              const totalUnits =
-                product.stock_type === "piece"
-                  ? product.units.reduce((sum, unit) => sum + unit.quantity, 0)
-                  : product.units.reduce((sum, unit) => sum + unit.count, 0);
+                // For piece type: show total quantity (pieces), for others: show count of units
+                const totalUnits =
+                  product.stock_type === "piece"
+                    ? product.units.reduce(
+                        (sum, unit) => sum + unit.quantity,
+                        0,
+                      )
+                    : product.units.reduce((sum, unit) => sum + unit.count, 0);
 
-              const productInfoText = getProductInfo(product);
+                const productInfoText = getProductInfo(product);
 
-              return (
-                <div
-                  key={product.id}
-                  className="flex items-center gap-3 p-4 border-t border-gray-200"
-                >
-                  {/* Product Image */}
-                  <ImageWrapper
-                    size="md"
-                    shape="square"
-                    imageUrl={imageUrl}
-                    alt={product.name}
-                    placeholderIcon={getProductIcon(
-                      product.stock_type as StockType,
-                    )}
-                  />
-
-                  {/* Product Info */}
-                  <div className="flex-1 min-w-0">
-                    <p
-                      title={product.name}
-                      className="text-base font-medium text-gray-700 truncate"
-                    >
-                      {product.name}
-                    </p>
-                    <p
-                      title={productInfoText}
-                      className="text-xs text-gray-500 truncate"
-                    >
-                      {productInfoText}
-                    </p>
-                  </div>
-
-                  {/* Add/Count Button */}
-                  {hasUnits ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => onOpenUnitSheet(product, hasUnits)}
-                    >
-                      <IconMinus />
-                      {pluralizeStockType(
-                        totalUnits,
+                return (
+                  <div
+                    key={product.id}
+                    className="flex items-center gap-3 p-4 border-t border-gray-200"
+                  >
+                    {/* Product Image */}
+                    <ImageWrapper
+                      size="md"
+                      shape="square"
+                      imageUrl={imageUrl}
+                      alt={product.name}
+                      placeholderIcon={getProductIcon(
                         product.stock_type as StockType,
                       )}
-                      <IconPlus />
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onOpenUnitSheet(product, hasUnits)}
-                    >
-                      <IconPlus />
-                      Add {product.stock_type}
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                    />
+
+                    {/* Product Info */}
+                    <div className="flex-1 min-w-0">
+                      <p
+                        title={product.name}
+                        className="text-base font-medium text-gray-700 truncate"
+                      >
+                        {product.name}
+                      </p>
+                      <p
+                        title={productInfoText}
+                        className="text-xs text-gray-500 truncate mt-1"
+                      >
+                        {productInfoText}
+                      </p>
+                    </div>
+
+                    {/* Add/Count Button */}
+                    {hasUnits ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => onOpenUnitSheet(product, hasUnits)}
+                      >
+                        <IconMinus />
+                        {pluralizeStockType(
+                          totalUnits,
+                          product.stock_type as StockType,
+                        )}
+                        <IconPlus />
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onOpenUnitSheet(product, hasUnits)}
+                      >
+                        <IconPlus />
+                        Add {product.stock_type}
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Loading more indicator */}
+            {isFetchingNextPage && (
+              <div className="flex items-center justify-center py-4 border-t border-border">
+                <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin" />
+                <p className="text-sm text-gray-500 ml-3">Loading more...</p>
+              </div>
+            )}
+
+            {/* End of list indicator */}
+            {!hasNextPage && products.length > 0 && (
+              <div className="flex items-center justify-center py-4 border-t border-border">
+                <p className="text-sm text-gray-500">
+                  All products loaded ({products.length})
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </>

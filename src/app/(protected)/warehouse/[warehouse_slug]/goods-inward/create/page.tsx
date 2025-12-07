@@ -16,7 +16,10 @@ import { InwardLinkToStep, InwardLinkToData } from "../InwardLinkToStep";
 import { InwardDetailsStep } from "../InwardDetailsStep";
 import { ProductFormSheet } from "../../inventory/ProductFormSheet";
 import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
-import { useProducts, useProductAttributes } from "@/lib/query/hooks/products";
+import {
+  useInfiniteProducts,
+  useProductAttributes,
+} from "@/lib/query/hooks/products";
 import { useStockFlowMutations } from "@/lib/query/hooks/stock-flow";
 import type { TablesInsert } from "@/types/database/supabase";
 import { useSession } from "@/contexts/session-context";
@@ -46,10 +49,16 @@ export default function CreateGoodsInwardPage() {
   // Mutations
   const { createInwardWithUnits } = useStockFlowMutations(warehouse.id);
 
-  // Fetch products and attributes using TanStack Query
-  const { data: productsData = [], isLoading: productsLoading } = useProducts({
+  // Fetch products and attributes using TanStack Query with infinite scroll
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteProducts({
     is_active: true,
-    order_by: "created_at",
+    order_by: "sequence_number",
     order_direction: "desc",
   });
   const { data: attributesData, isLoading: attributesLoading } =
@@ -60,15 +69,14 @@ export default function CreateGoodsInwardPage() {
     Record<string, StockUnitSpec[]>
   >({});
 
-  // Combine products data with units state
-  const products: ProductWithUnits[] = useMemo(
-    () =>
-      productsData.map((product) => ({
-        ...product,
-        units: productUnits[product.id] || [],
-      })),
-    [productsData, productUnits],
-  );
+  // Flatten products from infinite query pages and combine with units state
+  const products: ProductWithUnits[] = useMemo(() => {
+    const flatProducts = productsData?.pages.flatMap((page) => page.data) ?? [];
+    return flatProducts.map((product) => ({
+      ...product,
+      units: productUnits[product.id] || [],
+    }));
+  }, [productsData, productUnits]);
 
   const materials = attributesData?.materials || [];
   const colors = attributesData?.colors || [];
@@ -419,6 +427,9 @@ export default function CreateGoodsInwardPage() {
               loading={loading}
               onOpenUnitSheet={handleOpenUnitSheet}
               onAddNewProduct={() => setShowCreateProduct(true)}
+              fetchNextPage={fetchNextPage}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
             />
           )}
 

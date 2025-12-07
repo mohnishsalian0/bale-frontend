@@ -7,6 +7,7 @@ import { getProductIcon } from "@/lib/utils/product";
 import { formatStockUnitNumber } from "@/lib/utils/product";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
+import { formatAbsoluteDate } from "@/lib/utils/date";
 
 type StockUnit = Tables<"stock_units">;
 type Product = Tables<"products">;
@@ -85,6 +86,12 @@ export function StockUnitsTab({ stockUnits }: StockUnitsTabProps) {
                 )}
                 {item.warehouse_location && (
                   <span>Location: {item.warehouse_location}</span>
+                )}
+                {item.manufacturing_date && (
+                  <span>
+                    Manufactured on:{" "}
+                    {formatAbsoluteDate(item.manufacturing_date)}
+                  </span>
                 )}
               </div>
             </div>

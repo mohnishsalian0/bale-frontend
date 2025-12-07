@@ -88,7 +88,7 @@ export default function OrdersPage() {
   const { data: customers = [], isLoading: customersLoading } = usePartners({
     partner_type: "customer",
   });
-  const { data: products = [], isLoading: productsLoading } = useProducts({
+  const { data: productsResponse, isLoading: productsLoading } = useProducts({
     is_active: true,
   });
 
@@ -98,6 +98,7 @@ export default function OrdersPage() {
   const orders = ordersResponse?.data || [];
   const totalCount = ordersResponse?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const products = productsResponse?.data || [];
 
   // Reset to page 1 when filters change
   useEffect(() => {

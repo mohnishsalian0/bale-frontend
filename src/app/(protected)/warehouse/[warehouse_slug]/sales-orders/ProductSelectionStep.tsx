@@ -40,6 +40,9 @@ interface ProductSelectionStepProps {
   onOpenQuantitySheet: (product: ProductWithInventoryListView) => void;
   onAddNewProduct: () => void;
   onRemoveProduct: (productId: string) => void;
+  fetchNextPage: () => void;
+  hasNextPage?: boolean;
+  isFetchingNextPage: boolean;
 }
 
 export function ProductSelectionStep({
@@ -51,11 +54,25 @@ export function ProductSelectionStep({
   onOpenQuantitySheet,
   onAddNewProduct,
   onRemoveProduct,
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
 }: ProductSelectionStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [materialFilter, setMaterialFilter] = useState<string>("all");
   const [colorFilter, setColorFilter] = useState<string>("all");
   const [tagsFilter, setTagsFilter] = useState<string>("all");
+
+  // Handle scroll to trigger infinite loading
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
+
+    // Trigger fetch when scrolled 80% down
+    if (scrollPercentage > 0.8 && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
 
   // Filter and sort products using useMemo
   const filteredProducts = useMemo(() => {
@@ -182,7 +199,7 @@ export function ProductSelectionStep({
       </div>
 
       {/* Product List - Scrollable */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" onScroll={handleScroll}>
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-gray-500">Loading products...</p>
@@ -192,87 +209,106 @@ export function ProductSelectionStep({
             <p className="text-sm text-gray-500">No products found</p>
           </div>
         ) : (
-          <div className="flex flex-col">
-            {filteredProducts.map((product) => {
-              const imageUrl = product.product_images?.[0];
+          <>
+            <div className="flex flex-col">
+              {filteredProducts.map((product) => {
+                const imageUrl = product.product_images?.[0];
 
-              const productInfoText = getProductInfo(product);
+                const productInfoText = getProductInfo(product);
 
-              const unitAbbreviation = getMeasuringUnitAbbreviation(
-                product.measuring_unit as MeasuringUnit | null,
-              );
+                const unitAbbreviation = getMeasuringUnitAbbreviation(
+                  product.measuring_unit as MeasuringUnit | null,
+                );
 
-              return (
-                <div
-                  key={product.id}
-                  className="flex items-center gap-3 p-4 border-t border-gray-200"
-                >
-                  {/* Product Image */}
-                  <ImageWrapper
-                    size="md"
-                    shape="square"
-                    imageUrl={imageUrl}
-                    alt={product.name}
-                    placeholderIcon={getProductIcon(
-                      product.stock_type as StockType,
-                    )}
-                  />
+                return (
+                  <div
+                    key={product.id}
+                    className="flex items-center gap-3 p-4 border-t border-gray-200"
+                  >
+                    {/* Product Image */}
+                    <ImageWrapper
+                      size="md"
+                      shape="square"
+                      imageUrl={imageUrl}
+                      alt={product.name}
+                      placeholderIcon={getProductIcon(
+                        product.stock_type as StockType,
+                      )}
+                    />
 
-                  {/* Product Info */}
-                  <div className="flex-1 min-w-0">
-                    <p
-                      title={product.name}
-                      className="text-base font-medium text-gray-700 truncate"
-                    >
-                      {product.name}
-                    </p>
-                    <p
-                      title={productInfoText}
-                      className="text-xs text-gray-500 truncate"
-                    >
-                      {productInfoText}
-                    </p>
-                  </div>
+                    {/* Product Info */}
+                    <div className="flex-1 min-w-0">
+                      <p
+                        title={product.name}
+                        className="text-base font-medium text-gray-700 truncate"
+                      >
+                        {product.name}
+                      </p>
+                      <p
+                        title={productInfoText}
+                        className="text-xs text-gray-500 truncate mt-1"
+                      >
+                        {productInfoText}
+                      </p>
+                    </div>
 
-                  {/* Add/Quantity Button */}
-                  <div className="flex flex-col items-end gap-2">
-                    {product.selected && product.quantity > 0 ? (
-                      <div className="flex items-center gap-2">
+                    {/* Add/Quantity Button */}
+                    <div className="flex flex-col items-end gap-2">
+                      {product.selected && product.quantity > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => onOpenQuantitySheet(product)}
+                          >
+                            {product.quantity} {unitAbbreviation}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => onRemoveProduct(product.id)}
+                          >
+                            <IconTrash />
+                          </Button>
+                        </div>
+                      ) : (
                         <Button
                           type="button"
+                          variant="outline"
                           size="sm"
                           onClick={() => onOpenQuantitySheet(product)}
                         >
-                          {product.quantity} {unitAbbreviation}
+                          <IconPlus />
+                          Add {product.stock_type}
                         </Button>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => onRemoveProduct(product.id)}
-                        >
-                          <IconTrash />
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onOpenQuantitySheet(product)}
-                      >
-                        <IconPlus />
-                        Add {product.stock_type}
-                      </Button>
-                    )}
-                    <p className="text-xs text-gray-500">
-                      {getAvailableStockText(product)} avail.
-                    </p>
+                      )}
+                      <p className="text-xs text-gray-500">
+                        {getAvailableStockText(product)} avail.
+                      </p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+
+            {/* Loading more indicator */}
+            {isFetchingNextPage && (
+              <div className="flex items-center justify-center py-4 border-t border-border">
+                <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin" />
+                <p className="text-sm text-gray-500 ml-3">Loading more...</p>
+              </div>
+            )}
+
+            {/* End of list indicator */}
+            {!hasNextPage && products.length > 0 && (
+              <div className="flex items-center justify-center py-4 border-t border-border">
+                <p className="text-sm text-gray-500">
+                  All products loaded ({products.length})
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </>

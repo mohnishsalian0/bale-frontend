@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Card, CardContent } from "@/components/ui/card";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
@@ -87,15 +86,6 @@ export default function DashboardPage() {
 
   return (
     <div className="relative flex flex-col grow">
-      {/* Quote Card */}
-      <Card className="mx-4 mt-4">
-        <CardContent className="p-4 text-center">
-          <i className="text-gray-700">
-            Life is a weave of threads — choose the colorful ones.
-          </i>
-        </CardContent>
-      </Card>
-
       {/* Header */}
       <div className="flex items-end justify-between gap-4 px-4 pt-4">
         <div className="flex-1">

@@ -258,36 +258,47 @@ export function transformProductWithInventoryDetailView(
 // ============================================================================
 
 /**
- * Get all products (list view with minimal fields)
+ * Get all products (list view with minimal fields) with pagination
  */
 export async function getProducts(
   filters?: ProductFilters,
-): Promise<ProductListView[]> {
+  page: number = 1,
+  pageSize: number = 30,
+): Promise<{ data: ProductListView[]; totalCount: number }> {
   const supabase = createClient();
+
+  // Calculate pagination range
+  const offset = (page - 1) * pageSize;
+  const limit = pageSize;
 
   let query = supabase
     .from("products")
-    .select(PRODUCT_LIST_VIEW_SELECT)
-    .is("deleted_at", null);
+    .select(PRODUCT_LIST_VIEW_SELECT, { count: "exact" })
+    .is("deleted_at", null)
+    .range(offset, offset + limit - 1);
 
   // Apply is active
   if (filters?.is_active) {
     query = query.is("is_active", filters.is_active);
   }
 
-  // Apply ordering (defaults to first_name ascending)
+  // Apply ordering (defaults to name ascending)
   const orderBy = filters?.order_by || "name";
   const ascending = filters?.order_direction !== "desc";
   query = query.order(orderBy, { ascending });
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) throw error;
-  if (!data) return [];
 
-  return ((data as unknown as ProductListViewRaw[]) || []).map(
-    transformProductListView,
-  );
+  const transformedData = (
+    (data as unknown as ProductListViewRaw[]) || []
+  ).map(transformProductListView);
+
+  return {
+    data: transformedData,
+    totalCount: count || 0,
+  };
 }
 
 /**

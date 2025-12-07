@@ -1,6 +1,12 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
@@ -36,6 +42,49 @@ export function useProducts(filters?: ProductFilters) {
   return useQuery({
     queryKey: queryKeys.products.all(filters),
     queryFn: () => getProducts(filters),
+    ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+  });
+}
+
+/**
+ * Fetch products with infinite scroll (for product selection in forms)
+ */
+export function useInfiniteProducts(filters?: ProductFilters, pageSize: number = 30) {
+  return useInfiniteQuery({
+    queryKey: [...queryKeys.products.all(filters), "infinite"],
+    queryFn: ({ pageParam = 1 }) => getProducts(filters, pageParam, pageSize),
+    getNextPageParam: (lastPage, allPages) => {
+      const currentPage = allPages.length;
+      const totalPages = Math.ceil(lastPage.totalCount / pageSize);
+      return currentPage < totalPages ? currentPage + 1 : undefined;
+    },
+    initialPageParam: 1,
+    ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+  });
+}
+
+/**
+ * Fetch products with inventory and infinite scroll (for sales orders)
+ */
+export function useInfiniteProductsWithInventory(
+  warehouseId: string | null,
+  filters?: ProductFilters,
+  pageSize: number = 30,
+) {
+  return useInfiniteQuery({
+    queryKey: [
+      ...queryKeys.products.withInventory(warehouseId || "", filters),
+      "infinite",
+    ],
+    queryFn: ({ pageParam = 1 }) =>
+      getProductsWithInventory(warehouseId!, filters, pageParam, pageSize),
+    getNextPageParam: (lastPage, allPages) => {
+      const currentPage = allPages.length;
+      const totalPages = Math.ceil(lastPage.totalCount / pageSize);
+      return currentPage < totalPages ? currentPage + 1 : undefined;
+    },
+    initialPageParam: 1,
+    enabled: !!warehouseId,
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
   });
 }

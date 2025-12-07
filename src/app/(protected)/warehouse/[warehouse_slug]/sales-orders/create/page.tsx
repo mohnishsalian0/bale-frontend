@@ -13,7 +13,7 @@ import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import {
-  useProductsWithInventory,
+  useInfiniteProductsWithInventory,
   useProductAttributes,
 } from "@/lib/query/hooks/products";
 import { useSalesOrderMutations } from "@/lib/query/hooks/sales-orders";
@@ -48,12 +48,19 @@ export default function CreateSalesOrderPage() {
   const [currentStep, setCurrentStep] = useState<FormStep>("products");
 
   // Fetch products and attributes using TanStack Query
-  const { data: productsResponse, isLoading: productsLoading } =
-    useProductsWithInventory(warehouse.id, { is_active: true });
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteProductsWithInventory(warehouse.id, { is_active: true });
   const { data: attributesData, isLoading: attributesLoading } =
     useProductAttributes();
 
-  const productsData = productsResponse?.data || [];
+  // Flatten infinite query pages data
+  const flatProducts =
+    productsData?.pages.flatMap((page) => page.data) || [];
 
   // Sales order mutations
   const { create: createOrder } = useSalesOrderMutations(warehouse.id);
@@ -66,12 +73,12 @@ export default function CreateSalesOrderPage() {
   // Combine products data with selection state
   const products: ProductWithSelection[] = useMemo(
     () =>
-      productsData.map((product) => ({
+      flatProducts.map((product) => ({
         ...product,
         selected: productSelections[product.id]?.selected || false,
         quantity: productSelections[product.id]?.quantity || 0,
       })),
-    [productsData, productSelections],
+    [flatProducts, productSelections],
   );
 
   const materials = attributesData?.materials || [];
@@ -243,6 +250,9 @@ export default function CreateSalesOrderPage() {
               onOpenQuantitySheet={handleOpenQuantitySheet}
               onAddNewProduct={() => setShowCreateProduct(true)}
               onRemoveProduct={handleRemoveProduct}
+              fetchNextPage={fetchNextPage}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
             />
           ) : currentStep === "customer" ? (
             <CustomerSelectionStep

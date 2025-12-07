@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { generatePDFBlob, downloadPDF } from "@/lib/pdf/batch-pdf-generator";
 import type { LabelData } from "@/lib/pdf/qr-label-generator";
 import type { ProductListView } from "@/types/products.types";
-import { useProducts, useProductAttributes } from "@/lib/query/hooks/products";
+import { useInfiniteProducts, useProductAttributes } from "@/lib/query/hooks/products";
 import { useQRBatchMutations } from "@/lib/query/hooks/qr-batches";
 import { getQRBatchById } from "@/lib/queries/qr-batches";
 import FormHeader from "@/components/ui/form-header";
@@ -41,12 +41,19 @@ export default function CreateQRBatchPage() {
   const [saving, setSaving] = useState(false);
 
   // Fetch data using TanStack Query
-  const { data: products = [], isLoading: productsLoading } = useProducts({
-    is_active: true,
-  });
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteProducts({ is_active: true });
   const { data: attributeLists, isLoading: productAttributesLoading } =
     useProductAttributes();
   const { create: createBatch } = useQRBatchMutations(warehouse.id);
+
+  // Flatten infinite query pages data
+  const products = productsData?.pages.flatMap((page) => page.data) || [];
 
   const materials = attributeLists?.materials || [];
   const colors = attributeLists?.colors || [];
@@ -207,6 +214,9 @@ export default function CreateQRBatchPage() {
               tags={tags}
               loading={productsLoading || productAttributesLoading}
               onProductSelect={handleProductSelect}
+              fetchNextPage={fetchNextPage}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
             />
           )}
 

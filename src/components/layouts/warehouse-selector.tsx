@@ -157,7 +157,7 @@ export default function WarehouseSelector({
                   No warehouses found
                 </p>
               ) : (
-                <div className="flex flex-col mb-24 overflow-y-auto border-y border-border">
+                <div className="flex flex-col mb-24 overflow-y-auto border border-border">
                   {warehouses.map((warehouse) => {
                     const isSelected = warehouse.id === currentWarehouse;
                     const formattedAddress =

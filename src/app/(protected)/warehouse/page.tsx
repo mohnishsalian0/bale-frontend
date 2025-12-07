@@ -104,7 +104,7 @@ export default function WarehouseSelectionPage() {
             </p>
           </div>
         ) : (
-          <div className="flex flex-col border-b border-border">
+          <div className="flex flex-col border border-border">
             {warehouses.map((warehouse) => {
               const formattedAddress = getWarehouseFormattedAddress(warehouse);
 
