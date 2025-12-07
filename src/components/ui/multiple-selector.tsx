@@ -372,7 +372,7 @@ const MultipleSelector = React.forwardRef<
       >
         <div
           className={cn(
-            "flex items-start justify-between rounded-md border border-input px-3 py-2.5 text-base ring-offset-background focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px] md:text-sm",
+            "flex items-start justify-between rounded-md border border-input px-3 py-2.5 text-sm ring-offset-background focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px] md:text-sm",
             { "cursor-text": !disabled && selected.length !== 0 },
             className,
           )}

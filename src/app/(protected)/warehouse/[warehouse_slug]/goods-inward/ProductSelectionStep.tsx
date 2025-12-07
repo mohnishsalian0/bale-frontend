@@ -25,8 +25,9 @@ import type { StockType } from "@/types/database/enums";
 export interface StockUnitSpec {
   id: string; // temp ID for UI
   quantity: number;
-  grade: string;
+  grade?: string;
   supplier_number?: string;
+  manufactured_on?: Date;
   location?: string;
   notes?: string;
   count: number; // for duplicate specs

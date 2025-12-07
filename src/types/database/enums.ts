@@ -4,8 +4,10 @@
  */
 
 export type UserRole = "admin" | "staff";
+export const USER_ROLES = ["admin", "staff"] as const;
 
 export type PartnerType = "customer" | "vendor" | "supplier" | "agent";
+export const PARTNER_TYPES = ["customer", "vendor", "supplier", "agent"] as const;
 
 export type ProductStockStatus = "in_stock" | "low_stock" | "out_of_stock";
 
@@ -59,8 +61,10 @@ export type MaterialType =
   | "Custom";
 
 export type StockType = "roll" | "batch" | "piece";
+export const STOCK_TYPES = ["roll", "batch", "piece"] as const;
 
 export type MeasuringUnit = "metre" | "yard" | "kilogram" | "unit" | "piece";
+export const MEASURING_UNITS = ["metre", "yard", "kilogram", "unit", "piece"] as const;
 
 export type StockUnitStatus = "full" | "partial" | "empty" | "removed";
 

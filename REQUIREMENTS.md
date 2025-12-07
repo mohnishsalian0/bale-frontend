@@ -30,6 +30,13 @@
 - **Monitoring**: Built-in Railway/Fly.io analytics
 - **Real-time Updates**: Not in Phase 1 (future consideration)
 
+#### Form Validation
+
+- **Library**: Zod + React Hook Form for all forms
+- **Validation schemas**: Centralized in `/src/lib/validations/` (domain-specific files)
+- **Reusable validators**: Common patterns in `/src/lib/validations/common.ts`
+- **TypeScript integration**: Type-safe forms with automatic type inference
+
 ### Architecture Decisions
 
 - **Single App Approach**: Admins manage products/inventory through mobile app (no separate web dashboard)

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useForm, Controller, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   IconChevronDown,
   IconX,
@@ -46,31 +48,14 @@ import {
   useProductImageMutations,
 } from "@/lib/query/hooks/products";
 import { InputWithIcon } from "@/components/ui/input-with-icon";
+import { productSchema, ProductFormData } from "@/lib/validations/product";
+import IconGSM from "@/components/icons/IconGSM";
+import IconThreadCount from "@/components/icons/IconThreadCount";
 
 interface ProductFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   productToEdit?: ProductDetailView;
-}
-
-interface ProductFormData {
-  name: string;
-  productNumber: string;
-  showOnCatalog: boolean;
-  materials: Option[];
-  colors: Option[];
-  gsm: string;
-  threadCount: string;
-  tags: Option[];
-  stockType: StockType | "";
-  measuringUnit: MeasuringUnit | "";
-  costPrice: string;
-  sellingPrice: string;
-  minStockAlert: boolean;
-  minStockThreshold: string;
-  hsnCode: string;
-  notes: string;
-  images: File[];
 }
 
 export function ProductFormSheet({
@@ -85,38 +70,54 @@ export function ProductFormSheet({
   const createTag = useCreateProductTag();
   const { upload, deleteImages, updateField } = useProductImageMutations();
 
-  const [formData, setFormData] = useState<ProductFormData>({
-    name: productToEdit?.name || "",
-    productNumber: "", // Not used in edit mode
-    showOnCatalog: productToEdit?.show_on_catalog ?? true,
-    materials:
-      productToEdit?.materials.map((m) => ({
-        value: m.id,
-        label: m.name,
-      })) || [],
-    colors:
-      productToEdit?.colors.map((c) => ({
-        value: c.id,
-        label: c.name,
-      })) || [],
-    gsm: productToEdit?.gsm?.toString() || "",
-    threadCount: productToEdit?.thread_count_cm?.toString() || "",
-    tags:
-      productToEdit?.tags.map((t) => ({ value: t.id, label: t.name })) || [],
-    stockType: productToEdit?.stock_type as StockType,
-    measuringUnit: (productToEdit?.measuring_unit as MeasuringUnit) || "",
-    costPrice: productToEdit?.cost_price_per_unit?.toString() || "",
-    sellingPrice: productToEdit?.selling_price_per_unit?.toString() || "",
-    minStockAlert: productToEdit?.min_stock_alert ?? false,
-    minStockThreshold: productToEdit?.min_stock_threshold?.toString() || "",
-    hsnCode: productToEdit?.hsn_code || "",
-    notes: productToEdit?.notes || "",
-    images: [],
+  // Initialize form with React Hook Form
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    reset,
+    control,
+  } = useForm({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: productToEdit?.name || "",
+      showOnCatalog: productToEdit?.show_on_catalog ?? true,
+      materials:
+        productToEdit?.materials.map((m) => ({
+          value: m.id,
+          label: m.name,
+        })) || [],
+      colors:
+        productToEdit?.colors.map((c) => ({
+          value: c.id,
+          label: c.name,
+        })) || [],
+      gsm: productToEdit?.gsm?.toString() || "",
+      threadCount: productToEdit?.thread_count_cm?.toString() || "",
+      tags:
+        productToEdit?.tags.map((t) => ({ value: t.id, label: t.name })) || [],
+      stockType: (productToEdit?.stock_type as StockType) || undefined,
+      measuringUnit: (productToEdit?.measuring_unit as MeasuringUnit) || null,
+      costPrice: productToEdit?.cost_price_per_unit?.toString() || "",
+      sellingPrice: productToEdit?.selling_price_per_unit?.toString() || "",
+      minStockAlert: productToEdit?.min_stock_alert ?? false,
+      minStockThreshold: productToEdit?.min_stock_threshold?.toString() || "",
+      hsnCode: productToEdit?.hsn_code || "",
+      notes: productToEdit?.notes || "",
+    },
   });
 
+  // Watch stockType and measuringUnit for conditional rendering
+  const stockType = useWatch({ control, name: "stockType" });
+  const measuringUnit = useWatch({ control, name: "measuringUnit" });
+  const minStockAlert = useWatch({ control, name: "minStockAlert" });
+
+  // Image handling state (not part of form validation)
+  const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
-  const [showFeaturesImages, setShowFeaturesImages] = useState(false);
+  const [showFeaturesImages, setShowFeaturesImages] = useState(true);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [originalImages, setOriginalImages] = useState<string[]>([]); // Track original images to detect removals
@@ -154,27 +155,12 @@ export function ProductFormSheet({
     fetchAttributes();
   }, []);
 
-  // Simple handlers - new items are identified by value === label
-  // They will be inserted to DB on form submit
-  const handleMaterialsChange = (options: Option[]) => {
-    setFormData((prev) => ({ ...prev, materials: options }));
-  };
-
-  const handleColorsChange = (options: Option[]) => {
-    setFormData((prev) => ({ ...prev, colors: options }));
-  };
-
-  const handleTagsChange = (options: Option[]) => {
-    setFormData((prev) => ({ ...prev, tags: options }));
-  };
-
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
     // Check if adding these files would exceed the limit (existing + new uploads + incoming files)
-    const totalImages =
-      existingImages.length + formData.images.length + files.length;
+    const totalImages = existingImages.length + images.length + files.length;
     if (totalImages > MAX_PRODUCT_IMAGES) {
       setImageError(`Maximum ${MAX_PRODUCT_IMAGES} images allowed`);
       return;
@@ -191,9 +177,9 @@ export function ProductFormSheet({
 
     setImageError(null);
 
-    // Add files to form data
-    const newImages = [...formData.images, ...files];
-    setFormData((prev) => ({ ...prev, images: newImages }));
+    // Add files to images state
+    const newImages = [...images, ...files];
+    setImages(newImages);
 
     // Create previews using object URLs
     const newPreviews = files.map((file) => URL.createObjectURL(file));
@@ -217,8 +203,8 @@ export function ProductFormSheet({
     } else {
       // Remove from new uploads
       const adjustedIndex = index - existingImages.length;
-      const newImages = formData.images.filter((_, i) => i !== adjustedIndex);
-      setFormData((prev) => ({ ...prev, images: newImages }));
+      const newImages = images.filter((_, i) => i !== adjustedIndex);
+      setImages(newImages);
     }
 
     // Update previews
@@ -238,13 +224,11 @@ export function ProductFormSheet({
     };
   }, [imagePreviews]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const onSubmit = async (data: ProductFormData) => {
     try {
       // Step 1: Resolve attribute IDs (create new ones if needed)
       const materialIds: string[] = [];
-      for (const opt of formData.materials) {
+      for (const opt of data.materials) {
         if (opt.value === opt.label) {
           // New material, create it
           const id = await createMaterial.mutateAsync(opt.label);
@@ -255,7 +239,7 @@ export function ProductFormSheet({
       }
 
       const colorIds: string[] = [];
-      for (const opt of formData.colors) {
+      for (const opt of data.colors) {
         if (opt.value === opt.label) {
           // New color, create it
           const id = await createColor.mutateAsync(opt.label);
@@ -266,7 +250,7 @@ export function ProductFormSheet({
       }
 
       const tagIds: string[] = [];
-      for (const opt of formData.tags) {
+      for (const opt of data.tags) {
         if (opt.value === opt.label) {
           // New tag, create it
           const id = await createTag.mutateAsync(opt.label);
@@ -278,26 +262,18 @@ export function ProductFormSheet({
 
       // Step 2: Prepare product data
       const productData: ProductUpsertData = {
-        name: formData.name,
-        show_on_catalog: formData.showOnCatalog,
-        gsm: formData.gsm ? parseInt(formData.gsm) : null,
-        thread_count_cm: formData.threadCount
-          ? parseInt(formData.threadCount)
-          : null,
-        stock_type: formData.stockType as StockType,
-        measuring_unit: formData.measuringUnit || null,
-        cost_price_per_unit: formData.costPrice
-          ? parseFloat(formData.costPrice)
-          : null,
-        selling_price_per_unit: formData.sellingPrice
-          ? parseFloat(formData.sellingPrice)
-          : null,
-        min_stock_alert: formData.minStockAlert,
-        min_stock_threshold: formData.minStockThreshold
-          ? parseInt(formData.minStockThreshold)
-          : null,
-        hsn_code: formData.hsnCode || null,
-        notes: formData.notes || null,
+        name: data.name,
+        show_on_catalog: data.showOnCatalog,
+        gsm: data.gsm || null,
+        thread_count_cm: data.threadCount || null,
+        stock_type: data.stockType as StockType,
+        measuring_unit: data.measuringUnit || null,
+        cost_price_per_unit: data.costPrice || null,
+        selling_price_per_unit: data.sellingPrice || null,
+        min_stock_alert: data.minStockAlert,
+        min_stock_threshold: data.minStockThreshold || null,
+        hsn_code: data.hsnCode || null,
+        notes: data.notes || null,
       };
 
       const attributeIds = { materialIds, colorIds, tagIds };
@@ -332,11 +308,11 @@ export function ProductFormSheet({
         const imageUrls: string[] = [...existingImages];
 
         // Upload new images
-        if (formData.images.length > 0) {
+        if (images.length > 0) {
           const newImageUrls = await upload.mutateAsync({
             companyId: user.company_id,
             productId,
-            images: formData.images,
+            images: images,
             offset: existingImages.length,
           });
           imageUrls.push(...newImageUrls);
@@ -344,7 +320,7 @@ export function ProductFormSheet({
 
         // Update product images field if there are changes
         if (
-          formData.images.length > 0 ||
+          images.length > 0 ||
           existingImages.length !== (productToEdit?.product_images?.length || 0)
         ) {
           await updateField.mutateAsync({
@@ -373,25 +349,8 @@ export function ProductFormSheet({
 
   const handleCancel = () => {
     // Reset form
-    setFormData({
-      name: "",
-      productNumber: "PROD-001",
-      showOnCatalog: true,
-      materials: [],
-      colors: [],
-      gsm: "",
-      threadCount: "",
-      tags: [],
-      stockType: "",
-      measuringUnit: "",
-      costPrice: "",
-      sellingPrice: "",
-      minStockAlert: false,
-      minStockThreshold: "",
-      hsnCode: "",
-      notes: "",
-      images: [],
-    });
+    reset();
+    setImages([]);
     setImagePreviews([]);
     setImageError(null);
     setExistingImages([]);
@@ -411,134 +370,123 @@ export function ProductFormSheet({
 
         {/* Form Content - Scrollable */}
         <form
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col flex-1 overflow-hidden"
         >
           <div className="flex-1 overflow-y-auto">
             {/* Basic Info */}
             <div className="flex flex-col gap-6 px-4 py-5">
               {/* Product Name */}
-              <InputWithIcon
-                label="Product name"
-                placeholder="Enter a name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                required
-              />
+              <div className="flex flex-col gap-2">
+                <InputWithIcon
+                  label="Product name"
+                  placeholder="Enter a name"
+                  {...register("name")}
+                  required
+                />
+                {errors.name && (
+                  <p className="text-sm text-red-700">{errors.name.message}</p>
+                )}
+              </div>
 
               {/* Stock Type */}
               <div className="flex flex-col gap-2">
                 <Label required>Stock Type</Label>
-                <RadioGroup
-                  value={formData.stockType}
-                  onValueChange={(value) => {
-                    const stockType = value as StockType;
-                    let measuringUnit: MeasuringUnit | "" = "";
+                <Controller
+                  name="stockType"
+                  control={control}
+                  render={({ field }) => (
+                    <RadioGroup
+                      value={field.value as string}
+                      onValueChange={(value) => {
+                        const stockType = value as StockType;
+                        let measuringUnit: MeasuringUnit | null = null;
 
-                    // Auto-set measuring unit based on stock type
-                    if (stockType === "batch") {
-                      measuringUnit = "unit";
-                    }
+                        // Auto-set measuring unit based on stock type
+                        if (stockType === "batch") {
+                          measuringUnit = "unit";
+                        }
 
-                    setFormData((prev) => ({
-                      ...prev,
-                      stockType,
-                      measuringUnit,
-                    }));
-                  }}
-                  name="stock-type"
-                  disabled={!!productToEdit}
-                >
-                  <RadioGroupItem value="roll">Roll</RadioGroupItem>
-                  <RadioGroupItem value="batch">Batch</RadioGroupItem>
-                  <RadioGroupItem value="piece">Piece</RadioGroupItem>
-                </RadioGroup>
+                        field.onChange(stockType);
+                        setValue("measuringUnit", measuringUnit);
+                      }}
+                      name="stock-type"
+                      disabled={!!productToEdit}
+                    >
+                      <RadioGroupItem value="roll">Roll</RadioGroupItem>
+                      <RadioGroupItem value="batch">Batch</RadioGroupItem>
+                      <RadioGroupItem value="piece">Piece</RadioGroupItem>
+                    </RadioGroup>
+                  )}
+                />
+                {errors.stockType && (
+                  <p className="text-sm text-red-700">
+                    {errors.stockType.message}
+                  </p>
+                )}
               </div>
 
               {/* Measuring Unit - Only show for roll type */}
-              {formData.stockType === "roll" && (
+              {stockType === "roll" && (
                 <div className="flex flex-col gap-2">
                   <Label required>Measuring Unit</Label>
-                  <RadioGroup
-                    value={formData.measuringUnit}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        measuringUnit: value as MeasuringUnit,
-                      }))
-                    }
-                    name="measuring-unit"
-                    disabled={!!productToEdit}
-                  >
-                    <RadioGroupItem value="metre">Metre</RadioGroupItem>
-                    <RadioGroupItem value="kilogram">Kilogram</RadioGroupItem>
-                    <RadioGroupItem value="yard">Yard</RadioGroupItem>
-                  </RadioGroup>
+                  <Controller
+                    name="measuringUnit"
+                    control={control}
+                    render={({ field }) => (
+                      <RadioGroup
+                        value={field.value as string}
+                        onValueChange={field.onChange}
+                        name="measuring-unit"
+                        disabled={!!productToEdit}
+                      >
+                        <RadioGroupItem value="metre">Metre</RadioGroupItem>
+                        <RadioGroupItem value="kilogram">
+                          Kilogram
+                        </RadioGroupItem>
+                        <RadioGroupItem value="yard">Yard</RadioGroupItem>
+                      </RadioGroup>
+                    )}
+                  />
+                  {errors.measuringUnit && (
+                    <p className="text-sm text-red-700">
+                      {errors.measuringUnit.message}
+                    </p>
+                  )}
                 </div>
               )}
 
-              {/* Purchase & Sale Price */}
-              <div className="flex gap-4">
-                <InputWithIcon
-                  type="number"
-                  placeholder="Purchase price"
-                  value={formData.costPrice}
-                  icon={<IconCurrencyRupee />}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      costPrice: e.target.value,
-                    }))
-                  }
-                  className="flex-1"
-                  step="0.01"
-                  min="0"
-                />
-                <InputWithIcon
-                  type="number"
-                  placeholder="Sale price"
-                  value={formData.sellingPrice}
-                  icon={<IconCurrencyRupee />}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      sellingPrice: e.target.value,
-                    }))
-                  }
-                  className="flex-1"
-                  step="0.01"
-                  min="0"
-                />
-              </div>
-
               {/* Minimum Stock Alert */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <Label>Minimum stock alert</Label>
-                <Switch
-                  checked={formData.minStockAlert}
-                  onCheckedChange={(checked) =>
-                    setFormData((prev) => ({ ...prev, minStockAlert: checked }))
-                  }
+                <Controller
+                  name="minStockAlert"
+                  control={control}
+                  render={({ field }) => (
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
                 />
               </div>
 
               {/* Minimum Stock Threshold */}
-              {formData.minStockAlert && (
-                <Input
-                  type="number"
-                  placeholder="Minimum stock threshold"
-                  value={formData.minStockThreshold}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      minStockThreshold: e.target.value,
-                    }))
-                  }
-                  step="1"
-                  min="0"
-                />
+              {minStockAlert && (
+                <div className="flex flex-col gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Minimum stock threshold"
+                    {...register("minStockThreshold")}
+                    step="1"
+                    min="0"
+                  />
+                  {errors.minStockThreshold && (
+                    <p className="text-sm text-red-700">
+                      {errors.minStockThreshold.message}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
 
@@ -562,84 +510,47 @@ export function ProductFormSheet({
               <CollapsibleContent>
                 <div className="flex flex-col gap-6">
                   {/* Materials */}
-                  <MultipleSelector
-                    value={formData.materials}
-                    defaultOptions={materialOptions}
-                    onChange={handleMaterialsChange}
-                    placeholder="Materials"
-                    creatable
-                    triggerSearchOnFocus
-                    hidePlaceholderWhenSelected
-                    emptyIndicator={
-                      <p className="text-center text-sm text-gray-500">
-                        No materials found
-                      </p>
-                    }
+                  <Controller
+                    name="materials"
+                    control={control}
+                    render={({ field }) => (
+                      <MultipleSelector
+                        value={field.value}
+                        defaultOptions={materialOptions}
+                        onChange={field.onChange}
+                        placeholder="Materials"
+                        creatable
+                        triggerSearchOnFocus
+                        hidePlaceholderWhenSelected
+                        emptyIndicator={
+                          <p className="text-center text-sm text-gray-500">
+                            No materials found
+                          </p>
+                        }
+                      />
+                    )}
                   />
 
                   {/* Colors */}
-                  <MultipleSelector
-                    value={formData.colors}
-                    defaultOptions={colorOptions}
-                    onChange={handleColorsChange}
-                    placeholder="Colors"
-                    creatable
-                    triggerSearchOnFocus
-                    hidePlaceholderWhenSelected
-                    emptyIndicator={
-                      <p className="text-center text-sm text-gray-500">
-                        No colors found
-                      </p>
-                    }
-                  />
-
-                  {/* GSM & Thread Count */}
-                  <div className="flex gap-4">
-                    <Input
-                      type="number"
-                      placeholder="GSM"
-                      value={formData.gsm}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          gsm: e.target.value,
-                        }))
-                      }
-                      className="flex-1"
-                      step="1"
-                      min="50"
-                      max="500"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Thread count"
-                      value={formData.threadCount}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          threadCount: e.target.value,
-                        }))
-                      }
-                      className="flex-1"
-                      step="1"
-                      min="1"
-                    />
-                  </div>
-
-                  {/* Tags */}
-                  <MultipleSelector
-                    value={formData.tags}
-                    defaultOptions={tagOptions}
-                    onChange={handleTagsChange}
-                    placeholder="Tags"
-                    creatable
-                    triggerSearchOnFocus
-                    hidePlaceholderWhenSelected
-                    emptyIndicator={
-                      <p className="text-center text-sm text-gray-500">
-                        No tags found
-                      </p>
-                    }
+                  <Controller
+                    name="colors"
+                    control={control}
+                    render={({ field }) => (
+                      <MultipleSelector
+                        value={field.value}
+                        defaultOptions={colorOptions}
+                        onChange={field.onChange}
+                        placeholder="Colors"
+                        creatable
+                        triggerSearchOnFocus
+                        hidePlaceholderWhenSelected
+                        emptyIndicator={
+                          <p className="text-center text-sm text-gray-500">
+                            No colors found
+                          </p>
+                        }
+                      />
+                    )}
                   />
 
                   {/* Image Upload */}
@@ -673,7 +584,7 @@ export function ProductFormSheet({
                     )}
 
                     {/* Add Images Button */}
-                    {existingImages.length + formData.images.length <
+                    {existingImages.length + images.length <
                       MAX_PRODUCT_IMAGES && (
                       <label
                         htmlFor="product-images"
@@ -698,8 +609,65 @@ export function ProductFormSheet({
                     )}
 
                     {imageError && (
-                      <p className="text-sm text-red-600">{imageError}</p>
+                      <p className="text-sm text-red-700">{imageError}</p>
                     )}
+                  </div>
+
+                  {/* Tags */}
+                  <Controller
+                    name="tags"
+                    control={control}
+                    render={({ field }) => (
+                      <MultipleSelector
+                        value={field.value}
+                        defaultOptions={tagOptions}
+                        onChange={field.onChange}
+                        placeholder="Tags"
+                        creatable
+                        triggerSearchOnFocus
+                        hidePlaceholderWhenSelected
+                        emptyIndicator={
+                          <p className="text-center text-sm text-gray-500">
+                            No tags found
+                          </p>
+                        }
+                      />
+                    )}
+                  />
+
+                  {/* GSM & Thread Count */}
+                  <div className="flex gap-4">
+                    <div className="flex-1 flex flex-col gap-2">
+                      <InputWithIcon
+                        type="number"
+                        placeholder="GSM"
+                        icon={<IconGSM />}
+                        {...register("gsm")}
+                        step="1"
+                        min="50"
+                        max="500"
+                      />
+                      {errors.gsm && (
+                        <p className="text-sm text-red-700">
+                          {errors.gsm.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex-1 flex flex-col gap-2">
+                      <InputWithIcon
+                        type="number"
+                        placeholder="Thread count"
+                        icon={<IconThreadCount />}
+                        {...register("threadCount")}
+                        step="1"
+                        min="1"
+                      />
+                      {errors.threadCount && (
+                        <p className="text-sm text-red-700">
+                          {errors.threadCount.message}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CollapsibleContent>
@@ -725,49 +693,85 @@ export function ProductFormSheet({
               <CollapsibleContent>
                 <div className="flex flex-col gap-6">
                   {/* Show on Catalog */}
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <div className="flex flex-col">
                       <Label>Show on catalog</Label>
                       <span className="text-xs font-light text-gray-500 mt-1">
                         Display this product on your public sales catalog
                       </span>
                     </div>
-                    <Switch
-                      checked={formData.showOnCatalog}
-                      onCheckedChange={(checked) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          showOnCatalog: checked,
-                        }))
-                      }
-                      className="mt-2"
+                    <Controller
+                      name="showOnCatalog"
+                      control={control}
+                      render={({ field }) => (
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="mt-2"
+                        />
+                      )}
                     />
                   </div>
 
+                  {/* Purchase & Sale Price */}
+                  <div className="flex gap-4">
+                    <div className="flex-1 flex flex-col gap-2">
+                      <InputWithIcon
+                        type="number"
+                        placeholder="Purchase price"
+                        icon={<IconCurrencyRupee />}
+                        {...register("costPrice")}
+                        className="flex-1"
+                        step="0.01"
+                        min="0"
+                      />
+                      {errors.costPrice && (
+                        <p className="text-sm text-red-700">
+                          {errors.costPrice.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex-1 flex flex-col gap-2">
+                      <InputWithIcon
+                        type="number"
+                        placeholder="Sale price"
+                        icon={<IconCurrencyRupee />}
+                        {...register("sellingPrice")}
+                        className="flex-1"
+                        step="0.01"
+                        min="0"
+                      />
+                      {errors.sellingPrice && (
+                        <p className="text-sm text-red-700">
+                          {errors.sellingPrice.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
                   {/* HSN Code */}
-                  <Input
-                    placeholder="HSN code"
-                    value={formData.hsnCode}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        hsnCode: e.target.value,
-                      }))
-                    }
-                  />
+                  <div className="flex flex-col gap-2">
+                    <Input placeholder="HSN code" {...register("hsnCode")} />
+                    {errors.hsnCode && (
+                      <p className="text-sm text-red-700">
+                        {errors.hsnCode.message}
+                      </p>
+                    )}
+                  </div>
 
                   {/* Notes */}
-                  <Textarea
-                    placeholder="Enter a note..."
-                    value={formData.notes}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        notes: e.target.value,
-                      }))
-                    }
-                    className="min-h-32"
-                  />
+                  <div className="flex flex-col gap-2">
+                    <Textarea
+                      placeholder="Enter a note..."
+                      {...register("notes")}
+                      className="min-h-32"
+                    />
+                    {errors.notes && (
+                      <p className="text-sm text-red-700">
+                        {errors.notes.message}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </CollapsibleContent>
             </Collapsible>
@@ -788,8 +792,8 @@ export function ProductFormSheet({
                 type="submit"
                 disabled={
                   saving ||
-                  !formData.stockType ||
-                  (formData.stockType === "roll" && !formData.measuringUnit)
+                  !stockType ||
+                  (stockType === "roll" && !measuringUnit)
                 }
                 className="flex-1"
               >

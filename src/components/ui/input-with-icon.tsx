@@ -20,7 +20,7 @@ const InputWithIcon = React.forwardRef<HTMLInputElement, InputWithIconProps>(
         )}
         <div className="relative">
           {icon && (
-            <div className="absolute flex justify-center items-center left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500">
+            <div className="absolute flex justify-center items-center left-2.5 top-1/2 -translate-y-1/2 size-4 text-gray-500">
               {icon}
             </div>
           )}
@@ -28,7 +28,7 @@ const InputWithIcon = React.forwardRef<HTMLInputElement, InputWithIconProps>(
             id={label}
             required={required}
             ref={ref}
-            className={`${icon && "pl-12"}`}
+            className={`${icon && "pl-9"}`}
             {...props}
           />
         </div>

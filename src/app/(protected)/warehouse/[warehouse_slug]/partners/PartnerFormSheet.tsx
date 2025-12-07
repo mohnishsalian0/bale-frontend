@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import {
   IconUser,
   IconPhone,
+  IconAt,
   IconChevronDown,
   IconBuildingFactory2,
   IconBuilding,
@@ -38,31 +41,13 @@ import type {
 } from "@/types/partners.types";
 import { useSession } from "@/contexts/session-context";
 import { InputWithIcon } from "@/components/ui/input-with-icon";
+import { PartnerFormData, partnerSchema } from "@/lib/validations/partner";
 
 interface PartnerFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   partnerType?: PartnerType;
   partnerToEdit?: PartnerDetailView;
-}
-
-interface PartnerFormData {
-  partnerType: PartnerType;
-  firstName: string;
-  lastName: string;
-  phoneNumber: string;
-  businessType: string;
-  companyName: string;
-  addressLine1: string;
-  addressLine2: string;
-  city: string;
-  state: string;
-  country: string;
-  pinCode: string;
-  gstNumber: string;
-  panNumber: string;
-  notes: string;
-  image: File | null;
 }
 
 export function PartnerFormSheet({
@@ -74,33 +59,47 @@ export function PartnerFormSheet({
   const { user } = useSession();
   const { createPartner, updatePartner } = usePartnerMutations();
 
-  const [formData, setFormData] = useState<PartnerFormData>({
-    partnerType:
-      (partnerToEdit?.partner_type as PartnerType) || partnerType || "customer",
-    firstName: partnerToEdit?.first_name || "",
-    lastName: partnerToEdit?.last_name || "",
-    phoneNumber: partnerToEdit?.phone_number || "",
-    businessType: "",
-    companyName: partnerToEdit?.company_name || "",
-    addressLine1: partnerToEdit?.address_line1 || "",
-    addressLine2: partnerToEdit?.address_line2 || "",
-    city: partnerToEdit?.city || "",
-    state: partnerToEdit?.state || "",
-    country: partnerToEdit?.country || "India",
-    pinCode: partnerToEdit?.pin_code || "",
-    gstNumber: partnerToEdit?.gst_number || "",
-    panNumber: partnerToEdit?.pan_number || "",
-    notes: partnerToEdit?.notes || "",
-    image: null,
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    control,
+  } = useForm({
+    resolver: zodResolver(partnerSchema),
+    defaultValues: {
+      partnerType:
+        (partnerToEdit?.partner_type as PartnerType) ||
+        partnerType ||
+        "customer",
+      firstName: partnerToEdit?.first_name || "",
+      lastName: partnerToEdit?.last_name || "",
+      phoneNumber: partnerToEdit?.phone_number || "",
+      email: partnerToEdit?.email || "",
+      businessType: "",
+      companyName: partnerToEdit?.company_name || "",
+      addressLine1: partnerToEdit?.address_line1 || "",
+      addressLine2: partnerToEdit?.address_line2 || "",
+      city: partnerToEdit?.city || "",
+      state: partnerToEdit?.state || "",
+      country: partnerToEdit?.country || "India",
+      pinCode: partnerToEdit?.pin_code || "",
+      gstNumber: partnerToEdit?.gst_number || "",
+      panNumber: partnerToEdit?.pan_number || "",
+      notes: partnerToEdit?.notes || "",
+    },
   });
+
+  // Keep image handling separate from form state
+  const [image, setImage] = useState<File | null>(null);
 
   const [imagePreview, setImagePreview] = useState<string | null>(
     partnerToEdit?.image_url || null,
   );
   const [imageError, setImageError] = useState<string | null>(null);
-  const [showBusinessDetails, setShowBusinessDetails] = useState(false);
-  const [showAddress, setShowAddress] = useState(false);
-  const [showTaxDetails, setShowTaxDetails] = useState(false);
+  const [showBusinessDetails, setShowBusinessDetails] = useState(true);
+  const [showAddress, setShowAddress] = useState(true);
+  const [showTaxDetails, setShowTaxDetails] = useState(true);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(
     partnerToEdit?.image_url || null,
@@ -117,7 +116,7 @@ export function PartnerFormSheet({
     }
 
     setImageError(null);
-    setFormData((prev) => ({ ...prev, image: file }));
+    setImage(file);
 
     // Create preview using object URL
     const url = URL.createObjectURL(file);
@@ -130,7 +129,7 @@ export function PartnerFormSheet({
       URL.revokeObjectURL(imagePreview);
     }
     setImagePreview(null);
-    setFormData((prev) => ({ ...prev, image: null }));
+    setImage(null);
     setExistingImageUrl(null);
     setImageError(null);
   };
@@ -144,9 +143,7 @@ export function PartnerFormSheet({
     };
   }, [imagePreview]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const onSubmit = async (data: PartnerFormData) => {
     const mutationOptions = {
       onSuccess: () => {
         toast.success(
@@ -164,19 +161,20 @@ export function PartnerFormSheet({
 
     if (partnerToEdit) {
       const updates: PartnerUpdate = {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        phone_number: formData.phoneNumber,
-        company_name: formData.companyName || null,
-        address_line1: formData.addressLine1 || null,
-        address_line2: formData.addressLine2 || null,
-        city: formData.city || null,
-        state: formData.state || null,
-        country: formData.country || null,
-        pin_code: formData.pinCode || null,
-        gst_number: formData.gstNumber || null,
-        pan_number: formData.panNumber || null,
-        notes: formData.notes || null,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        phone_number: data.phoneNumber,
+        email: data.email || null,
+        company_name: data.companyName || null,
+        address_line1: data.addressLine1 || null,
+        address_line2: data.addressLine2 || null,
+        city: data.city || null,
+        state: data.state || null,
+        country: data.country || null,
+        pin_code: data.pinCode || null,
+        gst_number: data.gstNumber || null,
+        pan_number: data.panNumber || null,
+        notes: data.notes || null,
         image_url: existingImageUrl,
       };
 
@@ -184,34 +182,34 @@ export function PartnerFormSheet({
         {
           partnerId: partnerToEdit.id,
           partnerData: updates,
-          image: formData.image,
+          image: image,
           companyId: user.company_id,
         },
         mutationOptions,
       );
     } else {
       const newPartner: Omit<PartnerInsert, "image_url"> = {
-        partner_type: formData.partnerType,
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        phone_number: formData.phoneNumber,
-        email: null,
-        company_name: formData.companyName || null,
-        address_line1: formData.addressLine1 || null,
-        address_line2: formData.addressLine2 || null,
-        city: formData.city || null,
-        state: formData.state || null,
-        country: formData.country || null,
-        pin_code: formData.pinCode || null,
-        gst_number: formData.gstNumber || null,
-        pan_number: formData.panNumber || null,
-        notes: formData.notes || null,
+        partner_type: data.partnerType,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        phone_number: data.phoneNumber,
+        email: data.email || null,
+        company_name: data.companyName || null,
+        address_line1: data.addressLine1 || null,
+        address_line2: data.addressLine2 || null,
+        city: data.city || null,
+        state: data.state || null,
+        country: data.country || null,
+        pin_code: data.pinCode || null,
+        gst_number: data.gstNumber || null,
+        pan_number: data.panNumber || null,
+        notes: data.notes || null,
       };
 
       createPartner.mutate(
         {
           partner: newPartner,
-          image: formData.image,
+          image: image,
           companyId: user.company_id,
         },
         mutationOptions,
@@ -221,24 +219,8 @@ export function PartnerFormSheet({
 
   const handleCancel = () => {
     // Reset form
-    setFormData({
-      partnerType: "customer",
-      firstName: "",
-      lastName: "",
-      phoneNumber: "",
-      businessType: "",
-      companyName: "",
-      addressLine1: "",
-      addressLine2: "",
-      city: "",
-      state: "",
-      country: "India",
-      pinCode: "",
-      gstNumber: "",
-      panNumber: "",
-      notes: "",
-      image: null,
-    });
+    reset();
+    setImage(null);
     setImagePreview(null);
     setImageError(null);
     setExistingImageUrl(null);
@@ -259,7 +241,7 @@ export function PartnerFormSheet({
 
         {/* Form Content - Scrollable */}
         <form
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col h-full overflow-y-hidden"
         >
           <div className="flex-1 overflow-y-auto">
@@ -310,70 +292,94 @@ export function PartnerFormSheet({
               {/* Partner Type */}
               <div className="flex flex-col gap-2">
                 <Label required>Partner type</Label>
-                <RadioGroup
-                  value={formData.partnerType}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      partnerType: value as PartnerType,
-                    }))
-                  }
-                  name="partner-type"
-                  className="overflow-x-auto"
-                  disabled={!!partnerToEdit}
-                >
-                  <RadioGroupItem value="customer">Customer</RadioGroupItem>
-                  <RadioGroupItem value="supplier">Supplier</RadioGroupItem>
-                  <RadioGroupItem value="vendor">Vendor</RadioGroupItem>
-                  <RadioGroupItem value="agent">Agent</RadioGroupItem>
-                </RadioGroup>
+                <Controller
+                  name="partnerType"
+                  control={control}
+                  render={({ field }) => (
+                    <RadioGroup
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      name="partner-type"
+                      className="overflow-x-auto scrollbar-hide"
+                      disabled={!!partnerToEdit}
+                    >
+                      <RadioGroupItem value="customer">Customer</RadioGroupItem>
+                      <RadioGroupItem value="supplier">Supplier</RadioGroupItem>
+                      <RadioGroupItem value="vendor">Vendor</RadioGroupItem>
+                      <RadioGroupItem value="agent">Agent</RadioGroupItem>
+                    </RadioGroup>
+                  )}
+                />
+                {errors.partnerType && (
+                  <p className="text-sm text-red-600">
+                    {errors.partnerType.message}
+                  </p>
+                )}
               </div>
 
               {/* Name Fields */}
-              <div className="flex gap-4">
-                <InputWithIcon
-                  label="First name"
-                  placeholder="Enter first name"
-                  value={formData.firstName}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      firstName: e.target.value,
-                    }))
-                  }
-                  required
-                  className="flex-1"
-                />
-                <InputWithIcon
-                  label="Last name"
-                  placeholder="Enter last name"
-                  value={formData.lastName}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      lastName: e.target.value,
-                    }))
-                  }
-                  required
-                  className="flex-1"
-                />
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-4">
+                  <InputWithIcon
+                    label="First name"
+                    placeholder="Enter first name"
+                    {...register("firstName")}
+                    required
+                    className="flex-1"
+                  />
+                  <InputWithIcon
+                    label="Last name"
+                    placeholder="Enter last name"
+                    {...register("lastName")}
+                    required
+                    className="flex-1"
+                  />
+                </div>
+                {(errors.firstName || errors.lastName) && (
+                  <div className="flex gap-4">
+                    {errors.firstName && (
+                      <p className="text-sm text-red-600 flex-1">
+                        {errors.firstName.message}
+                      </p>
+                    )}
+                    {errors.lastName && (
+                      <p className="text-sm text-red-600 flex-1">
+                        {errors.lastName.message}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Phone Number */}
-              <InputWithIcon
-                type="tel"
-                label="Phone number"
-                icon={<IconPhone />}
-                placeholder="Enter phone number"
-                value={formData.phoneNumber}
-                required
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    phoneNumber: e.target.value,
-                  }))
-                }
-              />
+              <div className="flex flex-col gap-2">
+                <InputWithIcon
+                  type="tel"
+                  label="Phone number"
+                  icon={<IconPhone />}
+                  placeholder="Enter phone number"
+                  {...register("phoneNumber")}
+                  required
+                />
+                {errors.phoneNumber && (
+                  <p className="text-sm text-red-600">
+                    {errors.phoneNumber.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Email */}
+              <div className="flex flex-col gap-2">
+                <InputWithIcon
+                  type="email"
+                  icon={<IconAt />}
+                  placeholder="Email address"
+                  {...register("email")}
+                />
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email.message}</p>
+                )}
+              </div>
             </div>
 
             {/* Business Details Section */}
@@ -399,13 +405,7 @@ export function PartnerFormSheet({
                     <IconBuildingFactory2 className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
                     <Input
                       placeholder="Business type"
-                      value={formData.businessType}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          businessType: e.target.value,
-                        }))
-                      }
+                      {...register("businessType")}
                       className="pl-12"
                     />
                   </div>
@@ -413,13 +413,7 @@ export function PartnerFormSheet({
                     <IconBuilding className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
                     <Input
                       placeholder="Company name"
-                      value={formData.companyName}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          companyName: e.target.value,
-                        }))
-                      }
+                      {...register("companyName")}
                       className="pl-12"
                     />
                   </div>
@@ -446,67 +440,26 @@ export function PartnerFormSheet({
                 <div className="flex flex-col gap-5">
                   <Input
                     placeholder="Address line 1"
-                    value={formData.addressLine1}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        addressLine1: e.target.value,
-                      }))
-                    }
+                    {...register("addressLine1")}
                   />
                   <Input
                     placeholder="Address line 2"
-                    value={formData.addressLine2}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        addressLine2: e.target.value,
-                      }))
-                    }
+                    {...register("addressLine2")}
                   />
                   <div className="flex gap-4">
-                    <Input
-                      placeholder="City"
-                      value={formData.city}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          city: e.target.value,
-                        }))
-                      }
-                    />
-                    <Input
-                      placeholder="State"
-                      value={formData.state}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          state: e.target.value,
-                        }))
-                      }
-                    />
+                    <Input placeholder="City" {...register("city")} />
+                    <Input placeholder="State" {...register("state")} />
                   </div>
-                  <div className="flex gap-4">
-                    <Input
-                      placeholder="Country"
-                      value={formData.country}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          country: e.target.value,
-                        }))
-                      }
-                    />
-                    <Input
-                      placeholder="Pin code"
-                      value={formData.pinCode}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          pinCode: e.target.value,
-                        }))
-                      }
-                    />
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-4">
+                      <Input placeholder="Country" {...register("country")} />
+                      <Input placeholder="Pin code" {...register("pinCode")} />
+                    </div>
+                    {errors.pinCode && (
+                      <p className="text-sm text-red-600">
+                        {errors.pinCode.message}
+                      </p>
+                    )}
                   </div>
                 </div>
               </CollapsibleContent>
@@ -531,33 +484,35 @@ export function PartnerFormSheet({
 
               <CollapsibleContent>
                 <div className="flex flex-col gap-5">
-                  <div className="relative">
-                    <IconId className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-                    <Input
-                      placeholder="GST number"
-                      value={formData.gstNumber}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          gstNumber: e.target.value,
-                        }))
-                      }
-                      className="pl-12"
-                    />
+                  <div className="flex flex-col gap-2">
+                    <div className="relative">
+                      <IconId className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
+                      <Input
+                        placeholder="GST number"
+                        {...register("gstNumber")}
+                        className="pl-12"
+                      />
+                    </div>
+                    {errors.gstNumber && (
+                      <p className="text-sm text-red-600">
+                        {errors.gstNumber.message}
+                      </p>
+                    )}
                   </div>
-                  <div className="relative">
-                    <IconId className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-                    <Input
-                      placeholder="PAN number"
-                      value={formData.panNumber}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          panNumber: e.target.value,
-                        }))
-                      }
-                      className="pl-12"
-                    />
+                  <div className="flex flex-col gap-2">
+                    <div className="relative">
+                      <IconId className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
+                      <Input
+                        placeholder="PAN number"
+                        {...register("panNumber")}
+                        className="pl-12"
+                      />
+                    </div>
+                    {errors.panNumber && (
+                      <p className="text-sm text-red-600">
+                        {errors.panNumber.message}
+                      </p>
+                    )}
                   </div>
                 </div>
               </CollapsibleContent>
@@ -583,10 +538,7 @@ export function PartnerFormSheet({
               <CollapsibleContent>
                 <Textarea
                   placeholder="Enter a note..."
-                  value={formData.notes}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, notes: e.target.value }))
-                  }
+                  {...register("notes")}
                   className="min-h-32"
                 />
               </CollapsibleContent>

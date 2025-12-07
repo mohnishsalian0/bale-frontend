@@ -360,7 +360,7 @@ export default function StockFlowPage() {
   }
 
   return (
-    <div className="relative flex flex-col grow">
+    <div className="relative flex flex-col">
       {/* Header */}
       <div
         className={`flex items-end justify-between gap-4 p-4 pb-0 ${isMobile && "flex-col-reverse items-start"}`}

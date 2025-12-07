@@ -222,7 +222,7 @@ export default function CreateSalesOrderPage() {
       <div className="flex-1 flex flex-col w-full overflow-y-hidden">
         {/* Header - Fixed at top */}
         <FormHeader
-          title="Create sales order"
+          title="Create Sales Order"
           currentStep={
             currentStep === "products" ? 1 : currentStep === "customer" ? 2 : 3
           }

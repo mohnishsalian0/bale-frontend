@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useForm, Controller, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   IconMinus,
   IconPlus,
@@ -26,6 +28,10 @@ import type { StockUnitSpec } from "./ProductSelectionStep";
 import { Input } from "@/components/ui/input";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import {
+  createStockUnitSchema,
+  StockUnitFormData,
+} from "@/lib/validations/stock-unit";
 
 interface StockUnitFormSheetProps {
   open: boolean;
@@ -35,15 +41,6 @@ interface StockUnitFormSheetProps {
   onConfirm: (unit: Omit<StockUnitSpec, "id">) => void;
 }
 
-interface StockUnitFormData {
-  quantity: number;
-  manufacturedOn: Date | undefined;
-  quality: string;
-  supplierNumber: string;
-  location: string;
-  notes: string;
-}
-
 export function StockUnitFormSheet({
   open,
   onOpenChange,
@@ -51,63 +48,70 @@ export function StockUnitFormSheet({
   initialUnit,
   onConfirm,
 }: StockUnitFormSheetProps) {
-  const [formData, setFormData] = useState<StockUnitFormData>({
-    quantity: initialUnit?.quantity || 0,
-    manufacturedOn: undefined,
-    quality: initialUnit?.grade || "",
-    supplierNumber: initialUnit?.supplier_number || "",
-    location: initialUnit?.location || "",
-    notes: initialUnit?.notes || "",
+  // Create validation schema based on product stock type
+  const stockUnitSchema = createStockUnitSchema(
+    (product?.stock_type as StockType) || "roll",
+  );
+
+  // Initialize form with React Hook Form
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    reset,
+    control,
+  } = useForm({
+    resolver: zodResolver(stockUnitSchema),
+    defaultValues: {
+      quantity: initialUnit?.quantity || 0,
+      supplier_number: initialUnit?.supplier_number || "",
+      grade: initialUnit?.grade || "",
+      manufactured_on: undefined,
+      location: initialUnit?.location || "",
+      notes: initialUnit?.notes || "",
+    },
   });
 
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
+  const quantity = useWatch({ control, name: "quantity" });
+
+  // Early return after hooks
+  if (!product) return null;
 
   const handleCancel = () => {
     // Reset form
-    setFormData({
-      quantity: 0,
-      manufacturedOn: undefined,
-      quality: "",
-      supplierNumber: "",
-      location: "",
-      notes: "",
-    });
+    reset();
     setShowAdditionalDetails(false);
     onOpenChange(false);
   };
 
-  const handleConfirm = () => {
-    if (formData.quantity > 0) {
-      onConfirm({
-        quantity: formData.quantity,
-        grade: formData.quality,
-        supplier_number: formData.supplierNumber || undefined,
-        location: formData.location || undefined,
-        notes: formData.notes || undefined,
-        count: initialUnit?.count || 1,
-      });
-      handleCancel();
-    }
+  const onSubmit = (data: StockUnitFormData) => {
+    onConfirm({
+      quantity: data.quantity,
+      grade: data.grade || undefined,
+      supplier_number: data.supplier_number || undefined,
+      manufactured_on: data.manufactured_on || undefined,
+      location: data.location || undefined,
+      notes: data.notes || undefined,
+      count: initialUnit?.count || 1,
+    });
+    handleCancel();
   };
 
   const handleIncrement = () => {
-    setFormData((prev) => ({ ...prev, quantity: prev.quantity + 1 }));
+    setValue("quantity", quantity + 1);
   };
 
   const handleDecrement = () => {
-    setFormData((prev) => ({
-      ...prev,
-      quantity: Math.max(0, prev.quantity - 1),
-    }));
+    setValue("quantity", Math.max(0, quantity - 1));
   };
 
   const handlePresetAdd = (amount: number) => {
-    setFormData((prev) => ({ ...prev, quantity: prev.quantity + amount }));
+    setValue("quantity", quantity + amount);
   };
 
   const presetAmounts = [5, 10, 25, 50, 100, 250];
-
-  if (!product) return null;
 
   const unitAbbreviation = getMeasuringUnitAbbreviation(
     product.measuring_unit as MeasuringUnit | null,
@@ -115,207 +119,188 @@ export function StockUnitFormSheet({
 
   const productInfoText = getProductInfo(product);
 
-  const formContent = (
-    <div className="flex flex-col gap-8 p-4 md:px-0 overflow-x-hidden">
-      <div className="flex flex-col gap-4">
-        <div className="flex gap-4">
-          {/* Product Info */}
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <ImageWrapper
-              size="md"
-              shape="square"
-              imageUrl={product.product_images?.[0]}
-              alt={product.name}
-              placeholderIcon={getProductIcon(product.stock_type as StockType)}
-            />
-            <div className="flex-1 min-w-0">
-              <p
-                title={product.name}
-                className="text-base font-medium text-gray-700 truncate"
-              >
-                {product.name}
-              </p>
-              <p
-                title={productInfoText}
-                className="text-xs text-gray-500 truncate"
-              >
-                {productInfoText}
-              </p>
-            </div>
-          </div>
-
-          {/* Quantity Input */}
-          <div className="flex items-center gap-1 shrink-0">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={handleDecrement}
-            >
-              <IconMinus />
-            </Button>
-            <div className="relative">
-              <Input
-                type="number"
-                value={formData.quantity}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    quantity: Math.max(
-                      0,
-                      Math.round((parseFloat(e.target.value) || 0) * 100) / 100,
-                    ),
-                  }))
-                }
-                className="text-center text-lg font-medium max-w-25 pr-10"
-                min="0"
-                step={product.stock_type === "roll" ? "0.1" : "1"}
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
-                {unitAbbreviation}
-              </span>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={handleIncrement}
-            >
-              <IconPlus />
-            </Button>
-          </div>
-        </div>
-
-        {/* Preset size options */}
-        <div className="flex flex-wrap items-center gap-2">
-          {presetAmounts.map((amount) => (
-            <Button
-              key={amount}
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-border shadow-gray-sm text-foreground"
-              onClick={() => handlePresetAdd(amount)}
-            >
-              <IconPlus />
-              {amount}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        <div className="flex gap-4">
-          {/* Supplier Number - Input with Icon */}
-          <InputWithIcon
-            type="text"
-            placeholder="Supplier number"
-            value={formData.supplierNumber}
-            className="flex-1"
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                supplierNumber: e.target.value,
-              }))
-            }
-            icon={<IconHash />}
-          />
-
-          {/* Manufactured On - DatePicker */}
-          <DatePicker
-            placeholder="Manufactured on"
-            value={formData.manufacturedOn}
-            className="flex-1"
-            onChange={(date) =>
-              setFormData((prev) => ({ ...prev, manufacturedOn: date }))
-            }
-          />
-        </div>
-
-        <div className="flex gap-4">
-          {/* Quality - Input with Icon */}
-          <InputWithIcon
-            type="text"
-            placeholder="Quality"
-            value={formData.quality}
-            className="flex-1"
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, quality: e.target.value }))
-            }
-            icon={<IconRubberStamp />}
-          />
-
-          {/* Location - Input with Icon */}
-          <InputWithIcon
-            type="text"
-            placeholder="Location"
-            value={formData.location}
-            className="flex-1"
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, location: e.target.value }))
-            }
-            icon={<IconTruckLoading />}
-          />
-        </div>
-      </div>
-
-      {/* Additional Details */}
-      <Collapsible
-        open={showAdditionalDetails}
-        onOpenChange={setShowAdditionalDetails}
-      >
-        <CollapsibleTrigger
-          className={`flex items-center justify-between w-full ${showAdditionalDetails ? "pb-3" : "pb-0"}`}
-        >
-          <h3 className="font-medium text-gray-900">Additional Details</h3>
-          <IconChevronDown
-            className={`size-5 text-gray-500 transition-transform ${showAdditionalDetails ? "rotate-180" : "rotate-0"}`}
-          />
-        </CollapsibleTrigger>
-
-        <CollapsibleContent>
-          <Textarea
-            placeholder="Enter a note..."
-            value={formData.notes}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, notes: e.target.value }))
-            }
-            className="min-h-32"
-          />
-        </CollapsibleContent>
-      </Collapsible>
-    </div>
-  );
-
-  const footerButtons = (
-    <div className="flex gap-3 w-full">
-      <Button
-        type="button"
-        variant="outline"
-        onClick={handleCancel}
-        className="flex-1"
-      >
-        Cancel
-      </Button>
-      <Button
-        type="button"
-        onClick={handleConfirm}
-        disabled={formData.quantity <= 0}
-        className="flex-1"
-      >
-        Add
-      </Button>
-    </div>
-  );
-
   return (
     <ResponsiveDialog
       open={open}
       onOpenChange={onOpenChange}
       title="Stock unit"
-      footer={footerButtons}
+      footer={
+        <div className="flex gap-3 w-full">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCancel}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="stock-unit-form"
+            disabled={quantity <= 0}
+            className="flex-1"
+          >
+            Add
+          </Button>
+        </div>
+      }
     >
-      {formContent}
+      <form
+        id="stock-unit-form"
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col gap-8 p-4 md:px-0 overflow-x-hidden"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-4">
+            {/* Product Info */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <ImageWrapper
+                size="md"
+                shape="square"
+                imageUrl={product.product_images?.[0]}
+                alt={product.name}
+                placeholderIcon={getProductIcon(
+                  product.stock_type as StockType,
+                )}
+              />
+              <div className="flex-1 min-w-0">
+                <p
+                  title={product.name}
+                  className="text-base font-medium text-gray-700 truncate"
+                >
+                  {product.name}
+                </p>
+                <p
+                  title={productInfoText}
+                  className="text-xs text-gray-500 truncate"
+                >
+                  {productInfoText}
+                </p>
+              </div>
+            </div>
+
+            {/* Quantity Input */}
+            <div className="flex items-center gap-1 shrink-0">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={handleDecrement}
+              >
+                <IconMinus />
+              </Button>
+              <div className="relative">
+                <Input
+                  type="number"
+                  {...register("quantity", { valueAsNumber: true })}
+                  className="text-center font-medium max-w-25 pr-10"
+                  min="0"
+                  step={product.stock_type === "roll" ? "0.1" : "1"}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
+                  {unitAbbreviation}
+                </span>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={handleIncrement}
+              >
+                <IconPlus />
+              </Button>
+            </div>
+          </div>
+
+          {/* Preset size options */}
+          <div className="flex flex-wrap items-center gap-2">
+            {presetAmounts.map((amount) => (
+              <Button
+                key={amount}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="border-border shadow-gray-sm text-foreground"
+                onClick={() => handlePresetAdd(amount)}
+              >
+                <IconPlus />
+                {amount}
+              </Button>
+            ))}
+          </div>
+
+          {/* Quantity validation error */}
+          {errors.quantity && (
+            <p className="text-sm text-red-600">{errors.quantity.message}</p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-4">
+          {/* Supplier Number - Full Width */}
+          <InputWithIcon
+            type="text"
+            placeholder="Supplier number"
+            {...register("supplier_number")}
+            icon={<IconHash />}
+          />
+
+          <div className="flex gap-4">
+            {/* Quality - Input with Icon */}
+            <InputWithIcon
+              type="text"
+              placeholder="Quality"
+              {...register("grade")}
+              className="flex-1"
+              icon={<IconRubberStamp />}
+            />
+
+            {/* Manufactured On - DatePicker */}
+            <Controller
+              name="manufactured_on"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  placeholder="Manufactured on"
+                  value={field.value ?? undefined}
+                  onChange={field.onChange}
+                  className="flex-1"
+                />
+              )}
+            />
+          </div>
+
+          {/* Location - Full Width */}
+          <InputWithIcon
+            type="text"
+            placeholder="Location"
+            {...register("location")}
+            icon={<IconTruckLoading />}
+          />
+        </div>
+
+        {/* Additional Details */}
+        <Collapsible
+          open={showAdditionalDetails}
+          onOpenChange={setShowAdditionalDetails}
+        >
+          <CollapsibleTrigger
+            className={`flex items-center justify-between w-full ${showAdditionalDetails ? "pb-3" : "pb-0"}`}
+          >
+            <h3 className="font-medium text-gray-900">Additional Details</h3>
+            <IconChevronDown
+              className={`size-5 text-gray-500 transition-transform ${showAdditionalDetails ? "rotate-180" : "rotate-0"}`}
+            />
+          </CollapsibleTrigger>
+
+          <CollapsibleContent>
+            <Textarea
+              placeholder="Enter a note..."
+              {...register("notes")}
+              className="min-h-32"
+            />
+          </CollapsibleContent>
+        </Collapsible>
+      </form>
     </ResponsiveDialog>
   );
 }

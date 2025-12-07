@@ -142,6 +142,16 @@ npm run build
 - **Mutations**: Use hook mutations for automatic cache invalidation (e.g., `useProductMutations()`)
 - **New queries**: Add to `@/lib/queries/`, create hook in `@/lib/query/hooks/`, add key to `keys.ts`
 
+### Form Validation with Zod + React Hook Form
+
+- **Always use Zod + React Hook Form** for all forms (no manual state management)
+- **Validation schemas** in `/src/lib/validations/` - one file per domain (e.g., `partner.ts`, `product.ts`)
+- **Reusable validators** in `/src/lib/validations/common.ts` (phone, email, GST, PAN, PIN, names)
+- **TypeScript enums** - Import from `@/types/database/enums.ts` and use const arrays for Zod (e.g., `PARTNER_TYPES`)
+- **Error messages** - Show actual characters in format "word (character)" (e.g., "hyphen (-)")
+- **Custom components** - Wrap with `Controller` from `react-hook-form` (e.g., RadioGroup, DatePicker)
+- **Watching fields** - Use `useWatch` hook instead of `watch()` to avoid React Compiler warnings
+
 ### TypeScript Type Safety
 
 #### Shared Type Files
