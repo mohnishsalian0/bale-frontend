@@ -37,6 +37,7 @@ import {
 import { Toggle } from "@/components/ui/toggle";
 import { GlowIndicator } from "@/components/ui/glow-indicator";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useDebounce } from "@/hooks/use-debounce";
 
 export default function InventoryPage() {
   const router = useRouter();
@@ -44,6 +45,7 @@ export default function InventoryPage() {
   const { warehouse } = useSession();
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [lowStockFilter, setLowStockFilter] = useState<boolean>(false);
   const [materialFilter, setMaterialFilter] = useState<string>("all");
   const [colorFilter, setColorFilter] = useState<string>("all");
@@ -54,7 +56,7 @@ export default function InventoryPage() {
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const PAGE_SIZE = 25;
 
-  // Fetch products with inventory using TanStack Query with pagination
+  // Fetch products with inventory using TanStack Query with pagination and debounced search
   const {
     data: productsResponse,
     isLoading: productsLoading,
@@ -62,7 +64,10 @@ export default function InventoryPage() {
     refetch: refetchProducts,
   } = useProductsWithInventory(
     warehouse.id,
-    { is_active: true },
+    {
+      is_active: true,
+      search_term: debouncedSearchQuery || undefined,
+    },
     currentPage,
     PAGE_SIZE,
   );
@@ -83,21 +88,16 @@ export default function InventoryPage() {
   const totalCount = productsResponse?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters change (use debounced search to avoid excessive resets)
   useEffect(() => {
     if (currentPage !== 1) {
       router.push(`/warehouse/${warehouse.slug}/inventory?page=1`);
     }
-  }, [searchQuery, lowStockFilter, materialFilter, colorFilter, tagFilter]);
+  }, [debouncedSearchQuery, lowStockFilter, materialFilter, colorFilter, tagFilter]);
 
-  // Client-side filtering for current page only
+  // Client-side filtering for material/color/tag (keeping these on frontend for now)
   const filteredProducts = productsData.filter((product) => {
-    // Search filter
-    const matchesSearch =
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.sequence_number.toString().includes(searchQuery.toLowerCase());
-    if (!matchesSearch) return false;
-
+    // Low stock filter
     if (
       lowStockFilter &&
       (!product.min_stock_alert ||
@@ -218,7 +218,7 @@ export default function InventoryPage() {
           <div className="relative max-w-md">
             <Input
               type="text"
-              placeholder="Search for product"
+              placeholder="Search products by name, code, type..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pr-10"

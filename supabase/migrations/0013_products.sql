@@ -39,13 +39,16 @@ CREATE TABLE products (
     modified_by UUID,
     deleted_at TIMESTAMPTZ,
 
+    -- Full-text search
+    search_vector tsvector,
+
 		CONSTRAINT stock_type_measuring_unit
     CHECK (
         (stock_type = 'roll' AND measuring_unit IN ('metre', 'yard', 'kilogram')) OR
         (stock_type = 'batch' AND measuring_unit = 'unit') OR
         (stock_type = 'piece' AND measuring_unit IS NULL)
     ),
-    
+
     UNIQUE(company_id, sequence_number)
 );
 
@@ -73,6 +76,9 @@ CREATE INDEX idx_products_selling_price ON products(company_id, selling_price_pe
 
 -- Stock type filtering
 CREATE INDEX idx_products_stock_type ON products(company_id, stock_type);
+
+-- Full-text search index
+CREATE INDEX idx_products_search ON products USING GIN(search_vector);
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES
@@ -102,7 +108,6 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_auto_product_sequence
     BEFORE INSERT ON products
     FOR EACH ROW EXECUTE FUNCTION auto_generate_product_sequence();
-
 
 -- =====================================================
 -- PRODUCTS TABLE RLS POLICIES

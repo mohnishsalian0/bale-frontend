@@ -61,7 +61,10 @@ CREATE TABLE sales_orders (
     created_by UUID DEFAULT get_jwt_user_id(),
     modified_by UUID,
     deleted_at TIMESTAMPTZ,
-    
+
+    -- Full-text search
+    search_vector tsvector,
+
     UNIQUE(company_id, sequence_number)
 );
 
@@ -75,6 +78,9 @@ CREATE INDEX idx_sales_orders_status ON sales_orders(company_id, status);
 CREATE INDEX idx_sales_orders_date ON sales_orders(company_id, order_date);
 CREATE INDEX idx_sales_orders_warehouse ON sales_orders(warehouse_id);
 CREATE INDEX idx_sales_orders_sequence_number ON sales_orders(company_id, sequence_number);
+
+-- Full-text search index
+CREATE INDEX idx_sales_orders_search ON sales_orders USING GIN(search_vector);
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES

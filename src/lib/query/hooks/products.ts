@@ -115,6 +115,7 @@ export function useProductByNumber(sequenceNumber: string | null) {
 
 /**
  * Fetch products with inventory for a warehouse
+ * Supports full-text search via filters.search_term
  */
 export function useProductsWithInventory(
   warehouseId: string | null,

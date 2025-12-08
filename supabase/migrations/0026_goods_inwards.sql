@@ -44,6 +44,9 @@ CREATE TABLE goods_inwards (
     modified_by UUID,
     deleted_at TIMESTAMPTZ,
 
+    -- Full-text search
+    search_vector tsvector,
+
     -- Business logic constraints
     CONSTRAINT check_inward_source
         CHECK (
@@ -78,6 +81,9 @@ CREATE INDEX idx_goods_inwards_sequence_number ON goods_inwards(company_id, sequ
 CREATE INDEX idx_goods_inwards_partner ON goods_inwards(partner_id);
 CREATE INDEX idx_goods_inwards_sales_order ON goods_inwards(sales_order_id);
 CREATE INDEX idx_goods_inwards_job_work ON goods_inwards(job_work_id);
+
+-- Full-text search index
+CREATE INDEX idx_goods_inwards_search ON goods_inwards USING GIN(search_vector);
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES

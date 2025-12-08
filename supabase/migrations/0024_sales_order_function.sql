@@ -188,3 +188,87 @@ END;
 $$;
 
 COMMENT ON FUNCTION approve_sales_order_with_items IS 'Atomically approve sales order with updated data and line items. Updates all order fields, replaces line items, and changes status to in_progress. Validates required fields before approval.';
+
+-- =====================================================
+-- SALES ORDER SEARCH VECTOR UPDATE FUNCTION
+-- =====================================================
+
+-- Function to update sales order search vector for full-text search
+-- Weight A: sequence_number, customer name, warehouse name
+-- Weight B: product names (via sales_order_items join)
+-- Weight C: agent name, status, source
+-- Weight D: invoice_number, payment_terms
+CREATE OR REPLACE FUNCTION update_sales_order_search_vector()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_customer_name TEXT;
+    v_agent_name TEXT;
+    v_warehouse_name TEXT;
+    v_product_names TEXT;
+BEGIN
+    -- If record is soft-deleted, set search_vector to NULL to exclude from index
+    IF NEW.deleted_at IS NOT NULL THEN
+        NEW.search_vector := NULL;
+        RETURN NEW;
+    END IF;
+
+    -- Get customer name
+    SELECT CONCAT(first_name, ' ', last_name, ' ', COALESCE(company_name, ''))
+    INTO v_customer_name
+    FROM partners
+    WHERE id = NEW.customer_id;
+
+    -- Get agent name (if exists)
+    IF NEW.agent_id IS NOT NULL THEN
+        SELECT CONCAT(first_name, ' ', last_name, ' ', COALESCE(company_name, ''))
+        INTO v_agent_name
+        FROM partners
+        WHERE id = NEW.agent_id;
+    END IF;
+
+    -- Get warehouse name (if exists)
+    IF NEW.warehouse_id IS NOT NULL THEN
+        SELECT name
+        INTO v_warehouse_name
+        FROM warehouses
+        WHERE id = NEW.warehouse_id;
+    END IF;
+
+    -- Get aggregated product names from line items
+    SELECT string_agg(p.name, ' ')
+    INTO v_product_names
+    FROM sales_order_items soi
+    JOIN products p ON p.id = soi.product_id
+    WHERE soi.sales_order_id = NEW.id;
+
+    -- Build weighted search vector
+    NEW.search_vector :=
+        -- Weight A: Primary identifiers
+        setweight(to_tsvector('simple', COALESCE(NEW.sequence_number::text, '')), 'A') ||
+        setweight(to_tsvector('english', COALESCE(v_customer_name, '')), 'A') ||
+        setweight(to_tsvector('english', COALESCE(v_warehouse_name, '')), 'A') ||
+
+        -- Weight B: Product names
+        setweight(to_tsvector('english', COALESCE(v_product_names, '')), 'B') ||
+
+        -- Weight C: Agent, status, source
+        setweight(to_tsvector('english', COALESCE(v_agent_name, '')), 'C') ||
+        setweight(to_tsvector('english', COALESCE(NEW.status, '')), 'C') ||
+        setweight(to_tsvector('english', COALESCE(NEW.source, '')), 'C') ||
+
+        -- Weight D: Invoice and payment terms
+        setweight(to_tsvector('simple', COALESCE(NEW.invoice_number, '')), 'D') ||
+        setweight(to_tsvector('english', COALESCE(NEW.payment_terms, '')), 'D');
+
+    RETURN NEW;
+END;
+$$;
+
+COMMENT ON FUNCTION update_sales_order_search_vector() IS 'Automatically updates the search_vector column for sales orders with weighted full-text search fields including related customer, agent, warehouse, and product names';
+
+-- Create trigger for sales_orders table
+CREATE TRIGGER trigger_update_sales_order_search_vector
+    BEFORE INSERT OR UPDATE ON sales_orders
+    FOR EACH ROW EXECUTE FUNCTION update_sales_order_search_vector();

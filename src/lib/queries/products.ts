@@ -370,6 +370,14 @@ export async function getProductsWithInventory(
     query = query.eq("is_active", filters.is_active);
   }
 
+  // Apply full-text search filter
+  if (filters?.search_term && filters.search_term.trim() !== "") {
+    query = query.textSearch("search_vector", filters.search_term.trim(), {
+      type: "websearch",
+      config: "english",
+    });
+  }
+
   // Apply ordering (defaults to first_name ascending)
   const orderBy = filters?.order_by || "name";
   const ascending = filters?.order_direction !== "desc";

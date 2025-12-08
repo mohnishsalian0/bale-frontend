@@ -53,6 +53,9 @@ CREATE TABLE partners (
     modified_by UUID,
     deleted_at TIMESTAMPTZ,
 
+    -- Full-text search
+    search_vector tsvector,
+
 		UNIQUE (company_id, phone_number)
 );
 
@@ -90,6 +93,9 @@ CREATE INDEX idx_partners_city ON partners(company_id, city);
 
 -- Last interaction sorting (for dashboard recent partners)
 CREATE INDEX idx_partners_last_interaction ON partners(company_id, last_interaction_at DESC NULLS LAST) WHERE deleted_at IS NULL;
+
+-- Full-text search index
+CREATE INDEX idx_partners_search ON partners USING GIN(search_vector);
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES

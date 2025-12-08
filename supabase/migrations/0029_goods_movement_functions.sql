@@ -452,3 +452,176 @@ FOR EACH ROW
 EXECUTE FUNCTION update_sales_order_outward_flag();
 
 COMMENT ON FUNCTION update_sales_order_outward_flag IS 'Automatically maintains has_outward flag on sales_orders when goods_outwards are linked or unlinked';
+
+-- =====================================================
+-- GOODS INWARD SEARCH VECTOR UPDATE FUNCTION
+-- =====================================================
+
+-- Function to update goods inward search vector for full-text search
+-- Weight A: sequence_number, partner name, warehouse name
+-- Weight B: product names (via stock_units join)
+-- Weight C: inward_type, sales_order_sequence, purchase_order_number, other_reason
+-- Weight D: transport_reference_number, transport_type, transport_details
+CREATE OR REPLACE FUNCTION update_goods_inward_search_vector()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_partner_name TEXT;
+    v_warehouse_name TEXT;
+    v_product_names TEXT;
+    v_sales_order_sequence TEXT;
+BEGIN
+    -- If record is soft-deleted, set search_vector to NULL to exclude from index
+    IF NEW.deleted_at IS NOT NULL THEN
+        NEW.search_vector := NULL;
+        RETURN NEW;
+    END IF;
+
+    -- Get partner name (if exists)
+    IF NEW.partner_id IS NOT NULL THEN
+        SELECT CONCAT(first_name, ' ', last_name, ' ', COALESCE(company_name, ''))
+        INTO v_partner_name
+        FROM partners
+        WHERE id = NEW.partner_id;
+    END IF;
+
+    -- Get warehouse name
+    SELECT name
+    INTO v_warehouse_name
+    FROM warehouses
+    WHERE id = NEW.warehouse_id;
+
+    -- Get aggregated product names from stock units
+    SELECT string_agg(DISTINCT p.name, ' ')
+    INTO v_product_names
+    FROM stock_units su
+    JOIN products p ON p.id = su.product_id
+    WHERE su.created_from_inward_id = NEW.id;
+
+    -- Get sales order sequence number (if linked)
+    IF NEW.sales_order_id IS NOT NULL THEN
+        SELECT sequence_number::text
+        INTO v_sales_order_sequence
+        FROM sales_orders
+        WHERE id = NEW.sales_order_id;
+    END IF;
+
+    -- Build weighted search vector
+    NEW.search_vector :=
+        -- Weight A: Primary identifiers
+        setweight(to_tsvector('simple', COALESCE(NEW.sequence_number::text, '')), 'A') ||
+        setweight(to_tsvector('english', COALESCE(v_partner_name, '')), 'A') ||
+        setweight(to_tsvector('english', COALESCE(v_warehouse_name, '')), 'A') ||
+
+        -- Weight B: Product names
+        setweight(to_tsvector('english', COALESCE(v_product_names, '')), 'B') ||
+
+        -- Weight C: Type and references
+        setweight(to_tsvector('english', COALESCE(NEW.inward_type, '')), 'C') ||
+        setweight(to_tsvector('simple', COALESCE(v_sales_order_sequence, '')), 'C') ||
+        setweight(to_tsvector('simple', COALESCE(NEW.purchase_order_number, '')), 'C') ||
+        setweight(to_tsvector('english', COALESCE(NEW.other_reason, '')), 'C') ||
+
+        -- Weight D: Transport details
+        setweight(to_tsvector('simple', COALESCE(NEW.transport_reference_number, '')), 'D') ||
+        setweight(to_tsvector('english', COALESCE(NEW.transport_type, '')), 'D') ||
+        setweight(to_tsvector('english', COALESCE(NEW.transport_details, '')), 'D');
+
+    RETURN NEW;
+END;
+$$;
+
+COMMENT ON FUNCTION update_goods_inward_search_vector() IS 'Automatically updates the search_vector column for goods inwards with weighted full-text search fields including related partner, warehouse, and product names';
+
+-- =====================================================
+-- GOODS OUTWARD SEARCH VECTOR UPDATE FUNCTION
+-- =====================================================
+
+-- Function to update goods outward search vector for full-text search
+-- Weight A: sequence_number, partner name, warehouse name
+-- Weight B: product names (via goods_outward_items join)
+-- Weight C: outward_type, sales_order_sequence, purchase_order_number, other_reason
+-- Weight D: transport_reference_number, transport_type, transport_details, cancellation_reason
+CREATE OR REPLACE FUNCTION update_goods_outward_search_vector()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_partner_name TEXT;
+    v_warehouse_name TEXT;
+    v_product_names TEXT;
+    v_sales_order_sequence TEXT;
+BEGIN
+    -- If record is soft-deleted, set search_vector to NULL to exclude from index
+    IF NEW.deleted_at IS NOT NULL THEN
+        NEW.search_vector := NULL;
+        RETURN NEW;
+    END IF;
+
+    -- Get partner name (if exists)
+    IF NEW.partner_id IS NOT NULL THEN
+        SELECT CONCAT(first_name, ' ', last_name, ' ', COALESCE(company_name, ''))
+        INTO v_partner_name
+        FROM partners
+        WHERE id = NEW.partner_id;
+    END IF;
+
+    -- Get warehouse name
+    SELECT name
+    INTO v_warehouse_name
+    FROM warehouses
+    WHERE id = NEW.warehouse_id;
+
+    -- Get aggregated product names from outward items
+    SELECT string_agg(DISTINCT p.name, ' ')
+    INTO v_product_names
+    FROM goods_outward_items goi
+    JOIN stock_units su ON su.id = goi.stock_unit_id
+    JOIN products p ON p.id = su.product_id
+    WHERE goi.outward_id = NEW.id;
+
+    -- Get sales order sequence number (if linked)
+    IF NEW.sales_order_id IS NOT NULL THEN
+        SELECT sequence_number::text
+        INTO v_sales_order_sequence
+        FROM sales_orders
+        WHERE id = NEW.sales_order_id;
+    END IF;
+
+    -- Build weighted search vector
+    NEW.search_vector :=
+        -- Weight A: Primary identifiers
+        setweight(to_tsvector('simple', COALESCE(NEW.sequence_number::text, '')), 'A') ||
+        setweight(to_tsvector('english', COALESCE(v_partner_name, '')), 'A') ||
+        setweight(to_tsvector('english', COALESCE(v_warehouse_name, '')), 'A') ||
+
+        -- Weight B: Product names
+        setweight(to_tsvector('english', COALESCE(v_product_names, '')), 'B') ||
+
+        -- Weight C: Type and references
+        setweight(to_tsvector('english', COALESCE(NEW.outward_type, '')), 'C') ||
+        setweight(to_tsvector('simple', COALESCE(v_sales_order_sequence, '')), 'C') ||
+        setweight(to_tsvector('simple', COALESCE(NEW.purchase_order_number, '')), 'C') ||
+        setweight(to_tsvector('english', COALESCE(NEW.other_reason, '')), 'C') ||
+
+        -- Weight D: Transport and cancellation details
+        setweight(to_tsvector('simple', COALESCE(NEW.transport_reference_number, '')), 'D') ||
+        setweight(to_tsvector('english', COALESCE(NEW.transport_type, '')), 'D') ||
+        setweight(to_tsvector('english', COALESCE(NEW.transport_details, '')), 'D') ||
+        setweight(to_tsvector('english', COALESCE(NEW.cancellation_reason, '')), 'D');
+
+    RETURN NEW;
+END;
+$$;
+
+COMMENT ON FUNCTION update_goods_outward_search_vector() IS 'Automatically updates the search_vector column for goods outwards with weighted full-text search fields including related partner, warehouse, and product names';
+
+-- Create triggers for goods_inwards and goods_outwards tables
+CREATE TRIGGER trigger_update_goods_inward_search_vector
+    BEFORE INSERT OR UPDATE ON goods_inwards
+    FOR EACH ROW EXECUTE FUNCTION update_goods_inward_search_vector();
+
+CREATE TRIGGER trigger_update_goods_outward_search_vector
+    BEFORE INSERT OR UPDATE ON goods_outwards
+    FOR EACH ROW EXECUTE FUNCTION update_goods_outward_search_vector();
