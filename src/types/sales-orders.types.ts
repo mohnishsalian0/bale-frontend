@@ -1,8 +1,4 @@
-import {
-  ProductColor,
-  ProductMaterial,
-  ProductTag,
-} from "@/types/products.types";
+import { ProductAttribute } from "@/types/products.types";
 import type { Tables } from "./database/supabase";
 import { SalesOrderStatus } from "./database/enums";
 
@@ -83,9 +79,9 @@ export interface SalesOrderItemDetailView extends SalesOrderItem {
         | "sequence_number"
         | "stock_type"
       > & {
-        materials: Array<{ material: ProductMaterial }>;
-        colors: Array<{ color: ProductColor }>;
-        tags: Array<{ tag: ProductTag }>;
+        materials: Array<{ material: ProductAttribute }>;
+        colors: Array<{ color: ProductAttribute }>;
+        tags: Array<{ tag: ProductAttribute }>;
       })
     | null;
 }

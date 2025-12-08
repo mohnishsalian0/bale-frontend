@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { IconSearch, IconChevronRight } from "@tabler/icons-react";
+import { useDebounce } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -12,41 +13,48 @@ import {
 } from "@/components/ui/select";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
-import type {
-  ProductListView,
-  ProductMaterial,
-  ProductColor,
-  ProductTag,
-} from "@/types/products.types";
+import type { ProductListView } from "@/types/products.types";
 import type { StockType } from "@/types/database/enums";
+import {
+  useInfiniteProducts,
+  useProductAttributes,
+} from "@/lib/query/hooks/products";
 
 interface QRProductSelectionStepProps {
-  products: ProductListView[];
-  materials: ProductMaterial[];
-  colors: ProductColor[];
-  tags: ProductTag[];
-  loading: boolean;
   onProductSelect: (product: ProductListView) => void;
-  fetchNextPage: () => void;
-  hasNextPage?: boolean;
-  isFetchingNextPage: boolean;
 }
 
 export function QRProductSelectionStep({
-  products,
-  materials,
-  colors,
-  tags,
-  loading,
   onProductSelect,
-  fetchNextPage,
-  hasNextPage,
-  isFetchingNextPage,
 }: QRProductSelectionStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [materialFilter, setMaterialFilter] = useState<string>("all");
   const [colorFilter, setColorFilter] = useState<string>("all");
   const [tagsFilter, setTagsFilter] = useState<string>("all");
+
+  // Fetch products and attributes
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteProducts({
+    is_active: true,
+    search_term: debouncedSearchQuery || undefined,
+  });
+
+  const { data: attributesData, isLoading: attributesLoading } =
+    useProductAttributes();
+
+  // Flatten infinite query pages data
+  const products = productsData?.pages.flatMap((page) => page.data) || [];
+
+  const materials = attributesData?.materials || [];
+  const colors = attributesData?.colors || [];
+  const tags = attributesData?.tags || [];
+  const loading = productsLoading || attributesLoading;
 
   // Handle scroll to trigger infinite loading
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -59,25 +67,10 @@ export function QRProductSelectionStep({
     }
   };
 
-  // Filter products using useMemo
+  // Filter products using useMemo (client-side filtering for material/color/tag only)
   const filteredProducts = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
-    // Filter products
+    // Filter products (search is now handled server-side)
     return products.filter((product) => {
-      // Search filter (case-insensitive)
-      if (
-        query &&
-        !(
-          product.name.toLowerCase().includes(query) ||
-          product.materials?.some((m) =>
-            m.name.toLowerCase().includes(query),
-          ) ||
-          product.colors?.some((c) => c.name.toLowerCase().includes(query))
-        )
-      )
-        return false;
-
       // Material filter (exact match by ID)
       if (
         materialFilter !== "all" &&
@@ -101,7 +94,7 @@ export function QRProductSelectionStep({
 
       return true;
     });
-  }, [products, searchQuery, materialFilter, colorFilter, tagsFilter]);
+  }, [products, materialFilter, colorFilter, tagsFilter]);
 
   return (
     <>

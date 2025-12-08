@@ -13,11 +13,7 @@ import {
   transformProductListView,
   transformProductDetailView,
 } from "@/lib/queries/products";
-import type {
-  ProductMaterial,
-  ProductColor,
-  ProductTag,
-} from "@/types/products.types";
+import type { ProductAttribute } from "@/types/products.types";
 import type { InwardWithPartnerListView } from "@/types/stock-units.types";
 import { StockUnitStatus } from "@/types/database/enums";
 
@@ -40,14 +36,8 @@ type StockUnitWithProductListViewRaw = StockUnitListView & {
         | "min_stock_alert"
         | "min_stock_threshold"
       > & {
-        product_material_assignments: Array<{
-          material: Pick<ProductMaterial, "id" | "name" | "color_hex"> | null;
-        }>;
-        product_color_assignments: Array<{
-          color: Pick<ProductColor, "id" | "name" | "color_hex"> | null;
-        }>;
-        product_tag_assignments: Array<{
-          tag: Pick<ProductTag, "id" | "name" | "color_hex"> | null;
+        product_attribute_assignments: Array<{
+          attribute: ProductAttribute | null;
         }>;
       })
     | null;
@@ -60,14 +50,8 @@ type StockUnitWithInwardListViewRaw = StockUnitWithProductListViewRaw & {
 type StockUnitWithProductDetailViewRaw = Tables<"stock_units"> & {
   product:
     | (Tables<"products"> & {
-        product_material_assignments: Array<{
-          material: Pick<ProductMaterial, "id" | "name" | "color_hex"> | null;
-        }>;
-        product_color_assignments: Array<{
-          color: Pick<ProductColor, "id" | "name" | "color_hex"> | null;
-        }>;
-        product_tag_assignments: Array<{
-          tag: Pick<ProductTag, "id" | "name" | "color_hex"> | null;
+        product_attribute_assignments: Array<{
+          attribute: ProductAttribute | null;
         }>;
       })
     | null;

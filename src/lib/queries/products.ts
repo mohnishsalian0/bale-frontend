@@ -1,9 +1,7 @@
 import { createClient } from "@/lib/supabase/browser";
 import type { Tables } from "@/types/database/supabase";
 import {
-  ProductMaterial,
-  ProductColor,
-  ProductTag,
+  ProductAttribute,
   ProductInventory,
   ProductListView,
   ProductDetailView,
@@ -13,6 +11,7 @@ import {
   ProductAttributeAssignmentsRaw,
   ProductFilters,
 } from "@/types/products.types";
+import type { AttributeGroup } from "@/types/database/enums";
 import { uploadProductImage, deleteProductImagesByUrls } from "@/lib/storage";
 
 // ============================================================================
@@ -31,28 +30,16 @@ export const PRODUCT_LIST_VIEW_SELECT = `
 	product_images,
   min_stock_alert,
   min_stock_threshold,
-	product_material_assignments(
-		material:product_materials(id, name, color_hex)
-	),
-	product_color_assignments(
-		color:product_colors(id, name, color_hex)
-	),
-	product_tag_assignments(
-		tag:product_tags(id, name, color_hex)
+	product_attribute_assignments(
+		attribute:product_attributes(id, name, group_name, color_hex)
 	)
 `;
 
 // Select query for ProductDetailView (all fields)
 export const PRODUCT_DETAIL_VIEW_SELECT = `
 	*,
-	product_material_assignments(
-		material:product_materials(id, name, color_hex)
-	),
-	product_color_assignments(
-		color:product_colors(id, name, color_hex)
-	),
-	product_tag_assignments(
-		tag:product_tags(id, name, color_hex)
+	product_attribute_assignments(
+		attribute:product_attributes(id, name, group_name, color_hex)
 	)
 `;
 
@@ -65,14 +52,8 @@ export const PRODUCT_WITH_INVENTORY_LIST_VIEW_SELECT = `
 // Select query for ProductWithInventoryDetailView
 export const PRODUCT_WITH_INVENTORY_DETAIL_VIEW_SELECT = `
 	*,
-	product_material_assignments(
-		material:product_materials(id, name, color_hex)
-	),
-	product_color_assignments(
-		color:product_colors(id, name, color_hex)
-	),
-	product_tag_assignments(
-		tag:product_tags(id, name, color_hex)
+	product_attribute_assignments(
+		attribute:product_attributes(id, name, group_name, color_hex)
 	),
 	product_inventory_aggregates!inner(*)
 `;
@@ -84,14 +65,8 @@ export const PRODUCT_WITH_INVENTORY_DETAIL_VIEW_SELECT = `
 // Select query for products with all attributes
 export const PRODUCT_WITH_ATTRIBUTES_SELECT = `
 	*,
-	product_material_assignments(
-		material:product_materials(*)
-	),
-	product_color_assignments(
-		color:product_colors(*)
-	),
-	product_tag_assignments(
-		tag:product_tags(*)
+	product_attribute_assignments(
+		attribute:product_attributes(*)
 	)
 `;
 
@@ -140,17 +115,16 @@ type ProductWithInventoryDetailViewRaw = ProductDetailViewRaw & {
 
 /**
  * Helper to transform attributes from nested assignments
+ * Groups attributes by group_name into materials, colors, and tags arrays
  */
 export function transformAttributes(product: ProductAttributeAssignmentsRaw) {
-  const materials = product.product_material_assignments
-    .map((a) => a.material)
-    .filter((m): m is ProductMaterial => m !== null);
-  const colors = product.product_color_assignments
-    .map((a) => a.color)
-    .filter((c): c is ProductColor => c !== null);
-  const tags = product.product_tag_assignments
-    .map((a) => a.tag)
-    .filter((t): t is ProductTag => t !== null);
+  const allAttributes = product.product_attribute_assignments
+    .map((a) => a.attribute)
+    .filter((attr): attr is ProductAttribute => attr !== null);
+
+  const materials = allAttributes.filter((attr) => attr.group_name === "material");
+  const colors = allAttributes.filter((attr) => attr.group_name === "color");
+  const tags = allAttributes.filter((attr) => attr.group_name === "tag");
 
   return { materials, colors, tags };
 }
@@ -164,9 +138,7 @@ export function transformProductListView(
   const { materials, colors, tags } = transformAttributes(product);
 
   const {
-    product_material_assignments: _materials,
-    product_color_assignments: _colors,
-    product_tag_assignments: _tags,
+    product_attribute_assignments: _attributes,
     ...rest
   } = product;
 
@@ -187,9 +159,7 @@ export function transformProductDetailView(
   const { materials, colors, tags } = transformAttributes(product);
 
   const {
-    product_material_assignments: _materials,
-    product_color_assignments: _colors,
-    product_tag_assignments: _tags,
+    product_attribute_assignments: _attributes,
     ...rest
   } = product;
 
@@ -211,9 +181,7 @@ export function transformProductWithInventoryListView(
   const inventory = product.product_inventory_aggregates?.[0];
 
   const {
-    product_material_assignments: _materials,
-    product_color_assignments: _colors,
-    product_tag_assignments: _tags,
+    product_attribute_assignments: _attributes,
     product_inventory_aggregates: _inventory,
     ...rest
   } = product;
@@ -237,9 +205,7 @@ export function transformProductWithInventoryDetailView(
   const inventory = product.product_inventory_aggregates?.[0];
 
   const {
-    product_material_assignments: _materials,
-    product_color_assignments: _colors,
-    product_tag_assignments: _tags,
+    product_attribute_assignments: _attributes,
     product_inventory_aggregates: _inventory,
     ...rest
   } = product;
@@ -444,71 +410,45 @@ export async function getProductWithInventoryByNumber(
 }
 
 /**
- * Get all materials (RLS filters by company)
+ * Get all attributes, optionally filtered by group_name (RLS filters by company)
  */
-export async function getProductMaterials(): Promise<ProductMaterial[]> {
+export async function getProductAttributes(
+  groupName?: AttributeGroup
+): Promise<ProductAttribute[]> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
-    .from("product_materials")
-    .select("id, name, color_hex")
+  let query = supabase
+    .from("product_attributes")
+    .select("id, name, group_name, color_hex")
     .order("name", { ascending: true });
 
-  if (error) throw error;
-  if (!data) return [];
+  if (groupName) {
+    query = query.eq("group_name", groupName);
+  }
 
-  return data as ProductMaterial[];
-}
-
-/**
- * Get all colors (RLS filters by company)
- */
-export async function getProductColors(): Promise<ProductColor[]> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("product_colors")
-    .select("id, name, color_hex")
-    .order("name", { ascending: true });
+  const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching colors:", error);
+    console.error("Error fetching attributes:", error);
     return [];
   }
 
-  return data as ProductColor[];
+  return (data as ProductAttribute[]) || [];
 }
 
 /**
- * Get all tags (RLS filters by company)
- */
-export async function getProductTags(): Promise<ProductTag[]> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("product_tags")
-    .select("id, name, color_hex")
-    .order("name", { ascending: true });
-
-  if (error) throw error;
-  if (!data) return [];
-
-  return data as ProductTag[];
-}
-
-/**
- * Get all attribute lists in a single call
+ * Get all attribute lists in a single call, grouped by type
  */
 export async function getProductAttributeLists(): Promise<{
-  materials: ProductMaterial[];
-  colors: ProductColor[];
-  tags: ProductTag[];
+  materials: ProductAttribute[];
+  colors: ProductAttribute[];
+  tags: ProductAttribute[];
 }> {
-  const [materials, colors, tags] = await Promise.all([
-    getProductMaterials(),
-    getProductColors(),
-    getProductTags(),
-  ]);
+  const allAttributes = await getProductAttributes();
+
+  const materials = allAttributes.filter((attr) => attr.group_name === "material");
+  const colors = allAttributes.filter((attr) => attr.group_name === "color");
+  const tags = allAttributes.filter((attr) => attr.group_name === "tag");
 
   return { materials, colors, tags };
 }
@@ -518,76 +458,32 @@ export async function getProductAttributeLists(): Promise<{
 // ============================================================================
 
 /**
- * Create a new product material
+ * Create a new product attribute
  */
-export async function createProductMaterial(name: string): Promise<string> {
+export async function createProductAttribute(
+  name: string,
+  groupName: AttributeGroup
+): Promise<string> {
   const supabase = createClient();
 
   const { data, error } = await supabase
-    .from("product_materials")
-    .insert({ name })
+    .from("product_attributes")
+    .insert({ name, group_name: groupName })
     .select("id")
     .single<{ id: string }>();
 
   if (error) {
-    console.error("Error creating material:", error);
+    console.error("Error creating attribute:", error);
     throw error;
   }
 
   if (!data) {
-    throw new Error("Failed to create material");
+    throw new Error("Failed to create attribute");
   }
 
   return data.id;
 }
 
-/**
- * Create a new product color
- */
-export async function createProductColor(name: string): Promise<string> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("product_colors")
-    .insert({ name })
-    .select("id")
-    .single<{ id: string }>();
-
-  if (error) {
-    console.error("Error creating color:", error);
-    throw error;
-  }
-
-  if (!data) {
-    throw new Error("Failed to create color");
-  }
-
-  return data.id;
-}
-
-/**
- * Create a new product tag
- */
-export async function createProductTag(name: string): Promise<string> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("product_tags")
-    .insert({ name })
-    .select("id")
-    .single<{ id: string }>();
-
-  if (error) {
-    console.error("Error creating tag:", error);
-    throw error;
-  }
-
-  if (!data) {
-    throw new Error("Failed to create tag");
-  }
-
-  return data.id;
-}
 
 /**
  * Create a new product with attribute assignments
@@ -618,48 +514,25 @@ export async function createProduct(
     throw new Error("Failed to create product");
   }
 
-  // Insert material assignments
-  if (attributeIds.materialIds.length > 0) {
-    const materialAssignments = attributeIds.materialIds.map((id) => ({
-      product_id: product.id,
-      material_id: id,
-    }));
-    const { error: materialError } = await supabase
-      .from("product_material_assignments")
-      .insert(materialAssignments);
-    if (materialError) {
-      console.error("Error inserting materials:", materialError);
-      throw materialError;
-    }
-  }
+  // Collect all attribute IDs
+  const allAttributeIds = [
+    ...attributeIds.materialIds,
+    ...attributeIds.colorIds,
+    ...attributeIds.tagIds,
+  ];
 
-  // Insert color assignments
-  if (attributeIds.colorIds.length > 0) {
-    const colorAssignments = attributeIds.colorIds.map((id) => ({
+  // Insert attribute assignments
+  if (allAttributeIds.length > 0) {
+    const attributeAssignments = allAttributeIds.map((id) => ({
       product_id: product.id,
-      color_id: id,
+      attribute_id: id,
     }));
-    const { error: colorError } = await supabase
-      .from("product_color_assignments")
-      .insert(colorAssignments);
-    if (colorError) {
-      console.error("Error inserting colors:", colorError);
-      throw colorError;
-    }
-  }
-
-  // Insert tag assignments
-  if (attributeIds.tagIds.length > 0) {
-    const tagAssignments = attributeIds.tagIds.map((id) => ({
-      product_id: product.id,
-      tag_id: id,
-    }));
-    const { error: tagError } = await supabase
-      .from("product_tag_assignments")
-      .insert(tagAssignments);
-    if (tagError) {
-      console.error("Error inserting tags:", tagError);
-      throw tagError;
+    const { error: assignmentError } = await supabase
+      .from("product_attribute_assignments")
+      .insert(attributeAssignments);
+    if (assignmentError) {
+      console.error("Error inserting attribute assignments:", assignmentError);
+      throw assignmentError;
     }
   }
 
@@ -699,63 +572,30 @@ export async function updateProduct(
   }
 
   // Delete old assignments
-  await Promise.all([
-    supabase
-      .from("product_material_assignments")
-      .delete()
-      .eq("product_id", product.id),
-    supabase
-      .from("product_color_assignments")
-      .delete()
-      .eq("product_id", product.id),
-    supabase
-      .from("product_tag_assignments")
-      .delete()
-      .eq("product_id", product.id),
-  ]);
+  await supabase
+    .from("product_attribute_assignments")
+    .delete()
+    .eq("product_id", product.id);
 
-  // Insert new material assignments
-  if (attributeIds.materialIds.length > 0) {
-    const materialAssignments = attributeIds.materialIds.map((id) => ({
-      product_id: productId,
-      material_id: id,
-    }));
-    const { error: materialError } = await supabase
-      .from("product_material_assignments")
-      .insert(materialAssignments);
-    if (materialError) {
-      console.error("Error inserting materials:", materialError);
-      throw materialError;
-    }
-  }
+  // Collect all attribute IDs
+  const allAttributeIds = [
+    ...attributeIds.materialIds,
+    ...attributeIds.colorIds,
+    ...attributeIds.tagIds,
+  ];
 
-  // Insert new color assignments
-  if (attributeIds.colorIds.length > 0) {
-    const colorAssignments = attributeIds.colorIds.map((id) => ({
+  // Insert new attribute assignments
+  if (allAttributeIds.length > 0) {
+    const attributeAssignments = allAttributeIds.map((id) => ({
       product_id: productId,
-      color_id: id,
+      attribute_id: id,
     }));
-    const { error: colorError } = await supabase
-      .from("product_color_assignments")
-      .insert(colorAssignments);
-    if (colorError) {
-      console.error("Error inserting colors:", colorError);
-      throw colorError;
-    }
-  }
-
-  // Insert new tag assignments
-  if (attributeIds.tagIds.length > 0) {
-    const tagAssignments = attributeIds.tagIds.map((id) => ({
-      product_id: productId,
-      tag_id: id,
-    }));
-    const { error: tagError } = await supabase
-      .from("product_tag_assignments")
-      .insert(tagAssignments);
-    if (tagError) {
-      console.error("Error inserting tags:", tagError);
-      throw tagError;
+    const { error: assignmentError } = await supabase
+      .from("product_attribute_assignments")
+      .insert(attributeAssignments);
+    if (assignmentError) {
+      console.error("Error inserting attribute assignments:", assignmentError);
+      throw assignmentError;
     }
   }
 

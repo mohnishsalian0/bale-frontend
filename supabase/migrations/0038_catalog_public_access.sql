@@ -166,85 +166,29 @@ USING (
     )
 );
 
--- Allow anonymous users to view product materials
-CREATE POLICY "Anonymous users can view product materials"
-ON product_materials
+-- Allow anonymous users to view product attributes
+CREATE POLICY "Anonymous users can view product attributes"
+ON product_attributes
 FOR SELECT
 TO anon
 USING (
     EXISTS (
         SELECT 1 FROM catalog_configurations cc
-        WHERE cc.company_id = product_materials.company_id
+        WHERE cc.company_id = product_attributes.company_id
         AND cc.accepting_orders = true
     )
 );
 
--- Allow anonymous users to view product colors
-CREATE POLICY "Anonymous users can view product colors"
-ON product_colors
-FOR SELECT
-TO anon
-USING (
-    EXISTS (
-        SELECT 1 FROM catalog_configurations cc
-        WHERE cc.company_id = product_colors.company_id
-        AND cc.accepting_orders = true
-    )
-);
-
--- Allow anonymous users to view product tags
-CREATE POLICY "Anonymous users can view product tags"
-ON product_tags
-FOR SELECT
-TO anon
-USING (
-    EXISTS (
-        SELECT 1 FROM catalog_configurations cc
-        WHERE cc.company_id = product_tags.company_id
-        AND cc.accepting_orders = true
-    )
-);
-
--- Allow anonymous users to view product material assignments
-CREATE POLICY "Anonymous users can view product material assignments"
-ON product_material_assignments
+-- Allow anonymous users to view product attribute assignments
+CREATE POLICY "Anonymous users can view product attribute assignments"
+ON product_attribute_assignments
 FOR SELECT
 TO anon
 USING (
     EXISTS (
         SELECT 1 FROM products p
         JOIN catalog_configurations cc ON p.company_id = cc.company_id
-        WHERE p.id = product_material_assignments.product_id
-        AND p.show_on_catalog = true
-        AND cc.accepting_orders = true
-    )
-);
-
--- Allow anonymous users to view product color assignments
-CREATE POLICY "Anonymous users can view product color assignments"
-ON product_color_assignments
-FOR SELECT
-TO anon
-USING (
-    EXISTS (
-        SELECT 1 FROM products p
-        JOIN catalog_configurations cc ON p.company_id = cc.company_id
-        WHERE p.id = product_color_assignments.product_id
-        AND p.show_on_catalog = true
-        AND cc.accepting_orders = true
-    )
-);
-
--- Allow anonymous users to view product tag assignments
-CREATE POLICY "Anonymous users can view product tag assignments"
-ON product_tag_assignments
-FOR SELECT
-TO anon
-USING (
-    EXISTS (
-        SELECT 1 FROM products p
-        JOIN catalog_configurations cc ON p.company_id = cc.company_id
-        WHERE p.id = product_tag_assignments.product_id
+        WHERE p.id = product_attribute_assignments.product_id
         AND p.show_on_catalog = true
         AND cc.accepting_orders = true
     )
@@ -266,12 +210,8 @@ GRANT SELECT ON companies TO anon;
 GRANT SELECT ON products TO anon;
 GRANT SELECT ON partners TO anon;
 GRANT SELECT ON product_inventory_aggregates TO anon;
-GRANT SELECT ON product_materials TO anon;
-GRANT SELECT ON product_colors TO anon;
-GRANT SELECT ON product_tags TO anon;
-GRANT SELECT ON product_material_assignments TO anon;
-GRANT SELECT ON product_color_assignments TO anon;
-GRANT SELECT ON product_tag_assignments TO anon;
+GRANT SELECT ON product_attributes TO anon;
+GRANT SELECT ON product_attribute_assignments TO anon;
 
 -- Grant INSERT permissions for creating data
 GRANT INSERT ON partners TO anon;

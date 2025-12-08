@@ -29,11 +29,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import MultipleSelector, {
-  type Option,
-} from "@/components/ui/multiple-selector";
+import MultipleSelector from "@/components/ui/multiple-selector";
 import { validateImageFile, MAX_PRODUCT_IMAGES } from "@/lib/storage";
-import { getProductAttributeLists } from "@/lib/queries/products";
 import type {
   ProductDetailView,
   ProductUpsertData,
@@ -42,10 +39,9 @@ import type { StockType, MeasuringUnit } from "@/types/database/enums";
 import { useSession } from "@/contexts/session-context";
 import {
   useProductMutations,
-  useCreateProductMaterial,
-  useCreateProductColor,
-  useCreateProductTag,
+  useCreateProductAttribute,
   useProductImageMutations,
+  useProductAttributes,
 } from "@/lib/query/hooks/products";
 import { InputWithIcon } from "@/components/ui/input-with-icon";
 import { productSchema, ProductFormData } from "@/lib/validations/product";
@@ -65,10 +61,9 @@ export function ProductFormSheet({
 }: ProductFormSheetProps) {
   const { user } = useSession();
   const { create, update } = useProductMutations();
-  const createMaterial = useCreateProductMaterial();
-  const createColor = useCreateProductColor();
-  const createTag = useCreateProductTag();
+  const createAttribute = useCreateProductAttribute();
   const { upload, deleteImages, updateField } = useProductImageMutations();
+  const { data: attributesData } = useProductAttributes();
 
   // Initialize form with React Hook Form
   const {
@@ -126,34 +121,19 @@ export function ProductFormSheet({
   const saving =
     create.isPending ||
     update.isPending ||
-    createMaterial.isPending ||
-    createColor.isPending ||
-    createTag.isPending ||
+    createAttribute.isPending ||
     upload.isPending ||
     deleteImages.isPending ||
     updateField.isPending;
 
-  // Attribute options for MultipleSelector
-  const [materialOptions, setMaterialOptions] = useState<Option[]>([]);
-  const [colorOptions, setColorOptions] = useState<Option[]>([]);
-  const [tagOptions, setTagOptions] = useState<Option[]>([]);
-
-  // Fetch attribute lists on mount
-  useEffect(() => {
-    const fetchAttributes = async () => {
-      const attributes = await getProductAttributeLists();
-      setMaterialOptions(
-        attributes.materials.map((m) => ({ value: m.id, label: m.name })),
-      );
-      setColorOptions(
-        attributes.colors.map((c) => ({ value: c.id, label: c.name })),
-      );
-      setTagOptions(
-        attributes.tags.map((t) => ({ value: t.id, label: t.name })),
-      );
-    };
-    fetchAttributes();
-  }, []);
+  // Attribute options for MultipleSelector - derived from hook data
+  const materialOptions =
+    attributesData?.materials.map((m) => ({ value: m.id, label: m.name })) ||
+    [];
+  const colorOptions =
+    attributesData?.colors.map((c) => ({ value: c.id, label: c.name })) || [];
+  const tagOptions =
+    attributesData?.tags.map((t) => ({ value: t.id, label: t.name })) || [];
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -231,7 +211,10 @@ export function ProductFormSheet({
       for (const opt of data.materials) {
         if (opt.value === opt.label) {
           // New material, create it
-          const id = await createMaterial.mutateAsync(opt.label);
+          const id = await createAttribute.mutateAsync({
+            name: opt.label,
+            groupName: "material",
+          });
           materialIds.push(id);
         } else {
           materialIds.push(opt.value);
@@ -242,7 +225,10 @@ export function ProductFormSheet({
       for (const opt of data.colors) {
         if (opt.value === opt.label) {
           // New color, create it
-          const id = await createColor.mutateAsync(opt.label);
+          const id = await createAttribute.mutateAsync({
+            name: opt.label,
+            groupName: "color",
+          });
           colorIds.push(id);
         } else {
           colorIds.push(opt.value);
@@ -253,7 +239,10 @@ export function ProductFormSheet({
       for (const opt of data.tags) {
         if (opt.value === opt.label) {
           // New tag, create it
-          const id = await createTag.mutateAsync(opt.label);
+          const id = await createAttribute.mutateAsync({
+            name: opt.label,
+            groupName: "tag",
+          });
           tagIds.push(id);
         } else {
           tagIds.push(opt.value);

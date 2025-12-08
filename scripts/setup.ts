@@ -384,9 +384,9 @@ async function createTestPartners() {
   console.log("Creating materials...");
   for (const name of materialNames) {
     const { data, error } = await supabase
-      .from("product_materials")
+      .from("product_attributes")
       .upsert(
-        { company_id: companyId, name },
+        { company_id: companyId, name, group_name: "material" },
         { onConflict: "company_id,name" },
       )
       .select()
@@ -409,9 +409,9 @@ async function createTestPartners() {
   console.log("Creating colors...");
   for (const name of colorNames) {
     const { data, error } = await supabase
-      .from("product_colors")
+      .from("product_attributes")
       .upsert(
-        { company_id: companyId, name },
+        { company_id: companyId, name, group_name: "color" },
         { onConflict: "company_id,name" },
       )
       .select()
@@ -452,9 +452,9 @@ async function createTestPartners() {
   console.log("Creating tags...");
   for (const name of tagNames) {
     const { data, error } = await supabase
-      .from("product_tags")
+      .from("product_attributes")
       .upsert(
-        { company_id: companyId, name },
+        { company_id: companyId, name, group_name: "tag" },
         { onConflict: "company_id,name" },
       )
       .select()
@@ -649,54 +649,27 @@ async function createTestPartners() {
       `✅ Created product: ${item.product.name} (SEQ-${data.sequence_number})`,
     );
 
-    // Link materials
-    for (const materialName of item.materials) {
-      if (materialIds[materialName]) {
-        const { error: linkError } = await supabase
-          .from("product_material_assignments")
-          .insert({
-            product_id: productId,
-            material_id: materialIds[materialName],
-          });
-        if (linkError) {
-          console.error(
-            `   ❌ Failed to link material ${materialName}: ${linkError.message}`,
-          );
-        }
-      }
-    }
+    // Link attributes (materials, colors, tags)
+    const allAttributeIds = [
+      ...item.materials.map((name) => materialIds[name]),
+      ...item.colors.map((name) => colorIds[name]),
+      ...item.tags.map((name) => tagIds[name]),
+    ].filter(Boolean);
 
-    // Link colors
-    for (const colorName of item.colors) {
-      if (colorIds[colorName]) {
-        const { error: linkError } = await supabase
-          .from("product_color_assignments")
-          .insert({
-            product_id: productId,
-            color_id: colorIds[colorName],
-          });
-        if (linkError) {
-          console.error(
-            `   ❌ Failed to link color ${colorName}: ${linkError.message}`,
-          );
-        }
-      }
-    }
+    if (allAttributeIds.length > 0) {
+      const assignments = allAttributeIds.map((attributeId) => ({
+        product_id: productId,
+        attribute_id: attributeId,
+      }));
 
-    // Link tags
-    for (const tagName of item.tags) {
-      if (tagIds[tagName]) {
-        const { error: linkError } = await supabase
-          .from("product_tag_assignments")
-          .insert({
-            product_id: productId,
-            tag_id: tagIds[tagName],
-          });
-        if (linkError) {
-          console.error(
-            `   ❌ Failed to link tag ${tagName}: ${linkError.message}`,
-          );
-        }
+      const { error: linkError } = await supabase
+        .from("product_attribute_assignments")
+        .insert(assignments);
+
+      if (linkError) {
+        console.error(
+          `   ❌ Failed to link attributes: ${linkError.message}`,
+        );
       }
     }
   }

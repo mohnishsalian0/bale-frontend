@@ -16,20 +16,11 @@ import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import {
-  useProductsWithInventory,
-  useProductAttributes,
-} from "@/lib/query/hooks/products";
-import {
   useSalesOrderMutations,
   useSalesOrderByNumber,
 } from "@/lib/query/hooks/sales-orders";
 import type { ProductWithInventoryListView } from "@/types/products.types";
 import { UpdateSalesOrderData } from "@/types/sales-orders.types";
-
-interface ProductWithSelection extends ProductWithInventoryListView {
-  selected: boolean;
-  quantity: number;
-}
 
 interface OrderFormData {
   warehouseId: string;
@@ -66,14 +57,6 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
     isError: orderError,
   } = useSalesOrderByNumber(order_number);
 
-  // Fetch products and attributes using TanStack Query
-  const { data: productsResponse, isLoading: productsLoading } =
-    useProductsWithInventory(warehouse.id, { is_active: true });
-  const { data: attributesData, isLoading: attributesLoading } =
-    useProductAttributes();
-
-  const productsData = productsResponse?.data || [];
-
   // Sales order mutations
   const { approve: approveOrder } = useSalesOrderMutations(warehouse.id);
 
@@ -98,22 +81,6 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
       setProductSelections(selections);
     }
   }, [existingOrder]);
-
-  // Combine products data with selection state
-  const products: ProductWithSelection[] = useMemo(
-    () =>
-      productsData.map((product) => ({
-        ...product,
-        selected: productSelections[product.id]?.selected || false,
-        quantity: productSelections[product.id]?.quantity || 0,
-      })),
-    [productsData, productSelections],
-  );
-
-  const materials = attributesData?.materials || [];
-  const colors = attributesData?.colors || [];
-  const tags = attributesData?.tags || [];
-  const loading = productsLoading || attributesLoading || orderLoading;
 
   const [selectedProduct, setSelectedProduct] =
     useState<ProductWithInventoryListView | null>(null);
@@ -191,8 +158,8 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
   };
 
   const canProceed = useMemo(
-    () => products.some((p) => p.selected && p.quantity > 0),
-    [products],
+    () => Object.values(productSelections).some((p) => p.selected && p.quantity > 0),
+    [productSelections],
   );
 
   const canSubmit = useMemo(
@@ -239,9 +206,12 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
   const handleApprove = () => {
     if (!canSubmit || !existingOrder) return;
 
-    const selectedProducts = products.filter(
-      (p) => p.selected && p.quantity > 0,
-    );
+    const selectedProducts = Object.entries(productSelections)
+      .filter(([, selection]) => selection.selected && selection.quantity > 0)
+      .map(([productId, selection]) => ({
+        id: productId,
+        quantity: selection.quantity,
+      }));
 
     // Prepare order data
     const orderData: UpdateSalesOrderData = {
@@ -286,7 +256,7 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
   };
 
   // Loading state
-  if (loading) {
+  if (orderLoading) {
     return <LoadingState message="Loading order..." />;
   }
 
@@ -364,11 +334,8 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
         <div className="flex-1 flex-col overflow-y-auto flex">
           {currentStep === "products" ? (
             <ProductSelectionStep
-              products={products}
-              materials={materials}
-              colors={colors}
-              tags={tags}
-              loading={loading}
+              warehouseId={warehouse.id}
+              productSelections={productSelections}
               onOpenQuantitySheet={handleOpenQuantitySheet}
               onAddNewProduct={() => setShowCreateProduct(true)}
               onRemoveProduct={handleRemoveProduct}
@@ -457,7 +424,7 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
             onOpenChange={setShowQuantitySheet}
             product={selectedProduct}
             initialQuantity={
-              products.find((p) => p.id === selectedProduct.id)?.quantity || 0
+              productSelections[selectedProduct.id]?.quantity || 0
             }
             onConfirm={handleQuantityConfirm}
           />

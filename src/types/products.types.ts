@@ -5,9 +5,7 @@ import type {
 } from "@/types/database/supabase";
 
 export type Product = Tables<"products">;
-type ProductMaterialRaw = Tables<"product_materials">;
-type ProductColorRaw = Tables<"product_colors">;
-type ProductTagRaw = Tables<"product_tags">;
+type ProductAttributeRaw = Tables<"product_attributes">;
 
 export type ProductInventory = Tables<"product_inventory_aggregates">;
 
@@ -21,24 +19,16 @@ export type ProductUpsertData = Omit<
   "sequence_number" | "created_by" | "modified_by"
 >;
 
-// Attribute view types (for all views)
-export type ProductMaterial = Pick<
-  ProductMaterialRaw,
-  "id" | "name" | "color_hex"
+// Attribute type (consolidated materials, colors, and tags)
+export type ProductAttribute = Pick<
+  ProductAttributeRaw,
+  "id" | "name" | "group_name" | "color_hex"
 >;
-export type ProductColor = Pick<ProductColorRaw, "id" | "name" | "color_hex">;
-export type ProductTag = Pick<ProductTagRaw, "id" | "name" | "color_hex">;
 
 // Common structure for attribute assignments
 export type ProductAttributeAssignmentsRaw = {
-  product_material_assignments: Array<{
-    material: ProductMaterial | null;
-  }>;
-  product_color_assignments: Array<{
-    color: ProductColor | null;
-  }>;
-  product_tag_assignments: Array<{
-    tag: ProductTag | null;
+  product_attribute_assignments: Array<{
+    attribute: ProductAttribute | null;
   }>;
 };
 
@@ -74,9 +64,9 @@ export interface ProductListView extends Pick<
   | "min_stock_alert"
   | "min_stock_threshold"
 > {
-  materials: ProductMaterial[];
-  colors: ProductColor[];
-  tags: ProductTag[];
+  materials: ProductAttribute[];
+  colors: ProductAttribute[];
+  tags: ProductAttribute[];
 }
 
 /**
@@ -84,9 +74,9 @@ export interface ProductListView extends Pick<
  * Used in: product detail page, product edit forms
  */
 export interface ProductDetailView extends Product {
-  materials: ProductMaterial[];
-  colors: ProductColor[];
-  tags: ProductTag[];
+  materials: ProductAttribute[];
+  colors: ProductAttribute[];
+  tags: ProductAttribute[];
 }
 
 /**

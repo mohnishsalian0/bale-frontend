@@ -1,11 +1,6 @@
 import type { Tables } from "./database/supabase";
 import type { ProductStockStatus } from "./database/enums";
-import {
-  Product,
-  ProductColor,
-  ProductMaterial,
-  ProductTag,
-} from "./products.types";
+import { Product, ProductAttribute } from "./products.types";
 
 type Company = Tables<"companies">;
 type Partner = Tables<"partners">;
@@ -44,9 +39,9 @@ export interface PublicProduct extends Pick<
 > {
   in_stock_quantity: number; // Aggregated from product_inventory_aggregates
   stock_status: ProductStockStatus; // Computed: in_stock | low_stock | out_of_stock
-  materials: ProductMaterial[];
-  colors: ProductColor[];
-  tags: ProductTag[];
+  materials: ProductAttribute[];
+  colors: ProductAttribute[];
+  tags: ProductAttribute[];
 }
 
 // ============================================================================

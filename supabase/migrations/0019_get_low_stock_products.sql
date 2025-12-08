@@ -25,35 +25,16 @@ BEGIN
 			'in_stock_quantity', pia.in_stock_quantity,
 			'in_stock_value', pia.in_stock_value
 		),
-		'materials', COALESCE((
+		'attributes', COALESCE((
 			SELECT jsonb_agg(jsonb_build_object(
-				'id', pm.id,
-				'name', pm.name,
-				'color_hex', pm.color_hex
+				'id', pa.id,
+				'name', pa.name,
+				'group_name', pa.group_name,
+				'color_hex', pa.color_hex
 			))
-			FROM product_material_assignments pma
-			JOIN product_materials pm ON pm.id = pma.material_id
-			WHERE pma.product_id = p.id
-		), '[]'::jsonb),
-		'colors', COALESCE((
-			SELECT jsonb_agg(jsonb_build_object(
-				'id', pc.id,
-				'name', pc.name,
-				'color_hex', pc.color_hex
-			))
-			FROM product_color_assignments pca
-			JOIN product_colors pc ON pc.id = pca.color_id
-			WHERE pca.product_id = p.id
-		), '[]'::jsonb),
-		'tags', COALESCE((
-			SELECT jsonb_agg(jsonb_build_object(
-				'id', pt.id,
-				'name', pt.name,
-				'color_hex', pt.color_hex
-			))
-			FROM product_tag_assignments pta
-			JOIN product_tags pt ON pt.id = pta.tag_id
-			WHERE pta.product_id = p.id
+			FROM product_attribute_assignments paa
+			JOIN product_attributes pa ON pa.id = paa.attribute_id
+			WHERE paa.product_id = p.id
 		), '[]'::jsonb)
 	)
 	FROM product_inventory_aggregates pia

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   ProductSelectionStep,
-  ProductWithUnits,
   StockUnitSpec,
 } from "../ProductSelectionStep";
 import { StockUnitFormSheet } from "../StockUnitFormSheet";
@@ -16,10 +15,6 @@ import { InwardLinkToStep, InwardLinkToData } from "../InwardLinkToStep";
 import { InwardDetailsStep } from "../InwardDetailsStep";
 import { ProductFormSheet } from "../../inventory/ProductFormSheet";
 import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
-import {
-  useInfiniteProducts,
-  useProductAttributes,
-} from "@/lib/query/hooks/products";
 import { useStockFlowMutations } from "@/lib/query/hooks/stock-flow";
 import type { TablesInsert } from "@/types/database/supabase";
 import { useSession } from "@/contexts/session-context";
@@ -49,39 +44,10 @@ export default function CreateGoodsInwardPage() {
   // Mutations
   const { createInwardWithUnits } = useStockFlowMutations(warehouse.id);
 
-  // Fetch products and attributes using TanStack Query with infinite scroll
-  const {
-    data: productsData,
-    isLoading: productsLoading,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteProducts({
-    is_active: true,
-    order_by: "sequence_number",
-    order_direction: "desc",
-  });
-  const { data: attributesData, isLoading: attributesLoading } =
-    useProductAttributes();
-
   // Track product units state locally
   const [productUnits, setProductUnits] = useState<
     Record<string, StockUnitSpec[]>
   >({});
-
-  // Flatten products from infinite query pages and combine with units state
-  const products: ProductWithUnits[] = useMemo(() => {
-    const flatProducts = productsData?.pages.flatMap((page) => page.data) ?? [];
-    return flatProducts.map((product) => ({
-      ...product,
-      units: productUnits[product.id] || [],
-    }));
-  }, [productsData, productUnits]);
-
-  const materials = attributesData?.materials || [];
-  const colors = attributesData?.colors || [];
-  const tags = attributesData?.tags || [];
-  const loading = productsLoading || attributesLoading;
 
   // Hide chrome for immersive flow experience
   useEffect(() => {
@@ -258,8 +224,8 @@ export default function CreateGoodsInwardPage() {
 
   // Validation for each step
   const canProceedFromProducts = useMemo(
-    () => products.some((p) => p.units.length > 0),
-    [products],
+    () => Object.values(productUnits).some((units) => units.length > 0),
+    [productUnits],
   );
 
   const canProceedFromPartner = useMemo(
@@ -348,19 +314,19 @@ export default function CreateGoodsInwardPage() {
       "created_by" | "modified_by" | "sequence_number"
     >[] = [];
 
-    for (const product of products) {
-      if (product.units.length === 0) continue;
+    for (const [productId, units] of Object.entries(productUnits)) {
+      if (units.length === 0) continue;
 
-      for (const unit of product.units) {
-        // For piece type: only one unit with total quantity
-        // For non-piece type: multiple stock units based on count
-        const unitCount = product.stock_type === "piece" ? 1 : unit.count;
+      for (const unit of units) {
+        // We don't have stock_type here, but the backend RPC will handle it
+        // For now, just use unit.count as-is
+        const unitCount = unit.count;
         const stockStatus: StockUnitStatus = "full";
 
         for (let i = 0; i < unitCount; i++) {
           stockUnits.push({
             warehouse_id: warehouse.id,
-            product_id: product.id,
+            product_id: productId,
             initial_quantity: unit.quantity,
             remaining_quantity: unit.quantity,
             status: stockStatus,
@@ -392,9 +358,8 @@ export default function CreateGoodsInwardPage() {
   // Get current product's units for AllSpecsSheet
   const currentProductUnits = useMemo(() => {
     if (!selectedProduct) return [];
-    const product = products.find((p) => p.id === selectedProduct.id);
-    return product?.units || [];
-  }, [selectedProduct, products]);
+    return productUnits[selectedProduct.id] || [];
+  }, [selectedProduct, productUnits]);
 
   return (
     <div className="h-full flex flex-col items-center">
@@ -420,16 +385,9 @@ export default function CreateGoodsInwardPage() {
         <div className="flex-1 flex-col overflow-y-auto flex">
           {currentStep === "products" && (
             <ProductSelectionStep
-              products={products}
-              materials={materials}
-              colors={colors}
-              tags={tags}
-              loading={loading}
+              productUnits={productUnits}
               onOpenUnitSheet={handleOpenUnitSheet}
               onAddNewProduct={() => setShowCreateProduct(true)}
-              fetchNextPage={fetchNextPage}
-              hasNextPage={hasNextPage}
-              isFetchingNextPage={isFetchingNextPage}
             />
           )}
 

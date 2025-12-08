@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { IconSearch, IconPlus, IconTrash } from "@tabler/icons-react";
+import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,13 +19,12 @@ import {
   getProductIcon,
   getProductInfo,
 } from "@/lib/utils/product";
-import type {
-  ProductWithInventoryListView,
-  ProductMaterial,
-  ProductColor,
-  ProductTag,
-} from "@/types/products.types";
+import type { ProductWithInventoryListView } from "@/types/products.types";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
+import {
+  useInfiniteProductsWithInventory,
+  useProductAttributes,
+} from "@/lib/query/hooks/products";
 
 interface ProductWithSelection extends ProductWithInventoryListView {
   selected: boolean;
@@ -32,36 +32,60 @@ interface ProductWithSelection extends ProductWithInventoryListView {
 }
 
 interface ProductSelectionStepProps {
-  products: ProductWithSelection[];
-  materials: ProductMaterial[];
-  colors: ProductColor[];
-  tags: ProductTag[];
-  loading: boolean;
+  warehouseId: string;
+  productSelections: Record<string, { selected: boolean; quantity: number }>;
   onOpenQuantitySheet: (product: ProductWithInventoryListView) => void;
   onAddNewProduct: () => void;
   onRemoveProduct: (productId: string) => void;
-  fetchNextPage: () => void;
-  hasNextPage?: boolean;
-  isFetchingNextPage: boolean;
 }
 
 export function ProductSelectionStep({
-  products,
-  materials,
-  colors,
-  tags,
-  loading,
+  warehouseId,
+  productSelections,
   onOpenQuantitySheet,
   onAddNewProduct,
   onRemoveProduct,
-  fetchNextPage,
-  hasNextPage,
-  isFetchingNextPage,
 }: ProductSelectionStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [materialFilter, setMaterialFilter] = useState<string>("all");
   const [colorFilter, setColorFilter] = useState<string>("all");
   const [tagsFilter, setTagsFilter] = useState<string>("all");
+
+  // Fetch products and attributes
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteProductsWithInventory(warehouseId, {
+    is_active: true,
+    search_term: debouncedSearchQuery || undefined,
+  });
+
+  const { data: attributesData, isLoading: attributesLoading } =
+    useProductAttributes();
+
+  // Flatten infinite query pages data
+  const flatProducts =
+    productsData?.pages.flatMap((page) => page.data) || [];
+
+  const materials = attributesData?.materials || [];
+  const colors = attributesData?.colors || [];
+  const tags = attributesData?.tags || [];
+  const loading = productsLoading || attributesLoading;
+
+  // Combine products data with selection state
+  const products: ProductWithSelection[] = useMemo(
+    () =>
+      flatProducts.map((product) => ({
+        ...product,
+        selected: productSelections[product.id]?.selected || false,
+        quantity: productSelections[product.id]?.quantity || 0,
+      })),
+    [flatProducts, productSelections],
+  );
 
   // Handle scroll to trigger infinite loading
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -74,25 +98,10 @@ export function ProductSelectionStep({
     }
   };
 
-  // Filter and sort products using useMemo
+  // Filter and sort products using useMemo (client-side filtering for material/color/tag only)
   const filteredProducts = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
-    // Filter products
+    // Filter products (search is now handled server-side)
     let filtered = products.filter((product) => {
-      // Search filter (case-insensitive)
-      if (
-        query &&
-        !(
-          product.name.toLowerCase().includes(query) ||
-          product.materials?.some((m) =>
-            m.name.toLowerCase().includes(query),
-          ) ||
-          product.colors?.some((c) => c.name.toLowerCase().includes(query))
-        )
-      )
-        return false;
-
       // Material filter (exact match by ID)
       if (
         materialFilter !== "all" &&
@@ -125,7 +134,7 @@ export function ProductSelectionStep({
     });
 
     return filtered;
-  }, [products, searchQuery, materialFilter, colorFilter, tagsFilter]);
+  }, [products, materialFilter, colorFilter, tagsFilter]);
 
   return (
     <>

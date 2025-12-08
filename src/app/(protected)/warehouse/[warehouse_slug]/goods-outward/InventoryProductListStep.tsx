@@ -14,17 +14,15 @@ import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import type {
   ProductListView,
-  ProductMaterial,
-  ProductColor,
-  ProductTag,
+  ProductAttribute,
 } from "@/types/products.types";
 import type { StockType } from "@/types/database/enums";
 
 interface InventoryProductListStepProps {
   products: ProductListView[];
-  materials: ProductMaterial[];
-  colors: ProductColor[];
-  tags: ProductTag[];
+  materials: ProductAttribute[];
+  colors: ProductAttribute[];
+  tags: ProductAttribute[];
   loading: boolean;
   onProductSelect: (product: ProductListView) => void;
 }

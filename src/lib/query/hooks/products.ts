@@ -13,17 +13,12 @@ import {
   getProductAttributeLists,
   getProductById,
   getProductByNumber,
-  getProductColors,
-  getProductMaterials,
   getProducts,
   getProductsWithInventory,
   getProductWithInventoryById,
   getProductWithInventoryByNumber,
-  getProductTags,
   getLowStockProducts,
-  createProductMaterial,
-  createProductColor,
-  createProductTag,
+  createProductAttribute,
   createProduct,
   updateProduct,
   uploadProductImages,
@@ -34,6 +29,7 @@ import {
   updateProductCatalogVisibility,
 } from "@/lib/queries/products";
 import { ProductFilters, ProductUpsertData } from "@/types/products.types";
+import type { AttributeGroup } from "@/types/database/enums";
 
 /**
  * Fetch all products with attributes
@@ -170,39 +166,6 @@ export function useProductWithInventoryByNumber(
 }
 
 /**
- * Fetch product materials
- */
-export function useProductMaterials() {
-  return useQuery({
-    queryKey: queryKeys.products.materials(),
-    queryFn: getProductMaterials,
-    ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
-  });
-}
-
-/**
- * Fetch product colors
- */
-export function useProductColors() {
-  return useQuery({
-    queryKey: queryKeys.products.colors(),
-    queryFn: getProductColors,
-    ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
-  });
-}
-
-/**
- * Fetch product tags
- */
-export function useProductTags() {
-  return useQuery({
-    queryKey: queryKeys.products.tags(),
-    queryFn: getProductTags,
-    ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
-  });
-}
-
-/**
  * Fetch all product attributes (materials, colors, tags)
  */
 export function useProductAttributes() {
@@ -214,45 +177,15 @@ export function useProductAttributes() {
 }
 
 /**
- * Attribute mutation hooks
+ * Attribute mutation hook - consolidated for all attribute types
  */
-export function useCreateProductMaterial() {
+export function useCreateProductAttribute() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (name: string) => createProductMaterial(name),
+    mutationFn: ({ name, groupName }: { name: string; groupName: AttributeGroup }) =>
+      createProductAttribute(name, groupName),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.products.materials(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.products.attributes(),
-      });
-    },
-  });
-}
-
-export function useCreateProductColor() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (name: string) => createProductColor(name),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.colors() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.products.attributes(),
-      });
-    },
-  });
-}
-
-export function useCreateProductTag() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (name: string) => createProductTag(name),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.tags() });
       queryClient.invalidateQueries({
         queryKey: queryKeys.products.attributes(),
       });

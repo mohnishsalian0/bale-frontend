@@ -9,6 +9,9 @@ export const USER_ROLES = ["admin", "staff"] as const;
 export type PartnerType = "customer" | "vendor" | "supplier" | "agent";
 export const PARTNER_TYPES = ["customer", "vendor", "supplier", "agent"] as const;
 
+export type AttributeGroup = "material" | "color" | "tag";
+export const ATTRIBUTE_GROUPS = ["material", "color", "tag"] as const;
+
 export type ProductStockStatus = "in_stock" | "low_stock" | "out_of_stock";
 
 export type MaterialType =

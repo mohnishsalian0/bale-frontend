@@ -13,9 +13,7 @@ import { InventoryProductListStep } from "./InventoryProductListStep";
 import { getProducts, getProductAttributeLists } from "@/lib/queries/products";
 import {
   type ProductListView,
-  type ProductMaterial,
-  type ProductColor,
-  type ProductTag,
+  type ProductAttribute,
 } from "@/types/products.types";
 
 interface SelectInventorySheetProps {
@@ -30,9 +28,9 @@ export function SelectInventorySheet({
   onProductSelect,
 }: SelectInventorySheetProps) {
   const [products, setProducts] = useState<ProductListView[]>([]);
-  const [materials, setMaterials] = useState<ProductMaterial[]>([]);
-  const [colors, setColors] = useState<ProductColor[]>([]);
-  const [tags, setTags] = useState<ProductTag[]>([]);
+  const [materials, setMaterials] = useState<ProductAttribute[]>([]);
+  const [colors, setColors] = useState<ProductAttribute[]>([]);
+  const [tags, setTags] = useState<ProductAttribute[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Load products on mount
@@ -51,7 +49,7 @@ export function SelectInventorySheet({
         getProductAttributeLists(),
       ]);
 
-      setProducts(productsData);
+      setProducts(productsData.data);
       setMaterials(attributeLists.materials);
       setColors(attributeLists.colors);
       setTags(attributeLists.tags);

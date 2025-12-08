@@ -12,20 +12,11 @@ import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
-import {
-  useInfiniteProductsWithInventory,
-  useProductAttributes,
-} from "@/lib/query/hooks/products";
 import { useSalesOrderMutations } from "@/lib/query/hooks/sales-orders";
 import type { ProductWithInventoryListView } from "@/types/products.types";
 import { CreateSalesOrderData } from "@/types/sales-orders.types";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
-
-interface ProductWithSelection extends ProductWithInventoryListView {
-  selected: boolean;
-  quantity: number;
-}
 
 interface OrderFormData {
   warehouseId: string;
@@ -47,21 +38,6 @@ export default function CreateSalesOrderPage() {
   const { hideChrome, showChromeUI } = useAppChrome();
   const [currentStep, setCurrentStep] = useState<FormStep>("products");
 
-  // Fetch products and attributes using TanStack Query
-  const {
-    data: productsData,
-    isLoading: productsLoading,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteProductsWithInventory(warehouse.id, { is_active: true });
-  const { data: attributesData, isLoading: attributesLoading } =
-    useProductAttributes();
-
-  // Flatten infinite query pages data
-  const flatProducts =
-    productsData?.pages.flatMap((page) => page.data) || [];
-
   // Sales order mutations
   const { create: createOrder } = useSalesOrderMutations(warehouse.id);
 
@@ -69,22 +45,6 @@ export default function CreateSalesOrderPage() {
   const [productSelections, setProductSelections] = useState<
     Record<string, { selected: boolean; quantity: number }>
   >({});
-
-  // Combine products data with selection state
-  const products: ProductWithSelection[] = useMemo(
-    () =>
-      flatProducts.map((product) => ({
-        ...product,
-        selected: productSelections[product.id]?.selected || false,
-        quantity: productSelections[product.id]?.quantity || 0,
-      })),
-    [flatProducts, productSelections],
-  );
-
-  const materials = attributesData?.materials || [];
-  const colors = attributesData?.colors || [];
-  const tags = attributesData?.tags || [];
-  const loading = productsLoading || attributesLoading;
 
   const [selectedProduct, setSelectedProduct] =
     useState<ProductWithInventoryListView | null>(null);
@@ -135,8 +95,8 @@ export default function CreateSalesOrderPage() {
   };
 
   const canProceed = useMemo(
-    () => products.some((p) => p.selected && p.quantity > 0),
-    [products],
+    () => Object.values(productSelections).some((p) => p.selected && p.quantity > 0),
+    [productSelections],
   );
 
   const canSubmit = useMemo(
@@ -180,9 +140,12 @@ export default function CreateSalesOrderPage() {
   const handleSubmit = () => {
     if (!canSubmit) return;
 
-    const selectedProducts = products.filter(
-      (p) => p.selected && p.quantity > 0,
-    );
+    const selectedProducts = Object.entries(productSelections)
+      .filter(([, selection]) => selection.selected && selection.quantity > 0)
+      .map(([productId, selection]) => ({
+        id: productId,
+        quantity: selection.quantity,
+      }));
 
     // Prepare order data
     const orderData: CreateSalesOrderData = {
@@ -242,17 +205,11 @@ export default function CreateSalesOrderPage() {
         <div className="flex-1 flex-col overflow-y-auto flex">
           {currentStep === "products" ? (
             <ProductSelectionStep
-              products={products}
-              materials={materials}
-              colors={colors}
-              tags={tags}
-              loading={loading}
+              warehouseId={warehouse.id}
+              productSelections={productSelections}
               onOpenQuantitySheet={handleOpenQuantitySheet}
               onAddNewProduct={() => setShowCreateProduct(true)}
               onRemoveProduct={handleRemoveProduct}
-              fetchNextPage={fetchNextPage}
-              hasNextPage={hasNextPage}
-              isFetchingNextPage={isFetchingNextPage}
             />
           ) : currentStep === "customer" ? (
             <CustomerSelectionStep
@@ -336,7 +293,7 @@ export default function CreateSalesOrderPage() {
             onOpenChange={setShowQuantitySheet}
             product={selectedProduct}
             initialQuantity={
-              products.find((p) => p.id === selectedProduct.id)?.quantity || 0
+              productSelections[selectedProduct.id]?.quantity || 0
             }
             onConfirm={handleQuantityConfirm}
           />

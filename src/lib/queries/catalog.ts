@@ -102,14 +102,8 @@ export async function getPublicProducts(
 				in_stock_quantity,
 				warehouse_id
 			),
-			product_material_assignments(
-				material:product_materials(id, name, color_hex)
-			),
-			product_color_assignments(
-				color:product_colors(id, name, color_hex)
-			),
-			product_tag_assignments(
-				tag:product_tags(id, name, color_hex)
+			product_attribute_assignments(
+				attribute:product_attributes(id, name, group_name, color_hex)
 			)
 		`,
     )
@@ -157,9 +151,7 @@ export async function getPublicProducts(
 
     // Remove the nested assignment fields from the product
     const {
-      product_material_assignments: _materials,
-      product_color_assignments: _colors,
-      product_tag_assignments: _tags,
+      product_attribute_assignments: _attributes,
       inventory: _inventory,
       ...rest
     } = product;
