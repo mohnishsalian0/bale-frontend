@@ -79,20 +79,23 @@ export interface SalesOrderItemDetailView extends SalesOrderItem {
         | "sequence_number"
         | "stock_type"
       > & {
-        materials: Array<{ material: ProductAttribute }>;
-        colors: Array<{ color: ProductAttribute }>;
-        tags: Array<{ tag: ProductAttribute }>;
+        materials: ProductAttribute[];
+        colors: ProductAttribute[];
+        tags: ProductAttribute[];
       })
     | null;
 }
 
 /**
  * Sales order with complete details (for order detail page)
- * Includes customer address, agent, warehouse, and full product details
+ * Includes customer address, agent (minimal fields), warehouse, and full product details
  */
 export interface SalesOrderDetailView extends SalesOrder {
   customer: Partner | null;
-  agent: Partner | null;
+  agent: Pick<
+    Partner,
+    "id" | "first_name" | "last_name" | "company_name"
+  > | null;
   warehouse: Warehouse | null;
   sales_order_items: SalesOrderItemDetailView[];
 }

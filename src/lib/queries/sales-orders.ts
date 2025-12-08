@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/browser";
+import type { Tables } from "@/types/database/supabase";
 import type {
   SalesOrderListView,
   SalesOrderDetailView,
+  SalesOrderItemDetailView,
   SalesOrderFilters,
   CreateSalesOrderData,
   CreateSalesOrderLineItem,
@@ -9,6 +11,8 @@ import type {
   CancelSalesOrderData,
   CompleteSalesOrderData,
 } from "@/types/sales-orders.types";
+import type { ProductAttributeAssignmentsRaw } from "@/types/products.types";
+import { transformAttributes } from "./products";
 
 // Re-export types for convenience
 export type {
@@ -21,6 +25,47 @@ export type {
   CancelSalesOrderData,
   CompleteSalesOrderData,
 };
+
+// ============================================================================
+// RAW TYPES - For Supabase responses
+// ============================================================================
+
+/**
+ * Raw type for sales order item in detail view
+ * Includes nested product with attribute assignments
+ */
+type SalesOrderItemDetailViewRaw = Tables<"sales_order_items"> & {
+  product:
+    | (Pick<
+        Tables<"products">,
+        | "id"
+        | "name"
+        | "stock_type"
+        | "measuring_unit"
+        | "product_images"
+        | "sequence_number"
+      > &
+        ProductAttributeAssignmentsRaw)
+    | null;
+};
+
+/**
+ * Raw type for sales order detail view
+ * Includes nested customer, agent, warehouse, and items with raw attributes
+ */
+type SalesOrderDetailViewRaw = Tables<"sales_orders"> & {
+  customer: Tables<"partners"> | null;
+  agent: Pick<
+    Tables<"partners">,
+    "id" | "first_name" | "last_name" | "company_name"
+  > | null;
+  warehouse: Tables<"warehouses"> | null;
+  sales_order_items: SalesOrderItemDetailViewRaw[];
+};
+
+// ============================================================================
+// QUERIES
+// ============================================================================
 
 /**
  * Fetch sales orders for a warehouse with optional filters
@@ -136,14 +181,8 @@ export async function getSalesOrderByNumber(
 					measuring_unit,
 					product_images,
 					sequence_number,
-					materials:product_material_assignments(
-						material:material_id(*)
-					),
-					colors:product_color_assignments(
-						color:color_id(*)
-					),
-					tags:product_tag_assignments(
-						tag:tag_id(*)
+					product_attribute_assignments(
+						attribute:product_attributes(id, name, group_name, color_hex)
 					)
 				)
 			)
@@ -151,12 +190,41 @@ export async function getSalesOrderByNumber(
     )
     .eq("sequence_number", parseInt(sequenceNumber))
     .is("deleted_at", null)
-    .single<SalesOrderDetailView>();
+    .single<SalesOrderDetailViewRaw>();
 
   if (error) throw error;
   if (!data) throw new Error("Order not found");
 
-  return data;
+  // Transform sales order items to flatten attributes
+  const transformedItems: SalesOrderItemDetailView[] =
+    data.sales_order_items.map((item) => {
+      if (!item.product) {
+        return { ...item, product: null };
+      }
+
+      // Transform attributes using shared utility
+      const { materials, colors, tags } = transformAttributes(item.product);
+
+      // Remove nested assignments field
+      const { product_attribute_assignments: _attributes, ...productRest } =
+        item.product;
+
+      return {
+        ...item,
+        product: {
+          ...productRest,
+          materials,
+          colors,
+          tags,
+        },
+      };
+    });
+
+  // Return transformed sales order
+  return {
+    ...data,
+    sales_order_items: transformedItems,
+  };
 }
 
 /**

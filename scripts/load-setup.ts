@@ -329,7 +329,10 @@ async function generateProducts(
           const product = data[j];
           const template = PRODUCT_TEMPLATES[i - products.length + j + 1];
 
-          // Link materials (1-3 per product)
+          // Link attributes (materials, colors, tags) using consolidated table
+          const attributeAssignments = [];
+
+          // Materials (1-3 per product)
           const materialCount = randomInt(1, 3);
           const selectedMaterials = selectRandom(
             template.materials,
@@ -337,35 +340,42 @@ async function generateProducts(
           );
           for (const materialName of selectedMaterials) {
             if (materialIds[materialName]) {
-              await supabase.from("product_material_assignments").insert({
+              attributeAssignments.push({
                 product_id: product.id,
-                material_id: materialIds[materialName],
+                attribute_id: materialIds[materialName],
               });
             }
           }
 
-          // Link colors (1-4 per product)
+          // Colors (1-4 per product)
           const colorCount = randomInt(1, 4);
           const selectedColors = selectRandom(template.colors, colorCount);
           for (const colorName of selectedColors) {
             if (colorIds[colorName]) {
-              await supabase.from("product_color_assignments").insert({
+              attributeAssignments.push({
                 product_id: product.id,
-                color_id: colorIds[colorName],
+                attribute_id: colorIds[colorName],
               });
             }
           }
 
-          // Link tags (2-6 per product)
+          // Tags (2-6 per product)
           const tagCount = randomInt(2, 6);
           const selectedTags = selectRandom(template.tags, tagCount);
           for (const tagName of selectedTags) {
             if (tagIds[tagName]) {
-              await supabase.from("product_tag_assignments").insert({
+              attributeAssignments.push({
                 product_id: product.id,
-                tag_id: tagIds[tagName],
+                attribute_id: tagIds[tagName],
               });
             }
+          }
+
+          // Batch insert all attribute assignments
+          if (attributeAssignments.length > 0) {
+            await supabase
+              .from("product_attribute_assignments")
+              .insert(attributeAssignments);
           }
         }
 
@@ -866,35 +876,30 @@ async function loadTestData() {
 
   const userId = users[0].id;
 
-  // Get existing materials, colors, tags
-  const { data: materials } = await supabase
-    .from("product_materials")
-    .select("id, name")
+  // Get existing attributes (consolidated table)
+  const { data: attributes } = await supabase
+    .from("product_attributes")
+    .select("id, name, group_name")
     .eq("company_id", companyId);
 
-  const { data: colors } = await supabase
-    .from("product_colors")
-    .select("id, name")
-    .eq("company_id", companyId);
-
-  const { data: tags } = await supabase
-    .from("product_tags")
-    .select("id, name")
-    .eq("company_id", companyId);
-
-  if (!materials || !colors || !tags) {
+  if (!attributes) {
     console.error("❌ Missing product attributes. Please run setup.ts first.");
     return;
   }
 
   const materialIds: Record<string, string> = {};
-  materials.forEach((m) => (materialIds[m.name] = m.id));
-
   const colorIds: Record<string, string> = {};
-  colors.forEach((c) => (colorIds[c.name] = c.id));
-
   const tagIds: Record<string, string> = {};
-  tags.forEach((t) => (tagIds[t.name] = t.id));
+
+  attributes.forEach((attr) => {
+    if (attr.group_name === "material") {
+      materialIds[attr.name] = attr.id;
+    } else if (attr.group_name === "color") {
+      colorIds[attr.name] = attr.id;
+    } else if (attr.group_name === "tag") {
+      tagIds[attr.name] = attr.id;
+    }
+  });
 
   // Get partners
   const { data: partners } = await supabase

@@ -251,6 +251,7 @@ export default function SalesOrderDetailPage({ params }: PageParams) {
 
   // Error state
   if (companyError || error || !order) {
+    // console.log(companyError, error);
     return (
       <ErrorState
         title="Order not found"
