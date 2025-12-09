@@ -1,6 +1,7 @@
 import type { SalesOrderStatus } from "@/types/database/enums";
 import { SalesOrderItemListView } from "@/types/sales-orders.types";
 import { getPartnerName, PartnerNameFields } from "./partner";
+import { getMeasuringUnit } from "./measuring-units";
 
 export type DisplayStatus = SalesOrderStatus | "overdue";
 
@@ -57,16 +58,19 @@ export function getOrderDisplayStatus(
  * Example: Designer Silk Fabric x22, Cotton Denim x11, 3 more
  */
 export function getProductSummary(
-  products: Array<{ name: string; quantity: number }>,
+  orderItems: SalesOrderItemListView[],
 ): string {
-  if (products.length === 0) return "No products";
-  if (products.length === 1)
-    return `${products[0].name} x ${products[0].quantity}`;
-  if (products.length === 2) {
-    return `${products[0].name} x ${products[0].quantity}, ${products[1].name} x ${products[1].quantity}`;
-  }
-  const remaining = products.length - 2;
-  return `${products[0].name} x ${products[0].quantity}, ${products[1].name} x ${products[1].quantity}, ${remaining} more`;
+  if (orderItems.length === 0) return "No products";
+  let productsSummary: string[] = [];
+  orderItems.map((oi) => {
+    const productInfo = oi.product;
+    const measuringUnit = getMeasuringUnit(productInfo);
+    productsSummary.push(
+      `${productInfo?.name || "Unknown product"} (${oi.required_quantity} ${measuringUnit})`,
+    );
+  });
+
+  return productsSummary.join(", ");
 }
 
 /**

@@ -191,28 +191,10 @@ export default function PartnersPage() {
                           <p className="text-base font-medium text-gray-700">
                             {name}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-sm text-gray-500">
                             {PARTNER_TYPES.find((t) => t.value === type)?.label}
                           </p>
                         </div>
-
-                        {/* TODO: Amount */}
-                        {/* {partner.amount && ( */}
-                        {/*   <div className="flex flex-col items-end justify-center"> */}
-                        {/*     <p */}
-                        {/*       className={`text-base font-bold ${ */}
-                        {/*         partner.transactionType === "sales" */}
-                        {/*           ? "text-teal-700" */}
-                        {/*           : "text-yellow-700" */}
-                        {/*       }`} */}
-                        {/*     > */}
-                        {/*       ₹{partner.amount.toLocaleString("en-IN")} */}
-                        {/*     </p> */}
-                        {/*     <p className="text-xs text-gray-500"> */}
-                        {/*       in {partner.transactionType} */}
-                        {/*     </p> */}
-                        {/*   </div> */}
-                        {/* )} */}
                       </div>
                     </div>
 

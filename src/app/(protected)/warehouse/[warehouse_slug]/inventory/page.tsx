@@ -293,7 +293,7 @@ export default function InventoryPage() {
       <div className="flex-1">
         {filteredProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-gray-600 mb-2">No products found</p>
+            <p className="text-gray-700 mb-2">No products found</p>
             <p className="text-sm text-gray-500">
               {searchQuery
                 ? "Try adjusting your search"
@@ -336,7 +336,7 @@ export default function InventoryPage() {
                     <p className="text-base font-medium text-gray-700">
                       {product.name}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-sm text-gray-500 mt-0.5">
                       {productInfoText}
                     </p>
                   </div>

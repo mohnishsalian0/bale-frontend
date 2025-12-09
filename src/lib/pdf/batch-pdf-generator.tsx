@@ -5,7 +5,7 @@ import {
   generateQRCodeDataUrl,
   type LabelData,
 } from "./qr-label-generator";
-import type { QRTemplateField } from "@/app/(protected)/warehouse/[warehouse_slug]/qr-codes/QRTemplateCustomisationStep";
+import type { QRTemplateField } from "@/lib/utils/qr-batches";
 import { getQRBatchById } from "@/lib/queries/qr-batches";
 
 /**

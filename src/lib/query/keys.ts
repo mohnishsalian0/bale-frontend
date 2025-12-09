@@ -93,6 +93,8 @@ export const queryKeys = {
       filters?: Record<string, unknown>,
       page?: number,
     ) => ["stock-flow", "outwards", warehouseId, filters, page] as const,
+    outwardsBySalesOrder: (orderNumber: string, page?: number) =>
+      ["stock-flow", "outwards", orderNumber, page] as const,
     inwardDetail: (sequenceNumber: string) =>
       ["stock-flow", "inward", "detail", sequenceNumber] as const,
     outwardDetail: (sequenceNumber: string) =>

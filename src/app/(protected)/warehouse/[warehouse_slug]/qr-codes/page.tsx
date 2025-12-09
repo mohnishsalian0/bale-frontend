@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ImageWrapper from "@/components/ui/image-wrapper";
-import { formatCreatedAt, formatAbsoluteDate } from "@/lib/utils/date";
+import { formatCreatedAt } from "@/lib/utils/date";
 import { toast } from "sonner";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
@@ -212,14 +212,10 @@ export default function QRCodesPage() {
                   <p className="text-base font-medium text-gray-700">
                     {batch.batch_name}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm text-gray-500">
                     {batch.item_count}{" "}
                     {batch.item_count === 1 ? "code" : "codes"}
-                  </p>
-                  <p
-                    className="text-xs text-gray-500"
-                    title={formatAbsoluteDate(batch.created_at)}
-                  >
+                    <span>{" • "}</span>
                     {formatCreatedAt(batch.created_at)}
                   </p>
                 </div>
@@ -227,7 +223,11 @@ export default function QRCodesPage() {
                 {/* Action Buttons */}
                 <div className="flex gap-2">
                   {/* Share Button */}
-                  <Button variant="outline" onClick={() => handleShare(batch)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleShare(batch)}
+                  >
                     <IconShare className="size-5" />
                     <span className="hidden md:inline">Share</span>
                   </Button>
@@ -235,6 +235,7 @@ export default function QRCodesPage() {
                   {/* Download Button */}
                   <Button
                     variant="outline"
+                    size="sm"
                     onClick={() => handleDownload(batch)}
                   >
                     <IconDownload className="size-5" />

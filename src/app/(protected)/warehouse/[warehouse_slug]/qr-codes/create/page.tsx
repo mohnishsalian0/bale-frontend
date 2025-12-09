@@ -6,11 +6,9 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/browser";
 import { QRProductSelectionStep } from "../QRProductSelectionStep";
 import { QRStockUnitSelectionStep } from "../QRStockUnitSelectionStep";
-import {
-  QRTemplateSelectionStep,
-  getDefaultTemplateFields,
-} from "../QRTemplateCustomisationStep";
-import type { QRTemplateField } from "../QRTemplateCustomisationStep";
+import { QRTemplateSelectionStep } from "../QRTemplateCustomisationStep";
+import type { QRTemplateField } from "@/lib/utils/qr-batches";
+import { getCachedOrDefaultTemplateFields } from "@/lib/utils/qr-batches";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
@@ -34,10 +32,13 @@ export default function CreateQRBatchPage() {
   const [selectedStockUnitIds, setSelectedStockUnitIds] = useState<string[]>(
     [],
   );
-  const [selectedFields, setSelectedFields] = useState<QRTemplateField[]>(
-    getDefaultTemplateFields(),
-  );
+  const [selectedFields, setSelectedFields] = useState<QRTemplateField[]>([]);
   const [saving, setSaving] = useState(false);
+
+  // Load cached or default fields on mount
+  useEffect(() => {
+    setSelectedFields(getCachedOrDefaultTemplateFields());
+  }, []);
 
   // QR batch mutations
   const { create: createBatch } = useQRBatchMutations(warehouse.id);

@@ -9,6 +9,7 @@ import { formatAbsoluteDate } from "@/lib/utils/date";
 import {
   calculateCompletionPercentage,
   getOrderDisplayStatus,
+  getProductSummary,
   type DisplayStatus,
 } from "@/lib/utils/sales-order";
 import type { SalesOrderStatus } from "@/types/database/enums";
@@ -23,19 +24,6 @@ interface MonthGroup {
 interface OrdersTabProps {
   orders: SalesOrderListView[];
   warehouseSlug: string;
-}
-
-function getProductSummary(
-  items: SalesOrderListView["sales_order_items"],
-): string {
-  const productNames = items
-    .map((item) => item.product?.name)
-    .filter(Boolean) as string[];
-
-  if (productNames.length === 0) return "No products";
-  if (productNames.length === 1) return productNames[0];
-  if (productNames.length === 2) return productNames.join(", ");
-  return `${productNames[0]}, ${productNames[1]} +${productNames.length - 2} more`;
 }
 
 export function OrdersTab({ orders, warehouseSlug }: OrdersTabProps) {
@@ -118,23 +106,23 @@ export function OrdersTab({ orders, warehouseSlug }: OrdersTabProps) {
                 className="w-full flex flex-col gap-2 p-4 border-t border-dashed border-gray-300 hover:bg-gray-50 transition-colors"
               >
                 {/* Title and Status Badge */}
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2 text-left">
                   <p className="text-base font-medium text-gray-700 text-left">
-                    {getProductSummary(order.sales_order_items)}
-                  </p>
-                  <SalesStatusBadge status={displayStatus} />
-                </div>
-
-                {/* Subtexts spanning full width */}
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-gray-500">
                     {"SO-"}
                     {order.sequence_number}
                     {order.expected_delivery_date &&
                       ` • Due on ${formatAbsoluteDate(order.expected_delivery_date)}`}
                   </p>
+                  <SalesStatusBadge status={displayStatus} />
+                </div>
+
+                {/* Subtexts spanning full width */}
+                <div className="flex gap-3 items-center justify-between text-left">
+                  <p className="text-xs text-gray-500">
+                    {getProductSummary(order.sales_order_items)}
+                  </p>
                   {order.status !== "approval_pending" && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 text-right text-nowrap">
                       {completionPercentage}% completed
                     </p>
                   )}

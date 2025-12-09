@@ -38,13 +38,14 @@ import {
 } from "@/lib/utils/measuring-units";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
+import { SalesOrderItemListView } from "@/types/sales-orders.types";
 
 interface OrderListItem {
   id: string;
   orderNumber: number;
   customerId: string;
   customerName: string;
-  products: Array<{ name: string; quantity: number }>;
+  items: SalesOrderItemListView[];
   dueDate: string | null;
   orderDate: string;
   status:
@@ -150,11 +151,7 @@ export default function OrdersPage() {
       const orderItems: OrderListItem[] = orders.map((order) => {
         const customerName = getPartnerName(order.customer);
 
-        // Calculate products with quantities
-        const products = (order.sales_order_items || []).map((item) => ({
-          name: item.product?.name || "Unknown Product",
-          quantity: item.required_quantity,
-        }));
+        const items = order.sales_order_items;
 
         // Calculate completion percentage using utility
         const completionPercentage = calculateCompletionPercentage(
@@ -172,7 +169,7 @@ export default function OrdersPage() {
           orderNumber: order.sequence_number,
           customerId: order.customer_id,
           customerName,
-          products,
+          items,
           dueDate: order.expected_delivery_date,
           orderDate: order.order_date,
           status,
@@ -423,8 +420,8 @@ export default function OrdersPage() {
                       </div>
 
                       {/* Subtexts spanning full width */}
-                      <p className="text-xs text-gray-500 text-left mt-1">
-                        {getProductSummary(order.products)}
+                      <p className="text-sm text-gray-500 text-left mt-1">
+                        {getProductSummary(order.items)}
                       </p>
                       <div className="flex items-center justify-between mt-1">
                         <p className="text-xs text-gray-500">

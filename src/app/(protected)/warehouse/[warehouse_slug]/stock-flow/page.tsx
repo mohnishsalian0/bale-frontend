@@ -27,10 +27,7 @@ import { PaginationWrapper } from "@/components/ui/pagination-wrapper";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
-import {
-  formatMeasuringUnitQuantities,
-  getMeasuringUnit,
-} from "@/lib/utils/measuring-units";
+import { formatMeasuringUnitQuantities } from "@/lib/utils/measuring-units";
 import { getPartnerName, getPartnerTypeLabel } from "@/lib/utils/partner";
 import { formatMonthHeader } from "@/lib/utils/date";
 import type { MeasuringUnit, PartnerType } from "@/types/database/enums";
@@ -40,18 +37,25 @@ import {
 } from "@/lib/query/hooks/stock-flow";
 import { usePartners } from "@/lib/query/hooks/partners";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getReceiverName, getSenderName } from "@/lib/utils/stock-flow";
+import {
+  getInwardProductsSummary,
+  getInwardQuantitiesByUnit,
+  getOutwardProductsSummary,
+  getOutwardQuantitiesByUnit,
+  getReceiverName,
+  getSenderName,
+} from "@/lib/utils/stock-flow";
 
 interface StockFlowItem {
   id: string;
   type: "outward" | "inward";
-  productName: string;
+  productsSummary: string;
   partnerId: string | null;
-  sender_or_receiver_name: string;
+  senderOrReceiverName: string;
   date: string;
   quantities: Map<MeasuringUnit, number>;
   billNumber: string;
-  sequence_number: number;
+  sequenceNumber: number;
 }
 
 interface MonthGroup {
@@ -150,40 +154,20 @@ export default function StockFlowPage() {
     const inwardItems: StockFlowItem[] = inwards.map((r) => {
       const senderName = getSenderName(r);
 
-      const stockUnits = r.stock_units || [];
-      const firstProduct = stockUnits[0]?.product;
+      const productsSummary = getInwardProductsSummary(r);
 
-      // Get unique products
-      const uniqueProducts = new Set(
-        stockUnits.map((unit) => unit.product?.id).filter(Boolean),
-      );
-      const productCount = uniqueProducts.size;
-      const productName =
-        productCount > 1
-          ? `${firstProduct?.name || "Unknown Product"}, ${productCount - 1} more`
-          : firstProduct?.name || "Unknown Product";
-
-      // Aggregate quantities by measuring unit
-      const quantitiesMap = new Map<MeasuringUnit, number>();
-      stockUnits.forEach((unit) => {
-        const measuringUnit = getMeasuringUnit(unit.product);
-        const qty = Number(unit.initial_quantity) || 0;
-        quantitiesMap.set(
-          measuringUnit,
-          (quantitiesMap.get(measuringUnit) || 0) + qty,
-        );
-      });
+      const quantities = getInwardQuantitiesByUnit(r);
 
       return {
         id: r.id,
         type: "inward" as const,
-        productName,
+        productsSummary,
         partnerId: r.partner_id,
-        sender_or_receiver_name: senderName,
+        senderOrReceiverName: senderName,
         date: r.inward_date,
-        quantities: quantitiesMap,
+        quantities,
         billNumber: `GI-${r.sequence_number}`,
-        sequence_number: r.sequence_number,
+        sequenceNumber: r.sequence_number,
       };
     });
 
@@ -191,42 +175,20 @@ export default function StockFlowPage() {
     const outwardItems: StockFlowItem[] = outwards.map((d) => {
       const receiverName = getReceiverName(d);
 
-      const items = d.goods_outward_items || [];
-      const firstProduct = items[0]?.stock_unit?.product;
+      const productsSummary = getOutwardProductsSummary(d);
 
-      // Get unique products
-      const uniqueProducts = new Set(
-        items.map((item) => item.stock_unit?.product?.id).filter(Boolean),
-      );
-      const productCount = uniqueProducts.size;
-      const productName =
-        productCount > 1
-          ? `${firstProduct?.name || "Unknown Product"}, ${productCount - 1} more`
-          : firstProduct?.name || "Unknown Product";
-
-      // Aggregate quantities by measuring unit
-      const quantitiesMap = new Map<MeasuringUnit, number>();
-      items.forEach((item) => {
-        const measuringUnit = getMeasuringUnit(
-          item.stock_unit?.product || null,
-        );
-        const qty = Number(item.quantity_dispatched) || 0;
-        quantitiesMap.set(
-          measuringUnit,
-          (quantitiesMap.get(measuringUnit) || 0) + qty,
-        );
-      });
+      const quantities = getOutwardQuantitiesByUnit(d);
 
       return {
         id: d.id,
         type: "outward" as const,
-        productName,
+        productsSummary,
         partnerId: d.partner_id,
-        sender_or_receiver_name: receiverName,
+        senderOrReceiverName: receiverName,
         date: d.outward_date,
-        quantities: quantitiesMap,
+        quantities,
         billNumber: `GO-${d.sequence_number}`,
-        sequence_number: d.sequence_number,
+        sequenceNumber: d.sequence_number,
       };
     });
 
@@ -352,11 +314,11 @@ export default function StockFlowPage() {
           <div className="mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Stock flow</h1>
             <p className="text-sm font-medium text-gray-500 mt-2">
-              <span className="text-teal-700">
+              <span className="text-yellow-700">
                 {formatMeasuringUnitQuantities(totalReceived)} received
               </span>
               <span> & </span>
-              <span className="text-yellow-700">
+              <span className="text-teal-700">
                 {formatMeasuringUnitQuantities(totalOutwarded)} dispatched
               </span>
               <span> in past month</span>
@@ -445,15 +407,15 @@ export default function StockFlowPage() {
                   {group.month}
                 </p>
                 <p className="text-sm font-semibold text-right max-w-2/3">
-                  <span className="text-teal-700">
+                  <span className="text-yellow-700">
                     {formatMeasuringUnitQuantities(group.inCount)}{" "}
                   </span>
-                  <span className="text-teal-700 font-normal">In</span>
+                  <span className="text-yellow-700 font-normal">In</span>
                   <span>, </span>
-                  <span className="text-yellow-700">
+                  <span className="text-teal-700">
                     {formatMeasuringUnitQuantities(group.outCount)}{" "}
                   </span>
-                  <span className="text-yellow-700 font-normal">Out</span>
+                  <span className="text-teal-700 font-normal">Out</span>
                 </p>
               </div>
 
@@ -464,11 +426,11 @@ export default function StockFlowPage() {
                   onClick={() => {
                     if (item.type === "outward") {
                       router.push(
-                        `/warehouse/${warehouse.slug}/goods-outward/${item.sequence_number}`,
+                        `/warehouse/${warehouse.slug}/goods-outward/${item.sequenceNumber}`,
                       );
                     } else if (item.type === "inward") {
                       router.push(
-                        `/warehouse/${warehouse.slug}/goods-inward/${item.sequence_number}`,
+                        `/warehouse/${warehouse.slug}/goods-inward/${item.sequenceNumber}`,
                       );
                     }
                   }}
@@ -476,15 +438,15 @@ export default function StockFlowPage() {
                 >
                   <div className="flex-3 text-left">
                     <p className="text-base font-medium text-gray-700">
-                      {item.productName}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
                       {item.type === "inward" ? "From" : "To"}{" "}
-                      {item.sender_or_receiver_name}
+                      {item.senderOrReceiverName}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {item.productsSummary}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
                       {item.type === "inward" ? "GI" : "GO"}-
-                      {item.sequence_number}
+                      {item.sequenceNumber}
                       <span> &nbsp;•&nbsp; </span>
                       {formatDate(item.date)}
                     </p>
@@ -493,8 +455,8 @@ export default function StockFlowPage() {
                     <p
                       className={`text-sm font-semibold ${
                         item.type === "inward"
-                          ? "text-teal-700"
-                          : "text-yellow-700"
+                          ? "text-yellow-700"
+                          : "text-teal-700"
                       }`}
                     >
                       {formatMeasuringUnitQuantities(item.quantities)}

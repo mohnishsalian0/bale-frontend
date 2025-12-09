@@ -255,12 +255,12 @@ export default function StockFlowPage({ params }: PageParams) {
           >
             <div className="flex-3 text-left">
               <p className="text-base font-medium text-gray-700">
-                {flow.type === "inward" ? "GI" : "GO"}-{flow.sequence_number}
-              </p>
-              <p className="text-xs text-left text-gray-500 mt-1">
                 {flow.type === "inward"
                   ? `From ${flow.sender}`
                   : `To ${flow.receiver}`}
+              </p>
+              <p className="text-xs text-left text-gray-500 mt-1">
+                {flow.type === "inward" ? "GI" : "GO"}-{flow.sequence_number}
                 <span> &nbsp;•&nbsp; </span>
                 {formatAbsoluteDate(flow.date)}
               </p>
@@ -268,7 +268,7 @@ export default function StockFlowPage({ params }: PageParams) {
             <div className="flex-1 text-right text-wrap">
               <p
                 className={`text-sm font-semibold ${
-                  flow.type === "inward" ? "text-teal-700" : "text-yellow-700"
+                  flow.type === "inward" ? "text-yellow-700" : "text-teal-700"
                 }`}
               >
                 {flow.quantity.toFixed(2)} {unitAbbr}

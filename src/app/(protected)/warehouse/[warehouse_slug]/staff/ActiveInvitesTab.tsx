@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import {
-  IconMailOpened,
   IconBrandWhatsapp,
   IconCopy,
   IconTrash,
   IconClock,
+  IconMail,
 } from "@tabler/icons-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -108,9 +108,9 @@ The Bale Team`;
                 {/* Top Row: Icon, Info, Badge */}
                 <div className="flex gap-3 items-start w-full">
                   {/* Mail Icon */}
-                  <div className="relative size-12 rounded-lg shrink-0 bg-gray-200 overflow-hidden">
+                  <div className="relative size-12 rounded-lg shrink-0 bg-gray-100 overflow-hidden">
                     <div className="flex items-center justify-center size-full">
-                      <IconMailOpened className="size-6 text-gray-400" />
+                      <IconMail className="size-6 text-gray-400" />
                     </div>
                   </div>
 

@@ -50,7 +50,7 @@ export function StaffMembersTab({ staff }: StaffMembersTabProps) {
                             ? member.warehouse_names.join(", ")
                             : "Not assigned yet"
                         }
-                        className="text-xs text-gray-500 truncate"
+                        className="text-sm text-gray-500 truncate"
                       >
                         {member.warehouse_names.length > 0
                           ? member.warehouse_names.length === 1
@@ -63,7 +63,7 @@ export function StaffMembersTab({ staff }: StaffMembersTabProps) {
                     {/* Phone */}
                     <div className="flex gap-1.5 items-center justify-center text-gray-500 w-full">
                       <IconPhone className="size-3.5 shrink-0" />
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm text-gray-500">
                         {member.phone_number || "No phone"}
                       </p>
                     </div>

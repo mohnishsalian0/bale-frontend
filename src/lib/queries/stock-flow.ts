@@ -304,6 +304,58 @@ export async function getGoodsOutwards(
 }
 
 /**
+ * Fetch goods outwards list by sales order number
+ */
+export async function getGoodsOutwardsBySalesOrder(
+  orderNumber: string,
+  page: number = 1,
+  pageSize: number = 25,
+): Promise<{ data: OutwardWithOutwardItemListView[]; totalCount: number }> {
+  const supabase = createClient();
+
+  // Calculate pagination range
+  const offset = (page - 1) * pageSize;
+  const limit = pageSize;
+
+  const { data, error, count } = await supabase
+    .from("goods_outwards")
+    .select(
+      `
+      *,
+      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name),
+			from_warehouse:warehouses!to_warehouse_id(id, name),
+			sales_order:sales_orders!inner(id, sequence_number),
+      goods_outward_items(
+        quantity_dispatched,
+        stock_unit:stock_units(
+          product:products(${PRODUCT_LIST_VIEW_SELECT})
+        )
+      )
+    `,
+      { count: "exact" },
+    )
+    .eq("sales_order.sequence_number", orderNumber)
+    .is("deleted_at", null)
+    .order("outward_date", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error("Error fetching goods outwards:", error);
+    throw error;
+  }
+
+  const transformedData =
+    (data as unknown as OutwardWithOutwardItemListViewRaw[])?.map(
+      transformOutwardWithItemListView,
+    ) || [];
+
+  return {
+    data: transformedData,
+    totalCount: count || 0,
+  };
+}
+
+/**
  * Fetch a single goods inward by sequence number
  */
 export async function getGoodsInwardByNumber(

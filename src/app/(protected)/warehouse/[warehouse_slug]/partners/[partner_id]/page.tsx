@@ -28,6 +28,7 @@ import { getInitials } from "@/lib/utils/initials";
 import {
   calculateCompletionPercentage,
   getOrderDisplayStatus,
+  getProductSummary,
 } from "@/lib/utils/sales-order";
 import { SummaryTab } from "./SummaryTab";
 import { OrdersTab } from "./OrdersTab";
@@ -229,13 +230,7 @@ export default function PartnerDetailPage({ params }: PageParams) {
                     <SalesStatusBadge status={displayStatus} />
                   </div>
                   <p className="text-sm font-medium text-gray-700">
-                    {pendingOrder.sales_order_items
-                      .map((item) => item.product?.name)
-                      .filter(Boolean)
-                      .slice(0, 2)
-                      .join(", ")}
-                    {pendingOrder.sales_order_items.length > 2 &&
-                      ` +${pendingOrder.sales_order_items.length - 2} more`}
+                    {getProductSummary(pendingOrder.sales_order_items)}
                   </p>
                   <div className="flex items-center justify-between mt-1">
                     <p className="text-xs text-gray-500">

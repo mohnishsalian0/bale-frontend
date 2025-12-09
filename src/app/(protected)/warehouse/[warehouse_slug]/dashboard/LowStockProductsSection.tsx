@@ -64,7 +64,7 @@ export function LowStockProductsSection({
                   <p className="text-base font-medium text-gray-700">
                     {product.name}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-sm text-gray-500 mt-1">
                     {getProductInfo(product) || "No details"}
                   </p>
                 </div>

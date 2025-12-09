@@ -6,20 +6,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { IconQrcode } from "@tabler/icons-react";
 import { createClient } from "@/lib/supabase/browser";
 import { useSession } from "@/contexts/session-context";
-
-export type QRTemplateField =
-  | "product_name"
-  | "product_number"
-  | "hsn_code"
-  | "material"
-  | "color"
-  | "gsm"
-  | "selling_price_per_unit"
-  | "unit_number"
-  | "manufacturing_date"
-  | "initial_quantity"
-  | "quality_grade"
-  | "warehouse_location";
+import type { QRTemplateField } from "@/lib/utils/qr-batches";
+import { cacheTemplateFields } from "@/lib/utils/qr-batches";
 
 interface FieldOption {
   id: QRTemplateField;
@@ -139,11 +127,13 @@ export function QRTemplateSelectionStep({
   }, [supabase, user]);
 
   const handleFieldToggle = (fieldId: QRTemplateField, checked: boolean) => {
-    if (checked) {
-      onSelectionChange([...selectedFields, fieldId]);
-    } else {
-      onSelectionChange(selectedFields.filter((f) => f !== fieldId));
-    }
+    const newFields = checked
+      ? [...selectedFields, fieldId]
+      : selectedFields.filter((f) => f !== fieldId);
+
+    onSelectionChange(newFields);
+    // Cache the updated selection
+    cacheTemplateFields(newFields);
   };
 
   // Get all available fields in order
@@ -241,10 +231,3 @@ export function QRTemplateSelectionStep({
   );
 }
 
-// Helper to get default selected fields
-export function getDefaultTemplateFields(): QRTemplateField[] {
-  return [
-    ...PRODUCT_INFO_FIELDS.filter((f) => f.defaultSelected).map((f) => f.id),
-    ...STOCK_UNIT_INFO_FIELDS.filter((f) => f.defaultSelected).map((f) => f.id),
-  ];
-}

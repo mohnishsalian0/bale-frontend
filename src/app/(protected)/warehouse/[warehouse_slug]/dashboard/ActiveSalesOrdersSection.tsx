@@ -78,10 +78,6 @@ export function ActiveSalesOrdersSection({
             const customerName = order.customer
               ? getPartnerName(order.customer)
               : "Unknown Customer";
-            const products = order.sales_order_items.map((item) => ({
-              name: item.product?.name || "Unknown Product",
-              quantity: item.required_quantity,
-            }));
 
             return (
               <Card
@@ -107,8 +103,8 @@ export function ActiveSalesOrdersSection({
                       </div>
 
                       {/* Subtexts spanning full width */}
-                      <p className="text-xs text-gray-500 mt-2">
-                        {getProductSummary(products)}
+                      <p className="text-sm text-gray-500 mt-2">
+                        {getProductSummary(order.sales_order_items)}
                       </p>
                       <div className="flex items-center justify-between mt-1">
                         <p className="text-xs text-gray-500">
