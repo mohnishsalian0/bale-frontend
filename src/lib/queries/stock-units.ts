@@ -36,9 +36,7 @@ type StockUnitWithProductListViewRaw = StockUnitListView & {
         | "min_stock_alert"
         | "min_stock_threshold"
       > & {
-        product_attribute_assignments: Array<{
-          attribute: ProductAttribute | null;
-        }>;
+        attributes: ProductAttribute[] | null;
       })
     | null;
 };
@@ -50,9 +48,7 @@ type StockUnitWithInwardListViewRaw = StockUnitWithProductListViewRaw & {
 type StockUnitWithProductDetailViewRaw = Tables<"stock_units"> & {
   product:
     | (Tables<"products"> & {
-        product_attribute_assignments: Array<{
-          attribute: ProductAttribute | null;
-        }>;
+        attributes: ProductAttribute[] | null;
       })
     | null;
 };
@@ -268,11 +264,10 @@ export async function getStockUnitsWithInward(
     throw error;
   }
 
-  const transformedData = (
+  const transformedData =
     (data as unknown as StockUnitWithInwardListViewRaw[])?.map(
       transformStockUnitWithInwardListView,
-    ) || []
-  );
+    ) || [];
 
   return {
     data: transformedData,

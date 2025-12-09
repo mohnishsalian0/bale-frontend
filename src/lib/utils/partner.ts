@@ -1,3 +1,4 @@
+import { PartnerType } from "@/types/database/enums";
 import type { Tables } from "@/types/database/supabase";
 
 type Partner = Tables<"partners">;
@@ -113,4 +114,23 @@ export function getFormattedAddress(entity: AddressFields | null): string[] {
   }
 
   return lines;
+}
+
+/**
+ * Display format for partner types.
+ * Example: customer -> Customer
+ */
+export function getPartnerTypeLabel(type: PartnerType): string {
+  switch (type) {
+    case "customer":
+      return "Customer";
+    case "supplier":
+      return "Supplier";
+    case "vendor":
+      return "Vendor";
+    case "agent":
+      return "Agent";
+    default:
+      return type;
+  }
 }

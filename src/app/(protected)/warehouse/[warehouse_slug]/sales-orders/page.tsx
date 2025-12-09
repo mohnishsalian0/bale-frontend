@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useDebounce } from "@/hooks/use-debounce";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { IconSearch } from "@tabler/icons-react";
@@ -21,7 +22,7 @@ import { useSession } from "@/contexts/session-context";
 import { Progress } from "@/components/ui/progress";
 import { useSalesOrders } from "@/lib/query/hooks/sales-orders";
 import { usePartners } from "@/lib/query/hooks/partners";
-import { useProducts } from "@/lib/query/hooks/products";
+import { useInfiniteProducts } from "@/lib/query/hooks/products";
 import { getPartnerName } from "@/lib/utils/partner";
 import { formatMonthHeader } from "@/lib/utils/date";
 import {
@@ -36,6 +37,7 @@ import {
   getMeasuringUnit,
 } from "@/lib/utils/measuring-units";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
 
 interface OrderListItem {
   id: string;
@@ -67,6 +69,7 @@ export default function OrdersPage() {
   const { warehouse } = useSession();
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState("all");
   const [selectedCustomer, setSelectedCustomer] = useState("all");
@@ -81,16 +84,36 @@ export default function OrdersPage() {
     isLoading: ordersLoading,
     isError: ordersError,
   } = useSalesOrders({
-    filters: { warehouseId: warehouse.id },
+    filters: {
+      warehouseId: warehouse.id,
+      search_term: debouncedSearchQuery || undefined,
+      status:
+        selectedStatus !== "all"
+          ? (selectedStatus as SalesOrderStatus)
+          : undefined,
+      productId: selectedProduct !== "all" ? selectedProduct : undefined,
+      customerId: selectedCustomer !== "all" ? selectedCustomer : undefined,
+    },
     page: currentPage,
     pageSize: PAGE_SIZE,
   });
   const { data: customers = [], isLoading: customersLoading } = usePartners({
     partner_type: "customer",
   });
-  const { data: productsResponse, isLoading: productsLoading } = useProducts({
-    is_active: true,
-  });
+
+  // Fetch products
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteProducts(
+    {
+      is_active: true,
+    },
+    100,
+  );
 
   const loading = ordersLoading || customersLoading || productsLoading;
   const error = ordersError;
@@ -98,34 +121,19 @@ export default function OrdersPage() {
   const orders = ordersResponse?.data || [];
   const totalCount = ordersResponse?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-  const products = productsResponse?.data || [];
+  const products = productsData?.pages.flatMap((page) => page.data) || [];
 
   // Reset to page 1 when filters change
   useEffect(() => {
     if (currentPage !== 1) {
       router.push(`/warehouse/${warehouse.slug}/sales-orders?page=1`);
     }
-  }, [searchQuery, selectedStatus, selectedProduct, selectedCustomer]);
+  }, [debouncedSearchQuery, selectedStatus, selectedProduct, selectedCustomer]);
 
   // Handle page change
   const handlePageChange = (page: number) => {
     router.push(`/warehouse/${warehouse.slug}/sales-orders?page=${page}`);
   };
-
-  // Transform products and customers for filters
-  const availableProducts = useMemo(
-    () => products.map((product) => product.name).sort(),
-    [products],
-  );
-
-  const availableCustomers = useMemo(
-    () =>
-      customers.map((customer) => ({
-        id: customer.id,
-        name: getPartnerName(customer),
-      })),
-    [customers],
-  );
 
   // Process orders data using useMemo
   const { monthGroups, pendingOrdersCount, pendingQuantitiesByUnit } =
@@ -240,45 +248,6 @@ export default function OrdersPage() {
       };
     }, [orders]);
 
-  // Filter groups using useMemo
-  const filteredGroups = useMemo(() => {
-    return monthGroups
-      .map((group) => ({
-        ...group,
-        orders: group.orders.filter((order) => {
-          const matchesSearch =
-            order.orderNumber
-              .toString()
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase()) ||
-            order.customerName
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase());
-
-          const matchesStatus =
-            selectedStatus === "all" || order.status === selectedStatus;
-
-          const matchesProduct =
-            selectedProduct === "all" ||
-            order.products.some((p) => p.name === selectedProduct);
-
-          const matchesCustomer =
-            selectedCustomer === "all" || order.customerId === selectedCustomer;
-
-          return (
-            matchesSearch && matchesStatus && matchesProduct && matchesCustomer
-          );
-        }),
-      }))
-      .filter((group) => group.orders.length > 0);
-  }, [
-    monthGroups,
-    searchQuery,
-    selectedStatus,
-    selectedProduct,
-    selectedCustomer,
-  ]);
-
   // Loading state
   if (loading) {
     return <LoadingState message="Loading sales orders..." />;
@@ -323,7 +292,9 @@ export default function OrdersPage() {
               type="text"
               placeholder="Search by order number"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+              }}
               className="pr-10"
             />
             <IconSearch className="absolute right-3 top-1/2 -translate-y-1/2 size-5 text-gray-700" />
@@ -366,11 +337,25 @@ export default function OrdersPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All products</SelectItem>
-            {availableProducts.map((product) => (
-              <SelectItem key={product} value={product}>
-                {product}
+            {products.map((product) => (
+              <SelectItem key={product.id} value={product.id}>
+                {product.name}
               </SelectItem>
             ))}
+
+            {/* Load more */}
+            {hasNextPage && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onMouseDown={(e) => e.preventDefault()} // Prevent dropdown from closing
+                onClick={() => fetchNextPage()}
+                // disabled={isFetchingNextPage}
+                className="w-full"
+              >
+                {isFetchingNextPage ? "Loading..." : "Load More"}
+              </Button>
+            )}
           </SelectContent>
         </Select>
 
@@ -381,9 +366,9 @@ export default function OrdersPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All customers</SelectItem>
-            {availableCustomers.map((customer) => (
+            {customers.map((customer) => (
               <SelectItem key={customer.id} value={customer.id}>
-                {customer.name}
+                {getPartnerName(customer)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -392,7 +377,7 @@ export default function OrdersPage() {
 
       {/* Sales Orders List */}
       <div className="flex flex-col">
-        {filteredGroups.length === 0 ? (
+        {monthGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-gray-600 mb-2">No orders found</p>
             <p className="text-sm text-gray-500">
@@ -402,7 +387,7 @@ export default function OrdersPage() {
             </p>
           </div>
         ) : (
-          filteredGroups.map((group) => (
+          monthGroups.map((group) => (
             <div key={group.monthYear} className="flex flex-col">
               {/* Month Header */}
               <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 border-t border-dashed border-gray-300 bg-gray-100">

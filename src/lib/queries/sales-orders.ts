@@ -99,9 +99,9 @@ export async function getSalesOrders(
         agent:agent_id(
           id, first_name, last_name, company_name
         ),
-        sales_order_items(
+        sales_order_items!inner(
           *,
-          product:product_id(
+          product:product_id!inner(
             id, name, stock_type, measuring_unit, product_images, sequence_number
           )
         )
@@ -134,6 +134,19 @@ export async function getSalesOrders(
   // Filter by agent if provided
   if (filters?.agentId) {
     query = query.eq("agent_id", filters.agentId);
+  }
+
+  // Filter by product if provided
+  if (filters?.productId) {
+    query = query.eq("sales_order_items.product.id", filters.productId);
+  }
+
+  // Apply full-text search filter
+  if (filters?.search_term && filters.search_term.trim() !== "") {
+    query = query.textSearch("search_vector", filters.search_term.trim(), {
+      type: "websearch",
+      config: "english",
+    });
   }
 
   // Apply ordering (defaults to order_date descending)
@@ -181,9 +194,7 @@ export async function getSalesOrderByNumber(
 					measuring_unit,
 					product_images,
 					sequence_number,
-					product_attribute_assignments(
-						attribute:product_attributes(id, name, group_name, color_hex)
-					)
+					attributes:product_attributes!inner(id, name, group_name, color_hex)
 				)
 			)
 		`,
@@ -206,8 +217,7 @@ export async function getSalesOrderByNumber(
       const { materials, colors, tags } = transformAttributes(item.product);
 
       // Remove nested assignments field
-      const { product_attribute_assignments: _attributes, ...productRest } =
-        item.product;
+      const { attributes: _attributes, ...productRest } = item.product;
 
       return {
         ...item,

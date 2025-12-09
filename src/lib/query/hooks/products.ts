@@ -45,7 +45,10 @@ export function useProducts(filters?: ProductFilters) {
 /**
  * Fetch products with infinite scroll (for product selection in forms)
  */
-export function useInfiniteProducts(filters?: ProductFilters, pageSize: number = 30) {
+export function useInfiniteProducts(
+  filters?: ProductFilters,
+  pageSize: number = 30,
+) {
   return useInfiniteQuery({
     queryKey: [...queryKeys.products.all(filters), "infinite"],
     queryFn: ({ pageParam = 1 }) => getProducts(filters, pageParam, pageSize),
@@ -120,8 +123,13 @@ export function useProductsWithInventory(
   pageSize: number = 25,
 ) {
   return useQuery({
-    queryKey: queryKeys.products.withInventory(warehouseId || "", filters, page),
-    queryFn: () => getProductsWithInventory(warehouseId!, filters, page, pageSize),
+    queryKey: queryKeys.products.withInventory(
+      warehouseId || "",
+      filters,
+      page,
+    ),
+    queryFn: () =>
+      getProductsWithInventory(warehouseId!, filters, page, pageSize),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
     placeholderData: keepPreviousData,
     enabled: !!warehouseId,
@@ -183,8 +191,13 @@ export function useCreateProductAttribute() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ name, groupName }: { name: string; groupName: AttributeGroup }) =>
-      createProductAttribute(name, groupName),
+    mutationFn: ({
+      name,
+      groupName,
+    }: {
+      name: string;
+      groupName: AttributeGroup;
+    }) => createProductAttribute(name, groupName),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.products.attributes(),

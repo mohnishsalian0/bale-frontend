@@ -8,16 +8,26 @@
 -- Function to update product search vector for full-text search
 -- Weight A: name, sequence_number
 -- Weight B: hsn_code, stock_type, measuring_unit
+-- Weight C: product attributes (materials, colors, tags)
 CREATE OR REPLACE FUNCTION update_product_search_vector()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    attribute_names TEXT;
 BEGIN
     -- If record is soft-deleted, set search_vector to NULL to exclude from index
     IF NEW.deleted_at IS NOT NULL THEN
         NEW.search_vector := NULL;
         RETURN NEW;
     END IF;
+
+    -- Get all attribute names for this product
+    SELECT STRING_AGG(pa.name, ' ')
+    INTO attribute_names
+    FROM product_attribute_assignments paa
+    JOIN product_attributes pa ON pa.id = paa.attribute_id
+    WHERE paa.product_id = NEW.id;
 
     -- Build weighted search vector
     NEW.search_vector :=
@@ -28,7 +38,10 @@ BEGIN
         -- Weight B: Codes and types
         setweight(to_tsvector('simple', COALESCE(NEW.hsn_code, '')), 'B') ||
         setweight(to_tsvector('english', COALESCE(NEW.stock_type, '')), 'B') ||
-        setweight(to_tsvector('english', COALESCE(NEW.measuring_unit, '')), 'B');
+        setweight(to_tsvector('english', COALESCE(NEW.measuring_unit, '')), 'B') ||
+
+        -- Weight C: Product attributes (materials, colors, tags)
+        setweight(to_tsvector('english', COALESCE(attribute_names, '')), 'C');
 
     RETURN NEW;
 END;
@@ -93,3 +106,29 @@ CREATE TRIGGER trigger_cascade_product_search_updates
     FOR EACH ROW EXECUTE FUNCTION cascade_product_search_updates();
 
 COMMENT ON FUNCTION cascade_product_search_updates() IS 'Cascades search vector updates to dependent tables (goods_inwards, goods_outwards, sales_orders) when product name changes';
+
+-- =====================================================
+-- TRIGGER SEARCH VECTOR UPDATE ON ATTRIBUTE CHANGES
+-- =====================================================
+
+-- Function to update product search vector when attributes change
+CREATE OR REPLACE FUNCTION update_product_search_on_attribute_change()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- Update the product's search vector
+    UPDATE products
+    SET updated_at = NOW()
+    WHERE id = COALESCE(NEW.product_id, OLD.product_id);
+
+    RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+-- Trigger on product_attribute_assignments to update product search vector
+CREATE TRIGGER trigger_update_product_search_on_attribute_change
+    AFTER INSERT OR DELETE ON product_attribute_assignments
+    FOR EACH ROW EXECUTE FUNCTION update_product_search_on_attribute_change();
+
+COMMENT ON FUNCTION update_product_search_on_attribute_change() IS 'Updates product search_vector when attributes are assigned or removed';

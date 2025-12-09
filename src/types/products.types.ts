@@ -3,6 +3,7 @@ import type {
   TablesInsert,
   TablesUpdate,
 } from "@/types/database/supabase";
+import type { AttributeGroup } from "@/types/database/enums";
 
 export type Product = Tables<"products">;
 type ProductAttributeRaw = Tables<"product_attributes">;
@@ -27,18 +28,22 @@ export type ProductAttribute = Pick<
 
 // Common structure for attribute assignments
 export type ProductAttributeAssignmentsRaw = {
-  product_attribute_assignments: Array<{
-    attribute: ProductAttribute | null;
-  }>;
+  attributes: ProductAttribute[] | null;
 };
 
 // ============================================================================
 // FILTERS
 // ============================================================================
 
+export interface AttributeFilter {
+  group: AttributeGroup;
+  id: string; // attribute ID
+}
+
 export interface ProductFilters extends Record<string, unknown> {
   is_active?: boolean;
   search_term?: string;
+  attributes?: AttributeFilter[]; // Filter by multiple attributes
   order_by?: "name" | "created_at" | "sequence_number";
   order_direction?: "asc" | "desc";
 }

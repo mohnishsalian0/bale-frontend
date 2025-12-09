@@ -102,9 +102,7 @@ export async function getPublicProducts(
 				in_stock_quantity,
 				warehouse_id
 			),
-			product_attribute_assignments(
-				attribute:product_attributes(id, name, group_name, color_hex)
-			)
+			attributes:product_attributes!inner(id, name, group_name, color_hex)
 		`,
     )
     .eq("company_id", companyId)
@@ -150,11 +148,7 @@ export async function getPublicProducts(
     const { materials, colors, tags } = transformAttributes(product);
 
     // Remove the nested assignment fields from the product
-    const {
-      product_attribute_assignments: _attributes,
-      inventory: _inventory,
-      ...rest
-    } = product;
+    const { attributes: _attributes, inventory: _inventory, ...rest } = product;
 
     return {
       ...rest,

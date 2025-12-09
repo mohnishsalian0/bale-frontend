@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { IconSearch } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
+import { useDebounce } from "@/hooks/use-debounce";
 import {
   Select,
   SelectContent,
@@ -30,9 +31,9 @@ import {
   formatMeasuringUnitQuantities,
   getMeasuringUnit,
 } from "@/lib/utils/measuring-units";
-import { getPartnerName } from "@/lib/utils/partner";
+import { getPartnerName, getPartnerTypeLabel } from "@/lib/utils/partner";
 import { formatMonthHeader } from "@/lib/utils/date";
-import type { MeasuringUnit } from "@/types/database/enums";
+import type { MeasuringUnit, PartnerType } from "@/types/database/enums";
 import {
   useGoodsInwards,
   useGoodsOutwards,
@@ -67,6 +68,7 @@ export default function StockFlowPage() {
   const { warehouse } = useSession();
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [selectedFilter, setSelectedFilter] = useState<"outward" | "inward">(
     "inward",
   );
@@ -79,6 +81,17 @@ export default function StockFlowPage() {
   // Determine which view is active
   const isInwardView = selectedFilter === "inward";
 
+  // Build filters for backend
+  const inwardFilters = {
+    partner_id: selectedPartner !== "all" ? selectedPartner : undefined,
+    search_term: debouncedSearchQuery || undefined,
+  };
+
+  const outwardFilters = {
+    partner_id: selectedPartner !== "all" ? selectedPartner : undefined,
+    search_term: debouncedSearchQuery || undefined,
+  };
+
   // Fetch data based on selected filter (only one type at a time)
   // Use 'enabled' to prevent the unused query from running
   const {
@@ -88,7 +101,7 @@ export default function StockFlowPage() {
     refetch: refetchInwards,
   } = useGoodsInwards(
     warehouse.id,
-    {},
+    inwardFilters,
     isInwardView ? currentPage : 1,
     PAGE_SIZE,
   );
@@ -99,7 +112,7 @@ export default function StockFlowPage() {
     refetch: refetchOutwards,
   } = useGoodsOutwards(
     warehouse.id,
-    {},
+    outwardFilters,
     !isInwardView ? currentPage : 1,
     PAGE_SIZE,
   );
@@ -119,27 +132,19 @@ export default function StockFlowPage() {
     : outwardsResponse?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when server-side filters change (use debounced search)
   useEffect(() => {
     if (currentPage !== 1) {
       router.push(`/warehouse/${warehouse.slug}/stock-flow?page=1`);
     }
-  }, [searchQuery, selectedFilter, selectedPartner]);
+  }, [debouncedSearchQuery, selectedFilter, selectedPartner]);
 
   // Handle page change
   const handlePageChange = (page: number) => {
     router.push(`/warehouse/${warehouse.slug}/stock-flow?page=${page}`);
   };
 
-  // Transform partners for filter dropdown
-  const availablePartners = useMemo(() => {
-    return partners.map((partner) => ({
-      id: partner.id,
-      name: getPartnerName(partner),
-    }));
-  }, [partners]);
-
-  // Transform and group data
+  // Transform inwards
   const { monthGroups, totalReceived, totalOutwarded } = useMemo(() => {
     // Transform inwards
     const inwardItems: StockFlowItem[] = inwards.map((r) => {
@@ -300,28 +305,6 @@ export default function StockFlowPage() {
     };
   }, [inwards, outwards]);
 
-  const filteredGroups = monthGroups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => {
-        const matchesSearch =
-          item.billNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.sender_or_receiver_name
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          item.productName.toLowerCase().includes(searchQuery.toLowerCase());
-
-        // Filter is already applied by only fetching one type, so no need to filter again
-        const matchesFilter = true;
-
-        const matchesPartner =
-          selectedPartner === "all" || item.partnerId === selectedPartner;
-
-        return matchesSearch && matchesFilter && matchesPartner;
-      }),
-    }))
-    .filter((group) => group.items.length > 0);
-
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     const day = date.getDate();
@@ -428,9 +411,12 @@ export default function StockFlowPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All partners</SelectItem>
-            {availablePartners.map((partner) => (
+            {partners.map((partner) => (
               <SelectItem key={partner.id} value={partner.id}>
-                {partner.name}
+                <p>{getPartnerName(partner)}</p>
+                <p className="text-xs text-gray-500">
+                  {getPartnerTypeLabel(partner.partner_type as PartnerType)}
+                </p>
               </SelectItem>
             ))}
           </SelectContent>
@@ -439,7 +425,7 @@ export default function StockFlowPage() {
 
       {/* Stock Flow List */}
       <div className="flex flex-col">
-        {filteredGroups.length === 0 ? (
+        {monthGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-gray-600 mb-2">No transactions found</p>
             <p className="text-sm text-gray-500">
@@ -449,7 +435,7 @@ export default function StockFlowPage() {
             </p>
           </div>
         ) : (
-          filteredGroups.map((group) => (
+          monthGroups.map((group) => (
             <div key={group.monthYear} className="flex flex-col">
               {/* Month Header */}
               <div

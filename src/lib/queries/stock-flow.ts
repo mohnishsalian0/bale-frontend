@@ -203,6 +203,14 @@ export async function getGoodsInwards(
     query = query.lte("inward_date", filters.date_to);
   }
 
+  // Apply full-text search filter
+  if (filters?.search_term && filters.search_term.trim() !== "") {
+    query = query.textSearch("search_vector", filters.search_term.trim(), {
+      type: "websearch",
+      config: "english",
+    });
+  }
+
   const { data, error, count } = await query;
 
   if (error) {
@@ -267,6 +275,14 @@ export async function getGoodsOutwards(
 
   if (filters?.date_to) {
     query = query.lte("outward_date", filters.date_to);
+  }
+
+  // Apply full-text search filter
+  if (filters?.search_term && filters.search_term.trim() !== "") {
+    query = query.textSearch("search_vector", filters.search_term.trim(), {
+      type: "websearch",
+      config: "english",
+    });
   }
 
   const { data, error, count } = await query;

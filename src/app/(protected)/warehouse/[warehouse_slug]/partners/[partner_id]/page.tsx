@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSession } from "@/contexts/session-context";
 import { formatCurrency } from "@/lib/utils/financial";
-import { getPartnerName } from "@/lib/utils/partner";
+import { getPartnerName, getPartnerTypeLabel } from "@/lib/utils/partner";
 import { getInitials } from "@/lib/utils/initials";
 import {
   calculateCompletionPercentage,
@@ -46,21 +46,6 @@ interface PageParams {
     warehouse_slug: string;
     partner_id: string;
   }>;
-}
-
-function getPartnerTypeLabel(type: PartnerType): string {
-  switch (type) {
-    case "customer":
-      return "Customer";
-    case "supplier":
-      return "Supplier";
-    case "vendor":
-      return "Vendor";
-    case "agent":
-      return "Agent";
-    default:
-      return type;
-  }
 }
 
 export default function PartnerDetailPage({ params }: PageParams) {

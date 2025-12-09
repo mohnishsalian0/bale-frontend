@@ -57,6 +57,18 @@ export function ProductSelectionStep({
   const [colorFilter, setColorFilter] = useState<string>("all");
   const [tagsFilter, setTagsFilter] = useState<string>("all");
 
+  // Build attribute filters
+  const attributeFilters = [];
+  if (materialFilter !== "all") {
+    attributeFilters.push({ group: "material" as const, id: materialFilter });
+  }
+  if (colorFilter !== "all") {
+    attributeFilters.push({ group: "color" as const, id: colorFilter });
+  }
+  if (tagsFilter !== "all") {
+    attributeFilters.push({ group: "tag" as const, id: tagsFilter });
+  }
+
   // Fetch products and attributes
   const {
     data: productsData,
@@ -69,6 +81,7 @@ export function ProductSelectionStep({
     order_by: "sequence_number",
     order_direction: "desc",
     search_term: debouncedSearchQuery || undefined,
+    attributes: attributeFilters.length > 0 ? attributeFilters : undefined,
   });
 
   const { data: attributesData, isLoading: attributesLoading } =
@@ -103,36 +116,11 @@ export function ProductSelectionStep({
     }
   };
 
-  // Filter and sort products using useMemo (client-side filtering for material/color/tag only)
+  // Sort products using useMemo (filters are now handled server-side)
   const filteredProducts = useMemo(() => {
-    // Filter products (search is now handled server-side)
-    let filtered = products.filter((product) => {
-      // Material filter (exact match by ID)
-      if (
-        materialFilter !== "all" &&
-        !product.materials?.some((m) => m.id === materialFilter)
-      )
-        return false;
-
-      // Color filter (exact match by ID)
-      if (
-        colorFilter !== "all" &&
-        !product.colors?.some((c) => c.id === colorFilter)
-      )
-        return false;
-
-      // Tags filter (exact match by ID)
-      if (
-        tagsFilter !== "all" &&
-        !product.tags?.some((t) => t.id === tagsFilter)
-      )
-        return false;
-
-      return true;
-    });
-
     // Sort: products with units first
-    filtered.sort((a, b) => {
+    const sorted = [...products];
+    sorted.sort((a, b) => {
       const aHasUnits = a.units.length > 0;
       const bHasUnits = b.units.length > 0;
       if (aHasUnits && !bHasUnits) return -1;
@@ -140,8 +128,8 @@ export function ProductSelectionStep({
       return 0;
     });
 
-    return filtered;
-  }, [products, materialFilter, colorFilter, tagsFilter]);
+    return sorted;
+  }, [products]);
 
   return (
     <>

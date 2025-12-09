@@ -50,9 +50,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  console.log("ispublic", isPublic, pathname);
-  console.log("user", user);
-
   // If authenticated and trying to access auth pages, redirect to warehouse selection
   if (user && pathname.includes("auth/login")) {
     const redirectUrl = request.nextUrl.clone();

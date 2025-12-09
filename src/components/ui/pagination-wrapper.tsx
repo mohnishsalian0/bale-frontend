@@ -32,7 +32,6 @@ export function PaginationWrapper({
 
     // setTimeout(() => {
     const mainContent = document.getElementById("main-content");
-    console.log(mainContent);
 
     if (mainContent) {
       // Scroll the main content container (used in protected layout)

@@ -56,6 +56,18 @@ export default function InventoryPage() {
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const PAGE_SIZE = 25;
 
+  // Build attribute filters
+  const attributeFilters = [];
+  if (materialFilter !== "all") {
+    attributeFilters.push({ group: "material" as const, id: materialFilter });
+  }
+  if (colorFilter !== "all") {
+    attributeFilters.push({ group: "color" as const, id: colorFilter });
+  }
+  if (tagFilter !== "all") {
+    attributeFilters.push({ group: "tag" as const, id: tagFilter });
+  }
+
   // Fetch products with inventory using TanStack Query with pagination and debounced search
   const {
     data: productsResponse,
@@ -67,6 +79,7 @@ export default function InventoryPage() {
     {
       is_active: true,
       search_term: debouncedSearchQuery || undefined,
+      attributes: attributeFilters.length > 0 ? attributeFilters : undefined,
     },
     currentPage,
     PAGE_SIZE,
@@ -88,14 +101,21 @@ export default function InventoryPage() {
   const totalCount = productsResponse?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-  // Reset to page 1 when filters change (use debounced search to avoid excessive resets)
+  // Reset to page 1 when server-side filters change (use debounced search to avoid excessive resets)
+  // Note: lowStockFilter is client-side, so it doesn't trigger page reset
   useEffect(() => {
     if (currentPage !== 1) {
       router.push(`/warehouse/${warehouse.slug}/inventory?page=1`);
     }
-  }, [debouncedSearchQuery, lowStockFilter, materialFilter, colorFilter, tagFilter]);
+  }, [
+    debouncedSearchQuery,
+    lowStockFilter,
+    materialFilter,
+    colorFilter,
+    tagFilter,
+  ]);
 
-  // Client-side filtering for material/color/tag (keeping these on frontend for now)
+  // Client-side filtering for low stock only (attributes are filtered server-side)
   const filteredProducts = productsData.filter((product) => {
     // Low stock filter
     if (
@@ -104,27 +124,6 @@ export default function InventoryPage() {
         (product.min_stock_threshold ?? 0) <
           (product.inventory.in_stock_quantity ?? 0))
     ) {
-      return false;
-    }
-
-    // Material filter
-    if (
-      materialFilter !== "all" &&
-      !product.materials?.some((m) => m.id === materialFilter)
-    ) {
-      return false;
-    }
-
-    // Color filter
-    if (
-      colorFilter !== "all" &&
-      !product.colors?.some((c) => c.id === colorFilter)
-    ) {
-      return false;
-    }
-
-    // Tag filter
-    if (tagFilter !== "all" && !product.tags?.some((t) => t.id === tagFilter)) {
       return false;
     }
 

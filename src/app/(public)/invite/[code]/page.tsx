@@ -21,11 +21,6 @@ export default async function InvitePage({ params }: InvitePageProps) {
     .eq("token", code)
     .single<Invite>();
 
-  if (error) {
-    console.error("Error fetching invite:", error);
-    return null;
-  }
-
   // Check if user is already logged in
   const {
     data: { user: authUser },
@@ -45,6 +40,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
   }
 
   if (error || !invite) {
+    console.error("Error fetching invite:", error);
     return (
       <ErrorState
         title="Invite is invalid"

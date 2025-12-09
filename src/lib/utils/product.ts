@@ -58,7 +58,7 @@ export function getProductInfo(
     parts.push(colorNames);
   }
 
-  return parts.join(" · ");
+  return parts.join(" • ");
 }
 
 /**

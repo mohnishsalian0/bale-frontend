@@ -60,11 +60,11 @@ function LoginForm() {
         {/* Welcome Message */}
         <div className="text-center flex flex-col gap-1 w-full">
           <h1 className="text-3xl font-semibold text-gray-700">
-            Welcome fabric trader!
+            Welcome back!
           </h1>
-          <p className="text-base italic text-gray-500">
-            I&apos;m here to help you experience a smarter, newer & next
-            generation inventory solution.
+          <p className="text-base italic text-gray-500 mt-4">
+            Login to access your digital inventory management platform and
+            streamline your trade operations.
           </p>
         </div>
 

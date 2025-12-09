@@ -17,9 +17,12 @@ BEGIN
 		'sequence_number', p.sequence_number,
 		'name', p.name,
 		'show_on_catalog', p.show_on_catalog,
+		'is_active', p.is_active,
 		'stock_type', p.stock_type,
 		'measuring_unit', p.measuring_unit,
 		'product_images', p.product_images,
+		'min_stock_alert', p.min_stock_alert,
+		'min_stock_threshold', p.min_stock_threshold,
 		'inventory', jsonb_build_object(
 			'in_stock_units', pia.in_stock_units,
 			'in_stock_quantity', pia.in_stock_quantity,

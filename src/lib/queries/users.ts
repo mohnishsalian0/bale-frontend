@@ -37,10 +37,12 @@ export async function getUser(): Promise<User> {
 
   if (error) {
     console.error("Error fetching user by auth ID:", error);
+    supabase.auth.signOut();
     throw error;
   }
 
   if (!data) {
+    supabase.auth.signOut();
     throw new Error("User not found");
   }
 

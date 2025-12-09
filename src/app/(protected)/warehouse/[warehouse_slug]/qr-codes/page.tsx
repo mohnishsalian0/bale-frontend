@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { IconQrcode, IconShare, IconDownload } from "@tabler/icons-react";
@@ -22,7 +22,7 @@ import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
 import { useQRBatches } from "@/lib/query/hooks/qr-batches";
 import type { QRBatchListView } from "@/types/qr-batches.types";
-import type { ProductListView } from "@/types/products.types";
+import { useInfiniteProducts } from "@/lib/query/hooks/products";
 
 export default function QRCodesPage() {
   const router = useRouter();
@@ -32,27 +32,28 @@ export default function QRCodesPage() {
   // Fetch data using TanStack Query (with database-level filtering)
   const {
     data: batches = [],
-    isLoading: loading,
+    isLoading: qrBatchesLoading,
     isError: error,
     refetch: refetchBatches,
   } = useQRBatches(warehouse.id, {
     product_id: selectedProduct !== "all" ? selectedProduct : undefined,
   });
 
-  // Extract unique products from all batches for the dropdown
-  const products: ProductListView[] = useMemo(() => {
-    const productMap = new Map<string, ProductListView>();
+  // Fetch products
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteProducts(
+    {
+      is_active: true,
+    },
+    100,
+  );
 
-    batches.forEach((batch) => {
-      batch.distinct_products.forEach(({ product }) => {
-        if (!productMap.has(product.id)) {
-          productMap.set(product.id, product);
-        }
-      });
-    });
-
-    return Array.from(productMap.values());
-  }, [batches]);
+  const products = productsData?.pages.flatMap((page) => page.data) || [];
 
   const handleShare = async (batch: QRBatchListView) => {
     try {
@@ -114,7 +115,7 @@ export default function QRCodesPage() {
   };
 
   // Loading state
-  if (loading) {
+  if (qrBatchesLoading || productsLoading) {
     return <LoadingState message="Loading QR batches..." />;
   }
 
@@ -161,6 +162,20 @@ export default function QRCodesPage() {
                 {product.name}
               </SelectItem>
             ))}
+
+            {/* Load more */}
+            {hasNextPage && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onMouseDown={(e) => e.preventDefault()} // Prevent dropdown from closing
+                onClick={() => fetchNextPage()}
+                // disabled={isFetchingNextPage}
+                className="w-full"
+              >
+                {isFetchingNextPage ? "Loading..." : "Load More"}
+              </Button>
+            )}
           </SelectContent>
         </Select>
       </div>
