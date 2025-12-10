@@ -61,8 +61,6 @@ interface StockFlowItem {
 interface MonthGroup {
   month: string;
   monthYear: string;
-  inCount: Map<MeasuringUnit, number>;
-  outCount: Map<MeasuringUnit, number>;
   items: StockFlowItem[];
 }
 
@@ -209,24 +207,11 @@ export default function StockFlowPage() {
         groups[monthKey] = {
           month: monthDisplay,
           monthYear: monthKey,
-          inCount: new Map<MeasuringUnit, number>(),
-          outCount: new Map<MeasuringUnit, number>(),
           items: [],
         };
       }
 
       groups[monthKey].items.push(item);
-
-      // Aggregate quantities by unit for month totals
-      item.quantities.forEach((qty, unit) => {
-        if (item.type === "inward") {
-          const currentIn = groups[monthKey].inCount.get(unit) || 0;
-          groups[monthKey].inCount.set(unit, currentIn + qty);
-        } else {
-          const currentOut = groups[monthKey].outCount.get(unit) || 0;
-          groups[monthKey].outCount.set(unit, currentOut + qty);
-        }
-      });
     });
 
     const sortedGroups = Object.values(groups).sort((a, b) => {
@@ -405,17 +390,6 @@ export default function StockFlowPage() {
               >
                 <p className="text-xs font-semibold text-gray-700">
                   {group.month}
-                </p>
-                <p className="text-sm font-semibold text-right max-w-2/3">
-                  <span className="text-yellow-700">
-                    {formatMeasuringUnitQuantities(group.inCount)}{" "}
-                  </span>
-                  <span className="text-yellow-700 font-normal">In</span>
-                  <span>, </span>
-                  <span className="text-teal-700">
-                    {formatMeasuringUnitQuantities(group.outCount)}{" "}
-                  </span>
-                  <span className="text-teal-700 font-normal">Out</span>
                 </p>
               </div>
 

@@ -330,3 +330,11 @@
 - [ ] Configure Hostinger hosting
 - [ ] Production build and optimization
 - [ ] Deploy and configure CI/CD
+
+## Context Menu Implementation (In Progress)
+
+- [x] Create context menu items utility with types and helper functions (src/lib/utils/context-menu-items.tsx)
+- [x] Create responsive context menu component (src/components/ui/responsive-context-menu.tsx)
+- [ ] Update sales orders page with context menu
+- [ ] Update partners page with context menu
+- [ ] Update inventory page with context menu
