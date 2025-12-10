@@ -1,5 +1,7 @@
 "use client";
 
+import { use } from "react";
+import { useRouter } from "next/navigation";
 import {
   IconPhone,
   IconMail,
@@ -8,18 +10,45 @@ import {
   IconUser,
   IconCurrencyRupee,
 } from "@tabler/icons-react";
+import { LoadingState } from "@/components/layouts/loading-state";
+import { ErrorState } from "@/components/layouts/error-state";
 import { Section } from "@/components/layouts/section";
+import { usePartnerWithOrderStats } from "@/lib/query/hooks/partners";
 import { getFormattedAddress } from "@/lib/utils/partner";
-import type { Tables } from "@/types/database/supabase";
 
-type Partner = Tables<"partners">;
-
-interface SummaryTabProps {
-  partner: Partner;
-  onEdit: () => void;
+interface PageParams {
+  params: Promise<{
+    warehouse_slug: string;
+    partner_id: string;
+  }>;
 }
 
-export function SummaryTab({ partner, onEdit }: SummaryTabProps) {
+export default function PartnerSummaryPage({ params }: PageParams) {
+  const router = useRouter();
+  const { partner_id } = use(params);
+
+  // Fetch partner using TanStack Query (cached from layout)
+  const {
+    data: partner,
+    isLoading: loading,
+    isError: error,
+  } = usePartnerWithOrderStats(partner_id);
+
+  if (loading) {
+    return <LoadingState message="Loading partner summary..." />;
+  }
+
+  if (error || !partner) {
+    return (
+      <ErrorState
+        title="Partner not found"
+        message="This partner does not exist or has been deleted"
+        onRetry={() => router.back()}
+        actionText="Go back"
+      />
+    );
+  }
+
   const addressLines = getFormattedAddress(partner);
   const contactName =
     partner.first_name && partner.last_name
@@ -114,7 +143,7 @@ export function SummaryTab({ partner, onEdit }: SummaryTabProps) {
         <Section
           title="Notes"
           subtitle=""
-          onEdit={onEdit}
+          onEdit={() => {}}
           icon={() => <IconNotes className="size-5" />}
         >
           <p className="text-sm text-gray-700 whitespace-pre-wrap">
