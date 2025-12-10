@@ -175,9 +175,9 @@ export default function CreateSalesOrderPage() {
     createOrder.mutate(
       { orderData, lineItems },
       {
-        onSuccess: () => {
+        onSuccess: (sequenceNumber) => {
           toast.success("Sales order created successfully");
-          router.push(`/warehouse/${warehouse.slug}/sales-orders`);
+          router.push(`/warehouse/${warehouse.slug}/sales-orders/${sequenceNumber}`);
         },
         onError: (error) => {
           console.error("Error creating sales order:", error);

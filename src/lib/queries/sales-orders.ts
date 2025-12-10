@@ -243,11 +243,11 @@ export async function getSalesOrderByNumber(
 export async function createSalesOrder(
   orderData: CreateSalesOrderData,
   lineItems: CreateSalesOrderLineItem[],
-): Promise<string> {
+): Promise<number> {
   const supabase = createClient();
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const { data: orderId, error } = await supabase.rpc(
+  const { data: sequenceNumber, error } = await supabase.rpc(
     "create_sales_order_with_items",
     {
       p_order_data: orderData,
@@ -256,9 +256,9 @@ export async function createSalesOrder(
   );
 
   if (error) throw error;
-  if (!orderId) throw new Error("No order ID returned");
+  if (!sequenceNumber) throw new Error("No sequence number returned");
 
-  return orderId as string;
+  return sequenceNumber as number;
 }
 
 /**

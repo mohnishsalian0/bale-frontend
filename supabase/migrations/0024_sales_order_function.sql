@@ -11,12 +11,13 @@ CREATE OR REPLACE FUNCTION create_sales_order_with_items(
     p_order_data JSONB,
     p_line_items JSONB[]
 )
-RETURNS UUID
+RETURNS INTEGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
     v_order_id UUID;
+    v_sequence_number INTEGER;
     v_company_id UUID;
     v_warehouse_id UUID;
 BEGIN
@@ -70,7 +71,7 @@ BEGIN
         COALESCE(p_order_data->>'status', 'approval_pending'),
         COALESCE((p_order_data->>'created_by')::UUID, auth.uid())
     )
-    RETURNING id INTO v_order_id;
+    RETURNING id, sequence_number INTO v_order_id, v_sequence_number;
 
     -- Insert sales order line items
     INSERT INTO sales_order_items (
@@ -90,8 +91,8 @@ BEGIN
         COALESCE((item->>'unit_rate')::DECIMAL, 0)
     FROM unnest(p_line_items) AS item;
 
-    -- Return the order ID
-    RETURN v_order_id;
+    -- Return the sequence number
+    RETURN v_sequence_number;
 END;
 $$;
 
