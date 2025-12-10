@@ -2,48 +2,16 @@
 
 import { use } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { IconPhoto } from "@tabler/icons-react";
-import IconGoodsOutward from "@/components/icons/IconGoodsOutward";
-import {
-  formatMeasuringUnitQuantities,
-  getMeasuringUnitAbbreviation,
-} from "@/lib/utils/measuring-units";
+import { formatMeasuringUnitQuantities } from "@/lib/utils/measuring-units";
 import { formatAbsoluteDate } from "@/lib/utils/date";
-import type { Tables } from "@/types/database/supabase";
-import { MeasuringUnit } from "@/types/database/enums";
-import { useSalesOrderByNumber } from "@/lib/query/hooks/sales-orders";
 import { useGoodsOutwardsBySalesOrder } from "@/lib/query/hooks/stock-flow";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
-import { getPartnerName } from "@/lib/utils/partner";
 import {
   getOutwardProductsSummary,
   getOutwardQuantitiesByUnit,
 } from "@/lib/utils/stock-flow";
 import { Separator } from "@/components/ui/separator";
-
-// NOTE: The type below is based on the original OutwardsTab.tsx.
-// It might need to be updated based on the return type of the new hook.
-type GoodsOutward = Tables<"goods_outwards">;
-type GoodsOutwardItem = Tables<"goods_outward_items">;
-type StockUnit = Tables<"stock_units">;
-type Partner = Tables<"partners">;
-type Warehouse = Tables<"warehouses">;
-type Product = Tables<"products">;
-interface OutwardWithDetails extends GoodsOutward {
-  partner: Partner | null;
-  warehouse: Warehouse | null;
-  goods_outward_items: Array<
-    GoodsOutwardItem & {
-      stock_unit:
-        | (StockUnit & {
-            product: Product | null;
-          })
-        | null;
-    }
-  >;
-}
 
 interface PageParams {
   params: Promise<{

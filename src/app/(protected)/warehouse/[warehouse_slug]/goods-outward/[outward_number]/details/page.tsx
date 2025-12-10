@@ -1,5 +1,7 @@
 "use client";
 
+import { use } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   IconNote,
@@ -10,7 +12,10 @@ import {
   IconHash,
 } from "@tabler/icons-react";
 import IconJobWork from "@/components/icons/IconJobWork";
+import { LoadingState } from "@/components/layouts/loading-state";
+import { ErrorState } from "@/components/layouts/error-state";
 import { Section } from "@/components/layouts/section";
+import { useGoodsOutwardBySequenceNumber } from "@/lib/query/hooks/stock-flow";
 import { getInitials } from "@/lib/utils/initials";
 import { getPartnerName, getFormattedAddress } from "@/lib/utils/partner";
 import { formatAbsoluteDate } from "@/lib/utils/date";
@@ -18,16 +23,43 @@ import {
   getTransportIcon,
   getTransportTypeDisplay,
 } from "@/lib/utils/transport";
-import type { OutwardDetailView } from "@/types/stock-flow.types";
-import type { ComponentType } from "react";
 import { useSession } from "@/contexts/session-context";
+import type { ComponentType } from "react";
 
-interface OutwardDetailsTabProps {
-  outward: OutwardDetailView;
+interface PageParams {
+  params: Promise<{
+    warehouse_slug: string;
+    outward_number: string;
+  }>;
 }
 
-export function OutwardDetailsTab({ outward }: OutwardDetailsTabProps) {
+export default function OutwardDetailsPage({ params }: PageParams) {
+  const router = useRouter();
   const { warehouse } = useSession();
+  const { outward_number } = use(params);
+
+  // Fetch goods outward using TanStack Query (cached from layout)
+  const {
+    data: outward,
+    isLoading: loading,
+    isError: error,
+  } = useGoodsOutwardBySequenceNumber(outward_number);
+
+  if (loading) {
+    return <LoadingState message="Loading outward details..." />;
+  }
+
+  if (error || !outward) {
+    return (
+      <ErrorState
+        title="Goods outward not found"
+        message="This goods outward does not exist or has been deleted"
+        onRetry={() => router.back()}
+        actionText="Go back"
+      />
+    );
+  }
+
   // Determine reason for outward
   let reasonTitle = "Unknown";
   let ReasonIcon: ComponentType<{ className?: string }> = IconNote;

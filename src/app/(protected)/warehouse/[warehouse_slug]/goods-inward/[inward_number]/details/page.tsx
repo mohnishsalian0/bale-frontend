@@ -1,5 +1,7 @@
 "use client";
 
+import { use } from "react";
+import { useRouter } from "next/navigation";
 import {
   IconNote,
   IconBuildingWarehouse,
@@ -9,7 +11,10 @@ import {
   IconHash,
 } from "@tabler/icons-react";
 import IconJobWork from "@/components/icons/IconJobWork";
+import { LoadingState } from "@/components/layouts/loading-state";
+import { ErrorState } from "@/components/layouts/error-state";
 import { Section } from "@/components/layouts/section";
+import { useGoodsInwardBySequenceNumber } from "@/lib/query/hooks/stock-flow";
 import { getInitials } from "@/lib/utils/initials";
 import { getPartnerName, getFormattedAddress } from "@/lib/utils/partner";
 import { formatAbsoluteDate } from "@/lib/utils/date";
@@ -17,14 +22,41 @@ import {
   getTransportIcon,
   getTransportTypeDisplay,
 } from "@/lib/utils/transport";
-import type { InwardDetailView } from "@/types/stock-flow.types";
 import type { ComponentType } from "react";
 
-interface InwardDetailsTabProps {
-  inward: InwardDetailView;
+interface PageParams {
+  params: Promise<{
+    warehouse_slug: string;
+    inward_number: string;
+  }>;
 }
 
-export function InwardDetailsTab({ inward }: InwardDetailsTabProps) {
+export default function InwardDetailsPage({ params }: PageParams) {
+  const router = useRouter();
+  const { inward_number } = use(params);
+
+  // Fetch goods inward using TanStack Query (cached from layout)
+  const {
+    data: inward,
+    isLoading: loading,
+    isError: error,
+  } = useGoodsInwardBySequenceNumber(inward_number);
+
+  if (loading) {
+    return <LoadingState message="Loading inward details..." />;
+  }
+
+  if (error || !inward) {
+    return (
+      <ErrorState
+        title="Goods inward not found"
+        message="This goods inward does not exist or has been deleted"
+        onRetry={() => router.back()}
+        actionText="Go back"
+      />
+    );
+  }
+
   // Determine reason for inward
   let reasonTitle = "Unknown";
   let ReasonIcon: ComponentType<{ className?: string }> = IconNote;

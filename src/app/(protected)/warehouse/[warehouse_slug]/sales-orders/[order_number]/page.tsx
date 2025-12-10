@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation';
 
-export default function SalesOrderRedirectPage({
+export default async function SalesOrderRedirectPage({
   params,
 }: {
-  params: { warehouse_slug: string; order_number: string };
+  params: Promise<{ warehouse_slug: string; order_number: string }>;
 }) {
-  const { warehouse_slug, order_number } = params;
+  const { warehouse_slug, order_number } = await params;
   redirect(
     `/warehouse/${warehouse_slug}/sales-orders/${order_number}/details`,
   );

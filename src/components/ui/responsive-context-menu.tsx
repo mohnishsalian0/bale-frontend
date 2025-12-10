@@ -31,7 +31,7 @@ export function ResponsiveContextMenu({
   const isMobile = useIsMobile();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isLongPressing, setIsLongPressing] = useState(false);
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
