@@ -94,64 +94,67 @@ export function PieceQuantitySheet({
             </p>
             <p
               title={productInfoText}
-              className="text-xs text-gray-500 truncate"
+              className="text-sm text-gray-500 truncate"
             >
               {productInfoText}
             </p>
           </div>
         </div>
 
-        {/* Quantity Input */}
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={handleDecrement}
-          >
-            <IconMinus />
-          </Button>
-          <div className="relative">
-            <Input
-              type="number"
-              value={quantity}
-              onFocus={(e) => e.target.select()}
-              onChange={(e) =>
-                setQuantity(
-                  Math.max(0, Math.round(parseFloat(e.target.value) || 0)),
-                )
-              }
-              className="text-center text-lg font-medium max-w-25 pr-10"
-              min="0"
-              step="1"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
-              {pluralizedUnit}
-            </span>
+        <div className="shrink-0">
+          {/* Quantity Input */}
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleDecrement}
+            >
+              <IconMinus />
+            </Button>
+            <div className="relative">
+              <Input
+                type="number"
+                value={quantity}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) =>
+                  setQuantity(
+                    Math.max(0, Math.round(parseFloat(e.target.value) || 0)),
+                  )
+                }
+                className="text-center text-lg font-medium max-w-25 pr-10"
+                min="0"
+                step="1"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
+                {pluralizedUnit}
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleIncrement}
+            >
+              <IconPlus />
+            </Button>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={handleIncrement}
-          >
-            <IconPlus />
-          </Button>
+
+          {/* Current Inventory Display */}
+          {currentInventory !== undefined && (
+            <div className="text-center">
+              <p className="text-sm text-gray-500">
+                {currentInventory}{" "}
+                {pluralizeMeasuringUnitAbbreviation(
+                  currentInventory,
+                  unitAbbreviation,
+                )}{" "}
+                avail.
+              </p>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Current Inventory Display */}
-      {currentInventory !== undefined && (
-        <div className="text-center">
-          <p className="text-sm text-gray-500">
-            Current inventory: {currentInventory}{" "}
-            {pluralizeMeasuringUnitAbbreviation(
-              currentInventory,
-              unitAbbreviation,
-            )}
-          </p>
-        </div>
-      )}
 
       {/* Preset size options */}
       <div className="flex flex-wrap items-center gap-2 flex-2">

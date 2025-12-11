@@ -212,7 +212,7 @@ export function QRStockUnitSelectionStep({
                   }
                 />
                 <CollapsibleTrigger className="flex items-center justify-between w-full">
-                  <span className="flex-1 text-sm font-medium text-gray-700 text-start">
+                  <span className="flex-1 text-sm font-semibold text-gray-700 text-start">
                     GI-{inward.sequence_number} ({selectedInwardCount}/
                     {inward.stock_units.length} selected)
                   </span>
@@ -226,22 +226,23 @@ export function QRStockUnitSelectionStep({
                 {/* Stock Units List */}
                 <div className="flex flex-col">
                   {inward.stock_units.map((unit) => (
-                    <div key={unit.id} className="flex items-center gap-3 py-3">
+                    <div key={unit.id} className="flex gap-3 py-3">
                       <Checkbox
                         checked={selectedStockUnitIds.includes(unit.id)}
                         onCheckedChange={(checked) =>
                           handleUnitCheckboxChange(unit.id, checked === true)
                         }
+                        className="mt-1"
                       />
                       <div className="flex items-center gap-3 flex-1">
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-gray-700">
+                          <p className="text-sm font-medium text-gray-700">
                             {formatStockUnitNumber(
                               unit.sequence_number,
                               unit.product?.stock_type as StockType,
                             )}
                           </p>
-                          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                          <div className="flex items-center gap-1.5 text-sm text-gray-500">
                             {unit.manufacturing_date && (
                               <Fragment>
                                 <span>

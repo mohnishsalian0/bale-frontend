@@ -21,13 +21,17 @@ export const productSchema = z
     // Optional catalog display
     showOnCatalog: z.boolean().default(true),
 
-    // Optional feature fields
+    // Required feature fields
     materials: z
       .array(z.object({ value: z.string(), label: z.string() }))
+      .min(1, "Please select atleast 1 material")
       .default([]),
     colors: z
       .array(z.object({ value: z.string(), label: z.string() }))
+      .min(1, "Please select atleast 1 color")
       .default([]),
+
+    // Optional tags
     tags: z
       .array(z.object({ value: z.string(), label: z.string() }))
       .default([]),
