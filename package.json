@@ -9,6 +9,8 @@
     "start": "next start",
     "lint": "npx eslint .",
     "lint:quiet": "npx eslint . --quiet",
+    "format": "npx prettier --write .",
+    "format:check": "npx prettier --check .",
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:types": "npx supabase gen types typescript --local > src/types/database/supabase.ts",
     "setup:test": "npx tsx scripts/setup.ts local",
