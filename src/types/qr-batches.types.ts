@@ -31,8 +31,10 @@ export interface QRBatchProductSummary {
  * QR batch with minimal details for list views
  * Used in: QR batches list page
  */
-export interface QRBatchListView
-  extends Pick<QRBatch, "id" | "batch_name" | "image_url" | "created_at"> {
+export interface QRBatchListView extends Pick<
+  QRBatch,
+  "id" | "batch_name" | "image_url" | "created_at"
+> {
   item_count: number;
   distinct_products: QRBatchProductSummary[];
 }

@@ -181,9 +181,7 @@ export function getProductContextMenuItems(
       onClick: callbacks.onEdit,
     },
     {
-      label: product.show_on_catalog
-        ? "Hide from catalog"
-        : "Show on catalog",
+      label: product.show_on_catalog ? "Hide from catalog" : "Show on catalog",
       icon: product.show_on_catalog ? IconBasketOff : IconBasket,
       onClick: callbacks.onToggleCatalog,
     },

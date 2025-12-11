@@ -81,8 +81,7 @@ export function ProductSelectionStep({
     useProductAttributes();
 
   // Flatten infinite query pages data
-  const flatProducts =
-    productsData?.pages.flatMap((page) => page.data) || [];
+  const flatProducts = productsData?.pages.flatMap((page) => page.data) || [];
 
   const materials = attributesData?.materials || [];
   const colors = attributesData?.colors || [];

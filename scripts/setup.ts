@@ -667,9 +667,7 @@ async function createTestPartners() {
         .insert(assignments);
 
       if (linkError) {
-        console.error(
-          `   ❌ Failed to link attributes: ${linkError.message}`,
-        );
+        console.error(`   ❌ Failed to link attributes: ${linkError.message}`);
       }
     }
   }
@@ -1258,6 +1256,321 @@ async function createTestPartners() {
       }
 
       console.log("\n✨ Test sales orders created successfully!");
+    }
+  }
+
+  // Create purchase orders
+  console.log("\n📦 Creating test purchase orders...\n");
+
+  if (supplierError || !supplierPartners || supplierPartners.length === 0) {
+    console.error("❌ No suppliers found for creating purchase orders");
+  } else {
+    const supplierId1 = supplierPartners[0].id;
+    const supplierId2 =
+      supplierPartners.length > 1 ? supplierPartners[1].id : supplierId1;
+
+    // Get agent IDs if available
+    const { data: agentPartners } = await supabase
+      .from("partners")
+      .select("id")
+      .eq("company_id", companyId)
+      .eq("partner_type", "agent")
+      .limit(2);
+
+    const agentId1 =
+      agentPartners && agentPartners.length > 0 ? agentPartners[0].id : null;
+
+    // Get product IDs
+    const { data: productsList, error: productsError } = await supabase
+      .from("products")
+      .select("id, name")
+      .eq("company_id", companyId)
+      .limit(8);
+
+    if (productsError || !productsList || productsList.length === 0) {
+      console.error("❌ No products found for creating purchase orders");
+    } else {
+      // Create dates spanning 3 months
+      const now = new Date();
+      const currentMonth = new Date(now.getFullYear(), now.getMonth(), 5);
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+      const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 20);
+
+      // Define 10 purchase orders with different statuses
+      // Status distribution: 15% approval_pending, 25% in_progress, 50% completed, 10% cancelled
+      const testPurchaseOrders = [
+        // Two months ago - all completed/cancelled
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId1,
+          agent_id: agentId1,
+          order_date: twoMonthsAgo.toISOString().split("T")[0],
+          expected_delivery_date: new Date(
+            twoMonthsAgo.getTime() + 15 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "completed",
+          total_amount: 35000.0,
+          advance_amount: 15000.0,
+          discount_type: "percentage",
+          discount_value: 5,
+          payment_terms: "30 days net",
+          supplier_invoice_number: "INV-2024-1001",
+          notes: "Bulk fabric purchase for wedding season",
+        },
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId2,
+          order_date: new Date(twoMonthsAgo.getTime() + 5 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          expected_delivery_date: new Date(
+            twoMonthsAgo.getTime() + 20 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "completed",
+          total_amount: 28000.0,
+          advance_amount: 12000.0,
+          discount_type: "percentage",
+          discount_value: 8,
+          payment_terms: "15 days net",
+          supplier_invoice_number: "INV-2024-1002",
+          notes: "Regular supplier order",
+        },
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId1,
+          order_date: new Date(
+            twoMonthsAgo.getTime() + 10 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          expected_delivery_date: new Date(
+            twoMonthsAgo.getTime() + 25 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "cancelled",
+          total_amount: 22000.0,
+          advance_amount: 8000.0,
+          discount_type: "percentage",
+          discount_value: 0,
+          notes: "Cancelled due to quality issues",
+          status_notes: "Supplier unable to meet quality standards",
+        },
+
+        // Last month - mix of statuses
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId2,
+          agent_id: agentId1,
+          order_date: lastMonth.toISOString().split("T")[0],
+          expected_delivery_date: new Date(
+            lastMonth.getTime() + 10 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "completed",
+          total_amount: 42000.0,
+          advance_amount: 20000.0,
+          discount_type: "percentage",
+          discount_value: 10,
+          payment_terms: "45 days net",
+          supplier_invoice_number: "INV-2024-1003",
+          notes: "Premium silk fabrics order",
+        },
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId1,
+          order_date: new Date(lastMonth.getTime() + 5 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          expected_delivery_date: new Date(
+            lastMonth.getTime() - 5 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0], // Overdue
+          status: "in_progress",
+          total_amount: 38000.0,
+          advance_amount: 18000.0,
+          discount_type: "percentage",
+          discount_value: 5,
+          payment_terms: "30 days net",
+          notes: "Delayed shipment from supplier",
+        },
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId2,
+          order_date: new Date(lastMonth.getTime() + 10 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          expected_delivery_date: new Date(
+            lastMonth.getTime() + 25 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "completed",
+          total_amount: 32000.0,
+          advance_amount: 16000.0,
+          discount_type: "percentage",
+          discount_value: 12,
+          payment_terms: "20 days net",
+          supplier_invoice_number: "INV-2024-1004",
+          notes: "Cotton fabric stock replenishment",
+        },
+
+        // Current month - mostly pending/in progress
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId1,
+          agent_id: agentId1,
+          order_date: currentMonth.toISOString().split("T")[0],
+          expected_delivery_date: new Date(
+            currentMonth.getTime() + 20 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "approval_pending",
+          total_amount: 45000.0,
+          advance_amount: 22000.0,
+          discount_type: "percentage",
+          discount_value: 7,
+          payment_terms: "30 days net",
+          notes: "Awaiting management approval",
+        },
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId2,
+          order_date: new Date(currentMonth.getTime() + 5 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          expected_delivery_date: new Date(
+            currentMonth.getTime() + 25 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "in_progress",
+          total_amount: 52000.0,
+          advance_amount: 26000.0,
+          discount_type: "percentage",
+          discount_value: 10,
+          payment_terms: "45 days net",
+          notes: "Large order - partial shipment received",
+        },
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId1,
+          order_date: new Date(
+            currentMonth.getTime() + 10 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          expected_delivery_date: new Date(
+            currentMonth.getTime() + 30 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "completed",
+          total_amount: 29000.0,
+          advance_amount: 14000.0,
+          discount_type: "percentage",
+          discount_value: 5,
+          payment_terms: "15 days net",
+          supplier_invoice_number: "INV-2024-1005",
+          notes: "Express delivery completed",
+        },
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId2,
+          agent_id: agentId1,
+          order_date: new Date(
+            currentMonth.getTime() + 15 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          expected_delivery_date: new Date(
+            currentMonth.getTime() + 30 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "approval_pending",
+          total_amount: 48000.0,
+          advance_amount: 24000.0,
+          discount_type: "percentage",
+          discount_value: 15,
+          payment_terms: "60 days net",
+          notes: "New supplier - awaiting approval",
+        },
+      ];
+
+      for (const order of testPurchaseOrders) {
+        const { data, error } = await supabase
+          .from("purchase_orders")
+          .insert({
+            ...order,
+            created_by: userId,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error(`❌ Failed to create purchase order: ${error.message}`);
+          continue;
+        }
+
+        const orderId = data.id;
+        console.log(
+          `✅ Created purchase order: PO-${data.sequence_number} (${order.status})`,
+        );
+
+        // Create order items (2-4 products per order)
+        const itemCount = Math.floor(Math.random() * 3) + 2; // 2-4 items
+        for (let i = 0; i < itemCount && i < productsList.length; i++) {
+          const requiredQty = Math.floor(Math.random() * 20) + 5; // 5-25 units
+          const receivedQty =
+            order.status === "completed"
+              ? requiredQty
+              : order.status === "cancelled"
+                ? 0
+                : Math.floor(requiredQty * (Math.random() * 0.5 + 0.3)); // 30-80% received
+
+          const { error: itemError } = await supabase
+            .from("purchase_order_items")
+            .insert({
+              company_id: companyId,
+              warehouse_id: warehouseId,
+              purchase_order_id: orderId,
+              product_id: productsList[i].id,
+              required_quantity: requiredQty,
+              received_quantity: receivedQty,
+              notes: `${productsList[i].name} - ${requiredQty} units`,
+            });
+
+          if (itemError) {
+            console.error(
+              `   ❌ Failed to create order item: ${itemError.message}`,
+            );
+          } else {
+            console.log(
+              `   ✅ Added item: ${productsList[i].name} (${receivedQty}/${requiredQty} received)`,
+            );
+          }
+        }
+      }
+
+      console.log("\n✨ Test purchase orders created successfully!");
     }
   }
 

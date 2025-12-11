@@ -34,6 +34,7 @@ interface OrderFormData {
   deliveryDate: string;
   advanceAmount: string;
   discount: string;
+  paymentTerms: string;
   notes: string;
   files: File[];
 }
@@ -207,6 +208,28 @@ export function OrderDetailsStep({
 
         <CollapsibleContent>
           <div className="flex flex-col gap-5">
+            {/* Payment Terms */}
+            <Select
+              value={formData.paymentTerms || undefined}
+              onValueChange={(value) =>
+                setFormData({ ...formData, paymentTerms: value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Payment terms (Optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Cash on delivery">
+                  Cash on delivery
+                </SelectItem>
+                <SelectItem value="15 days net">NET 15</SelectItem>
+                <SelectItem value="30 days net">NET 30</SelectItem>
+                <SelectItem value="45 days net">NET 45</SelectItem>
+                <SelectItem value="60 days net">NET 60</SelectItem>
+                <SelectItem value="90 days net">NET 90</SelectItem>
+              </SelectContent>
+            </Select>
+
             {/* Advance Amount */}
             <InputWithIcon
               type="number"

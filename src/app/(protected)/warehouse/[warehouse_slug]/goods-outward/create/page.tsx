@@ -61,7 +61,7 @@ export default function CreateGoodsOutwardPage() {
   const [linkToData, setLinkToData] = useState<OutwardLinkToData>({
     linkToType: "sales_order",
     sales_order_id: null,
-    purchase_order_number: null,
+    purchase_order_id: null,
     other_reason: null,
     job_work_id: null,
   });
@@ -117,7 +117,7 @@ export default function CreateGoodsOutwardPage() {
       case "sales_order":
         return !!linkToData.sales_order_id;
       case "purchase_return":
-        return !!linkToData.purchase_order_number?.trim();
+        return !!linkToData.purchase_order_id?.trim();
       case "other":
         return !!linkToData.other_reason?.trim();
       default:
@@ -184,7 +184,7 @@ export default function CreateGoodsOutwardPage() {
             ? selectedWarehouseId || undefined
             : undefined,
         sales_order_id: linkToData.sales_order_id || undefined,
-        purchase_order_number: linkToData.purchase_order_number || undefined,
+        purchase_order_id: linkToData.purchase_order_id || undefined,
         other_reason: linkToData.other_reason || undefined,
       };
 

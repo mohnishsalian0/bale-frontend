@@ -4,8 +4,8 @@ import { use, useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { ProductQuantitySheet } from "../../ProductQuantitySheet";
-import { ProductSelectionStep } from "../../ProductSelectionStep";
+import { ProductQuantitySheet } from "@/components/layouts/product-quantity-sheet";
+import { ProductSelectionStep } from "@/components/layouts/product-selection-step";
 import { CustomerSelectionStep } from "../../CustomerSelectionStep";
 import { OrderDetailsStep } from "../../OrderDetailsStep";
 import { ProductFormSheet } from "../../../inventory/ProductFormSheet";
@@ -30,6 +30,7 @@ interface OrderFormData {
   deliveryDate: string;
   advanceAmount: string;
   discount: string;
+  paymentTerms: string;
   notes: string;
   files: File[];
 }
@@ -39,13 +40,13 @@ type FormStep = "products" | "customer" | "details";
 interface PageParams {
   params: Promise<{
     warehouse_slug: string;
-    order_number: string;
+    sale_number: string;
   }>;
 }
 
 export default function ApproveSalesOrderPage({ params }: PageParams) {
   const router = useRouter();
-  const { order_number } = use(params);
+  const { sale_number } = use(params);
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
   const [currentStep, setCurrentStep] = useState<FormStep>("products");
@@ -55,7 +56,7 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
     data: existingOrder,
     isLoading: orderLoading,
     isError: orderError,
-  } = useSalesOrderByNumber(order_number);
+  } = useSalesOrderByNumber(sale_number);
 
   // Sales order mutations
   const { approve: approveOrder } = useSalesOrderMutations(warehouse.id);
@@ -102,6 +103,7 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
     deliveryDate: "",
     advanceAmount: "",
     discount: "",
+    paymentTerms: "",
     notes: "",
     files: [],
   });
@@ -124,6 +126,7 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
         deliveryDate: existingOrder.expected_delivery_date || "",
         advanceAmount: existingOrder.advance_amount?.toString() || "",
         discount: existingOrder.discount_value?.toString() || "",
+        paymentTerms: existingOrder.payment_terms || "",
         notes: existingOrder.notes || "",
         files: [],
       });
@@ -158,7 +161,10 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
   };
 
   const canProceed = useMemo(
-    () => Object.values(productSelections).some((p) => p.selected && p.quantity > 0),
+    () =>
+      Object.values(productSelections).some(
+        (p) => p.selected && p.quantity > 0,
+      ),
     [productSelections],
   );
 
@@ -200,7 +206,7 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
   };
 
   const handleCancel = () => {
-    router.push(`/warehouse/${warehouse.slug}/sales-orders/${order_number}`);
+    router.push(`/warehouse/${warehouse.slug}/sales-orders/${sale_number}`);
   };
 
   const handleApprove = () => {
@@ -244,7 +250,7 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
         onSuccess: () => {
           toast.success("Sales order approved successfully");
           router.push(
-            `/warehouse/${warehouse.slug}/sales-orders/${order_number}`,
+            `/warehouse/${warehouse.slug}/sales-orders/${sale_number}`,
           );
         },
         onError: (error) => {

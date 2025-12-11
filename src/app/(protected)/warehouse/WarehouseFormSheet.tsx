@@ -22,7 +22,10 @@ import {
 import { useWarehouseMutations } from "@/lib/query/hooks/warehouses";
 import { Warehouse, WarehouseInsert } from "@/types/warehouses.types";
 import { InputWithIcon } from "@/components/ui/input-with-icon";
-import { warehouseSchema, WarehouseFormData } from "@/lib/validations/warehouse";
+import {
+  warehouseSchema,
+  WarehouseFormData,
+} from "@/lib/validations/warehouse";
 
 interface WarehouseFormSheetProps {
   open: boolean;

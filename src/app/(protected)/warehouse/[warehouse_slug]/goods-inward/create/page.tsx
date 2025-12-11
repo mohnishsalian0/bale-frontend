@@ -3,10 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  ProductSelectionStep,
-  StockUnitSpec,
-} from "../ProductSelectionStep";
+import { ProductSelectionStep, StockUnitSpec } from "../ProductSelectionStep";
 import { StockUnitFormSheet } from "../StockUnitFormSheet";
 import { AllSpecificationsSheet } from "../AllSpecificationsSheet";
 import { PieceQuantitySheet } from "../PieceQuantitySheet";
@@ -81,7 +78,7 @@ export default function CreateGoodsInwardPage() {
   const [linkToData, setLinkToData] = useState<InwardLinkToData>({
     linkToType: "purchase_order",
     sales_order_id: null,
-    purchase_order_number: null,
+    purchase_order_id: null,
     other_reason: null,
     job_work_id: null,
   });
@@ -238,7 +235,7 @@ export default function CreateGoodsInwardPage() {
   const canProceedFromLinkTo = useMemo(() => {
     switch (linkToData.linkToType) {
       case "purchase_order":
-        return !!linkToData.purchase_order_number?.trim();
+        return !!linkToData.purchase_order_id?.trim();
       case "sales_return":
         return !!linkToData.sales_order_id;
       case "other":
@@ -303,7 +300,7 @@ export default function CreateGoodsInwardPage() {
           ? selectedWarehouseId || undefined
           : undefined,
       sales_order_id: linkToData.sales_order_id || undefined,
-      purchase_order_number: linkToData.purchase_order_number || undefined,
+      purchase_order_id: linkToData.purchase_order_id || undefined,
       other_reason: linkToData.other_reason || undefined,
       notes: detailsFormData.notes || undefined,
     };

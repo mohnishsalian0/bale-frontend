@@ -22,7 +22,7 @@ import type { GoodsOutward } from "@/types/stock-flow.types";
 
 export interface OutwardLinkToData extends Pick<
   GoodsOutward,
-  "sales_order_id" | "purchase_order_number" | "other_reason" | "job_work_id"
+  "sales_order_id" | "purchase_order_id" | "other_reason" | "job_work_id"
 > {
   linkToType: OutwardLinkToType;
 }
@@ -72,7 +72,7 @@ export function OutwardLinkToStep({
     onLinkToChange({
       linkToType: type,
       sales_order_id: null,
-      purchase_order_number: null,
+      purchase_order_id: null,
       other_reason: null,
       job_work_id: null,
     });
@@ -200,12 +200,9 @@ export function OutwardLinkToStep({
             <Input
               id="po_number"
               placeholder="Enter PO number for return"
-              value={linkToData.purchase_order_number || ""}
+              value={linkToData.purchase_order_id || ""}
               onChange={(e) =>
-                handleValueChange(
-                  "purchase_order_number",
-                  e.target.value || null,
-                )
+                handleValueChange("purchase_order_id", e.target.value || null)
               }
               required
             />

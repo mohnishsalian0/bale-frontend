@@ -89,11 +89,8 @@ export default function StockUnitsPage({ params }: PageParams) {
         );
 
         return (
-          <>
-            <li
-              key={item.id}
-              className="flex gap-3 p-4 hover:border-gray-300 transition-colors"
-            >
+          <li key={item.id}>
+            <div className="flex gap-3 p-4 hover:border-gray-300 transition-colors">
               {/* Product Image */}
               <ImageWrapper
                 size="md"
@@ -140,9 +137,9 @@ export default function StockUnitsPage({ params }: PageParams) {
                   )}
                 </div>
               </div>
-            </li>
+            </div>
             <Separator />
-          </>
+          </li>
         );
       })}
     </ul>

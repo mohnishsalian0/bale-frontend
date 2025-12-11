@@ -287,7 +287,7 @@ export default function OrdersPage() {
           <div className="relative max-w-md">
             <Input
               type="text"
-              placeholder="Search by order number"
+              placeholder="Search by order number, customer, product..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);

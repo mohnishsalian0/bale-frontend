@@ -12,10 +12,7 @@ import {
 } from "@/components/ui/select";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
-import type {
-  ProductListView,
-  ProductAttribute,
-} from "@/types/products.types";
+import type { ProductListView, ProductAttribute } from "@/types/products.types";
 import type { StockType } from "@/types/database/enums";
 
 interface InventoryProductListStepProps {

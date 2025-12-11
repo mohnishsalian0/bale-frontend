@@ -3,8 +3,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ProductQuantitySheet } from "../ProductQuantitySheet";
-import { ProductSelectionStep } from "../ProductSelectionStep";
+import { ProductQuantitySheet } from "@/components/layouts/product-quantity-sheet";
+import { ProductSelectionStep } from "@/components/layouts/product-selection-step";
 import { CustomerSelectionStep } from "../CustomerSelectionStep";
 import { OrderDetailsStep } from "../OrderDetailsStep";
 import { ProductFormSheet } from "../../inventory/ProductFormSheet";
@@ -26,6 +26,7 @@ interface OrderFormData {
   deliveryDate: string;
   advanceAmount: string;
   discount: string;
+  paymentTerms: string;
   notes: string;
   files: File[];
 }
@@ -69,6 +70,7 @@ export default function CreateSalesOrderPage() {
     deliveryDate: "",
     advanceAmount: "",
     discount: "",
+    paymentTerms: "",
     notes: "",
     files: [],
   });
@@ -95,7 +97,10 @@ export default function CreateSalesOrderPage() {
   };
 
   const canProceed = useMemo(
-    () => Object.values(productSelections).some((p) => p.selected && p.quantity > 0),
+    () =>
+      Object.values(productSelections).some(
+        (p) => p.selected && p.quantity > 0,
+      ),
     [productSelections],
   );
 
@@ -177,7 +182,9 @@ export default function CreateSalesOrderPage() {
       {
         onSuccess: (sequenceNumber) => {
           toast.success("Sales order created successfully");
-          router.push(`/warehouse/${warehouse.slug}/sales-orders/${sequenceNumber}`);
+          router.push(
+            `/warehouse/${warehouse.slug}/sales-orders/${sequenceNumber}`,
+          );
         },
         onError: (error) => {
           console.error("Error creating sales order:", error);

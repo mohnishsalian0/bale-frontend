@@ -48,6 +48,7 @@ BEGIN
         from_warehouse_id,
         job_work_id,
         sales_order_id,
+        purchase_order_id,
         other_reason,
         notes,
         created_by
@@ -65,6 +66,7 @@ BEGIN
         (p_inward_data->>'from_warehouse_id')::UUID,
         (p_inward_data->>'job_work_id')::UUID,
         (p_inward_data->>'sales_order_id')::UUID,
+        (p_inward_data->>'purchase_order_id')::UUID,
         p_inward_data->>'other_reason',
         p_inward_data->>'notes',
         COALESCE((p_inward_data->>'created_by')::UUID, auth.uid())
@@ -199,6 +201,7 @@ BEGIN
         to_warehouse_id,
         sales_order_id,
         job_work_id,
+        purchase_order_id,
         other_reason,
         outward_date,
         expected_delivery_date,
@@ -216,6 +219,7 @@ BEGIN
         (p_outward_data->>'to_warehouse_id')::UUID,
         (p_outward_data->>'sales_order_id')::UUID,
         (p_outward_data->>'job_work_id')::UUID,
+        (p_outward_data->>'purchase_order_id')::UUID,
         p_outward_data->>'other_reason',
         (p_outward_data->>'outward_date')::DATE,
         (p_outward_data->>'expected_delivery_date')::DATE,
@@ -460,7 +464,7 @@ COMMENT ON FUNCTION update_sales_order_outward_flag IS 'Automatically maintains 
 -- Function to update goods inward search vector for full-text search
 -- Weight A: sequence_number, partner name, warehouse name
 -- Weight B: product names (via stock_units join)
--- Weight C: inward_type, sales_order_sequence, purchase_order_number, other_reason
+-- Weight C: inward_type, sales_order_sequence, purchase_order_sequence, other_reason
 -- Weight D: transport_reference_number, transport_type, transport_details
 CREATE OR REPLACE FUNCTION update_goods_inward_search_vector()
 RETURNS TRIGGER
@@ -471,6 +475,7 @@ DECLARE
     v_warehouse_name TEXT;
     v_product_names TEXT;
     v_sales_order_sequence TEXT;
+    v_purchase_order_sequence TEXT;
 BEGIN
     -- If record is soft-deleted, set search_vector to NULL to exclude from index
     IF NEW.deleted_at IS NOT NULL THEN
@@ -507,6 +512,14 @@ BEGIN
         WHERE id = NEW.sales_order_id;
     END IF;
 
+    -- Get purchase order sequence number (if linked)
+    IF NEW.purchase_order_id IS NOT NULL THEN
+        SELECT sequence_number::text
+        INTO v_purchase_order_sequence
+        FROM purchase_orders
+        WHERE id = NEW.purchase_order_id;
+    END IF;
+
     -- Build weighted search vector
     NEW.search_vector :=
         -- Weight A: Primary identifiers
@@ -520,7 +533,7 @@ BEGIN
         -- Weight C: Type and references
         setweight(to_tsvector('english', COALESCE(NEW.inward_type, '')), 'C') ||
         setweight(to_tsvector('simple', COALESCE(v_sales_order_sequence, '')), 'C') ||
-        setweight(to_tsvector('simple', COALESCE(NEW.purchase_order_number, '')), 'C') ||
+        setweight(to_tsvector('simple', COALESCE(v_purchase_order_sequence, '')), 'C') ||
         setweight(to_tsvector('english', COALESCE(NEW.other_reason, '')), 'C') ||
 
         -- Weight D: Transport details
@@ -541,7 +554,7 @@ COMMENT ON FUNCTION update_goods_inward_search_vector() IS 'Automatically update
 -- Function to update goods outward search vector for full-text search
 -- Weight A: sequence_number, partner name, warehouse name
 -- Weight B: product names (via goods_outward_items join)
--- Weight C: outward_type, sales_order_sequence, purchase_order_number, other_reason
+-- Weight C: outward_type, sales_order_sequence, purchase_order_sequence, other_reason
 -- Weight D: transport_reference_number, transport_type, transport_details, cancellation_reason
 CREATE OR REPLACE FUNCTION update_goods_outward_search_vector()
 RETURNS TRIGGER
@@ -552,6 +565,7 @@ DECLARE
     v_warehouse_name TEXT;
     v_product_names TEXT;
     v_sales_order_sequence TEXT;
+    v_purchase_order_sequence TEXT;
 BEGIN
     -- If record is soft-deleted, set search_vector to NULL to exclude from index
     IF NEW.deleted_at IS NOT NULL THEN
@@ -589,6 +603,14 @@ BEGIN
         WHERE id = NEW.sales_order_id;
     END IF;
 
+    -- Get purchase order sequence number (if linked)
+    IF NEW.purchase_order_id IS NOT NULL THEN
+        SELECT sequence_number::text
+        INTO v_purchase_order_sequence
+        FROM purchase_orders
+        WHERE id = NEW.purchase_order_id;
+    END IF;
+
     -- Build weighted search vector
     NEW.search_vector :=
         -- Weight A: Primary identifiers
@@ -602,7 +624,7 @@ BEGIN
         -- Weight C: Type and references
         setweight(to_tsvector('english', COALESCE(NEW.outward_type, '')), 'C') ||
         setweight(to_tsvector('simple', COALESCE(v_sales_order_sequence, '')), 'C') ||
-        setweight(to_tsvector('simple', COALESCE(NEW.purchase_order_number, '')), 'C') ||
+        setweight(to_tsvector('simple', COALESCE(v_purchase_order_sequence, '')), 'C') ||
         setweight(to_tsvector('english', COALESCE(NEW.other_reason, '')), 'C') ||
 
         -- Weight D: Transport and cancellation details

@@ -7,7 +7,12 @@ export type UserRole = "admin" | "staff";
 export const USER_ROLES = ["admin", "staff"] as const;
 
 export type PartnerType = "customer" | "vendor" | "supplier" | "agent";
-export const PARTNER_TYPES = ["customer", "vendor", "supplier", "agent"] as const;
+export const PARTNER_TYPES = [
+  "customer",
+  "vendor",
+  "supplier",
+  "agent",
+] as const;
 
 export type AttributeGroup = "material" | "color" | "tag";
 export const ATTRIBUTE_GROUPS = ["material", "color", "tag"] as const;
@@ -67,11 +72,23 @@ export type StockType = "roll" | "batch" | "piece";
 export const STOCK_TYPES = ["roll", "batch", "piece"] as const;
 
 export type MeasuringUnit = "metre" | "yard" | "kilogram" | "unit" | "piece";
-export const MEASURING_UNITS = ["metre", "yard", "kilogram", "unit", "piece"] as const;
+export const MEASURING_UNITS = [
+  "metre",
+  "yard",
+  "kilogram",
+  "unit",
+  "piece",
+] as const;
 
 export type StockUnitStatus = "full" | "partial" | "empty" | "removed";
 
 export type SalesOrderStatus =
+  | "approval_pending"
+  | "in_progress"
+  | "completed"
+  | "cancelled";
+
+export type PurchaseOrderStatus =
   | "approval_pending"
   | "in_progress"
   | "completed"

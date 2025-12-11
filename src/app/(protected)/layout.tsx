@@ -79,7 +79,10 @@ function ChromeWrapper({
           />
         )}
 
-        <div id="main-content" className="flex flex-col flex-1 overflow-y-auto max-w-4xl">
+        <div
+          id="main-content"
+          className="flex flex-col flex-1 overflow-y-auto max-w-4xl"
+        >
           {children}
         </div>
 

@@ -9,7 +9,5 @@ interface PageParams {
 
 export default async function ProductDetailPage({ params }: PageParams) {
   const { warehouse_slug, product_number } = await params;
-  redirect(
-    `/warehouse/${warehouse_slug}/inventory/${product_number}/summary`,
-  );
+  redirect(`/warehouse/${warehouse_slug}/inventory/${product_number}/summary`);
 }

@@ -803,9 +803,140 @@ Permissions are organized hierarchically with the following top-level categories
 - Phone number must be unique within company
 - GST and PAN basic validation for Indian businesses
 
-### 6. Job Work Management
+### 6. Purchase Order Management
 
-#### 6.1 Job Work Order Processing
+#### 6.1 Purchase Order Creation & Management
+
+**Feature Description:** Supplier order management with procurement tracking and goods inward integration (Warehouse-specific operations)
+
+**Specifications:**
+
+**Purchase Order Creation Access:**
+
+- **Company Admin:** Can create purchase orders via Inventory App
+- Both creation and approval require admin privileges
+- Purchase orders automatically link to goods inward for received materials
+
+**Order Header**
+
+- **Order Information:**
+  - Order Number (auto: PO-{SEQUENCE})
+  - Supplier (required, from Partners with type=Supplier)
+  - Agent (optional, from Partners with type=Agent for broker/intermediary)
+  - Order Date (required, default: today)
+  - Expected Delivery Date (optional, can be set during order processing)
+  - Warehouse (auto-assigned from admin's warehouse)
+
+**Order Line Items**
+
+- **Product Selection:**
+  - Product (searchable dropdown from product master)
+  - Required Quantity (in product measuring unit)
+  - Unit Rate (optional, typically from product cost price)
+  - Line Total (auto-calculated)
+- **Additional Information:**
+  - Advance Amount (payment made upfront to supplier)
+  - Discount (percentage or flat amount)
+  - Payment Terms (NET 15/30/45/60/90, Cash on delivery)
+  - Supplier Invoice Number (for completed orders)
+  - Notes
+  - Attachments
+- **Receipt Tracking:**
+  - Required Quantity (materials ordered from supplier)
+  - Received Quantity (materials actually received via goods inward)
+  - Pending Quantity (auto-calculated: Required Quantity - Received Quantity)
+  - Total Completion in % (auto-calculated: (Received Quantity / Required Quantity) \* 100)
+- **Audit information**
+  - Unique ID (unique and auto-generated in backend)
+  - Created on (date, time and generated in backend)
+  - Updated on (date, time and generated in backend)
+  - Created by (id of user who created the record)
+  - Modified by (id of user who last modified the record)
+  - Deleted at (date, time and generated in backend)
+
+**Staff Access Controls:**
+
+- **Company Admin:** Full CRUD on purchase orders for all warehouses
+- **Staff:** Read-only access to purchase orders for assigned warehouse
+- Purchase orders created within warehouse scope
+- Receipt tracking limited to assigned warehouse
+
+**Business Rules**
+
+- Cannot create purchase order without supplier details
+- Expected delivery date is optional during creation, can be updated during processing
+- Order completion requires 100% receipt via goods inward or manual override
+- Cancellation releases all pending quantities
+- Goods inward can be linked to purchase orders for automatic receipt tracking
+- Payment terms help track supplier payment obligations
+
+#### 6.2 Purchase Order Dashboard & Tracking
+
+**Specifications:**
+
+**Order Management Interface List View (Warehouse-Filtered):**
+
+- Auto-filtered to show only orders for the warehouse admin is logged into
+- Filter by status (approval_pending, in_progress, completed, cancelled), supplier, product, agent
+- Sort by order date
+- Search by PO number, supplier name, or product
+
+**Order Status Workflow:**
+
+- **approval_pending** - Initial status for all new purchase orders, awaiting approval
+- **in_progress** - Order approved and materials being received
+- **completed** - Order fully received and processed (requires completion notes)
+- **cancelled** - Order cancelled (requires cancellation reason)
+
+**Status Change Tracking:**
+
+- **status_changed_at** - Timestamp when status was changed to completed/cancelled
+- **status_changed_by** - User who changed the status
+- **status_notes** - Completion notes (for completed) or cancellation reason (for cancelled)
+- Full audit trail of status changes with efficient single-field design
+
+**Detail View:**
+
+- Complete order information
+- Real-time receipt status (warehouse-specific)
+- Linked goods inwards (from assigned warehouse)
+- Financial breakdown (subtotal, discount, GST, total)
+
+**Purchase Order Details Page:**
+
+- **Layout**: Tabbed interface with "Details" and "Inwards" tabs
+- **Header**: PO-{sequence_number} title with order date subtitle, status badge, and progress bar (for in_progress orders)
+- **Details Tab Sections**:
+  - Products: List of line items with product images, name, required quantity, received quantity, pending quantity, unit rate, line total
+  - Supplier: Supplier name with initials, address, phone number (using flex justify-between format)
+  - Agent: Agent name with initials (conditionally shown if agent_id exists)
+  - Payment Details: Advance amount, discount, payment terms, GST breakdown, total amount
+  - Warehouse: Receiving warehouse details
+  - Important Dates: Order date, expected delivery date
+  - Supplier Invoice: Supplier invoice number (conditionally shown if exists)
+  - Notes: Order notes
+  - Status Notes: Completion notes or cancellation reason (conditionally shown for completed/cancelled orders)
+- **Inwards Tab**: List of linked goods inward records with GI-{number}, date, inward type, source, and clickable navigation
+
+**Audit Information**
+
+- Unique ID (auto-generated in backend)
+- Created on (date, time, auto-generated)
+- Updated on (date, time, auto-generated)
+- Created by (user ID)
+- Modified by (user ID)
+- Deleted at (soft delete timestamp)
+
+**Integration with Goods Inward:**
+
+- Goods inward can be linked to purchase orders (inward_type='purchase_order')
+- Received quantities automatically update from linked goods inward
+- Helps track procurement vs actual receipt
+- Supports partial receipts over multiple goods inward transactions
+
+### 7. Job Work Management
+
+#### 7.1 Job Work Order Processing
 
 **Feature Description**: Job work coordination with goods outward and inward integration but without sales order integration
 
@@ -884,9 +1015,9 @@ Permissions are organized hierarchically with the following top-level categories
 - Pending quantities update based on actual goods outward/inward transactions
 - Job work can exist independently without sales order linkage
 
-### 7. Inventory Movement System
+### 8. Inventory Movement System
 
-#### 7.1 Goods Outward
+#### 8.1 Goods Outward
 
 **Feature Description**: Comprehensive outward inventory management with flexible linking
 
@@ -990,7 +1121,7 @@ Permissions are organized hierarchically with the following top-level categories
   - Notes: Outward notes
 - **Stock Units Tab**: List of dispatched stock units with product images, SU-{number}, quantity dispatched
 
-#### 7.2 Goods Inward
+#### 8.2 Goods Inward
 
 **Feature Description**: Comprehensive inward inventory management with automatic unit creation
 
@@ -1076,9 +1207,9 @@ Permissions are organized hierarchically with the following top-level categories
   - Notes: Inward notes
 - **Stock Units Tab**: List of created stock units with product images, SU-{number}, initial quantity with unit
 
-### 8. Barcode Generation System
+### 9. Barcode Generation System
 
-#### 8.1 Barcode Generation Workflow
+#### 9.1 Barcode Generation Workflow
 
 **Feature Description**: Comprehensive barcode generation with customization and batch printing
 
@@ -1160,11 +1291,11 @@ Permissions are organized hierarchically with the following top-level categories
 - Templates can be saved for consistent formatting
 - Batch tracking for generation history
 
-### 9. Public Sales Catalog
+### 10. Public Sales Catalog
 
 Based on the specifications provided, here's how I would divide this into 2 distinct features:
 
-#### 9.1 Catalog Management System
+#### 10.1 Catalog Management System
 
 **Feature Description**: Admin-controlled catalog creation and content management system
 
@@ -1180,7 +1311,7 @@ Based on the specifications provided, here's how I would divide this into 2 dist
   - Search (name & product number)
   - Sort (alphabetical, price)
 
-#### 9.2 Public Sales Catalog Interface
+#### 10.2 Public Sales Catalog Interface
 
 **Feature Description**: Customer-facing product catalog with complete ordering capabilities
 

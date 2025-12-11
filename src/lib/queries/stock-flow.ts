@@ -356,6 +356,56 @@ export async function getGoodsOutwardsBySalesOrder(
 }
 
 /**
+ * Fetch goods inwards list by purchase order number
+ */
+export async function getGoodsInwardsByPurchaseOrder(
+  orderNumber: string,
+  page: number = 1,
+  pageSize: number = 25,
+): Promise<{ data: InwardWithStockUnitListView[]; totalCount: number }> {
+  const supabase = createClient();
+
+  // Calculate pagination range
+  const offset = (page - 1) * pageSize;
+  const limit = pageSize;
+
+  const { data, error, count } = await supabase
+    .from("goods_inwards")
+    .select(
+      `
+      *,
+      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, company_name),
+			from_warehouse:warehouses!from_warehouse_id(id, name),
+			purchase_order:purchase_orders!inner(id, sequence_number),
+      stock_units(
+        product:products(${PRODUCT_LIST_VIEW_SELECT}),
+        initial_quantity
+      )
+    `,
+      { count: "exact" },
+    )
+    .eq("purchase_order.sequence_number", orderNumber)
+    .is("deleted_at", null)
+    .order("inward_date", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error("Error fetching goods inwards:", error);
+    throw error;
+  }
+
+  const transformedData =
+    (data as unknown as InwardWithStockUnitListViewRaw[])?.map(
+      transformInwardWithStockUnitListView,
+    ) || [];
+
+  return {
+    data: transformedData,
+    totalCount: count || 0,
+  };
+}
+
+/**
  * Fetch a single goods inward by sequence number
  */
 export async function getGoodsInwardByNumber(

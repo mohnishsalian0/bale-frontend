@@ -108,9 +108,7 @@ export function ResponsiveContextMenu({
 
                 return (
                   <div key={item.label}>
-                    {needsSeparator && (
-                      <div className="h-px bg-border my-2" />
-                    )}
+                    {needsSeparator && <div className="h-px bg-border my-2" />}
                     <button
                       onClick={() => handleItemClick(item.onClick)}
                       disabled={item.disabled}
@@ -125,7 +123,9 @@ export function ResponsiveContextMenu({
                       }`}
                     >
                       <Icon className="size-5" />
-                      <span className="text-base font-medium">{item.label}</span>
+                      <span className="text-base font-medium">
+                        {item.label}
+                      </span>
                     </button>
                   </div>
                 );
