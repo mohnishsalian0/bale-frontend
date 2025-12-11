@@ -15,7 +15,6 @@ import {
   pluralizeMeasuringUnitAbbreviation,
 } from "@/lib/utils/measuring-units";
 import { useSession } from "@/contexts/session-context";
-import { ProductListView } from "@/types/products.types";
 import { getStockUnitWithProductDetail } from "@/lib/queries/stock-units";
 import { StockUnitWithProductDetailView } from "@/types/stock-units.types";
 
@@ -210,13 +209,16 @@ export function QRScannerStep({
   };
 
   const handleOpenInventory = () => {
+    setPaused(true); // Pause scanner when opening inventory
     setShowInventorySheet(true);
   };
 
-  const handleProductSelect = (product: ProductListView) => {
-    // TODO: Open stock units selection for this product
-    console.log("Selected product:", product);
-    setShowInventorySheet(false);
+  const handleInventorySheetClose = (open: boolean) => {
+    setShowInventorySheet(open);
+    if (!open) {
+      // Resume scanner when sheet closes
+      setPaused(false);
+    }
   };
 
   return (
@@ -384,8 +386,10 @@ export function QRScannerStep({
       {showInventorySheet && (
         <SelectInventorySheet
           open={showInventorySheet}
-          onOpenChange={setShowInventorySheet}
-          onProductSelect={handleProductSelect}
+          onOpenChange={handleInventorySheetClose}
+          warehouseId={warehouse.id}
+          scannedUnits={scannedUnits}
+          onScannedUnitsChange={onScannedUnitsChange}
         />
       )}
 

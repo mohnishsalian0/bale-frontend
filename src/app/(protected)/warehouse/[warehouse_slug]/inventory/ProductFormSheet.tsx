@@ -47,6 +47,7 @@ import { InputWithIcon } from "@/components/ui/input-with-icon";
 import { productSchema, ProductFormData } from "@/lib/validations/product";
 import IconGSM from "@/components/icons/IconGSM";
 import IconThreadCount from "@/components/icons/IconThreadCount";
+import { getProductIcon } from "@/lib/utils/product";
 
 interface ProductFormSheetProps {
   open: boolean;
@@ -347,6 +348,10 @@ export function ProductFormSheet({
     onOpenChange(false);
   };
 
+  const RollIcon = getProductIcon("roll");
+  const BatchIcon = getProductIcon("batch");
+  const PieceIcon = getProductIcon("piece");
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
@@ -402,9 +407,18 @@ export function ProductFormSheet({
                       name="stock-type"
                       disabled={!!productToEdit}
                     >
-                      <RadioGroupItem value="roll">Roll</RadioGroupItem>
-                      <RadioGroupItem value="batch">Batch</RadioGroupItem>
-                      <RadioGroupItem value="piece">Piece</RadioGroupItem>
+                      <RadioGroupItem value="roll">
+                        <RollIcon />
+                        Roll
+                      </RadioGroupItem>
+                      <RadioGroupItem value="batch">
+                        <BatchIcon />
+                        Batch
+                      </RadioGroupItem>
+                      <RadioGroupItem value="piece">
+                        <PieceIcon />
+                        Piece
+                      </RadioGroupItem>
                     </RadioGroup>
                   )}
                 />
@@ -499,48 +513,64 @@ export function ProductFormSheet({
               <CollapsibleContent>
                 <div className="flex flex-col gap-6">
                   {/* Materials */}
-                  <Controller
-                    name="materials"
-                    control={control}
-                    render={({ field }) => (
-                      <MultipleSelector
-                        value={field.value}
-                        defaultOptions={materialOptions}
-                        onChange={field.onChange}
-                        placeholder="Materials"
-                        creatable
-                        triggerSearchOnFocus
-                        hidePlaceholderWhenSelected
-                        emptyIndicator={
-                          <p className="text-center text-sm text-gray-500">
-                            No materials found
-                          </p>
-                        }
-                      />
+                  <div className="flex flex-col gap-2">
+                    <Label required>Materials</Label>
+                    <Controller
+                      name="materials"
+                      control={control}
+                      render={({ field }) => (
+                        <MultipleSelector
+                          value={field.value}
+                          defaultOptions={materialOptions}
+                          onChange={field.onChange}
+                          placeholder="Select materials"
+                          creatable
+                          triggerSearchOnFocus
+                          hidePlaceholderWhenSelected
+                          emptyIndicator={
+                            <p className="text-center text-sm text-gray-500">
+                              No materials found
+                            </p>
+                          }
+                        />
+                      )}
+                    />
+                    {errors.materials && (
+                      <p className="text-sm text-red-700">
+                        {errors.materials.message}
+                      </p>
                     )}
-                  />
+                  </div>
 
                   {/* Colors */}
-                  <Controller
-                    name="colors"
-                    control={control}
-                    render={({ field }) => (
-                      <MultipleSelector
-                        value={field.value}
-                        defaultOptions={colorOptions}
-                        onChange={field.onChange}
-                        placeholder="Colors"
-                        creatable
-                        triggerSearchOnFocus
-                        hidePlaceholderWhenSelected
-                        emptyIndicator={
-                          <p className="text-center text-sm text-gray-500">
-                            No colors found
-                          </p>
-                        }
-                      />
+                  <div className="flex flex-col gap-2">
+                    <Label required>Colors</Label>
+                    <Controller
+                      name="colors"
+                      control={control}
+                      render={({ field }) => (
+                        <MultipleSelector
+                          value={field.value}
+                          defaultOptions={colorOptions}
+                          onChange={field.onChange}
+                          placeholder="Select colors"
+                          creatable
+                          triggerSearchOnFocus
+                          hidePlaceholderWhenSelected
+                          emptyIndicator={
+                            <p className="text-center text-sm text-gray-500">
+                              No colors found
+                            </p>
+                          }
+                        />
+                      )}
+                    />
+                    {errors.colors && (
+                      <p className="text-sm text-red-700">
+                        {errors.colors.message}
+                      </p>
                     )}
-                  />
+                  </div>
 
                   {/* Image Upload */}
                   <div className="flex flex-col gap-3">

@@ -249,7 +249,7 @@ export default function StockUnitsPage({ params }: PageParams) {
             <div key={group.inward.id} className="border-t border-gray-200">
               {/* Inward Header */}
               <div className="flex items-center justify-between px-4 py-2 bg-gray-100">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-semibold text-gray-700">
                   GI-{group.inward.sequence_number}
                 </span>
                 <span className="text-xs text-gray-500">

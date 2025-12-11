@@ -20,6 +20,7 @@ interface DatePickerProps {
   onChange?: (date: Date | undefined) => void;
   required?: boolean;
   className?: string;
+  disabled?: (date: Date) => boolean;
 }
 
 export function DatePicker({
@@ -29,6 +30,7 @@ export function DatePicker({
   onChange,
   required = false,
   className,
+  disabled,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -75,6 +77,7 @@ export function DatePicker({
             mode="single"
             selected={value}
             captionLayout="dropdown"
+            disabled={disabled}
             onSelect={(date) => {
               if (onChange) {
                 onChange(date);

@@ -12,8 +12,13 @@ import {
 } from "@/components/ui/select";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
+import {
+  getMeasuringUnitAbbreviation,
+  pluralizeMeasuringUnitAbbreviation,
+} from "@/lib/utils/measuring-units";
 import type { ProductListView, ProductAttribute } from "@/types/products.types";
-import type { StockType } from "@/types/database/enums";
+import type { StockType, MeasuringUnit } from "@/types/database/enums";
+import type { ScannedStockUnit } from "./QRScannerStep";
 
 interface InventoryProductListStepProps {
   products: ProductListView[];
@@ -21,6 +26,7 @@ interface InventoryProductListStepProps {
   colors: ProductAttribute[];
   tags: ProductAttribute[];
   loading: boolean;
+  scannedUnits: ScannedStockUnit[];
   onProductSelect: (product: ProductListView) => void;
 }
 
@@ -30,6 +36,7 @@ export function InventoryProductListStep({
   colors,
   tags,
   loading,
+  scannedUnits,
   onProductSelect,
 }: InventoryProductListStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,6 +87,29 @@ export function InventoryProductListStep({
       return true;
     });
   }, [products, searchQuery, materialFilter, colorFilter, tagsFilter]);
+
+  // Calculate total quantity for a product
+  const getTotalQuantity = (productId: string): number => {
+    return scannedUnits
+      .filter((unit) => unit.stockUnit.product?.id === productId)
+      .reduce((total, unit) => total + unit.quantity, 0);
+  };
+
+  // Format quantity display with unit
+  const formatQuantityDisplay = (product: ProductListView): string | null => {
+    const totalQuantity = getTotalQuantity(product.id);
+    if (totalQuantity === 0) return null;
+
+    const unitAbbr = getMeasuringUnitAbbreviation(
+      product.measuring_unit as MeasuringUnit,
+    );
+    const pluralizedUnit = pluralizeMeasuringUnitAbbreviation(
+      totalQuantity,
+      unitAbbr,
+    );
+
+    return `${totalQuantity} ${pluralizedUnit} added`;
+  };
 
   return (
     <>
@@ -158,8 +188,8 @@ export function InventoryProductListStep({
           <div className="flex flex-col">
             {filteredProducts.map((product) => {
               const imageUrl = product.product_images?.[0];
-
               const productInfoText = getProductInfo(product);
+              const quantityDisplay = formatQuantityDisplay(product);
 
               return (
                 <button
@@ -189,14 +219,21 @@ export function InventoryProductListStep({
                     </p>
                     <p
                       title={productInfoText}
-                      className="text-xs text-gray-500 truncate"
+                      className="text-sm text-gray-500 truncate"
                     >
                       {productInfoText}
                     </p>
                   </div>
 
-                  {/* Right Chevron */}
-                  <IconChevronRight className="size-5 text-gray-400 shrink-0" />
+                  {/* Quantity and Right Chevron */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {quantityDisplay && (
+                      <span className="text-sm font-medium text-green-700">
+                        {quantityDisplay}
+                      </span>
+                    )}
+                    <IconChevronRight className="size-5 text-gray-400" />
+                  </div>
                 </button>
               );
             })}

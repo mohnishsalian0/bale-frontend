@@ -44,6 +44,19 @@ export function OutwardDetailsStep({
     }
   };
 
+  // Disable delivery dates before outward date
+  const isDeliveryDateDisabled = (date: Date) => {
+    // Disable dates before outward date if outward date is selected
+    if (formData.outwardDate) {
+      const outwardDate = new Date(formData.outwardDate);
+      outwardDate.setHours(0, 0, 0, 0);
+      const checkDate = new Date(date);
+      checkDate.setHours(0, 0, 0, 0);
+      return checkDate < outwardDate;
+    }
+    return false;
+  };
+
   return (
     <div className="flex-1 overflow-y-auto flex flex-col gap-5 py-4">
       {/* Date Fields */}
@@ -64,7 +77,7 @@ export function OutwardDetailsStep({
             required
           />
 
-          {/* Due Date */}
+          {/* Delivery Date */}
           <DatePicker
             label="Delivery date"
             placeholder="Pick a date"
@@ -74,6 +87,7 @@ export function OutwardDetailsStep({
                 dueDate: date ? dateToISOString(date) : "",
               })
             }
+            disabled={isDeliveryDateDisabled}
           />
         </div>
       </div>

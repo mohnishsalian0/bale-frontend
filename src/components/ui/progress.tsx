@@ -25,10 +25,10 @@ const progressIndicatorVariants = cva("h-full w-full flex-1 transition-all", {
   variants: {
     color: {
       blue: "bg-primary-500",
-      green: "bg-green-500",
-      yellow: "bg-yellow-500",
-      orange: "bg-orange-500",
-      red: "bg-red-500",
+      green: "bg-green-600",
+      yellow: "bg-yellow-600",
+      orange: "bg-orange-600",
+      red: "bg-red-600",
       gray: "bg-gray-400",
     },
   },
