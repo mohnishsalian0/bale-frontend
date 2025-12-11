@@ -20,7 +20,12 @@ import { formatAbsoluteDate } from "@/lib/utils/date";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getPartnerName, getFormattedAddress } from "@/lib/utils/partner";
 import { getAgentName } from "@/lib/utils/purchase-order";
-import type { MeasuringUnit, StockType, DiscountType, PurchaseOrderStatus } from "@/types/database/enums";
+import type {
+  MeasuringUnit,
+  StockType,
+  DiscountType,
+  PurchaseOrderStatus,
+} from "@/types/database/enums";
 import { Section } from "@/components/layouts/section";
 import { getProductIcon } from "@/lib/utils/product";
 import { usePurchaseOrderByNumber } from "@/lib/query/hooks/purchase-orders";

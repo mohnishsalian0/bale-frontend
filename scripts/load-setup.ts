@@ -179,7 +179,11 @@ interface ProductTemplate {
 const PRODUCT_TEMPLATES: ProductTemplate[] = [
   // Silk fabrics (20) - All rolls with metre/yard/kilogram
   ...Array.from({ length: 20 }, (_, i) => {
-    const measuringUnits: Array<"metre" | "yard" | "kilogram"> = ["metre", "yard", "kilogram"];
+    const measuringUnits: Array<"metre" | "yard" | "kilogram"> = [
+      "metre",
+      "yard",
+      "kilogram",
+    ];
     return {
       name: `Silk Fabric ${["Banarasi", "Kanjivaram", "Tussar", "Chanderi", "Mysore"][i % 5]} ${i + 1}`,
       category: "silk",
@@ -196,14 +200,22 @@ const PRODUCT_TEMPLATES: ProductTemplate[] = [
   // Cotton fabrics (30) - Mix of roll and batch
   ...Array.from({ length: 30 }, (_, i) => {
     const isBatch = i % 3 === 0;
-    const rollUnits: Array<"metre" | "yard" | "kilogram"> = ["metre", "yard", "kilogram"];
+    const rollUnits: Array<"metre" | "yard" | "kilogram"> = [
+      "metre",
+      "yard",
+      "kilogram",
+    ];
     return {
       name: `Cotton Fabric ${["Regular", "Organic", "Printed", "Khadi", "Slub"][i % 5]} ${i + 1}`,
       category: "cotton",
       gsmRange: [120, 180] as [number, number],
       threadCountRange: [50, 80] as [number, number],
       stockType: (isBatch ? "batch" : "roll") as "roll" | "batch",
-      measuringUnit: (isBatch ? "unit" : rollUnits[i % 3]) as "metre" | "yard" | "kilogram" | "unit",
+      measuringUnit: (isBatch ? "unit" : rollUnits[i % 3]) as
+        | "metre"
+        | "yard"
+        | "kilogram"
+        | "unit",
       priceRange: [300, 800] as [number, number],
       materials: ["Cotton"],
       colors: ["White", "Black", "Blue", "Yellow", "Red"],
@@ -212,7 +224,11 @@ const PRODUCT_TEMPLATES: ProductTemplate[] = [
   }),
   // Wool/Blends (15) - All rolls
   ...Array.from({ length: 15 }, (_, i) => {
-    const rollUnits: Array<"metre" | "yard" | "kilogram"> = ["metre", "yard", "kilogram"];
+    const rollUnits: Array<"metre" | "yard" | "kilogram"> = [
+      "metre",
+      "yard",
+      "kilogram",
+    ];
     return {
       name: `Wool Fabric ${["Pure", "Cashmere", "Merino", "Blend", "Fine"][i % 5]} ${i + 1}`,
       category: "wool",
@@ -230,14 +246,26 @@ const PRODUCT_TEMPLATES: ProductTemplate[] = [
   ...Array.from({ length: 20 }, (_, i) => {
     const isPiece = i % 5 === 0;
     const isBatch = i % 7 === 0 && !isPiece;
-    const rollUnits: Array<"metre" | "yard" | "kilogram"> = ["metre", "yard", "kilogram"];
+    const rollUnits: Array<"metre" | "yard" | "kilogram"> = [
+      "metre",
+      "yard",
+      "kilogram",
+    ];
     return {
       name: `Synthetic Fabric ${["Polyester", "Nylon", "Rayon", "Lycra"][i % 4]} ${i + 1}`,
       category: "synthetic",
       gsmRange: [140, 220] as [number, number],
       threadCountRange: [55, 85] as [number, number],
-      stockType: (isPiece ? "piece" : isBatch ? "batch" : "roll") as "roll" | "batch" | "piece",
-      measuringUnit: (isPiece ? null : isBatch ? "unit" : rollUnits[i % 3]) as "metre" | "yard" | "kilogram" | "unit" | null,
+      stockType: (isPiece ? "piece" : isBatch ? "batch" : "roll") as
+        | "roll"
+        | "batch"
+        | "piece",
+      measuringUnit: (isPiece ? null : isBatch ? "unit" : rollUnits[i % 3]) as
+        | "metre"
+        | "yard"
+        | "kilogram"
+        | "unit"
+        | null,
       priceRange: [250, 700] as [number, number],
       materials: ["Polyester"],
       colors: ["Blue", "Black", "Red", "Green", "Yellow"],
@@ -247,14 +275,22 @@ const PRODUCT_TEMPLATES: ProductTemplate[] = [
   // Specialty (15) - Mix of roll and batch
   ...Array.from({ length: 15 }, (_, i) => {
     const isBatch = i % 4 === 0;
-    const rollUnits: Array<"metre" | "yard" | "kilogram"> = ["metre", "yard", "kilogram"];
+    const rollUnits: Array<"metre" | "yard" | "kilogram"> = [
+      "metre",
+      "yard",
+      "kilogram",
+    ];
     return {
       name: `Specialty Fabric ${["Linen", "Jute", "Bamboo", "Modal", "Hemp"][i % 5]} ${i + 1}`,
       category: "specialty",
       gsmRange: [130, 200] as [number, number],
       threadCountRange: [45, 70] as [number, number],
       stockType: (isBatch ? "batch" : "roll") as "roll" | "batch",
-      measuringUnit: (isBatch ? "unit" : rollUnits[i % 3]) as "metre" | "yard" | "kilogram" | "unit",
+      measuringUnit: (isBatch ? "unit" : rollUnits[i % 3]) as
+        | "metre"
+        | "yard"
+        | "kilogram"
+        | "unit",
       priceRange: [600, 1500] as [number, number],
       materials: ["Linen"],
       colors: ["White", "Black", "Green", "Yellow"],
@@ -291,9 +327,7 @@ async function generateProducts(
 
     const showOnCatalog = Math.random() < 0.7; // 70% visible
     const minStockAlert = Math.random() < 0.8; // 80% have alerts
-    const minStockThreshold = minStockAlert
-      ? randomInt(10, 100)
-      : undefined;
+    const minStockThreshold = minStockAlert ? randomInt(10, 100) : undefined;
 
     products.push({
       company_id: companyId,
@@ -307,7 +341,12 @@ async function generateProducts(
       show_on_catalog: showOnCatalog,
       min_stock_alert: minStockAlert,
       min_stock_threshold: minStockThreshold,
-      hsn_code: template.category === "silk" ? "5007" : template.category === "cotton" ? "5208" : "5407",
+      hsn_code:
+        template.category === "silk"
+          ? "5007"
+          : template.category === "cotton"
+            ? "5208"
+            : "5407",
       notes: `${template.category} fabric - auto-generated test data`,
       created_by: userId,
     });
@@ -404,21 +443,39 @@ async function generateGoodsInwards(
   purchaseOrders: Array<{
     id: string;
     status: string;
-    items: Array<{ product_id: string; required_quantity: number; received_quantity: number }>;
+    items: Array<{
+      product_id: string;
+      required_quantity: number;
+      received_quantity: number;
+    }>;
   }>,
   salesOrders: Array<{
     id: string;
     status: string;
-    items: Array<{ product_id: string; required_quantity: number; dispatched_quantity: number }>;
+    items: Array<{
+      product_id: string;
+      required_quantity: number;
+      dispatched_quantity: number;
+    }>;
   }>,
 ) {
   console.log("\n📥 Generating 600 goods inwards entries...\n");
-  console.log("   Distribution: 50% purchase orders, 30% sales returns, 20% other\n");
+  console.log(
+    "   Distribution: 50% purchase orders, 30% sales returns, 20% other\n",
+  );
 
   const monthlyTargets = [
-    60, 60, 60, // Jan-Mar (wedding season)
-    45, 45, 45, 45, 45, // Apr-Aug
-    55, 55, 55, // Sep-Nov (festive)
+    60,
+    60,
+    60, // Jan-Mar (wedding season)
+    45,
+    45,
+    45,
+    45,
+    45, // Apr-Aug
+    55,
+    55,
+    55, // Sep-Nov (festive)
     35, // Dec
   ];
 
@@ -429,14 +486,16 @@ async function generateGoodsInwards(
 
   // Filter eligible purchase orders (completed or in_progress with received items)
   const eligiblePOs = purchaseOrders.filter(
-    (po) => (po.status === "completed" || po.status === "in_progress") &&
-            po.items.some((item) => item.received_quantity > 0)
+    (po) =>
+      (po.status === "completed" || po.status === "in_progress") &&
+      po.items.some((item) => item.received_quantity > 0),
   );
 
   // Filter eligible sales orders for returns (completed orders)
   const eligibleSOs = salesOrders.filter(
-    (so) => so.status === "completed" &&
-            so.items.some((item) => item.dispatched_quantity > 0)
+    (so) =>
+      so.status === "completed" &&
+      so.items.some((item) => item.dispatched_quantity > 0),
   );
 
   const otherReasons = [
@@ -492,13 +551,16 @@ async function generateGoodsInwards(
           .slice(0, randomInt(1, Math.min(3, so.items.length))) // Return 1-3 product types
           .map((item) => ({
             id: item.product_id,
-            quantity: Math.floor(item.dispatched_quantity * randomFloat(0.2, 0.5)),
+            quantity: Math.floor(
+              item.dispatched_quantity * randomFloat(0.2, 0.5),
+            ),
           }));
         linkedToSR++;
       } else {
         // Other type (20%)
         inwardType = "other";
-        otherReason = otherReasons[Math.floor(Math.random() * otherReasons.length)];
+        otherReason =
+          otherReasons[Math.floor(Math.random() * otherReasons.length)];
 
         // Random products
         const itemCount = randomInt(1, 5);
@@ -509,7 +571,8 @@ async function generateGoodsInwards(
         other++;
       }
 
-      const partnerId = partnerIds[Math.floor(Math.random() * partnerIds.length)];
+      const partnerId =
+        partnerIds[Math.floor(Math.random() * partnerIds.length)];
 
       // Create inward
       const { data: inward, error: inwardError } = await supabase
@@ -541,9 +604,10 @@ async function generateGoodsInwards(
         const qtyPerUnit = totalQty / stockUnitsCount;
 
         for (let j = 0; j < stockUnitsCount; j++) {
-          const quantity = j === stockUnitsCount - 1
-            ? parseFloat((totalQty - qtyPerUnit * j).toFixed(2)) // Last unit gets remainder
-            : parseFloat(qtyPerUnit.toFixed(2));
+          const quantity =
+            j === stockUnitsCount - 1
+              ? parseFloat((totalQty - qtyPerUnit * j).toFixed(2)) // Last unit gets remainder
+              : parseFloat(qtyPerUnit.toFixed(2));
 
           const qualityRoll = Math.random();
           const qualityGrade =
@@ -568,15 +632,23 @@ async function generateGoodsInwards(
 
       totalCreated++;
       if (totalCreated % 50 === 0) {
-        console.log(`   ✅ Created ${totalCreated}/600 inwards (PO: ${linkedToPO}, SR: ${linkedToSR}, Other: ${other})...`);
+        console.log(
+          `   ✅ Created ${totalCreated}/600 inwards (PO: ${linkedToPO}, SR: ${linkedToSR}, Other: ${other})...`,
+        );
       }
     }
   }
 
   console.log(`\n✨ Successfully created ${totalCreated} goods inwards!`);
-  console.log(`   • Linked to purchase orders: ${linkedToPO} (${Math.round((linkedToPO / totalCreated) * 100)}%)`);
-  console.log(`   • Linked to sales returns: ${linkedToSR} (${Math.round((linkedToSR / totalCreated) * 100)}%)`);
-  console.log(`   • Other inwards: ${other} (${Math.round((other / totalCreated) * 100)}%)`);
+  console.log(
+    `   • Linked to purchase orders: ${linkedToPO} (${Math.round((linkedToPO / totalCreated) * 100)}%)`,
+  );
+  console.log(
+    `   • Linked to sales returns: ${linkedToSR} (${Math.round((linkedToSR / totalCreated) * 100)}%)`,
+  );
+  console.log(
+    `   • Other inwards: ${other} (${Math.round((other / totalCreated) * 100)}%)`,
+  );
   return totalCreated;
 }
 
@@ -595,21 +667,37 @@ async function generateSalesOrders(
   console.log("\n📋 Generating 500 sales orders...\n");
 
   const monthlyTargets = [
-    50, 50, 50, // Jan-Mar (wedding season)
-    40, 40, 40, // Apr-Jun (summer)
-    30, 50, // Jul-Aug (monsoon dip then recovery)
-    40, 40, 40, // Sep-Nov (festive)
+    50,
+    50,
+    50, // Jan-Mar (wedding season)
+    40,
+    40,
+    40, // Apr-Jun (summer)
+    30,
+    50, // Jul-Aug (monsoon dip then recovery)
+    40,
+    40,
+    40, // Sep-Nov (festive)
     30, // Dec
   ];
 
   let totalCreated = 0;
-  const statuses = ["approval_pending", "in_progress", "completed", "cancelled"];
+  const statuses = [
+    "approval_pending",
+    "in_progress",
+    "completed",
+    "cancelled",
+  ];
   const statusWeights = [0.15, 0.25, 0.5, 0.1]; // 15%, 25%, 50%, 10%
 
   const createdOrders: Array<{
     id: string;
     status: string;
-    items: Array<{ product_id: string; required_quantity: number; dispatched_quantity: number }>;
+    items: Array<{
+      product_id: string;
+      required_quantity: number;
+      dispatched_quantity: number;
+    }>;
   }> = [];
 
   for (let month = 1; month <= 12; month++) {
@@ -644,15 +732,24 @@ async function generateSalesOrders(
         finalDeliveryDate = pastDate.toISOString().split("T")[0];
       }
 
-      const customerId = customerIds[Math.floor(Math.random() * customerIds.length)];
+      const customerId =
+        customerIds[Math.floor(Math.random() * customerIds.length)];
 
       // Discount logic (discount_type_enum: 'none' | 'percentage' | 'flat_amount')
       const hasDiscount = Math.random() < 0.7; // 70% get discount
-      const discountType = hasDiscount ? (Math.random() < 0.8 ? "percentage" : "flat_amount") : "none";
+      const discountType = hasDiscount
+        ? Math.random() < 0.8
+          ? "percentage"
+          : "flat_amount"
+        : "none";
       const discountValue = hasDiscount ? randomFloat(5, 20, 0) : 0;
 
       const totalAmount = randomFloat(5000, 50000, 2);
-      const advanceAmount = randomFloat(totalAmount * 0.3, totalAmount * 0.6, 2);
+      const advanceAmount = randomFloat(
+        totalAmount * 0.3,
+        totalAmount * 0.6,
+        2,
+      );
 
       // Create order
       const { data: order, error: orderError } = await supabase
@@ -682,7 +779,11 @@ async function generateSalesOrders(
       // Create order items (1-8 products per order)
       const itemCount = randomInt(1, 8);
       const selectedProducts = selectRandom(productIds, itemCount);
-      const orderItems: Array<{ product_id: string; required_quantity: number; dispatched_quantity: number }> = [];
+      const orderItems: Array<{
+        product_id: string;
+        required_quantity: number;
+        dispatched_quantity: number;
+      }> = [];
 
       for (const productId of selectedProducts) {
         const requiredQty = randomInt(5, 200);
@@ -691,7 +792,8 @@ async function generateSalesOrders(
         if (status === "completed") {
           dispatchedQty = requiredQty;
         } else if (status === "cancelled") {
-          dispatchedQty = Math.random() < 0.1 ? randomInt(1, requiredQty * 0.3) : 0;
+          dispatchedQty =
+            Math.random() < 0.1 ? randomInt(1, requiredQty * 0.3) : 0;
         } else if (status === "in_progress") {
           dispatchedQty = Math.floor(requiredQty * randomFloat(0.3, 0.9));
         } else if (status === "approval_pending") {
@@ -708,7 +810,11 @@ async function generateSalesOrders(
           notes: `Auto-generated test data`,
         });
 
-        orderItems.push({ product_id: productId, required_quantity: requiredQty, dispatched_quantity: dispatchedQty });
+        orderItems.push({
+          product_id: productId,
+          required_quantity: requiredQty,
+          dispatched_quantity: dispatchedQty,
+        });
       }
 
       createdOrders.push({
@@ -744,26 +850,44 @@ async function generatePurchaseOrders(
   console.log("\n📦 Generating 400 purchase orders...\n");
 
   const monthlyTargets = [
-    40, 40, 40, // Jan-Mar (wedding season - higher procurement)
-    30, 30, 30, // Apr-Jun (regular)
-    25, 35, // Jul-Aug (monsoon dip then recovery)
-    35, 35, 35, // Sep-Nov (festive season prep)
+    40,
+    40,
+    40, // Jan-Mar (wedding season - higher procurement)
+    30,
+    30,
+    30, // Apr-Jun (regular)
+    25,
+    35, // Jul-Aug (monsoon dip then recovery)
+    35,
+    35,
+    35, // Sep-Nov (festive season prep)
     25, // Dec
   ];
 
   let totalCreated = 0;
-  const statuses = ["approval_pending", "in_progress", "completed", "cancelled"];
+  const statuses = [
+    "approval_pending",
+    "in_progress",
+    "completed",
+    "cancelled",
+  ];
   const statusWeights = [0.15, 0.25, 0.5, 0.1]; // 15%, 25%, 50%, 10%
 
   const createdOrders: Array<{
     id: string;
     status: string;
-    items: Array<{ product_id: string; required_quantity: number; received_quantity: number }>;
+    items: Array<{
+      product_id: string;
+      required_quantity: number;
+      received_quantity: number;
+    }>;
   }> = [];
 
   for (let month = 1; month <= 12; month++) {
     const targetCount = monthlyTargets[month - 1];
-    console.log(`📅 Month ${month}: Creating ${targetCount} purchase orders...`);
+    console.log(
+      `📅 Month ${month}: Creating ${targetCount} purchase orders...`,
+    );
 
     for (let i = 0; i < targetCount; i++) {
       const orderDate = getRandomDate(month, year);
@@ -793,27 +917,47 @@ async function generatePurchaseOrders(
         finalDeliveryDate = pastDate.toISOString().split("T")[0];
       }
 
-      const supplierId = supplierIds[Math.floor(Math.random() * supplierIds.length)];
-      const agentId = Math.random() < 0.3 && agentIds.length > 0
-        ? agentIds[Math.floor(Math.random() * agentIds.length)]
-        : null; // 30% have agents
+      const supplierId =
+        supplierIds[Math.floor(Math.random() * supplierIds.length)];
+      const agentId =
+        Math.random() < 0.3 && agentIds.length > 0
+          ? agentIds[Math.floor(Math.random() * agentIds.length)]
+          : null; // 30% have agents
 
       // Discount logic (discount_type_enum: 'none' | 'percentage' | 'flat_amount')
       const hasDiscount = Math.random() < 0.6; // 60% get discount (less than sales)
-      const discountType = hasDiscount ? (Math.random() < 0.9 ? "percentage" : "flat_amount") : "none";
+      const discountType = hasDiscount
+        ? Math.random() < 0.9
+          ? "percentage"
+          : "flat_amount"
+        : "none";
       const discountValue = hasDiscount ? randomFloat(3, 15, 0) : 0; // Lower discounts for purchases
 
       const totalAmount = randomFloat(10000, 80000, 2);
-      const advanceAmount = randomFloat(totalAmount * 0.2, totalAmount * 0.5, 2);
+      const advanceAmount = randomFloat(
+        totalAmount * 0.2,
+        totalAmount * 0.5,
+        2,
+      );
 
       // Payment terms
-      const paymentTermsOptions = ["15 days net", "30 days net", "45 days net", "60 days net", "Cash on delivery"];
-      const paymentTerms = paymentTermsOptions[Math.floor(Math.random() * paymentTermsOptions.length)];
+      const paymentTermsOptions = [
+        "15 days net",
+        "30 days net",
+        "45 days net",
+        "60 days net",
+        "Cash on delivery",
+      ];
+      const paymentTerms =
+        paymentTermsOptions[
+          Math.floor(Math.random() * paymentTermsOptions.length)
+        ];
 
       // Supplier invoice number for completed orders
-      const supplierInvoiceNumber = status === "completed"
-        ? `INV-${year}-${String(1000 + totalCreated).padStart(4, "0")}`
-        : null;
+      const supplierInvoiceNumber =
+        status === "completed"
+          ? `INV-${year}-${String(1000 + totalCreated).padStart(4, "0")}`
+          : null;
 
       // Create order
       const { data: order, error: orderError } = await supabase
@@ -839,14 +983,20 @@ async function generatePurchaseOrders(
         .single();
 
       if (orderError || !order) {
-        console.error(`❌ Failed to create purchase order: ${orderError?.message}`);
+        console.error(
+          `❌ Failed to create purchase order: ${orderError?.message}`,
+        );
         continue;
       }
 
       // Create order items (1-8 products per order)
       const itemCount = randomInt(1, 8);
       const selectedProducts = selectRandom(productIds, itemCount);
-      const orderItems: Array<{ product_id: string; required_quantity: number; received_quantity: number }> = [];
+      const orderItems: Array<{
+        product_id: string;
+        required_quantity: number;
+        received_quantity: number;
+      }> = [];
 
       for (const productId of selectedProducts) {
         const requiredQty = randomInt(10, 300); // Higher quantities for purchases
@@ -855,7 +1005,8 @@ async function generatePurchaseOrders(
         if (status === "completed") {
           receivedQty = requiredQty;
         } else if (status === "cancelled") {
-          receivedQty = Math.random() < 0.1 ? randomInt(1, requiredQty * 0.3) : 0;
+          receivedQty =
+            Math.random() < 0.1 ? randomInt(1, requiredQty * 0.3) : 0;
         } else if (status === "in_progress") {
           receivedQty = Math.floor(requiredQty * randomFloat(0.3, 0.9));
         } else if (status === "approval_pending") {
@@ -872,7 +1023,11 @@ async function generatePurchaseOrders(
           notes: `Auto-generated test data`,
         });
 
-        orderItems.push({ product_id: productId, required_quantity: requiredQty, received_quantity: receivedQty });
+        orderItems.push({
+          product_id: productId,
+          required_quantity: requiredQty,
+          received_quantity: receivedQty,
+        });
       }
 
       createdOrders.push({
@@ -903,11 +1058,17 @@ async function generateGoodsOutwards(
   salesOrders: Array<{
     id: string;
     status: string;
-    items: Array<{ product_id: string; required_quantity: number; dispatched_quantity: number }>;
+    items: Array<{
+      product_id: string;
+      required_quantity: number;
+      dispatched_quantity: number;
+    }>;
   }>,
   year: number,
 ) {
-  console.log("\n📤 Generating goods outwards (linked to sales orders + standalone)...\n");
+  console.log(
+    "\n📤 Generating goods outwards (linked to sales orders + standalone)...\n",
+  );
 
   let totalCreated = 0;
 
@@ -924,11 +1085,15 @@ async function generateGoodsOutwards(
   // 1. Create outwards for sales orders (280 outwards from 500 orders)
   for (const order of salesOrders) {
     // Skip if no items dispatched
-    const totalDispatched = order.items.reduce((sum, item) => sum + item.dispatched_quantity, 0);
+    const totalDispatched = order.items.reduce(
+      (sum, item) => sum + item.dispatched_quantity,
+      0,
+    );
     if (totalDispatched === 0) continue;
 
     // Prepare stock unit items
-    const stockUnitItems: Array<{ stock_unit_id: string; quantity: number }> = [];
+    const stockUnitItems: Array<{ stock_unit_id: string; quantity: number }> =
+      [];
 
     for (const item of order.items) {
       if (item.dispatched_quantity === 0) continue;
@@ -946,17 +1111,24 @@ async function generateGoodsOutwards(
     }
 
     if (stockUnitItems.length === 0) {
-      console.log(`   ⚠️  No stock available for order ${order.id}, skipping...`);
+      console.log(
+        `   ⚠️  No stock available for order ${order.id}, skipping...`,
+      );
       continue;
     }
 
     // Get a random customer partner_id (constraint requires partner_id OR to_warehouse_id)
-    const partnerId = customerPartnerIds.length > 0
-      ? customerPartnerIds[Math.floor(Math.random() * customerPartnerIds.length)]
-      : null;
+    const partnerId =
+      customerPartnerIds.length > 0
+        ? customerPartnerIds[
+            Math.floor(Math.random() * customerPartnerIds.length)
+          ]
+        : null;
 
     if (!partnerId) {
-      console.log(`   ⚠️  No customer partner available, skipping order ${order.id}...`);
+      console.log(
+        `   ⚠️  No customer partner available, skipping order ${order.id}...`,
+      );
       continue;
     }
 
@@ -977,7 +1149,9 @@ async function generateGoodsOutwards(
     });
 
     if (error) {
-      console.error(`   ❌ Failed to create outward for order: ${error.message}`);
+      console.error(
+        `   ❌ Failed to create outward for order: ${error.message}`,
+      );
     } else {
       totalCreated++;
       if (totalCreated % 50 === 0) {
@@ -1012,11 +1186,16 @@ async function generateGoodsOutwards(
 
     for (let i = 0; i < 120 && stockIndex < availableStockUnits.length; i++) {
       const outwardDate = getRandomDate(randomInt(1, 12), year);
-      const reason = otherReasons[Math.floor(Math.random() * otherReasons.length)];
+      const reason =
+        otherReasons[Math.floor(Math.random() * otherReasons.length)];
 
       // Select 1-6 stock units
-      const itemCount = Math.min(randomInt(1, 6), availableStockUnits.length - stockIndex);
-      const stockUnitItems: Array<{ stock_unit_id: string; quantity: number }> = [];
+      const itemCount = Math.min(
+        randomInt(1, 6),
+        availableStockUnits.length - stockIndex,
+      );
+      const stockUnitItems: Array<{ stock_unit_id: string; quantity: number }> =
+        [];
 
       for (let j = 0; j < itemCount; j++) {
         const stockUnit = availableStockUnits[stockIndex++];
@@ -1032,12 +1211,17 @@ async function generateGoodsOutwards(
       }
 
       // Get a random partner for the outward (constraint requires partner_id OR to_warehouse_id)
-      const partnerId = customerPartnerIds.length > 0
-        ? customerPartnerIds[Math.floor(Math.random() * customerPartnerIds.length)]
-        : null;
+      const partnerId =
+        customerPartnerIds.length > 0
+          ? customerPartnerIds[
+              Math.floor(Math.random() * customerPartnerIds.length)
+            ]
+          : null;
 
       if (!partnerId) {
-        console.log(`   ⚠️  No partner available for other outward, skipping...`);
+        console.log(
+          `   ⚠️  No partner available for other outward, skipping...`,
+        );
         continue;
       }
 
@@ -1084,7 +1268,9 @@ async function loadTestData() {
     .limit(1);
 
   if (companyError || !companies || companies.length === 0) {
-    console.error("❌ No company found. Please run setup.ts first to create a company.");
+    console.error(
+      "❌ No company found. Please run setup.ts first to create a company.",
+    );
     return;
   }
 
@@ -1157,12 +1343,20 @@ async function loadTestData() {
     return;
   }
 
-  const supplierIds = partners.filter((p) => p.partner_type === "supplier").map((p) => p.id);
-  const customerIds = partners.filter((p) => p.partner_type === "customer").map((p) => p.id);
-  const agentIds = partners.filter((p) => p.partner_type === "agent").map((p) => p.id);
+  const supplierIds = partners
+    .filter((p) => p.partner_type === "supplier")
+    .map((p) => p.id);
+  const customerIds = partners
+    .filter((p) => p.partner_type === "customer")
+    .map((p) => p.id);
+  const agentIds = partners
+    .filter((p) => p.partner_type === "agent")
+    .map((p) => p.id);
 
   if (supplierIds.length === 0 || customerIds.length === 0) {
-    console.error("❌ Missing suppliers or customers. Please run setup.ts first.");
+    console.error(
+      "❌ Missing suppliers or customers. Please run setup.ts first.",
+    );
     return;
   }
 

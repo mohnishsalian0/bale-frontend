@@ -22,9 +22,15 @@ export const productSchema = z
     showOnCatalog: z.boolean().default(true),
 
     // Optional feature fields
-    materials: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
-    colors: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
-    tags: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
+    materials: z
+      .array(z.object({ value: z.string(), label: z.string() }))
+      .default([]),
+    colors: z
+      .array(z.object({ value: z.string(), label: z.string() }))
+      .default([]),
+    tags: z
+      .array(z.object({ value: z.string(), label: z.string() }))
+      .default([]),
 
     // Optional numeric fields with validation
     gsm: z
@@ -37,7 +43,7 @@ export const productSchema = z
           .int()
           .min(50, "GSM must be at least 50")
           .max(500, "GSM must not exceed 500")
-          .nullable()
+          .nullable(),
       )
       .or(z.null()),
 
@@ -45,7 +51,9 @@ export const productSchema = z
       .string()
       .trim()
       .transform((val) => (val === "" ? null : parseInt(val)))
-      .pipe(z.number().int().positive("Thread count must be positive").nullable())
+      .pipe(
+        z.number().int().positive("Thread count must be positive").nullable(),
+      )
       .or(z.null()),
 
     // Optional pricing fields
@@ -54,10 +62,7 @@ export const productSchema = z
       .trim()
       .transform((val) => (val === "" ? null : parseFloat(val)))
       .pipe(
-        z
-          .number()
-          .nonnegative("Cost price must be 0 or greater")
-          .nullable()
+        z.number().nonnegative("Cost price must be 0 or greater").nullable(),
       )
       .or(z.null()),
 
@@ -66,10 +71,7 @@ export const productSchema = z
       .trim()
       .transform((val) => (val === "" ? null : parseFloat(val)))
       .pipe(
-        z
-          .number()
-          .nonnegative("Selling price must be 0 or greater")
-          .nullable()
+        z.number().nonnegative("Selling price must be 0 or greater").nullable(),
       )
       .or(z.null()),
 
@@ -84,7 +86,7 @@ export const productSchema = z
           .number()
           .int()
           .nonnegative("Minimum stock threshold must be 0 or greater")
-          .nullable()
+          .nullable(),
       )
       .or(z.null()),
 
@@ -103,7 +105,7 @@ export const productSchema = z
     {
       message: "Measuring unit is required for roll type products",
       path: ["measuringUnit"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -116,7 +118,7 @@ export const productSchema = z
     {
       message: "Minimum stock threshold is required when alert is enabled",
       path: ["minStockThreshold"],
-    }
+    },
   );
 
 /**

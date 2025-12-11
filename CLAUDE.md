@@ -172,9 +172,11 @@ export interface SalesOrderListView extends SalesOrder {
 }
 
 // ✅ Good - Uses Pick<> with base type inside
-export interface SalesOrderListView
-  extends Pick<SalesOrder, 'id' | 'sequence_number' | 'status'> {
-  customer: Pick<Partner, 'first_name' | 'last_name'> | null;
+export interface SalesOrderListView extends Pick<
+  SalesOrder,
+  "id" | "sequence_number" | "status"
+> {
+  customer: Pick<Partner, "first_name" | "last_name"> | null;
 }
 ```
 
@@ -192,10 +194,10 @@ export interface SalesOrderListView
 
 ```typescript
 // If agent_id is NULLABLE in database:
-agent: Pick<Partner, 'id' | 'name'> | null;
+agent: Pick<Partner, "id" | "name"> | null;
 
 // If customer_id is NOT NULL in database:
-customer: Pick<Partner, 'id' | 'name'>;
+customer: Pick<Partner, "id" | "name">;
 ```
 
 4. **Don't create new field interfaces** - Use `Pick<>` unless fields are derived/computed
@@ -208,8 +210,10 @@ export interface SalesOrderItemListView {
 }
 
 // ✅ Good - Uses Pick<> for DB fields
-export interface SalesOrderItemListView
-  extends Pick<SalesOrderItem, 'id' | 'quantity'> {
+export interface SalesOrderItemListView extends Pick<
+  SalesOrderItem,
+  "id" | "quantity"
+> {
   // Only add new fields if they're computed/derived
   displayName?: string; // Computed field, not from DB
 }
@@ -219,20 +223,19 @@ export interface SalesOrderItemListView
 
 ```typescript
 // ✅ Good naming
-export interface SalesOrderListView { }
-export interface SalesOrderDetailView { }
-export interface PartnerListView { }
+export interface SalesOrderListView {}
+export interface SalesOrderDetailView {}
+export interface PartnerListView {}
 ```
 
 6. **Consolidate to 2 types per domain** - ListView and DetailView (unless bespoke requirement)
 
 ```typescript
 // For most domains, keep it simple:
-- ProductListView      // For list pages
-- ProductDetailView    // For detail pages
-
-// Only add specialized views if truly needed:
-- ProductCatalogView   // Bespoke requirement for public catalog
+-ProductListView - // For list pages
+  ProductDetailView - // For detail pages
+  // Only add specialized views if truly needed:
+  ProductCatalogView; // Bespoke requirement for public catalog
 ```
 
 #### Type-Query Alignment
@@ -242,12 +245,13 @@ export interface PartnerListView { }
 - **Payload reduction**: Fetching only needed fields can reduce payload by 50-70%
 
 Example:
+
 ```typescript
 // ❌ Bad - Type includes all fields, query fetches 3
 partner: Partner | null;
 
 // ✅ Good - Type matches what query fetches
-partner: Pick<Partner, 'first_name' | 'last_name' | 'company_name'> | null;
+partner: Pick<Partner, "first_name" | "last_name" | "company_name"> | null;
 ```
 
 #### Documentation
@@ -259,5 +263,5 @@ partner: Pick<Partner, 'first_name' | 'last_name' | 'company_name'> | null;
  * Sales order with minimal details for list views
  * Used in: sales order list page, partner detail page
  */
-export interface SalesOrderListView { }
+export interface SalesOrderListView {}
 ```

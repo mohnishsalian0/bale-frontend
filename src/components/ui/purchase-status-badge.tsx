@@ -35,7 +35,10 @@ export function getStatusConfig(
 /**
  * Status badge for purchase order
  */
-export function PurchaseStatusBadge({ status, className }: PurchaseStatusBadgeProps) {
+export function PurchaseStatusBadge({
+  status,
+  className,
+}: PurchaseStatusBadgeProps) {
   const config = getStatusConfig(status);
 
   return (

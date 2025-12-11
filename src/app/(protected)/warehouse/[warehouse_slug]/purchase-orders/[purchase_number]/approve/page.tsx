@@ -188,7 +188,9 @@ export default function ApprovePurchaseOrderPage({
   };
 
   const handleCancel = () => {
-    router.push(`/warehouse/${warehouse.slug}/purchase-orders/${purchase_number}`);
+    router.push(
+      `/warehouse/${warehouse.slug}/purchase-orders/${purchase_number}`,
+    );
   };
 
   const handleSubmit = () => {

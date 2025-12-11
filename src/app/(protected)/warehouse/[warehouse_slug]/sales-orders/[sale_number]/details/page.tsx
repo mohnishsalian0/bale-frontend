@@ -17,8 +17,17 @@ import { getInitials } from "@/lib/utils/initials";
 import { formatCurrency } from "@/lib/utils/financial";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getPartnerName, getFormattedAddress } from "@/lib/utils/partner";
-import { getAgentName, getOrderDisplayStatus, type DisplayStatus } from "@/lib/utils/sales-order";
-import type { MeasuringUnit, StockType, DiscountType, SalesOrderStatus } from "@/types/database/enums";
+import {
+  getAgentName,
+  getOrderDisplayStatus,
+  type DisplayStatus,
+} from "@/lib/utils/sales-order";
+import type {
+  MeasuringUnit,
+  StockType,
+  DiscountType,
+  SalesOrderStatus,
+} from "@/types/database/enums";
 import { Section } from "@/components/layouts/section";
 import { getProductIcon } from "@/lib/utils/product";
 import { useSalesOrderByNumber } from "@/lib/query/hooks/sales-orders";
@@ -34,7 +43,6 @@ import { AgentEditSheet } from "../AgentEditSheet";
 import { WarehouseEditSheet } from "../WarehouseEditSheet";
 import { PaymentTermsEditSheet } from "../PaymentTermsEditSheet";
 import { TransportEditSheet } from "../TransportEditSheet";
-
 
 interface PageParams {
   params: Promise<{
@@ -53,7 +61,7 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
   const [showWarehouseEdit, setShowWarehouseEdit] = useState(false);
   const [showTransportEdit, setShowTransportEdit] = useState(false);
   const [showNotesEdit, setShowNotesEdit] = useState(false);
-  
+
   // Fetch sales order using TanStack Query
   const {
     data: order,
@@ -84,7 +92,7 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
       order.expected_delivery_date,
     );
   }, [order]);
-  
+
   const progressBarColor = getStatusConfig(displayStatus).color;
 
   if (isLoading) {
@@ -284,19 +292,20 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
           onEdit={() => setShowWarehouseEdit(true)}
           icon={() => <IconBuildingWarehouse className="size-5" />}
         >
-          {order.warehouse && getFormattedAddress(order.warehouse).length > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-700 flex items-center gap-2">
-                <IconMapPin className="size-4" />
-                Address
-              </span>
-              <div className="font-semibold text-gray-700 text-right max-w-[200px]">
-                {getFormattedAddress(order.warehouse).map((line, index) => (
-                  <p key={index}>{line}</p>
-                ))}
+          {order.warehouse &&
+            getFormattedAddress(order.warehouse).length > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-700 flex items-center gap-2">
+                  <IconMapPin className="size-4" />
+                  Address
+                </span>
+                <div className="font-semibold text-gray-700 text-right max-w-[200px]">
+                  {getFormattedAddress(order.warehouse).map((line, index) => (
+                    <p key={index}>{line}</p>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
         </Section>
 
         {/* Notes Section */}

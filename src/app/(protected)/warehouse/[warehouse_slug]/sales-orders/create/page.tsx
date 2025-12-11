@@ -97,7 +97,10 @@ export default function CreateSalesOrderPage() {
   };
 
   const canProceed = useMemo(
-    () => Object.values(productSelections).some((p) => p.selected && p.quantity > 0),
+    () =>
+      Object.values(productSelections).some(
+        (p) => p.selected && p.quantity > 0,
+      ),
     [productSelections],
   );
 
@@ -179,7 +182,9 @@ export default function CreateSalesOrderPage() {
       {
         onSuccess: (sequenceNumber) => {
           toast.success("Sales order created successfully");
-          router.push(`/warehouse/${warehouse.slug}/sales-orders/${sequenceNumber}`);
+          router.push(
+            `/warehouse/${warehouse.slug}/sales-orders/${sequenceNumber}`,
+          );
         },
         onError: (error) => {
           console.error("Error creating sales order:", error);

@@ -114,10 +114,7 @@ export function InwardLinkToStep({
               placeholder="Enter PO number from supplier/vendor"
               value={linkToData.purchase_order_id || ""}
               onChange={(e) =>
-                handleValueChange(
-                  "purchase_order_id",
-                  e.target.value || null,
-                )
+                handleValueChange("purchase_order_id", e.target.value || null)
               }
               required
             />

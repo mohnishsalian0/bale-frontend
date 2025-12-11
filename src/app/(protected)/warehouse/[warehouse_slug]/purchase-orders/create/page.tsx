@@ -99,7 +99,10 @@ export default function CreatePurchaseOrderPage() {
   };
 
   const canProceed = useMemo(
-    () => Object.values(productSelections).some((p) => p.selected && p.quantity > 0),
+    () =>
+      Object.values(productSelections).some(
+        (p) => p.selected && p.quantity > 0,
+      ),
     [productSelections],
   );
 
@@ -181,7 +184,9 @@ export default function CreatePurchaseOrderPage() {
       {
         onSuccess: (sequenceNumber) => {
           toast.success("Purchase order created successfully");
-          router.push(`/warehouse/${warehouse.slug}/purchase-orders/${sequenceNumber}`);
+          router.push(
+            `/warehouse/${warehouse.slug}/purchase-orders/${sequenceNumber}`,
+          );
         },
         onError: (error) => {
           console.error("Error creating purchase order:", error);

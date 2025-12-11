@@ -667,9 +667,7 @@ async function createTestPartners() {
         .insert(assignments);
 
       if (linkError) {
-        console.error(
-          `   ❌ Failed to link attributes: ${linkError.message}`,
-        );
+        console.error(`   ❌ Failed to link attributes: ${linkError.message}`);
       }
     }
   }
@@ -1279,7 +1277,8 @@ async function createTestPartners() {
       .eq("partner_type", "agent")
       .limit(2);
 
-    const agentId1 = agentPartners && agentPartners.length > 0 ? agentPartners[0].id : null;
+    const agentId1 =
+      agentPartners && agentPartners.length > 0 ? agentPartners[0].id : null;
 
     // Get product IDs
     const { data: productsList, error: productsError } = await supabase

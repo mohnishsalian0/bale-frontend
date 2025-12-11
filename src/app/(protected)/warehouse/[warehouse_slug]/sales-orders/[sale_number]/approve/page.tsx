@@ -161,7 +161,10 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
   };
 
   const canProceed = useMemo(
-    () => Object.values(productSelections).some((p) => p.selected && p.quantity > 0),
+    () =>
+      Object.values(productSelections).some(
+        (p) => p.selected && p.quantity > 0,
+      ),
     [productSelections],
   );
 

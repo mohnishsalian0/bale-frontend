@@ -3,10 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  ProductSelectionStep,
-  StockUnitSpec,
-} from "../ProductSelectionStep";
+import { ProductSelectionStep, StockUnitSpec } from "../ProductSelectionStep";
 import { StockUnitFormSheet } from "../StockUnitFormSheet";
 import { AllSpecificationsSheet } from "../AllSpecificationsSheet";
 import { PieceQuantitySheet } from "../PieceQuantitySheet";

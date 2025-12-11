@@ -845,7 +845,7 @@ Permissions are organized hierarchically with the following top-level categories
   - Required Quantity (materials ordered from supplier)
   - Received Quantity (materials actually received via goods inward)
   - Pending Quantity (auto-calculated: Required Quantity - Received Quantity)
-  - Total Completion in % (auto-calculated: (Received Quantity / Required Quantity) * 100)
+  - Total Completion in % (auto-calculated: (Received Quantity / Required Quantity) \* 100)
 - **Audit information**
   - Unique ID (unique and auto-generated in backend)
   - Created on (date, time and generated in backend)

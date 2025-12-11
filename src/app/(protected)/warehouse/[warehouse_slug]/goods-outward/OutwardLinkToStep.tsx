@@ -202,10 +202,7 @@ export function OutwardLinkToStep({
               placeholder="Enter PO number for return"
               value={linkToData.purchase_order_id || ""}
               onChange={(e) =>
-                handleValueChange(
-                  "purchase_order_id",
-                  e.target.value || null,
-                )
+                handleValueChange("purchase_order_id", e.target.value || null)
               }
               required
             />
