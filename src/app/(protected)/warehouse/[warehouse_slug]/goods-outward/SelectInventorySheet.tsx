@@ -19,10 +19,7 @@ import {
   getStockUnitWithProductDetail,
 } from "@/lib/queries/stock-units";
 import type { ScannedStockUnit } from "./QRScannerStep";
-import type {
-  ProductListView,
-  ProductAttribute,
-} from "@/types/products.types";
+import type { ProductListView, ProductAttribute } from "@/types/products.types";
 import type { StockUnitWithProductDetailView } from "@/types/stock-units.types";
 import type { StockType } from "@/types/database/enums";
 
@@ -43,7 +40,8 @@ export function SelectInventorySheet({
   scannedUnits,
   onScannedUnitsChange,
 }: SelectInventorySheetProps) {
-  const [currentStep, setCurrentStep] = useState<SelectInventoryStep>("products");
+  const [currentStep, setCurrentStep] =
+    useState<SelectInventoryStep>("products");
   const [products, setProducts] = useState<ProductListView[]>([]);
   const [materials, setMaterials] = useState<ProductAttribute[]>([]);
   const [colors, setColors] = useState<ProductAttribute[]>([]);
@@ -51,9 +49,10 @@ export function SelectInventorySheet({
   const [loading, setLoading] = useState(false);
 
   // Selected state
-  const [selectedProduct, setSelectedProduct] = useState<ProductListView | null>(null);
-  const [selectedStockUnit, setSelectedStockUnit] = useState<StockUnitWithProductDetailView | null>(null);
-  const [selectedStockUnitId, setSelectedStockUnitId] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] =
+    useState<ProductListView | null>(null);
+  const [selectedStockUnit, setSelectedStockUnit] =
+    useState<StockUnitWithProductDetailView | null>(null);
 
   // Quantity sheet state
   const [showQuantitySheet, setShowQuantitySheet] = useState(false);
@@ -71,7 +70,6 @@ export function SelectInventorySheet({
       setCurrentStep("products");
       setSelectedProduct(null);
       setSelectedStockUnit(null);
-      setSelectedStockUnitId(null);
       setShowQuantitySheet(false);
     }
   }, [open]);
@@ -111,7 +109,9 @@ export function SelectInventorySheet({
 
         if (stockUnits.length > 0) {
           const pieceUnit = stockUnits[0]; // Get the singleton unit
-          const stockUnitDetail = await getStockUnitWithProductDetail(pieceUnit.id);
+          const stockUnitDetail = await getStockUnitWithProductDetail(
+            pieceUnit.id,
+          );
           setSelectedStockUnit(stockUnitDetail);
           setShowQuantitySheet(true);
         } else {
@@ -128,7 +128,6 @@ export function SelectInventorySheet({
   };
 
   const handleStockUnitSelect = async (stockUnitId: string) => {
-    setSelectedStockUnitId(stockUnitId);
     try {
       const stockUnitDetail = await getStockUnitWithProductDetail(stockUnitId);
       setSelectedStockUnit(stockUnitDetail);
@@ -169,7 +168,6 @@ export function SelectInventorySheet({
       setCurrentStep("products");
       setSelectedProduct(null);
       setSelectedStockUnit(null);
-      setSelectedStockUnitId(null);
     }
   };
 
@@ -185,7 +183,6 @@ export function SelectInventorySheet({
     setCurrentStep("products");
     setSelectedProduct(null);
     setSelectedStockUnit(null);
-    setSelectedStockUnitId(null);
   };
 
   const handleCancel = () => {

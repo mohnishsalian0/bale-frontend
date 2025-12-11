@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { IconPhoto } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import ImageWrapper from "@/components/ui/image-wrapper";
 import { StockStatusBadge } from "@/components/ui/stock-status-badge";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { formatStockUnitNumber } from "@/lib/utils/product";
