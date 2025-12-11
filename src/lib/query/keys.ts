@@ -62,6 +62,18 @@ export const queryKeys = {
       ["sales-orders", "customer", customerId] as const,
   },
 
+  // Purchase Orders
+  purchaseOrders: {
+    all: (filters?: Record<string, unknown>, page?: number) =>
+      ["purchase-orders", filters, page] as const,
+    detail: (sequenceNumber: string) =>
+      ["purchase-orders", "detail", sequenceNumber] as const,
+    dashboard: (warehouseId: string) =>
+      ["purchase-orders", "dashboard", warehouseId] as const,
+    supplier: (supplierId: string) =>
+      ["purchase-orders", "supplier", supplierId] as const,
+  },
+
   // Warehouses (companyId removed - RLS handles scoping, user in single company)
   warehouses: {
     all: () => ["warehouses"] as const,
@@ -93,6 +105,8 @@ export const queryKeys = {
       filters?: Record<string, unknown>,
       page?: number,
     ) => ["stock-flow", "outwards", warehouseId, filters, page] as const,
+    inwardsByPurchaseOrder: (orderNumber: string, page?: number) =>
+      ["stock-flow", "inwards", orderNumber, page] as const,
     outwardsBySalesOrder: (orderNumber: string, page?: number) =>
       ["stock-flow", "outwards", orderNumber, page] as const,
     inwardDetail: (sequenceNumber: string) =>

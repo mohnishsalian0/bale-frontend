@@ -77,6 +77,12 @@ export type SalesOrderStatus =
   | "completed"
   | "cancelled";
 
+export type PurchaseOrderStatus =
+  | "approval_pending"
+  | "in_progress"
+  | "completed"
+  | "cancelled";
+
 export type DiscountType = "none" | "percentage" | "flat_amount";
 
 export type JobWorkStatus =

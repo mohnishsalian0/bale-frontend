@@ -4,56 +4,55 @@ import { use } from "react";
 import { useRouter } from "next/navigation";
 import { formatMeasuringUnitQuantities } from "@/lib/utils/measuring-units";
 import { formatAbsoluteDate } from "@/lib/utils/date";
-import { useGoodsOutwardsBySalesOrder } from "@/lib/query/hooks/stock-flow";
+import { useGoodsInwardsByPurchaseOrder } from "@/lib/query/hooks/stock-flow";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import {
-  getOutwardProductsSummary,
-  getOutwardQuantitiesByUnit,
+  getInwardProductsSummary,
+  getInwardQuantitiesByUnit,
 } from "@/lib/utils/stock-flow";
 import { Separator } from "@/components/ui/separator";
 
 interface PageParams {
   params: Promise<{
     warehouse_slug: string;
-    order_number: string;
+    purchase_number: string;
   }>;
 }
 
-export default function OutwardsPage({ params }: PageParams) {
+export default function PurchaseOrderInwardsPage({ params }: PageParams) {
   const router = useRouter();
-  const { warehouse_slug, order_number } = use(params);
+  const { warehouse_slug, purchase_number } = use(params);
 
-  // 2. Fetch outwards using the order ID from the first query
   const {
-    data: outwardsResponse,
-    isLoading: outwardsLoading,
-    isError: outwardsError,
-  } = useGoodsOutwardsBySalesOrder(order_number);
+    data: inwardsResponse,
+    isLoading: inwardsLoading,
+    isError: inwardsError,
+  } = useGoodsInwardsByPurchaseOrder(purchase_number);
 
-  const outwards = outwardsResponse?.data || [];
-  const outwardsCount = outwardsResponse?.totalCount || 0;
+  const inwards = inwardsResponse?.data || [];
+  const inwardsCount = inwardsResponse?.totalCount || 0;
 
-  if (outwardsLoading) {
-    return <LoadingState message="Loading outwards..." />;
+  if (inwardsLoading) {
+    return <LoadingState message="Loading inwards..." />;
   }
 
-  if (outwardsError) {
+  if (inwardsError) {
     return (
       <ErrorState
         title="Error"
-        message="Could not load outwards for this order."
+        message="Could not load inwards for this order."
         onRetry={() => router.refresh()}
       />
     );
   }
 
-  if (!outwards || outwardsCount === 0) {
+  if (!inwards || inwardsCount === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <p className="text-gray-700">No outwards linked yet</p>
+        <p className="text-gray-700">No inwards linked yet</p>
         <p className="text-sm text-gray-500">
-          Create an outward to dispatch items from this order
+          Create an inward to receive items from this order
         </p>
       </div>
     );
@@ -61,38 +60,37 @@ export default function OutwardsPage({ params }: PageParams) {
 
   return (
     <div className="flex flex-col">
-      {outwards.map((outward) => (
-        <>
+      {inwards.map((inward) => (
+        <li key={inward.id}>
           <button
-            key={outward.id}
             onClick={() => {
               router.push(
-                `/warehouse/${warehouse_slug}/goods-outward/${outward.sequence_number}`,
+                `/warehouse/${warehouse_slug}/goods-inward/${inward.sequence_number}`,
               );
             }}
             className="flex items-center gap-4 p-4 hover:bg-gray-100 hover:cursor-pointer transition-colors"
           >
             <div className="flex-3 text-left">
               <p className="text-base font-medium text-gray-700">
-                GO-{outward.sequence_number}
+                GI-{inward.sequence_number}
                 <span> &nbsp;•&nbsp; </span>
-                {formatAbsoluteDate(outward.outward_date)}
+                {formatAbsoluteDate(inward.inward_date)}
               </p>
               <p className="text-sm text-gray-500 mt-1">
-                {getOutwardProductsSummary(outward)}
+                {getInwardProductsSummary(inward)}
               </p>
             </div>
             <div className="flex-1 items-end justify-center text-right text-wrap">
               <p className="text-sm font-semibold text-teal-700">
                 {formatMeasuringUnitQuantities(
-                  getOutwardQuantitiesByUnit(outward),
+                  getInwardQuantitiesByUnit(inward),
                 )}
               </p>
-              <p className="text-xs text-gray-500">Out</p>
+              <p className="text-xs text-gray-500">In</p>
             </div>
           </button>
           <Separator />
-        </>
+        </li>
       ))}
     </div>
   );

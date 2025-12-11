@@ -20,7 +20,7 @@ CREATE TABLE goods_outwards (
     -- Linking (optional, for reference)
     sales_order_id UUID REFERENCES sales_orders(id), -- When outward_type = 'sales'
     job_work_id UUID REFERENCES job_works(id), -- When outward_type = 'job_work'
-    purchase_order_number VARCHAR(100), -- When outward_type = 'purchase_return'
+    purchase_order_id UUID REFERENCES purchase_orders(id), -- When outward_type = 'purchase_return'
     other_reason TEXT, -- When outward_type = 'other'
 
     -- Recipients
@@ -64,7 +64,7 @@ CREATE TABLE goods_outwards (
         CHECK (
 						(outward_type = 'sales_order' AND sales_order_id IS NOT NULL) OR
 						(outward_type = 'job_work' AND job_work_id IS NOT NULL) OR
-						(outward_type = 'purchase_return' AND purchase_order_number IS NOT NULL) OR
+						(outward_type = 'purchase_return' AND purchase_order_id IS NOT NULL) OR
 						(outward_type = 'other' AND other_reason IS NOT NULL)
         ),
 
@@ -82,6 +82,7 @@ CREATE INDEX idx_goods_outwards_sequence_number ON goods_outwards(company_id, se
 CREATE INDEX idx_goods_outwards_partner ON goods_outwards(partner_id);
 CREATE INDEX idx_goods_outwards_sales_order ON goods_outwards(sales_order_id);
 CREATE INDEX idx_goods_outwards_job_work ON goods_outwards(job_work_id);
+CREATE INDEX idx_goods_outwards_purchase_order ON goods_outwards(purchase_order_id);
 
 -- Full-text search index
 CREATE INDEX idx_goods_outwards_search ON goods_outwards USING GIN(search_vector);

@@ -11,6 +11,7 @@ import { useCurrentUser, useUserMutations } from "@/lib/query/hooks/users";
 import { Warehouse } from "@/types/warehouses.types";
 import { getWarehouseFormattedAddress } from "@/lib/utils/warehouse";
 import { toast } from "sonner";
+import { Separator } from "@/components/ui/separator";
 
 export default function WarehouseSelectionPage() {
   const router = useRouter();
@@ -104,40 +105,42 @@ export default function WarehouseSelectionPage() {
             </p>
           </div>
         ) : (
-          <div className="flex flex-col border border-border">
+          <ul className="flex flex-col border border-border">
             {warehouses.map((warehouse) => {
               const formattedAddress = getWarehouseFormattedAddress(warehouse);
 
               return (
-                <div
-                  key={warehouse.id}
-                  onClick={() => handleWarehouseSelect(warehouse)}
-                  className="flex gap-3 p-4 cursor-pointer transition-all bg-background border-t border-border hover:bg-primary-100 select-none"
-                >
-                  {/* Icon */}
-                  <div className="flex-shrink-0 w-14 h-14 rounded-lg flex items-center justify-center bg-gray-100">
-                    <IconBuildingWarehouse className="size-6 text-gray-500" />
-                  </div>
+                <li key={warehouse.id}>
+                  <div
+                    onClick={() => handleWarehouseSelect(warehouse)}
+                    className="flex gap-3 p-4 cursor-pointer transition-all bg-background border-t border-border hover:bg-primary-100 select-none"
+                  >
+                    {/* Icon */}
+                    <div className="flex-shrink-0 w-14 h-14 rounded-lg flex items-center justify-center bg-gray-100">
+                      <IconBuildingWarehouse className="size-6 text-gray-500" />
+                    </div>
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0 flex flex-col gap-1">
-                    <p
-                      className="text-base font-medium text-gray-700 truncate"
-                      title={warehouse.name}
-                    >
-                      {warehouse.name}
-                    </p>
-                    <p
-                      className="text-sm text-gray-500"
-                      title={formattedAddress}
-                    >
-                      {formattedAddress}
-                    </p>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-1">
+                      <p
+                        className="text-base font-medium text-gray-700 truncate"
+                        title={warehouse.name}
+                      >
+                        {warehouse.name}
+                      </p>
+                      <p
+                        className="text-sm text-gray-500"
+                        title={formattedAddress}
+                      >
+                        {formattedAddress}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                  <Separator />
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
       </div>
     </div>

@@ -113,9 +113,8 @@ export default function StockUnitsPage({ params }: PageParams) {
           const measuringUnit = product?.measuring_unit as MeasuringUnit;
 
           return (
-            <>
-              <li
-                key={item.id}
+            <li key={item.id}>
+              <div
                 onClick={() => stockUnit && handleStockUnitClick(stockUnit.id)}
                 className="flex gap-3 p-4 hover:border-gray-300 transition-colors cursor-pointer"
               >
@@ -168,9 +167,9 @@ export default function StockUnitsPage({ params }: PageParams) {
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">Dispatched</p>
                 </div>
-              </li>
+              </div>
               <Separator />
-            </>
+            </li>
           );
         })}
       </ul>

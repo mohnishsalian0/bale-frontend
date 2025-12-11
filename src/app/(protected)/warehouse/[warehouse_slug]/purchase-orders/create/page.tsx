@@ -5,42 +5,43 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ProductQuantitySheet } from "@/components/layouts/product-quantity-sheet";
 import { ProductSelectionStep } from "@/components/layouts/product-selection-step";
-import { CustomerSelectionStep } from "../CustomerSelectionStep";
-import { OrderDetailsStep } from "../OrderDetailsStep";
+import { SupplierSelectionStep } from "../SupplierSelectionStep";
+import { PurchaseOrderDetailsStep } from "../PurchaseOrderDetailsStep";
 import { ProductFormSheet } from "../../inventory/ProductFormSheet";
 import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
-import { useSalesOrderMutations } from "@/lib/query/hooks/sales-orders";
+import { usePurchaseOrderMutations } from "@/lib/query/hooks/purchase-orders";
 import type { ProductWithInventoryListView } from "@/types/products.types";
-import { CreateSalesOrderData } from "@/types/sales-orders.types";
+import { CreatePurchaseOrderData } from "@/types/purchase-orders.types";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
 
 interface OrderFormData {
   warehouseId: string;
-  customerId: string;
+  supplierId: string;
   agentId: string;
   orderDate: string;
   deliveryDate: string;
   advanceAmount: string;
   discount: string;
   paymentTerms: string;
+  supplierInvoiceNumber: string;
   notes: string;
   files: File[];
 }
 
-type FormStep = "products" | "customer" | "details";
+type FormStep = "products" | "supplier" | "details";
 
-export default function CreateSalesOrderPage() {
+export default function CreatePurchaseOrderPage() {
   const router = useRouter();
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
   const [currentStep, setCurrentStep] = useState<FormStep>("products");
 
-  // Sales order mutations
-  const { create: createOrder } = useSalesOrderMutations(warehouse.id);
+  // Purchase order mutations
+  const { create: createOrder } = usePurchaseOrderMutations(warehouse.id);
 
   // Track product selection state locally
   const [productSelections, setProductSelections] = useState<
@@ -51,8 +52,8 @@ export default function CreateSalesOrderPage() {
     useState<ProductWithInventoryListView | null>(null);
   const [showQuantitySheet, setShowQuantitySheet] = useState(false);
   const [showCreateProduct, setShowCreateProduct] = useState(false);
-  const [showAddCustomer, setShowAddCustomer] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+  const [showAddSupplier, setShowAddSupplier] = useState(false);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(
     null,
   );
 
@@ -64,13 +65,14 @@ export default function CreateSalesOrderPage() {
 
   const [formData, setFormData] = useState<OrderFormData>({
     warehouseId: warehouse.id,
-    customerId: "",
+    supplierId: "",
     agentId: "",
     orderDate: "",
     deliveryDate: "",
     advanceAmount: "",
     discount: "",
     paymentTerms: "",
+    supplierInvoiceNumber: "",
     notes: "",
     files: [],
   });
@@ -102,17 +104,17 @@ export default function CreateSalesOrderPage() {
   );
 
   const canSubmit = useMemo(
-    () => formData.customerId !== "" && formData.orderDate !== "",
-    [formData.customerId, formData.orderDate],
+    () => formData.supplierId !== "" && formData.orderDate !== "",
+    [formData.supplierId, formData.orderDate],
   );
 
   const handleNext = () => {
     if (currentStep === "products") {
-      setCurrentStep("customer");
-    } else if (currentStep === "customer") {
-      // Transfer selected customer to formData
-      if (selectedCustomerId) {
-        setFormData((prev) => ({ ...prev, customerId: selectedCustomerId }));
+      setCurrentStep("supplier");
+    } else if (currentStep === "supplier") {
+      // Transfer selected supplier to formData
+      if (selectedSupplierId) {
+        setFormData((prev) => ({ ...prev, supplierId: selectedSupplierId }));
       }
       setCurrentStep("details");
     }
@@ -120,23 +122,23 @@ export default function CreateSalesOrderPage() {
 
   const handleBack = () => {
     if (currentStep === "details") {
-      setCurrentStep("customer");
-    } else if (currentStep === "customer") {
+      setCurrentStep("supplier");
+    } else if (currentStep === "supplier") {
       setCurrentStep("products");
     }
   };
 
-  const handleSelectCustomer = (customerId: string) => {
-    setSelectedCustomerId(customerId);
+  const handleSelectSupplier = (supplierId: string) => {
+    setSelectedSupplierId(supplierId);
     // Auto-advance to next step
     setTimeout(() => {
-      setFormData((prev) => ({ ...prev, customerId }));
+      setFormData((prev) => ({ ...prev, supplierId }));
       setCurrentStep("details");
     }, 300); // Small delay for visual feedback
   };
 
   const handleCancel = () => {
-    router.push(`/warehouse/${warehouse.slug}/sales-orders`);
+    router.push(`/warehouse/${warehouse.slug}/purchase-orders`);
   };
 
   const handleSubmit = () => {
@@ -150,9 +152,9 @@ export default function CreateSalesOrderPage() {
       }));
 
     // Prepare order data
-    const orderData: CreateSalesOrderData = {
+    const orderData: CreatePurchaseOrderData = {
       warehouse_id: formData.warehouseId,
-      customer_id: formData.customerId,
+      supplier_id: formData.supplierId,
       agent_id: formData.agentId || null,
       order_date: formData.orderDate,
       expected_delivery_date: formData.deliveryDate || null,
@@ -173,17 +175,17 @@ export default function CreateSalesOrderPage() {
       unit_rate: 0,
     }));
 
-    // Create sales order using mutation
+    // Create purchase order using mutation
     createOrder.mutate(
       { orderData, lineItems },
       {
         onSuccess: (sequenceNumber) => {
-          toast.success("Sales order created successfully");
-          router.push(`/warehouse/${warehouse.slug}/sales-orders/${sequenceNumber}`);
+          toast.success("Purchase order created successfully");
+          router.push(`/warehouse/${warehouse.slug}/purchase-orders/${sequenceNumber}`);
         },
         onError: (error) => {
-          console.error("Error creating sales order:", error);
-          toast.error("Failed to create sales order");
+          console.error("Error creating purchase order:", error);
+          toast.error("Failed to create purchase order");
         },
       },
     );
@@ -194,9 +196,9 @@ export default function CreateSalesOrderPage() {
       <div className="flex-1 flex flex-col w-full overflow-y-hidden">
         {/* Header - Fixed at top */}
         <FormHeader
-          title="Create Sales Order"
+          title="Create Purchase Order"
           currentStep={
-            currentStep === "products" ? 1 : currentStep === "customer" ? 2 : 3
+            currentStep === "products" ? 1 : currentStep === "supplier" ? 2 : 3
           }
           totalSteps={3}
           onCancel={handleCancel}
@@ -213,14 +215,14 @@ export default function CreateSalesOrderPage() {
               onAddNewProduct={() => setShowCreateProduct(true)}
               onRemoveProduct={handleRemoveProduct}
             />
-          ) : currentStep === "customer" ? (
-            <CustomerSelectionStep
-              selectedCustomerId={selectedCustomerId}
-              onSelectCustomer={handleSelectCustomer}
-              onAddNewCustomer={() => setShowAddCustomer(true)}
+          ) : currentStep === "supplier" ? (
+            <SupplierSelectionStep
+              selectedSupplierId={selectedSupplierId}
+              onSelectSupplier={handleSelectSupplier}
+              onAddNewSupplier={() => setShowAddSupplier(true)}
             />
           ) : (
-            <OrderDetailsStep
+            <PurchaseOrderDetailsStep
               formData={formData}
               setFormData={(updates) =>
                 setFormData((prev) => ({ ...prev, ...updates }))
@@ -249,7 +251,7 @@ export default function CreateSalesOrderPage() {
                 Next
               </Button>
             </>
-          ) : currentStep === "customer" ? (
+          ) : currentStep === "supplier" ? (
             <>
               <Button
                 variant="outline"
@@ -261,7 +263,7 @@ export default function CreateSalesOrderPage() {
               </Button>
               <Button
                 onClick={handleNext}
-                disabled={!selectedCustomerId || createOrder.isPending}
+                disabled={!selectedSupplierId || createOrder.isPending}
                 className="flex-1"
               >
                 Next
@@ -310,12 +312,12 @@ export default function CreateSalesOrderPage() {
           />
         )}
 
-        {/* Add Customer Sheet */}
-        {showAddCustomer && (
+        {/* Add Supplier Sheet */}
+        {showAddSupplier && (
           <PartnerFormSheet
-            open={showAddCustomer}
-            onOpenChange={setShowAddCustomer}
-            partnerType="customer"
+            open={showAddSupplier}
+            onOpenChange={setShowAddSupplier}
+            partnerType="supplier"
           />
         )}
       </div>

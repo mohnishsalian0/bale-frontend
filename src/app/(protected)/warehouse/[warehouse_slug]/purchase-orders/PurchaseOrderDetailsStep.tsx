@@ -7,6 +7,7 @@ import {
   IconPhoto,
   IconPercentage,
 } from "@tabler/icons-react";
+import { Input } from "@/components/ui/input";
 import { InputWithIcon } from "@/components/ui/input-with-icon";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -28,26 +29,27 @@ import { dateToISOString } from "@/lib/utils/date";
 
 interface OrderFormData {
   warehouseId: string;
-  customerId: string;
+  supplierId: string;
   agentId: string;
   orderDate: string;
   deliveryDate: string;
   advanceAmount: string;
   discount: string;
   paymentTerms: string;
+  supplierInvoiceNumber: string;
   notes: string;
   files: File[];
 }
 
-interface OrderDetailsStepProps {
+interface PurchaseOrderDetailsStepProps {
   formData: OrderFormData;
-  setFormData: (data: OrderFormData) => void;
+  setFormData: (data: Partial<OrderFormData>) => void;
 }
 
-export function OrderDetailsStep({
+export function PurchaseOrderDetailsStep({
   formData,
   setFormData,
-}: OrderDetailsStepProps) {
+}: PurchaseOrderDetailsStepProps) {
   const [warehouses, setWarehouses] = useState<Tables<"warehouses">[]>([]);
   const [agents, setAgents] = useState<Tables<"partners">[]>([]);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
@@ -102,7 +104,7 @@ export function OrderDetailsStep({
       const isPDF = file.type === "application/pdf";
       return isImage || isPDF;
     });
-    setFormData({ ...formData, files: [...formData.files, ...validFiles] });
+    setFormData({ files: [...formData.files, ...validFiles] });
   };
 
   return (
@@ -112,9 +114,7 @@ export function OrderDetailsStep({
         {/* Warehouse Dropdown */}
         <Select
           value={formData.warehouseId}
-          onValueChange={(value) =>
-            setFormData({ ...formData, warehouseId: value })
-          }
+          onValueChange={(value) => setFormData({ warehouseId: value })}
           required
         >
           <SelectTrigger>
@@ -132,9 +132,7 @@ export function OrderDetailsStep({
         {/* Agent Dropdown */}
         <Select
           value={formData.agentId || undefined}
-          onValueChange={(value) =>
-            setFormData({ ...formData, agentId: value })
-          }
+          onValueChange={(value) => setFormData({ agentId: value })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Agent (Optional)" />
@@ -160,7 +158,6 @@ export function OrderDetailsStep({
             }
             onChange={(date) =>
               setFormData({
-                ...formData,
                 orderDate: date ? dateToISOString(date) : "",
               })
             }
@@ -170,7 +167,7 @@ export function OrderDetailsStep({
 
           {/* Delivery Date */}
           <DatePicker
-            label="Delivery date"
+            label="Expected delivery"
             placeholder="Pick a date"
             value={
               formData.deliveryDate
@@ -179,7 +176,6 @@ export function OrderDetailsStep({
             }
             onChange={(date) =>
               setFormData({
-                ...formData,
                 deliveryDate: date ? dateToISOString(date) : "",
               })
             }
@@ -187,6 +183,16 @@ export function OrderDetailsStep({
             className="flex-1"
           />
         </div>
+
+        {/* Supplier Invoice Number */}
+        <Input
+          type="text"
+          placeholder="Supplier invoice number (Optional)"
+          value={formData.supplierInvoiceNumber}
+          onChange={(e) =>
+            setFormData({ supplierInvoiceNumber: e.target.value })
+          }
+        />
       </div>
 
       {/* Additional Details Section */}
@@ -211,9 +217,7 @@ export function OrderDetailsStep({
             {/* Payment Terms */}
             <Select
               value={formData.paymentTerms || undefined}
-              onValueChange={(value) =>
-                setFormData({ ...formData, paymentTerms: value })
-              }
+              onValueChange={(value) => setFormData({ paymentTerms: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Payment terms (Optional)" />
@@ -235,9 +239,7 @@ export function OrderDetailsStep({
               type="number"
               placeholder="Advance amount"
               value={formData.advanceAmount}
-              onChange={(e) =>
-                setFormData({ ...formData, advanceAmount: e.target.value })
-              }
+              onChange={(e) => setFormData({ advanceAmount: e.target.value })}
               icon={<IconCurrencyRupee />}
               min="0"
               step="0.01"
@@ -248,9 +250,7 @@ export function OrderDetailsStep({
               type="number"
               placeholder="Discount percent"
               value={formData.discount}
-              onChange={(e) =>
-                setFormData({ ...formData, discount: e.target.value })
-              }
+              onChange={(e) => setFormData({ discount: e.target.value })}
               icon={<IconPercentage />}
               min="0"
               step="0.01"
@@ -258,16 +258,13 @@ export function OrderDetailsStep({
 
             {/* Notes */}
             <Textarea
-              placeholder="Enter instructions, special requirements, custom measurements, order source, etc..."
+              placeholder="Enter instructions, special requirements, order source, etc..."
               value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
+              onChange={(e) => setFormData({ notes: e.target.value })}
               className="min-h-32"
             />
 
             {/* Add Files */}
-            {/* TODO: Update this component */}
             <label className="border border-primary-700 rounded-lg h-11 flex items-center justify-center gap-3 cursor-pointer text-primary-700 hover:bg-primary-50 transition-colors shadow-gray-sm">
               <IconPhoto className="size-4" />
               <span className="text-sm font-normal">Add files</span>
@@ -297,7 +294,7 @@ export function OrderDetailsStep({
                         const newFiles = formData.files.filter(
                           (_, i) => i !== index,
                         );
-                        setFormData({ ...formData, files: newFiles });
+                        setFormData({ files: newFiles });
                       }}
                       className="text-red-600 hover:text-red-700 ml-2"
                     >

@@ -210,7 +210,7 @@ export type Database = {
           notes: string | null
           other_reason: string | null
           partner_id: string | null
-          purchase_order_number: string | null
+          purchase_order_id: string | null
           sales_order_id: string | null
           search_vector: unknown
           sequence_number: number
@@ -237,7 +237,7 @@ export type Database = {
           notes?: string | null
           other_reason?: string | null
           partner_id?: string | null
-          purchase_order_number?: string | null
+          purchase_order_id?: string | null
           sales_order_id?: string | null
           search_vector?: unknown
           sequence_number: number
@@ -264,7 +264,7 @@ export type Database = {
           notes?: string | null
           other_reason?: string | null
           partner_id?: string | null
-          purchase_order_number?: string | null
+          purchase_order_id?: string | null
           sales_order_id?: string | null
           search_vector?: unknown
           sequence_number?: number
@@ -308,6 +308,13 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_inwards_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
             referencedColumns: ["id"]
           },
           {
@@ -409,7 +416,7 @@ export type Database = {
           outward_date: string
           outward_type: string
           partner_id: string | null
-          purchase_order_number: string | null
+          purchase_order_id: string | null
           sales_order_id: string | null
           search_vector: unknown
           sequence_number: number
@@ -440,7 +447,7 @@ export type Database = {
           outward_date?: string
           outward_type: string
           partner_id?: string | null
-          purchase_order_number?: string | null
+          purchase_order_id?: string | null
           sales_order_id?: string | null
           search_vector?: unknown
           sequence_number: number
@@ -471,7 +478,7 @@ export type Database = {
           outward_date?: string
           outward_type?: string
           partner_id?: string | null
-          purchase_order_number?: string | null
+          purchase_order_id?: string | null
           sales_order_id?: string | null
           search_vector?: unknown
           sequence_number?: number
@@ -509,6 +516,13 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_outwards_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
             referencedColumns: ["id"]
           },
           {
@@ -1406,6 +1420,211 @@ export type Database = {
           },
         ]
       }
+      purchase_order_items: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          line_total: number | null
+          notes: string | null
+          pending_quantity: number | null
+          product_id: string
+          purchase_order_id: string
+          received_quantity: number | null
+          required_quantity: number
+          unit_rate: number | null
+          updated_at: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          line_total?: number | null
+          notes?: string | null
+          pending_quantity?: number | null
+          product_id: string
+          purchase_order_id: string
+          received_quantity?: number | null
+          required_quantity: number
+          unit_rate?: number | null
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          line_total?: number | null
+          notes?: string | null
+          pending_quantity?: number | null
+          product_id?: string
+          purchase_order_id?: string
+          received_quantity?: number | null
+          required_quantity?: number
+          unit_rate?: number | null
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          advance_amount: number | null
+          agent_id: string | null
+          attachments: string[] | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          discount_type: Database["public"]["Enums"]["discount_type_enum"]
+          discount_value: number | null
+          expected_delivery_date: string | null
+          gst_amount: number | null
+          gst_rate: number | null
+          has_inward: boolean | null
+          id: string
+          modified_by: string | null
+          notes: string | null
+          order_date: string
+          payment_terms: string | null
+          search_vector: unknown
+          sequence_number: number
+          source: string
+          status: string
+          status_changed_at: string | null
+          status_changed_by: string | null
+          status_notes: string | null
+          supplier_id: string
+          supplier_invoice_number: string | null
+          total_amount: number | null
+          updated_at: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          advance_amount?: number | null
+          agent_id?: string | null
+          attachments?: string[] | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          discount_type?: Database["public"]["Enums"]["discount_type_enum"]
+          discount_value?: number | null
+          expected_delivery_date?: string | null
+          gst_amount?: number | null
+          gst_rate?: number | null
+          has_inward?: boolean | null
+          id?: string
+          modified_by?: string | null
+          notes?: string | null
+          order_date?: string
+          payment_terms?: string | null
+          search_vector?: unknown
+          sequence_number: number
+          source?: string
+          status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
+          status_notes?: string | null
+          supplier_id: string
+          supplier_invoice_number?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          advance_amount?: number | null
+          agent_id?: string | null
+          attachments?: string[] | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          discount_type?: Database["public"]["Enums"]["discount_type_enum"]
+          discount_value?: number | null
+          expected_delivery_date?: string | null
+          gst_amount?: number | null
+          gst_rate?: number | null
+          has_inward?: boolean | null
+          id?: string
+          modified_by?: string | null
+          notes?: string | null
+          order_date?: string
+          payment_terms?: string | null
+          search_vector?: unknown
+          sequence_number?: number
+          source?: string
+          status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
+          status_notes?: string | null
+          supplier_id?: string
+          supplier_invoice_number?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       qr_batch_items: {
         Row: {
           batch_id: string
@@ -2127,6 +2346,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_purchase_order_with_items: {
+        Args: { p_line_items: Json[]; p_order_data: Json; p_order_id: string }
+        Returns: undefined
+      }
       approve_sales_order_with_items: {
         Args: { p_line_items: Json[]; p_order_data: Json; p_order_id: string }
         Returns: undefined
@@ -2141,13 +2364,17 @@ export type Database = {
         Args: { p_outward_data: Json; p_stock_unit_items: Json[] }
         Returns: string
       }
+      create_purchase_order_with_items: {
+        Args: { p_line_items: Json[]; p_order_data: Json }
+        Returns: number
+      }
       create_qr_batch_with_items: {
         Args: { p_batch_data: Json; p_stock_unit_ids: string[] }
         Returns: string
       }
       create_sales_order_with_items: {
         Args: { p_line_items: Json[]; p_order_data: Json }
-        Returns: string
+        Returns: number
       }
       create_staff_invite: {
         Args: {

@@ -5,8 +5,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   getStatusConfig,
-  SalesStatusBadge,
-} from "@/components/ui/sales-status-badge";
+  PurchaseStatusBadge,
+} from "@/components/ui/purchase-status-badge";
 import { Progress } from "@/components/ui/progress";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
@@ -16,8 +16,8 @@ import {
   calculateCompletionPercentage,
   getOrderDisplayStatus,
   type DisplayStatus,
-} from "@/lib/utils/sales-order";
-import type { SalesOrderStatus } from "@/types/database/enums";
+} from "@/lib/utils/purchase-order";
+import type { PurchaseOrderStatus } from "@/types/database/enums";
 import { TabUnderline } from "@/components/ui/tab-underline";
 import {
   DropdownMenu,
@@ -26,76 +26,67 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { IconDotsVertical, IconDownload, IconShare } from "@tabler/icons-react";
+import { IconDotsVertical, IconShare } from "@tabler/icons-react";
 import {
-  useSalesOrderByNumber,
-  useSalesOrderMutations,
-} from "@/lib/query/hooks/sales-orders";
+  usePurchaseOrderByNumber,
+  usePurchaseOrderMutations,
+} from "@/lib/query/hooks/purchase-orders";
 import { CancelOrderDialog } from "./CancelOrderDialog";
 import { CompleteOrderDialog } from "./CompleteOrderDialog";
 import { toast } from "sonner";
-import { useCompany } from "@/lib/query/hooks/company";
-import { OrderConfirmationPDF } from "@/components/pdf/OrderConfirmationPDF";
-import { pdf } from "@react-pdf/renderer";
 
 interface LayoutParams {
   params: Promise<{
     warehouse_slug: string;
-    order_number: string;
+    purchase_number: string;
   }>;
   children: React.ReactNode;
 }
 
-export default function SalesOrderDetailLayout({
+export default function PurchaseOrderDetailLayout({
   params,
   children,
 }: LayoutParams) {
   const router = useRouter();
   const pathname = usePathname();
-  const { warehouse_slug, order_number } = use(params);
+  const { warehouse_slug, purchase_number } = use(params);
   const { warehouse } = useSession();
-  const [downloading, setDownloading] = useState(false);
 
   // Dialog states
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
 
-  // Fetch company and sales order using TanStack Query hooks
-  const {
-    data: company,
-    isLoading: companyLoading,
-    isError: companyError,
-  } = useCompany();
+  // Fetch purchase order using TanStack Query hooks
   const {
     data: order,
     isLoading: loading,
     isError: error,
-  } = useSalesOrderByNumber(order_number);
+  } = usePurchaseOrderByNumber(purchase_number);
 
-  // Sales order mutations
+  // Purchase order mutations
   const { cancel: cancelOrder, complete: completeOrder } =
-    useSalesOrderMutations(warehouse?.id || null);
+    usePurchaseOrderMutations(warehouse?.id || null);
 
   // Calculate completion percentage using utility
   const completionPercentage = useMemo(() => {
     if (!order) return 0;
-    return calculateCompletionPercentage(order.sales_order_items);
+    return calculateCompletionPercentage(order.purchase_order_items);
   }, [order]);
 
   // Compute display status (includes 'overdue' logic) using utility
   const displayStatus: DisplayStatus = useMemo(() => {
     if (!order) return "in_progress";
     return getOrderDisplayStatus(
-      order.status as SalesOrderStatus,
+      order.status as PurchaseOrderStatus,
       order.expected_delivery_date,
     );
   }, [order]);
   const progressBarColor = getStatusConfig(displayStatus).color;
 
   // Tab logic
-  const basePath = `/warehouse/${warehouse_slug}/sales-orders/${order_number}`;
+  const basePath = `/warehouse/${warehouse_slug}/purchase-orders/${purchase_number}`;
   const getActiveTab = () => {
-    if (pathname.endsWith("/outwards")) return "outwards";
+    if (pathname.endsWith("/inwards")) return "inwards";
     return "details";
   };
   const handleTabChange = (tab: string) => {
@@ -106,7 +97,7 @@ export default function SalesOrderDetailLayout({
   const handleApprove = () => {
     if (!order) return;
     router.push(
-      `/warehouse/${warehouse.slug}/sales-orders/${order.sequence_number}/approve`,
+      `/warehouse/${warehouse.slug}/purchase-orders/${order.sequence_number}/approve`,
     );
   };
 
@@ -150,7 +141,7 @@ export default function SalesOrderDetailLayout({
 
     if (order.status === "approval_pending") {
       return (
-        <Button onClick={handleApprove} className="flex-1">
+        <Button size="sm" onClick={handleApprove} className="flex-1">
           Approve order
         </Button>
       );
@@ -161,12 +152,12 @@ export default function SalesOrderDetailLayout({
         <Button
           onClick={() =>
             router.push(
-              `/warehouse/${warehouse.slug}/goods-outward/create?order=${order.sequence_number}`,
+              `/warehouse/${warehouse.slug}/goods-inward/create?order=${order.sequence_number}`,
             )
           }
           className="flex-1"
         >
-          Create outward
+          Create inward
         </Button>
       );
     }
@@ -175,54 +166,25 @@ export default function SalesOrderDetailLayout({
   };
 
   const handleShare = async () => {
-    if (!order || !company) return null;
+    if (!order) return;
 
-    const orderUrl = `${window.location.origin}/company/${company.slug}/order/${order.id}`;
+    const orderUrl = `${window.location.origin}/warehouse/${warehouse.slug}/purchase-orders/${order.sequence_number}`;
     try {
       await navigator.clipboard.writeText(orderUrl);
+      toast.success("Link copied to clipboard");
     } catch (err) {
       console.error("Failed to copy to clipboard:", err);
-    }
-
-    const orderShareMessage = `Here are the details and live status of order #${order.sequence_number}\n🔗 ${orderUrl}`;
-    const encodedMessage = encodeURIComponent(orderShareMessage);
-    window.open(`https://wa.me/?text=${encodedMessage}`, "_blank");
-  };
-
-  const handleDownloadPDF = async () => {
-    if (!company || !order) return;
-
-    try {
-      setDownloading(true);
-      const blob = await pdf(
-        <OrderConfirmationPDF company={company} order={order} />,
-      ).toBlob();
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `order-${order.sequence_number}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast.success("PDF downloaded successfully");
-    } catch (error) {
-      console.error("Error downloading PDF:", error);
-      toast.error("Failed to download PDF");
-    } finally {
-      setDownloading(false);
+      toast.error("Failed to copy link");
     }
   };
 
   // Loading state
-  if (companyLoading || loading) {
+  if (loading) {
     return <LoadingState message="Loading order..." />;
   }
 
   // Error state
-  if (companyError || error || !order) {
+  if (error || !order) {
     return (
       <ErrorState
         title="Order not found"
@@ -241,20 +203,25 @@ export default function SalesOrderDetailLayout({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold text-gray-900">
-                SO-{order.sequence_number}
+                PO-{order.sequence_number}
               </h1>
-              <SalesStatusBadge status={displayStatus} />
+              <PurchaseStatusBadge status={displayStatus} />
             </div>
-            <p className="text-sm text-gray-500">
-              Sales order on {formatAbsoluteDate(order.order_date)}
+            <p className="text-sm text-gray-500 mt-1">
+              Purchase order on {formatAbsoluteDate(order.order_date)}
             </p>
+            {order.supplier_invoice_number && (
+              <p className="text-sm text-gray-500">
+                {order.supplier_invoice_number}
+              </p>
+            )}
           </div>
 
           {/* Progress Bar */}
           {displayStatus !== "approval_pending" && (
             <div className="mt-4 max-w-sm">
               <p className="text-sm text-gray-700 mb-1">
-                {completionPercentage}% completed
+                {completionPercentage}% received
               </p>
               <Progress color={progressBarColor} value={completionPercentage} />
             </div>
@@ -267,7 +234,7 @@ export default function SalesOrderDetailLayout({
           onTabChange={handleTabChange}
           tabs={[
             { value: "details", label: "Order details" },
-            { value: "outwards", label: "Outwards" },
+            { value: "inwards", label: "Inwards" },
           ]}
         />
 
@@ -279,7 +246,7 @@ export default function SalesOrderDetailLayout({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon-sm">
-                <IconDotsVertical className="size-5" />
+                <IconDotsVertical />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
@@ -296,22 +263,6 @@ export default function SalesOrderDetailLayout({
                 <IconShare />
                 Share
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={handleDownloadPDF}
-                disabled={downloading}
-              >
-                {downloading ? (
-                  <>
-                    <IconDownload className="animate-pulse" />
-                    Downloading...
-                  </>
-                ) : (
-                  <>
-                    <IconDownload />
-                    Download PDF
-                  </>
-                )}
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
@@ -322,9 +273,6 @@ export default function SalesOrderDetailLayout({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button size="sm" variant="outline" disabled className="flex-1">
-            Make invoice
-          </Button>
           {getPrimaryCTA()}
         </div>
 

@@ -15,12 +15,12 @@ import {
 } from "@/components/ui/select";
 import { PaginationWrapper } from "@/components/ui/pagination-wrapper";
 import { Fab } from "@/components/ui/fab";
-import { SalesStatusBadge } from "@/components/ui/sales-status-badge";
+import { PurchaseStatusBadge } from "@/components/ui/purchase-status-badge";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
 import { Progress } from "@/components/ui/progress";
-import { useSalesOrders } from "@/lib/query/hooks/sales-orders";
+import { usePurchaseOrders } from "@/lib/query/hooks/purchase-orders";
 import { usePartners } from "@/lib/query/hooks/partners";
 import { useInfiniteProducts } from "@/lib/query/hooks/products";
 import { getPartnerName } from "@/lib/utils/partner";
@@ -29,8 +29,11 @@ import {
   calculateCompletionPercentage,
   getOrderDisplayStatus,
   getProductSummary,
-} from "@/lib/utils/sales-order";
-import type { SalesOrderStatus, MeasuringUnit } from "@/types/database/enums";
+} from "@/lib/utils/purchase-order";
+import type {
+  PurchaseOrderStatus,
+  MeasuringUnit,
+} from "@/types/database/enums";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import {
   formatMeasuringUnitQuantities,
@@ -38,14 +41,14 @@ import {
 } from "@/lib/utils/measuring-units";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
-import { SalesOrderItemListView } from "@/types/sales-orders.types";
+import { PurchaseOrderItemListView } from "@/types/purchase-orders.types";
 
 interface OrderListItem {
   id: string;
   orderNumber: number;
-  customerId: string;
-  customerName: string;
-  items: SalesOrderItemListView[];
+  supplierId: string;
+  supplierName: string;
+  items: PurchaseOrderItemListView[];
   dueDate: string | null;
   orderDate: string;
   status:
@@ -64,7 +67,7 @@ interface MonthGroup {
   orders: OrderListItem[];
 }
 
-export default function OrdersPage() {
+export default function PurchaseOrdersPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { warehouse } = useSession();
@@ -73,33 +76,33 @@ export default function OrdersPage() {
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState("all");
-  const [selectedCustomer, setSelectedCustomer] = useState("all");
+  const [selectedSupplier, setSelectedSupplier] = useState("all");
 
   // Get current page from URL (default to 1)
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const PAGE_SIZE = 25;
 
-  // Fetch orders, customers, and products using TanStack Query with pagination
+  // Fetch orders, suppliers, and products using TanStack Query with pagination
   const {
     data: ordersResponse,
     isLoading: ordersLoading,
     isError: ordersError,
-  } = useSalesOrders({
+  } = usePurchaseOrders({
     filters: {
       warehouseId: warehouse.id,
       search_term: debouncedSearchQuery || undefined,
       status:
         selectedStatus !== "all"
-          ? (selectedStatus as SalesOrderStatus)
+          ? (selectedStatus as PurchaseOrderStatus)
           : undefined,
       productId: selectedProduct !== "all" ? selectedProduct : undefined,
-      customerId: selectedCustomer !== "all" ? selectedCustomer : undefined,
+      supplierId: selectedSupplier !== "all" ? selectedSupplier : undefined,
     },
     page: currentPage,
     pageSize: PAGE_SIZE,
   });
-  const { data: customers = [], isLoading: customersLoading } = usePartners({
-    partner_type: "customer",
+  const { data: suppliers = [], isLoading: suppliersLoading } = usePartners({
+    partner_type: "supplier",
   });
 
   // Fetch products
@@ -116,7 +119,7 @@ export default function OrdersPage() {
     100,
   );
 
-  const loading = ordersLoading || customersLoading || productsLoading;
+  const loading = ordersLoading || suppliersLoading || productsLoading;
   const error = ordersError;
 
   const orders = ordersResponse?.data || [];
@@ -127,13 +130,13 @@ export default function OrdersPage() {
   // Reset to page 1 when filters change
   useEffect(() => {
     if (currentPage !== 1) {
-      router.push(`/warehouse/${warehouse.slug}/sales-orders?page=1`);
+      router.push(`/warehouse/${warehouse.slug}/purchase-orders?page=1`);
     }
-  }, [debouncedSearchQuery, selectedStatus, selectedProduct, selectedCustomer]);
+  }, [debouncedSearchQuery, selectedStatus, selectedProduct, selectedSupplier]);
 
   // Handle page change
   const handlePageChange = (page: number) => {
-    router.push(`/warehouse/${warehouse.slug}/sales-orders?page=${page}`);
+    router.push(`/warehouse/${warehouse.slug}/purchase-orders?page=${page}`);
   };
 
   // Process orders data using useMemo
@@ -149,26 +152,26 @@ export default function OrdersPage() {
 
       // Transform orders
       const orderItems: OrderListItem[] = orders.map((order) => {
-        const customerName = getPartnerName(order.customer);
+        const supplierName = getPartnerName(order.supplier);
 
-        const items = order.sales_order_items;
+        const items = order.purchase_order_items;
 
         // Calculate completion percentage using utility
         const completionPercentage = calculateCompletionPercentage(
-          order.sales_order_items || [],
+          order.purchase_order_items || [],
         );
 
         // Determine status (including overdue) using utility
         const status = getOrderDisplayStatus(
-          order.status as SalesOrderStatus,
+          order.status as PurchaseOrderStatus,
           order.expected_delivery_date,
         );
 
         return {
           id: order.id,
           orderNumber: order.sequence_number,
-          customerId: order.customer_id,
-          customerName,
+          supplierId: order.supplier_id,
+          supplierName,
           items,
           dueDate: order.expected_delivery_date,
           orderDate: order.order_date,
@@ -227,10 +230,10 @@ export default function OrdersPage() {
       const unitMap = new Map<MeasuringUnit, number>();
 
       pendingOrders.forEach((order) => {
-        (order.sales_order_items || []).forEach((item) => {
+        (order.purchase_order_items || []).forEach((item) => {
           const unit = getMeasuringUnit(item.product);
           const remainingQty =
-            item.required_quantity - (item.dispatched_quantity || 0);
+            item.required_quantity - (item.received_quantity || 0);
 
           unitMap.set(unit, (unitMap.get(unit) || 0) + remainingQty);
         });
@@ -247,15 +250,15 @@ export default function OrdersPage() {
 
   // Loading state
   if (loading) {
-    return <LoadingState message="Loading sales orders..." />;
+    return <LoadingState message="Loading purchase orders..." />;
   }
 
   // Error state
   if (error) {
     return (
       <ErrorState
-        title="Failed to load sales orders"
-        message="Unable to fetch sales orders data"
+        title="Failed to load purchase orders"
+        message="Unable to fetch purchase orders data"
         onRetry={() => window.location.reload()}
       />
     );
@@ -269,7 +272,9 @@ export default function OrdersPage() {
       >
         <div className={`${isMobile ? "w-full" : "flex-1"}`}>
           <div className="mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">Sales orders</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Purchase orders
+            </h1>
             <p className="text-sm text-gray-500 mt-2">
               <span className="text-teal-700 font-medium">
                 {pendingOrdersCount}
@@ -279,7 +284,7 @@ export default function OrdersPage() {
               <span className="text-teal-700 font-medium">
                 {pendingQuantitiesByUnit}
               </span>
-              <span className="text-gray-500"> pending to fulfill</span>
+              <span className="text-gray-500"> pending to receive</span>
             </p>
           </div>
 
@@ -287,7 +292,7 @@ export default function OrdersPage() {
           <div className="relative max-w-md">
             <Input
               type="text"
-              placeholder="Search by order number, customer, product..."
+              placeholder="Search by order number, supplier, product..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -299,12 +304,12 @@ export default function OrdersPage() {
         </div>
 
         {/* Mascot */}
-        <div className="relative size-25 shrink-0">
+        <div className="relative size-30 shrink-0">
           <Image
-            src="/illustrations/sales-order-cart.png"
-            alt="Sales orders"
+            src="/illustrations/raw-materials.png"
+            alt="Purchase orders"
             fill
-            sizes="100px"
+            sizes="120px"
             className="object-contain"
           />
         </div>
@@ -347,7 +352,6 @@ export default function OrdersPage() {
                 size="sm"
                 onMouseDown={(e) => e.preventDefault()} // Prevent dropdown from closing
                 onClick={() => fetchNextPage()}
-                // disabled={isFetchingNextPage}
                 className="w-full"
               >
                 {isFetchingNextPage ? "Loading..." : "Load More"}
@@ -356,23 +360,23 @@ export default function OrdersPage() {
           </SelectContent>
         </Select>
 
-        {/* Customer Filter */}
-        <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
+        {/* Supplier Filter */}
+        <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
           <SelectTrigger className="flex-shrink-0 h-10 max-w-34">
-            <SelectValue placeholder="All customers" />
+            <SelectValue placeholder="All suppliers" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All customers</SelectItem>
-            {customers.map((customer) => (
-              <SelectItem key={customer.id} value={customer.id}>
-                {getPartnerName(customer)}
+            <SelectItem value="all">All suppliers</SelectItem>
+            {suppliers.map((supplier) => (
+              <SelectItem key={supplier.id} value={supplier.id}>
+                {getPartnerName(supplier)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Sales Orders List */}
+      {/* Purchase Orders List */}
       <div className="flex flex-col">
         {monthGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -380,7 +384,7 @@ export default function OrdersPage() {
             <p className="text-sm text-gray-500">
               {searchQuery
                 ? "Try adjusting your search or filters"
-                : "Start by adding a sales order"}
+                : "Start by adding a purchase order"}
             </p>
           </div>
         ) : (
@@ -405,7 +409,7 @@ export default function OrdersPage() {
                     key={order.id}
                     onClick={() =>
                       router.push(
-                        `/warehouse/${warehouse.slug}/sales-orders/${order.orderNumber}`,
+                        `/warehouse/${warehouse.slug}/purchase-orders/${order.orderNumber}`,
                       )
                     }
                     className="flex flex-col gap-2 p-4 border-t border-dashed border-gray-300 hover:bg-gray-100 transition-colors"
@@ -414,9 +418,9 @@ export default function OrdersPage() {
                     <div>
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-base font-medium text-gray-700">
-                          {order.customerName}
+                          {order.supplierName}
                         </p>
-                        <SalesStatusBadge status={order.status} />
+                        <PurchaseStatusBadge status={order.status} />
                       </div>
 
                       {/* Subtexts spanning full width */}
@@ -425,14 +429,14 @@ export default function OrdersPage() {
                       </p>
                       <div className="flex items-center justify-between mt-1">
                         <p className="text-xs text-gray-500">
-                          {"SO-"}
+                          {"PO-"}
                           {order.orderNumber}
                           {order.dueDate &&
                             ` • Due on ${formatAbsoluteDate(order.dueDate)}`}
                         </p>
                         {order.status !== "approval_pending" && (
                           <p className="text-xs text-gray-500">
-                            {order.completionPercentage}% completed
+                            {order.completionPercentage}% received
                           </p>
                         )}
                       </div>
@@ -463,7 +467,7 @@ export default function OrdersPage() {
       {/* Floating Action Button */}
       <Fab
         onClick={() =>
-          router.push(`/warehouse/${warehouse.slug}/sales-orders/create`)
+          router.push(`/warehouse/${warehouse.slug}/purchase-orders/create`)
         }
         className="fixed bottom-20 right-4"
       />

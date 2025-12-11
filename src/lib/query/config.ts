@@ -15,6 +15,7 @@ export const STALE_TIME = {
   // Transactional Data - Changes more frequently
   STOCK_UNITS: 2 * 60 * 1000, // 2 minutes
   SALES_ORDERS: 3 * 60 * 1000, // 3 minutes
+  PURCHASE_ORDERS: 3 * 60 * 1000, // 3 minutes
   STOCK_FLOW: 3 * 60 * 1000, // 3 minutes (goods inward/outward)
 
   // Real-time Data - Needs frequent updates

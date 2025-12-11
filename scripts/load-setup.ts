@@ -401,8 +401,19 @@ async function generateGoodsInwards(
   partnerIds: string[],
   productIds: string[],
   year: number,
+  purchaseOrders: Array<{
+    id: string;
+    status: string;
+    items: Array<{ product_id: string; required_quantity: number; received_quantity: number }>;
+  }>,
+  salesOrders: Array<{
+    id: string;
+    status: string;
+    items: Array<{ product_id: string; required_quantity: number; dispatched_quantity: number }>;
+  }>,
 ) {
   console.log("\n📥 Generating 600 goods inwards entries...\n");
+  console.log("   Distribution: 50% purchase orders, 30% sales returns, 20% other\n");
 
   const monthlyTargets = [
     60, 60, 60, // Jan-Mar (wedding season)
@@ -412,18 +423,32 @@ async function generateGoodsInwards(
   ];
 
   let totalCreated = 0;
+  let linkedToPO = 0;
+  let linkedToSR = 0;
+  let other = 0;
 
-  // Constraint: inward_type must be 'job_work' | 'sales_return' | 'purchase_order' | 'other'
-  // And each type has specific field requirements
+  // Filter eligible purchase orders (completed or in_progress with received items)
+  const eligiblePOs = purchaseOrders.filter(
+    (po) => (po.status === "completed" || po.status === "in_progress") &&
+            po.items.some((item) => item.received_quantity > 0)
+  );
+
+  // Filter eligible sales orders for returns (completed orders)
+  const eligibleSOs = salesOrders.filter(
+    (so) => so.status === "completed" &&
+            so.items.some((item) => item.dispatched_quantity > 0)
+  );
+
   const otherReasons = [
-    "Regular supplier purchase",
-    "Bulk purchase order",
-    "Seasonal stock replenishment",
-    "Customer return received",
     "Warehouse transfer",
     "Donation received",
     "Production sample return",
+    "Quality test return",
+    "Manual stock adjustment",
   ];
+
+  let poIndex = 0;
+  let soIndex = 0;
 
   for (let month = 1; month <= 12; month++) {
     const targetCount = monthlyTargets[month - 1];
@@ -431,10 +456,59 @@ async function generateGoodsInwards(
 
     for (let i = 0; i < targetCount; i++) {
       const inwardDate = getRandomDate(month, year);
+      const typeRoll = Math.random();
+      let inwardType: "purchase_order" | "sales_return" | "other";
+      let purchaseOrderId: string | null = null;
+      let salesOrderId: string | null = null;
+      let otherReason: string | null = null;
+      let selectedProducts: Array<{ id: string; quantity: number }> = [];
 
-      // For now, use "other" type with other_reason (simplest approach)
-      // In real scenarios, you'd use 'purchase_order', 'job_work', 'sales_return' with proper references
-      const reason = otherReasons[Math.floor(Math.random() * otherReasons.length)];
+      // Determine inward type based on distribution: 50% PO, 30% SR, 20% other
+      if (typeRoll < 0.5 && eligiblePOs.length > 0) {
+        // Link to purchase order (50%)
+        inwardType = "purchase_order";
+        const po = eligiblePOs[poIndex % eligiblePOs.length];
+        poIndex++;
+        purchaseOrderId = po.id;
+
+        // Use products from the PO with received quantities
+        selectedProducts = po.items
+          .filter((item) => item.received_quantity > 0)
+          .map((item) => ({
+            id: item.product_id,
+            quantity: item.received_quantity,
+          }));
+        linkedToPO++;
+      } else if (typeRoll < 0.8 && eligibleSOs.length > 0) {
+        // Link to sales return (30%)
+        inwardType = "sales_return";
+        const so = eligibleSOs[soIndex % eligibleSOs.length];
+        soIndex++;
+        salesOrderId = so.id;
+
+        // Use some products from the SO as returns (20-50% of dispatched)
+        selectedProducts = so.items
+          .filter((item) => item.dispatched_quantity > 0)
+          .slice(0, randomInt(1, Math.min(3, so.items.length))) // Return 1-3 product types
+          .map((item) => ({
+            id: item.product_id,
+            quantity: Math.floor(item.dispatched_quantity * randomFloat(0.2, 0.5)),
+          }));
+        linkedToSR++;
+      } else {
+        // Other type (20%)
+        inwardType = "other";
+        otherReason = otherReasons[Math.floor(Math.random() * otherReasons.length)];
+
+        // Random products
+        const itemCount = randomInt(1, 5);
+        selectedProducts = selectRandom(productIds, itemCount).map((id) => ({
+          id,
+          quantity: randomFloat(10, 150, 2),
+        }));
+        other++;
+      }
+
       const partnerId = partnerIds[Math.floor(Math.random() * partnerIds.length)];
 
       // Create inward
@@ -443,11 +517,13 @@ async function generateGoodsInwards(
         .insert({
           company_id: companyId,
           warehouse_id: warehouseId,
-          inward_type: "other",
-          other_reason: reason,
+          inward_type: inwardType,
+          purchase_order_id: purchaseOrderId,
+          sales_order_id: salesOrderId,
+          other_reason: otherReason,
           partner_id: partnerId,
           inward_date: inwardDate,
-          notes: `${reason} - auto-generated test data`,
+          notes: `${inwardType === "purchase_order" ? "PO receipt" : inwardType === "sales_return" ? "Customer return" : otherReason} - auto-generated`,
           created_by: userId,
         })
         .select()
@@ -458,15 +534,17 @@ async function generateGoodsInwards(
         continue;
       }
 
-      // Create stock units for this inward (1-5 products)
-      const itemCount = randomInt(1, 5);
-      const selectedProducts = selectRandom(productIds, itemCount);
-
-      for (const productId of selectedProducts) {
-        const stockUnitsCount = randomInt(1, 8);
+      // Create stock units for this inward
+      for (const product of selectedProducts) {
+        const stockUnitsCount = randomInt(1, 5); // Fewer stock units per product
+        const totalQty = product.quantity;
+        const qtyPerUnit = totalQty / stockUnitsCount;
 
         for (let j = 0; j < stockUnitsCount; j++) {
-          const quantity = randomFloat(10, 150, 2);
+          const quantity = j === stockUnitsCount - 1
+            ? parseFloat((totalQty - qtyPerUnit * j).toFixed(2)) // Last unit gets remainder
+            : parseFloat(qtyPerUnit.toFixed(2));
+
           const qualityRoll = Math.random();
           const qualityGrade =
             qualityRoll < 0.6 ? "A" : qualityRoll < 0.9 ? "B" : "C";
@@ -476,7 +554,7 @@ async function generateGoodsInwards(
           await supabase.from("stock_units").insert({
             company_id: companyId,
             warehouse_id: warehouseId,
-            product_id: productId,
+            product_id: product.id,
             created_from_inward_id: inward.id,
             initial_quantity: quantity,
             remaining_quantity: quantity,
@@ -490,12 +568,15 @@ async function generateGoodsInwards(
 
       totalCreated++;
       if (totalCreated % 50 === 0) {
-        console.log(`   ✅ Created ${totalCreated}/600 inwards...`);
+        console.log(`   ✅ Created ${totalCreated}/600 inwards (PO: ${linkedToPO}, SR: ${linkedToSR}, Other: ${other})...`);
       }
     }
   }
 
   console.log(`\n✨ Successfully created ${totalCreated} goods inwards!`);
+  console.log(`   • Linked to purchase orders: ${linkedToPO} (${Math.round((linkedToPO / totalCreated) * 100)}%)`);
+  console.log(`   • Linked to sales returns: ${linkedToSR} (${Math.round((linkedToSR / totalCreated) * 100)}%)`);
+  console.log(`   • Other inwards: ${other} (${Math.round((other / totalCreated) * 100)}%)`);
   return totalCreated;
 }
 
@@ -644,6 +725,170 @@ async function generateSalesOrders(
   }
 
   console.log(`\n✨ Successfully created ${totalCreated} sales orders!`);
+  return createdOrders;
+}
+
+// ============================================================================
+// PURCHASE ORDERS GENERATION
+// ============================================================================
+
+async function generatePurchaseOrders(
+  companyId: string,
+  warehouseId: string,
+  userId: string,
+  supplierIds: string[],
+  agentIds: string[],
+  productIds: string[],
+  year: number,
+) {
+  console.log("\n📦 Generating 400 purchase orders...\n");
+
+  const monthlyTargets = [
+    40, 40, 40, // Jan-Mar (wedding season - higher procurement)
+    30, 30, 30, // Apr-Jun (regular)
+    25, 35, // Jul-Aug (monsoon dip then recovery)
+    35, 35, 35, // Sep-Nov (festive season prep)
+    25, // Dec
+  ];
+
+  let totalCreated = 0;
+  const statuses = ["approval_pending", "in_progress", "completed", "cancelled"];
+  const statusWeights = [0.15, 0.25, 0.5, 0.1]; // 15%, 25%, 50%, 10%
+
+  const createdOrders: Array<{
+    id: string;
+    status: string;
+    items: Array<{ product_id: string; required_quantity: number; received_quantity: number }>;
+  }> = [];
+
+  for (let month = 1; month <= 12; month++) {
+    const targetCount = monthlyTargets[month - 1];
+    console.log(`📅 Month ${month}: Creating ${targetCount} purchase orders...`);
+
+    for (let i = 0; i < targetCount; i++) {
+      const orderDate = getRandomDate(month, year);
+      const deliveryDays = randomInt(10, 60); // Longer lead time for procurement
+      const orderDateObj = new Date(orderDate);
+      orderDateObj.setDate(orderDateObj.getDate() + deliveryDays);
+      const expectedDeliveryDate = orderDateObj.toISOString().split("T")[0];
+
+      // Select status based on weights
+      const statusRoll = Math.random();
+      let status = statuses[0];
+      let cumulative = 0;
+      for (let j = 0; j < statuses.length; j++) {
+        cumulative += statusWeights[j];
+        if (statusRoll < cumulative) {
+          status = statuses[j];
+          break;
+        }
+      }
+
+      // 15% of in_progress orders are overdue
+      let finalDeliveryDate = expectedDeliveryDate;
+      if (status === "in_progress" && Math.random() < 0.15) {
+        const today = new Date();
+        const pastDate = new Date(today);
+        pastDate.setDate(today.getDate() - randomInt(1, 30));
+        finalDeliveryDate = pastDate.toISOString().split("T")[0];
+      }
+
+      const supplierId = supplierIds[Math.floor(Math.random() * supplierIds.length)];
+      const agentId = Math.random() < 0.3 && agentIds.length > 0
+        ? agentIds[Math.floor(Math.random() * agentIds.length)]
+        : null; // 30% have agents
+
+      // Discount logic (discount_type_enum: 'none' | 'percentage' | 'flat_amount')
+      const hasDiscount = Math.random() < 0.6; // 60% get discount (less than sales)
+      const discountType = hasDiscount ? (Math.random() < 0.9 ? "percentage" : "flat_amount") : "none";
+      const discountValue = hasDiscount ? randomFloat(3, 15, 0) : 0; // Lower discounts for purchases
+
+      const totalAmount = randomFloat(10000, 80000, 2);
+      const advanceAmount = randomFloat(totalAmount * 0.2, totalAmount * 0.5, 2);
+
+      // Payment terms
+      const paymentTermsOptions = ["15 days net", "30 days net", "45 days net", "60 days net", "Cash on delivery"];
+      const paymentTerms = paymentTermsOptions[Math.floor(Math.random() * paymentTermsOptions.length)];
+
+      // Supplier invoice number for completed orders
+      const supplierInvoiceNumber = status === "completed"
+        ? `INV-${year}-${String(1000 + totalCreated).padStart(4, "0")}`
+        : null;
+
+      // Create order
+      const { data: order, error: orderError } = await supabase
+        .from("purchase_orders")
+        .insert({
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId,
+          agent_id: agentId,
+          order_date: orderDate,
+          expected_delivery_date: finalDeliveryDate,
+          status: status,
+          total_amount: totalAmount,
+          advance_amount: advanceAmount,
+          discount_type: discountType,
+          discount_value: discountValue,
+          payment_terms: paymentTerms,
+          supplier_invoice_number: supplierInvoiceNumber,
+          notes: `${status} order - auto-generated test data`,
+          created_by: userId,
+        })
+        .select()
+        .single();
+
+      if (orderError || !order) {
+        console.error(`❌ Failed to create purchase order: ${orderError?.message}`);
+        continue;
+      }
+
+      // Create order items (1-8 products per order)
+      const itemCount = randomInt(1, 8);
+      const selectedProducts = selectRandom(productIds, itemCount);
+      const orderItems: Array<{ product_id: string; required_quantity: number; received_quantity: number }> = [];
+
+      for (const productId of selectedProducts) {
+        const requiredQty = randomInt(10, 300); // Higher quantities for purchases
+        let receivedQty = 0;
+
+        if (status === "completed") {
+          receivedQty = requiredQty;
+        } else if (status === "cancelled") {
+          receivedQty = Math.random() < 0.1 ? randomInt(1, requiredQty * 0.3) : 0;
+        } else if (status === "in_progress") {
+          receivedQty = Math.floor(requiredQty * randomFloat(0.3, 0.9));
+        } else if (status === "approval_pending") {
+          receivedQty = 0; // No receipt until approved
+        }
+
+        await supabase.from("purchase_order_items").insert({
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          purchase_order_id: order.id,
+          product_id: productId,
+          required_quantity: requiredQty,
+          received_quantity: receivedQty,
+          notes: `Auto-generated test data`,
+        });
+
+        orderItems.push({ product_id: productId, required_quantity: requiredQty, received_quantity: receivedQty });
+      }
+
+      createdOrders.push({
+        id: order.id,
+        status: order.status,
+        items: orderItems,
+      });
+
+      totalCreated++;
+      if (totalCreated % 50 === 0) {
+        console.log(`   ✅ Created ${totalCreated}/400 purchase orders...`);
+      }
+    }
+  }
+
+  console.log(`\n✨ Successfully created ${totalCreated} purchase orders!`);
   return createdOrders;
 }
 
@@ -914,6 +1159,7 @@ async function loadTestData() {
 
   const supplierIds = partners.filter((p) => p.partner_type === "supplier").map((p) => p.id);
   const customerIds = partners.filter((p) => p.partner_type === "customer").map((p) => p.id);
+  const agentIds = partners.filter((p) => p.partner_type === "agent").map((p) => p.id);
 
   if (supplierIds.length === 0 || customerIds.length === 0) {
     console.error("❌ Missing suppliers or customers. Please run setup.ts first.");
@@ -936,12 +1182,13 @@ async function loadTestData() {
 
   const productIds = productsList.map((p) => p.id);
 
-  // Generate goods inwards
-  await generateGoodsInwards(
+  // Generate purchase orders first (needed for linking goods inwards)
+  const purchaseOrders = await generatePurchaseOrders(
     companyId,
     warehouseId,
     userId,
     supplierIds,
+    agentIds,
     productIds,
     2025,
   );
@@ -954,6 +1201,18 @@ async function loadTestData() {
     customerIds,
     productIds,
     2025,
+  );
+
+  // Generate goods inwards (link 50% to POs, 30% to sales returns, 20% to other)
+  await generateGoodsInwards(
+    companyId,
+    warehouseId,
+    userId,
+    supplierIds,
+    productIds,
+    2025,
+    purchaseOrders,
+    salesOrders,
   );
 
   // Generate goods outwards
@@ -971,6 +1230,7 @@ async function loadTestData() {
   console.log("   • 100 products with varied attributes");
   console.log("   • 600 goods inwards with stock units");
   console.log("   • 500 sales orders (spanning Jan-Dec 2025)");
+  console.log("   • 400 purchase orders (spanning Jan-Dec 2025)");
   console.log("   • ~400 goods outwards (linked to orders + standalone)");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 }

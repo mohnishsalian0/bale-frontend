@@ -38,13 +38,13 @@ import { TransportEditSheet } from "../TransportEditSheet";
 
 interface PageParams {
   params: Promise<{
-    order_number: string;
+    sale_number: string;
   }>;
 }
 
 export default function SalesOrderDetailsPage({ params }: PageParams) {
   const router = useRouter();
-  const { order_number } = use(params);
+  const { sale_number } = use(params);
 
   // Edit sheet states
   const [showCustomerEdit, setShowCustomerEdit] = useState(false);
@@ -59,7 +59,7 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
     data: order,
     isLoading,
     isError,
-  } = useSalesOrderByNumber(order_number);
+  } = useSalesOrderByNumber(sale_number);
 
   // Calculate financials
   const financials = useMemo(() => {

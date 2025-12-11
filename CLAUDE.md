@@ -35,6 +35,7 @@ Company
 | Partners                | Full CRUD      | Read only                    |
 | Stock Units             | All warehouses | Assigned warehouse only      |
 | Sales Orders            | Full CRUD all  | Read assigned warehouse only |
+| Purchase Orders         | Full CRUD all  | Read assigned warehouse only |
 | Job Work                | All warehouses | Assigned warehouse (CRUD)    |
 | Outward/Inward          | All warehouses | Assigned warehouse (CRUD)    |
 | Barcode Generation      | All warehouses | Assigned warehouse only      |

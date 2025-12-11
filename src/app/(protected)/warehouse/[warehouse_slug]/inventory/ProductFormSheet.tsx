@@ -364,7 +364,7 @@ export function ProductFormSheet({
         >
           <div className="flex-1 overflow-y-auto">
             {/* Basic Info */}
-            <div className="flex flex-col gap-6 px-4 py-5">
+            <div className="flex flex-col gap-5 px-4 py-5">
               {/* Product Name */}
               <div className="flex flex-col gap-2">
                 <InputWithIcon

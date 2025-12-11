@@ -10,7 +10,12 @@ import {
   QuickActionButton,
   type QuickAction,
 } from "@/components/ui/quick-action-button";
-import { IconShirt, IconQrcode, IconScan } from "@tabler/icons-react";
+import {
+  IconShirt,
+  IconQrcode,
+  IconScan,
+  IconShoppingCart,
+} from "@tabler/icons-react";
 import IconGoodsInward from "@/components/icons/IconGoodsInward";
 import IconGoodsOutward from "@/components/icons/IconGoodsOutward";
 import { Fab } from "@/components/ui/fab";
@@ -55,6 +60,11 @@ export default function DashboardPage() {
       icon: IconGoodsInward,
       label: "Goods inward",
       href: `/warehouse/${warehouse.slug}/goods-inward/create`,
+    },
+    {
+      icon: IconShoppingCart,
+      label: "Purchase order",
+      href: `/warehouse/${warehouse.slug}/purchase-orders`,
     },
     {
       icon: IconQrcode,

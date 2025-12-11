@@ -19,6 +19,7 @@ import {
   type InwardFilters,
   type OutwardFilters,
   getGoodsOutwardsBySalesOrder,
+  getGoodsInwardsByPurchaseOrder,
 } from "@/lib/queries/stock-flow";
 import type { TablesInsert } from "@/types/database/supabase";
 
@@ -51,6 +52,22 @@ export function useGoodsOutwards(
   return useQuery({
     queryKey: queryKeys.stockFlow.outwards(warehouseId, filters, page),
     queryFn: () => getGoodsOutwards(warehouseId, filters, page, pageSize),
+    ...getQueryOptions(STALE_TIME.STOCK_FLOW, GC_TIME.TRANSACTIONAL),
+    placeholderData: keepPreviousData,
+  });
+}
+
+/**
+ * Fetch goods inwards for a purchase order
+ */
+export function useGoodsInwardsByPurchaseOrder(
+  orderNumber: string,
+  page: number = 1,
+  pageSize: number = 25,
+) {
+  return useQuery({
+    queryKey: queryKeys.stockFlow.inwardsByPurchaseOrder(orderNumber, page),
+    queryFn: () => getGoodsInwardsByPurchaseOrder(orderNumber, page, pageSize),
     ...getQueryOptions(STALE_TIME.STOCK_FLOW, GC_TIME.TRANSACTIONAL),
     placeholderData: keepPreviousData,
   });
