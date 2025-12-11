@@ -22,7 +22,7 @@ import type { GoodsInward } from "@/types/stock-flow.types";
 
 export interface InwardLinkToData extends Pick<
   GoodsInward,
-  "sales_order_id" | "purchase_order_number" | "other_reason" | "job_work_id"
+  "sales_order_id" | "purchase_order_id" | "other_reason" | "job_work_id"
 > {
   linkToType: InwardLinkToType;
 }
@@ -65,7 +65,7 @@ export function InwardLinkToStep({
     onLinkToChange({
       linkToType: type,
       sales_order_id: null,
-      purchase_order_number: null,
+      purchase_order_id: null,
       other_reason: null,
       job_work_id: null,
     });
@@ -112,10 +112,10 @@ export function InwardLinkToStep({
             <Input
               id="po_number"
               placeholder="Enter PO number from supplier/vendor"
-              value={linkToData.purchase_order_number || ""}
+              value={linkToData.purchase_order_id || ""}
               onChange={(e) =>
                 handleValueChange(
-                  "purchase_order_number",
+                  "purchase_order_id",
                   e.target.value || null,
                 )
               }

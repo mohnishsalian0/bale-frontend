@@ -7,6 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "ts": "npx tsc --noEmit",
     "lint": "npx eslint .",
     "lint:quiet": "npx eslint . --quiet",
     "format": "npx prettier --write .",
