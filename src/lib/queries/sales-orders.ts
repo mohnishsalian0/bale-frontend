@@ -262,6 +262,39 @@ export async function createSalesOrder(
 }
 
 /**
+ * Create a quick order (sales order + goods outward) atomically
+ * Used when customer visits store and collects items immediately
+ */
+export async function createQuickOrder(
+  orderData: CreateSalesOrderData,
+  orderItems: CreateSalesOrderLineItem[],
+  stockUnitItems: Array<{
+    stock_unit_id: string;
+    quantity: number;
+  }>,
+): Promise<number> {
+  const supabase = createClient();
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { data: sequenceNumber, error } = await supabase.rpc(
+    "quick_order_with_outward",
+    {
+      p_order_data: orderData,
+      p_order_items: orderItems,
+      p_stock_unit_items: stockUnitItems,
+    },
+  );
+
+  if (error) {
+    console.error("Error creating quick order:", error);
+    throw error;
+  }
+  if (!sequenceNumber) throw new Error("No sequence number returned");
+
+  return sequenceNumber as number;
+}
+
+/**
  * Approve and update a sales order with new data and line items
  * Uses RPC function for atomic transaction with validation
  */

@@ -259,7 +259,7 @@ export default function StockFlowPage({ params }: PageParams) {
                   ? `From ${flow.sender}`
                   : `To ${flow.receiver}`}
               </p>
-              <p className="text-xs text-left text-gray-500 mt-1">
+              <p className="text-sm text-left text-gray-500 mt-1">
                 {flow.type === "inward" ? "GI" : "GO"}-{flow.sequence_number}
                 <span> &nbsp;•&nbsp; </span>
                 {formatAbsoluteDate(flow.date)}

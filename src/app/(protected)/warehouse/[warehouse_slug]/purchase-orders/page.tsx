@@ -15,7 +15,10 @@ import {
 } from "@/components/ui/select";
 import { PaginationWrapper } from "@/components/ui/pagination-wrapper";
 import { Fab } from "@/components/ui/fab";
-import { PurchaseStatusBadge } from "@/components/ui/purchase-status-badge";
+import {
+  getStatusConfig,
+  PurchaseStatusBadge,
+} from "@/components/ui/purchase-status-badge";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
@@ -401,8 +404,7 @@ export default function PurchaseOrdersPage() {
               {group.orders.map((order) => {
                 const showProgressBar =
                   order.status === "in_progress" || order.status === "overdue";
-                const progressColor =
-                  order.status === "overdue" ? "yellow" : "blue";
+                const progressBarColor = getStatusConfig(order.status).color;
 
                 return (
                   <button
@@ -445,7 +447,7 @@ export default function PurchaseOrdersPage() {
                     {/* Progress Bar */}
                     {showProgressBar && (
                       <Progress
-                        color={progressColor}
+                        color={progressBarColor}
                         value={order.completionPercentage}
                       />
                     )}

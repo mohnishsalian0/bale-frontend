@@ -757,6 +757,22 @@ Permissions are organized hierarchically with the following top-level categories
 - Modified by (user ID)
 - Deleted at (soft delete timestamp)
 
+#### 4.3 Quick Order Creation
+
+**Feature Description:** Streamlined order fulfillment for walk-in customers who place orders and collect items immediately from the store/warehouse
+
+**Use Case:**
+
+- Handle walk-in customers who visit the warehouse/store in person
+- Complete the entire order-to-delivery process in a single transaction
+- Creates both sales order and goods outward together atomically
+- Ideal for immediate pickup scenarios where customers don't need installment deliveries
+
+**Key Difference from Regular Orders:**
+
+- Regular orders: Created first, then fulfilled via separate goods outward over time (installment deliveries)
+- Quick orders: Sales order and goods outward created together with status 'completed'
+
 ### 5. Partner Management
 
 #### 5.1 Partner Master

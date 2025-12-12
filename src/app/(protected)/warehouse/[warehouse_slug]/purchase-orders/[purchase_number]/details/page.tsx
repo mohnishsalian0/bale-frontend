@@ -19,7 +19,11 @@ import { formatCurrency } from "@/lib/utils/financial";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getPartnerName, getFormattedAddress } from "@/lib/utils/partner";
-import { getAgentName } from "@/lib/utils/purchase-order";
+import {
+  DisplayStatus,
+  getAgentName,
+  getOrderDisplayStatus,
+} from "@/lib/utils/purchase-order";
 import type {
   MeasuringUnit,
   StockType,
@@ -65,10 +69,16 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
     );
   }, [order]);
 
-  const progressBarColor = useMemo(() => {
-    if (!order) return "blue";
-    return getStatusConfig(order.status as PurchaseOrderStatus).color;
+  // Compute display status (includes 'overdue' logic) using utility
+  const displayStatus: DisplayStatus = useMemo(() => {
+    if (!order) return "in_progress";
+    return getOrderDisplayStatus(
+      order.status as PurchaseOrderStatus,
+      order.expected_delivery_date,
+    );
   }, [order]);
+
+  const progressBarColor = getStatusConfig(displayStatus).color;
 
   if (isLoading) {
     return <LoadingState message="Loading order details..." />;

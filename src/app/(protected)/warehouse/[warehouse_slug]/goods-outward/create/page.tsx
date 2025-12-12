@@ -3,7 +3,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { QRScannerStep, ScannedStockUnit } from "../QRScannerStep";
+import {
+  StockUnitScannerStep,
+  ScannedStockUnit,
+} from "@/components/layouts/stock-unit-scanner-step";
 import { PartnerSelectionStep } from "@/app/(protected)/warehouse/[warehouse_slug]/stock-flow/PartnerSelectionStep";
 import { OutwardLinkToStep, OutwardLinkToData } from "../OutwardLinkToStep";
 import { OutwardDetailsStep } from "../OutwardDetailsStep";
@@ -236,9 +239,10 @@ export default function CreateGoodsOutwardPage() {
         {/* Step Content - Scrollable */}
         <div className="flex-1 flex-col overflow-y-auto flex">
           {currentStep === "scanner" && (
-            <QRScannerStep
+            <StockUnitScannerStep
               scannedUnits={scannedUnits}
               onScannedUnitsChange={setScannedUnits}
+              warehouseId={warehouse.id}
             />
           )}
 
