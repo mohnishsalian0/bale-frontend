@@ -289,7 +289,7 @@ export default function StockUnitsPage({ params }: PageParams) {
 
                       {/* QR Status */}
                       <p
-                        className={`text-xs mt-0.5 ${
+                        className={`text-sm mt-1 ${
                           unit.qr_generated_at
                             ? "text-gray-500"
                             : "text-green-700"
@@ -306,7 +306,7 @@ export default function StockUnitsPage({ params }: PageParams) {
                       </p>
 
                       {/* Additional Details */}
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-1">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
                         {unit.quality_grade && (
                           <span>Grade: {unit.quality_grade}</span>
                         )}

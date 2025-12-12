@@ -8,7 +8,7 @@ interface PurchaseStatusBadgeProps {
 }
 
 interface PurchaseStatusConfig {
-  color: "blue" | "green" | "orange" | "red" | "gray";
+  color: "blue" | "green" | "orange" | "red" | "gray" | "yellow";
   variant: "default" | "secondary" | "outline";
   label: string;
 }
@@ -22,7 +22,7 @@ export function getStatusConfig(
     case "in_progress":
       return { color: "blue", variant: "secondary", label: "In Progress" };
     case "overdue":
-      return { color: "orange", variant: "secondary", label: "Overdue" };
+      return { color: "yellow", variant: "secondary", label: "Overdue" };
     case "completed":
       return { color: "green", variant: "secondary", label: "Completed" };
     case "cancelled":

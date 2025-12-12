@@ -4,8 +4,9 @@ import { useState } from "react";
 import {
   IconChevronDown,
   IconCurrencyRupee,
-  IconPhoto,
   IconPercentage,
+  IconTruck,
+  IconUpload,
 } from "@tabler/icons-react";
 import { InputWithIcon } from "@/components/ui/input-with-icon";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,69 +25,55 @@ import {
 import { DatePicker } from "@/components/ui/date-picker";
 import { dateToISOString } from "@/lib/utils/date";
 import { usePartners } from "@/lib/query/hooks/partners";
-import { useWarehouses } from "@/lib/query/hooks/warehouses";
 
-interface OrderFormData {
-  warehouseId: string;
-  customerId: string;
+export interface QuickOrderFormData {
+  orderDate: string; // Same as outward date
+  deliveryDate: string; // Same for both order and outward
   agentId: string;
-  orderDate: string;
-  deliveryDate: string;
+  paymentTerms: string;
   advanceAmount: string;
   discount: string;
-  paymentTerms: string;
+  transportDetails: string;
   notes: string;
-  files: File[];
+  documentFile: File | null;
 }
 
-interface OrderDetailsStepProps {
-  formData: OrderFormData;
-  setFormData: (data: OrderFormData) => void;
+interface QuickOrderDetailsStepProps {
+  formData: QuickOrderFormData;
+  onChange: (data: Partial<QuickOrderFormData>) => void;
 }
 
-export function OrderDetailsStep({
+export function QuickOrderDetailsStep({
   formData,
-  setFormData,
-}: OrderDetailsStepProps) {
+  onChange,
+}: QuickOrderDetailsStepProps) {
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
-  const { data: warehouses = [] } = useWarehouses();
   const { data: agents = [] } = usePartners({ partner_type: "agent" });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    // Filter for images and PDFs only
-    const validFiles = files.filter((file) => {
-      const isImage = file.type.startsWith("image/");
-      const isPDF = file.type === "application/pdf";
-      return isImage || isPDF;
-    });
-    setFormData({ ...formData, files: [...formData.files, ...validFiles] });
+    const file = e.target.files?.[0];
+    if (file) {
+      onChange({ documentFile: file });
+    }
+  };
+
+  // Disable delivery dates before order date
+  const isDeliveryDateDisabled = (date: Date) => {
+    // Disable dates before order date if order date is selected
+    if (formData.orderDate) {
+      const orderDate = new Date(formData.orderDate);
+      orderDate.setHours(0, 0, 0, 0);
+      const checkDate = new Date(date);
+      checkDate.setHours(0, 0, 0, 0);
+      return checkDate < orderDate;
+    }
+    return false;
   };
 
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Main Fields */}
       <div className="flex flex-col gap-5 px-4 py-6">
-        {/* Warehouse Dropdown */}
-        <Select
-          value={formData.warehouseId}
-          onValueChange={(value) =>
-            setFormData({ ...formData, warehouseId: value })
-          }
-          required
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Warehouse" />
-          </SelectTrigger>
-          <SelectContent>
-            {warehouses.map((warehouse) => (
-              <SelectItem key={warehouse.id} value={warehouse.id}>
-                {warehouse.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
         {/* Date Fields */}
         <div className="flex gap-3">
           {/* Order Date */}
@@ -97,8 +84,7 @@ export function OrderDetailsStep({
               formData.orderDate ? new Date(formData.orderDate) : undefined
             }
             onChange={(date) =>
-              setFormData({
-                ...formData,
+              onChange({
                 orderDate: date ? dateToISOString(date) : "",
               })
             }
@@ -116,11 +102,11 @@ export function OrderDetailsStep({
                 : undefined
             }
             onChange={(date) =>
-              setFormData({
-                ...formData,
+              onChange({
                 deliveryDate: date ? dateToISOString(date) : "",
               })
             }
+            disabled={isDeliveryDateDisabled}
             required
             className="flex-1"
           />
@@ -129,9 +115,7 @@ export function OrderDetailsStep({
         {/* Agent Dropdown */}
         <Select
           value={formData.agentId || undefined}
-          onValueChange={(value) =>
-            setFormData({ ...formData, agentId: value })
-          }
+          onValueChange={(value) => onChange({ agentId: value })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Agent (Optional)" />
@@ -169,9 +153,7 @@ export function OrderDetailsStep({
             {/* Payment Terms */}
             <Select
               value={formData.paymentTerms || undefined}
-              onValueChange={(value) =>
-                setFormData({ ...formData, paymentTerms: value })
-              }
+              onValueChange={(value) => onChange({ paymentTerms: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Payment terms (Optional)" />
@@ -193,9 +175,7 @@ export function OrderDetailsStep({
               type="number"
               placeholder="Advance amount"
               value={formData.advanceAmount}
-              onChange={(e) =>
-                setFormData({ ...formData, advanceAmount: e.target.value })
-              }
+              onChange={(e) => onChange({ advanceAmount: e.target.value })}
               icon={<IconCurrencyRupee />}
               min="0"
               step="0.01"
@@ -206,65 +186,50 @@ export function OrderDetailsStep({
               type="number"
               placeholder="Discount percent"
               value={formData.discount}
-              onChange={(e) =>
-                setFormData({ ...formData, discount: e.target.value })
-              }
+              onChange={(e) => onChange({ discount: e.target.value })}
               icon={<IconPercentage />}
               min="0"
               step="0.01"
             />
 
+            {/* Transport Details */}
+            <InputWithIcon
+              type="text"
+              placeholder="Transport details"
+              value={formData.transportDetails}
+              onChange={(e) => onChange({ transportDetails: e.target.value })}
+              icon={<IconTruck />}
+            />
+
             {/* Notes */}
             <Textarea
-              placeholder="Enter instructions, special requirements, custom measurements, order source, etc..."
+              placeholder="Enter a note..."
               value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
+              onChange={(e) => onChange({ notes: e.target.value })}
               className="min-h-32"
             />
 
-            {/* Add Files */}
-            {/* TODO: Update this component */}
-            <label className="border border-primary-700 rounded-lg h-11 flex items-center justify-center gap-3 cursor-pointer text-primary-700 hover:bg-primary-50 transition-colors shadow-gray-sm">
-              <IconPhoto className="size-4" />
-              <span className="text-sm font-normal">Add files</span>
+            {/* File Upload */}
+            <div>
+              <label
+                htmlFor="document-upload"
+                className="flex items-center justify-center gap-2 h-11 px-4 border border-input rounded-md cursor-pointer hover:bg-accent transition-colors"
+              >
+                <IconUpload className="size-4" />
+                <span className="text-sm">
+                  {formData.documentFile
+                    ? formData.documentFile.name
+                    : "Upload document"}
+                </span>
+              </label>
               <input
+                id="document-upload"
                 type="file"
-                accept="image/*,.pdf"
-                multiple
+                accept=".pdf,.jpg,.jpeg,.png"
                 onChange={handleFileSelect}
                 className="sr-only"
               />
-            </label>
-
-            {/* File List */}
-            {formData.files.length > 0 && (
-              <div className="flex flex-col gap-2">
-                {formData.files.map((file, index) => (
-                  <div
-                    key={index}
-                    className="text-sm text-gray-700 flex items-center justify-between"
-                  >
-                    <span title={file.name} className="truncate">
-                      {file.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newFiles = formData.files.filter(
-                          (_, i) => i !== index,
-                        );
-                        setFormData({ ...formData, files: newFiles });
-                      }}
-                      className="text-red-600 hover:text-red-700 ml-2"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+            </div>
           </div>
         </CollapsibleContent>
       </Collapsible>

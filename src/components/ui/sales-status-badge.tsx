@@ -1,28 +1,26 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { SalesOrderStatus } from "@/types/database/enums";
+import { DisplayStatus } from "@/lib/utils/sales-order";
 
 interface SalesStatusBadgeProps {
-  status: SalesOrderStatus | "overdue";
+  status: DisplayStatus;
   className?: string;
 }
 
 interface SalesStatusConfig {
-  color: "blue" | "green" | "orange" | "red" | "gray";
+  color: "blue" | "green" | "orange" | "red" | "gray" | "yellow";
   variant: "default" | "secondary" | "outline";
   label: string;
 }
 
-export function getStatusConfig(
-  status: SalesOrderStatus | "overdue",
-): SalesStatusConfig {
+export function getStatusConfig(status: DisplayStatus): SalesStatusConfig {
   switch (status) {
     case "approval_pending":
       return { color: "blue", variant: "default", label: "Approval Pending" };
     case "in_progress":
       return { color: "blue", variant: "secondary", label: "In Progress" };
     case "overdue":
-      return { color: "orange", variant: "secondary", label: "Overdue" };
+      return { color: "yellow", variant: "secondary", label: "Overdue" };
     case "completed":
       return { color: "green", variant: "secondary", label: "Completed" };
     case "cancelled":

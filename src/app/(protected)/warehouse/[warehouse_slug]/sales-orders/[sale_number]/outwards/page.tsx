@@ -69,7 +69,7 @@ export default function OutwardsPage({ params }: PageParams) {
                 `/warehouse/${warehouse_slug}/goods-outward/${outward.sequence_number}`,
               );
             }}
-            className="flex items-center gap-4 p-4 hover:bg-gray-100 hover:cursor-pointer transition-colors"
+            className="w-full flex items-center gap-4 p-4 hover:bg-gray-100 hover:cursor-pointer transition-colors"
           >
             <div className="flex-3 text-left">
               <p className="text-base font-medium text-gray-700">

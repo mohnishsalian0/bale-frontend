@@ -2461,6 +2461,14 @@ export type Database = {
         Args: { warehouse_id_to_check: string };
         Returns: boolean;
       };
+      quick_order_with_outward: {
+        Args: {
+          p_order_data: Json;
+          p_order_items: Json[];
+          p_stock_unit_items: Json[];
+        };
+        Returns: number;
+      };
       recalculate_partner_order_aggregates: {
         Args: { p_partner_id: string };
         Returns: undefined;

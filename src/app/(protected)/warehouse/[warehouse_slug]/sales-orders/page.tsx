@@ -4,8 +4,14 @@ import { useState, useMemo, useEffect } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { IconSearch } from "@tabler/icons-react";
+import { IconSearch, IconBolt, IconPlus } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -15,7 +21,10 @@ import {
 } from "@/components/ui/select";
 import { PaginationWrapper } from "@/components/ui/pagination-wrapper";
 import { Fab } from "@/components/ui/fab";
-import { SalesStatusBadge } from "@/components/ui/sales-status-badge";
+import {
+  getStatusConfig,
+  SalesStatusBadge,
+} from "@/components/ui/sales-status-badge";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
@@ -397,8 +406,7 @@ export default function OrdersPage() {
               {group.orders.map((order) => {
                 const showProgressBar =
                   order.status === "in_progress" || order.status === "overdue";
-                const progressColor =
-                  order.status === "overdue" ? "yellow" : "blue";
+                const progressBarColor = getStatusConfig(order.status).color;
 
                 return (
                   <button
@@ -441,7 +449,7 @@ export default function OrdersPage() {
                     {/* Progress Bar */}
                     {showProgressBar && (
                       <Progress
-                        color={progressColor}
+                        color={progressBarColor}
                         value={order.completionPercentage}
                       />
                     )}
@@ -460,13 +468,36 @@ export default function OrdersPage() {
         onPageChange={handlePageChange}
       />
 
-      {/* Floating Action Button */}
-      <Fab
-        onClick={() =>
-          router.push(`/warehouse/${warehouse.slug}/sales-orders/create`)
-        }
-        className="fixed bottom-20 right-4"
-      />
+      {/* Floating Action Button with Dropdown */}
+      <div className="fixed bottom-20 right-4 z-40">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div>
+              <Fab />
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem
+              onClick={() =>
+                router.push(
+                  `/warehouse/${warehouse.slug}/sales-orders/quick-create`,
+                )
+              }
+            >
+              <IconBolt className="mr-2 size-4" />
+              Quick Order
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() =>
+                router.push(`/warehouse/${warehouse.slug}/sales-orders/create`)
+              }
+            >
+              <IconPlus className="mr-2 size-4" />
+              New Order
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 }

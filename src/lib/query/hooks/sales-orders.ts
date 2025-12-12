@@ -12,6 +12,7 @@ import {
   getSalesOrders,
   getSalesOrderByNumber,
   createSalesOrder,
+  createQuickOrder,
   approveSalesOrder,
   cancelSalesOrder,
   completeSalesOrder,
@@ -136,8 +137,46 @@ export function useSalesOrderMutations(warehouseId: string | null) {
     },
   });
 
+  const quickCreate = useMutation({
+    mutationFn: ({
+      orderData,
+      orderItems,
+      stockUnitItems,
+    }: {
+      orderData: CreateSalesOrderData;
+      orderItems: CreateSalesOrderLineItem[];
+      stockUnitItems: Array<{
+        stock_unit_id: string;
+        quantity: number;
+      }>;
+    }) => createQuickOrder(orderData, orderItems, stockUnitItems),
+    onSuccess: () => {
+      // Invalidate sales orders
+      queryClient.invalidateQueries({
+        queryKey: ["sales-orders", warehouseId],
+      });
+      // Invalidate goods outward/stock flow (quick order creates both)
+      queryClient.invalidateQueries({
+        queryKey: ["stock-flow", warehouseId],
+      });
+      // Invalidate stock units (quantities updated)
+      queryClient.invalidateQueries({
+        queryKey: ["stock-units", warehouseId],
+      });
+      // Invalidate products (inventory counts updated)
+      queryClient.invalidateQueries({
+        queryKey: ["products", warehouseId],
+      });
+      // Invalidate dashboard (statistics updated)
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard", warehouseId],
+      });
+    },
+  });
+
   return {
     create,
+    quickCreate,
     approve,
     cancel,
     complete,
