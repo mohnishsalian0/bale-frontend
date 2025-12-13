@@ -5,6 +5,7 @@ import {
   useMutation,
   useQueryClient,
   keepPreviousData,
+  useInfiniteQuery,
 } from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
@@ -12,7 +13,7 @@ import {
   getSalesOrders,
   getSalesOrderByNumber,
   createSalesOrder,
-  createQuickOrder,
+  createQuickSalesOrder,
   approveSalesOrder,
   cancelSalesOrder,
   completeSalesOrder,
@@ -50,6 +51,29 @@ export function useSalesOrders({
     ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
     placeholderData: keepPreviousData,
     enabled,
+  });
+}
+
+/**
+ * Fetch sales orders with infinite scroll
+ *
+ * Used in link-to steps where we need to display a scrollable list of orders
+ */
+export function useInfiniteSalesOrders(
+  filters?: SalesOrderFilters,
+  pageSize: number = 30,
+) {
+  return useInfiniteQuery({
+    queryKey: [...queryKeys.salesOrders.all(filters, 1), "infinite"],
+    queryFn: ({ pageParam = 1 }) =>
+      getSalesOrders(filters, pageParam, pageSize),
+    getNextPageParam: (lastPage, allPages) => {
+      const currentPage = allPages.length;
+      const totalPages = Math.ceil(lastPage.totalCount / pageSize);
+      return currentPage < totalPages ? currentPage + 1 : undefined;
+    },
+    initialPageParam: 1,
+    ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
   });
 }
 
@@ -149,13 +173,13 @@ export function useSalesOrderMutations(warehouseId: string | null) {
         stock_unit_id: string;
         quantity: number;
       }>;
-    }) => createQuickOrder(orderData, orderItems, stockUnitItems),
+    }) => createQuickSalesOrder(orderData, orderItems, stockUnitItems),
     onSuccess: () => {
       // Invalidate sales orders
       queryClient.invalidateQueries({
         queryKey: ["sales-orders", warehouseId],
       });
-      // Invalidate goods outward/stock flow (quick order creates both)
+      // Invalidate goods outward/stock flow (quick sales order creates both)
       queryClient.invalidateQueries({
         queryKey: ["stock-flow", warehouseId],
       });

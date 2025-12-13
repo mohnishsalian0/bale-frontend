@@ -122,7 +122,12 @@ export async function getPurchaseOrders(
     if (Array.isArray(filters.status)) {
       query = query.in("status", filters.status);
     } else {
-      query = query.eq("status", filters.status);
+      if (filters.status === "overdue") {
+        query = query.eq("status", "in_progress");
+        query = query.lt("expected_delivery_date", new Date().toISOString());
+      } else {
+        query = query.eq("status", filters.status);
+      }
     }
   }
 

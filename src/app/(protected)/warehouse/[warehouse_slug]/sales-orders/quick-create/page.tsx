@@ -177,20 +177,20 @@ export default function QuickCreateOrderPage() {
         status: "completed",
       };
 
-      // Call RPC function to create quick order
+      // Call RPC function to create quick sales
       const sequenceNumber = await quickCreate.mutateAsync({
         orderData,
         orderItems,
         stockUnitItems,
       });
 
-      toast.success("Quick order created successfully");
+      toast.success("Quick sale created successfully");
       router.push(
         `/warehouse/${warehouse.slug}/sales-orders/${sequenceNumber}`,
       );
     } catch (error) {
-      console.error("Error creating quick order:", error);
-      toast.error("Failed to create quick order");
+      console.error("Error creating quick sale:", error);
+      toast.error("Failed to create quick sale");
     } finally {
       setSaving(false);
     }
@@ -205,7 +205,7 @@ export default function QuickCreateOrderPage() {
       <div className="flex-1 flex flex-col w-full overflow-y-hidden">
         {/* Header - Fixed at top */}
         <FormHeader
-          title="Quick Order"
+          title="Quick Sales"
           currentStep={stepNumber}
           totalSteps={3}
           onCancel={handleCancel}

@@ -5,6 +5,7 @@ import {
   useMutation,
   useQueryClient,
   keepPreviousData,
+  useInfiniteQuery,
 } from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
@@ -49,6 +50,29 @@ export function usePurchaseOrders({
     ...getQueryOptions(STALE_TIME.PURCHASE_ORDERS, GC_TIME.TRANSACTIONAL),
     placeholderData: keepPreviousData,
     enabled,
+  });
+}
+
+/**
+ * Fetch purchase orders with infinite scroll
+ *
+ * Used in link-to steps where we need to display a scrollable list of orders
+ */
+export function useInfinitePurchaseOrders(
+  filters?: PurchaseOrderFilters,
+  pageSize: number = 30,
+) {
+  return useInfiniteQuery({
+    queryKey: [...queryKeys.purchaseOrders.all(filters, 1), "infinite"],
+    queryFn: ({ pageParam = 1 }) =>
+      getPurchaseOrders(filters, pageParam, pageSize),
+    getNextPageParam: (lastPage, allPages) => {
+      const currentPage = allPages.length;
+      const totalPages = Math.ceil(lastPage.totalCount / pageSize);
+      return currentPage < totalPages ? currentPage + 1 : undefined;
+    },
+    initialPageParam: 1,
+    ...getQueryOptions(STALE_TIME.PURCHASE_ORDERS, GC_TIME.TRANSACTIONAL),
   });
 }
 

@@ -1,11 +1,11 @@
--- Bale Backend - Quick Order Function
+-- Bale Backend - Quick Sales Order Function
 -- Atomic function for creating sales orders with immediate goods outward
 
 -- =====================================================
--- QUICK ORDER CREATION FUNCTION
+-- QUICK SALES ORDER CREATION FUNCTION
 -- =====================================================
 
--- Function to create quick order (sales order + goods outward) atomically
+-- Function to create quick sales order (sales order + goods outward) atomically
 -- Used when customer visits store and collects items immediately
 CREATE OR REPLACE FUNCTION quick_order_with_outward(
     p_order_data JSONB,
@@ -41,7 +41,7 @@ BEGIN
 
     -- Validate business rules
     IF array_length(p_order_items, 1) IS NULL OR array_length(p_order_items, 1) = 0 THEN
-        RAISE EXCEPTION 'At least one product is required to create a quick order';
+        RAISE EXCEPTION 'At least one product is required to create a quick sales order';
     END IF;
 
     IF array_length(p_stock_unit_items, 1) IS NULL OR array_length(p_stock_unit_items, 1) = 0 THEN
@@ -49,11 +49,11 @@ BEGIN
     END IF;
 
     IF v_warehouse_id IS NULL THEN
-        RAISE EXCEPTION 'Warehouse ID is required for quick orders';
+        RAISE EXCEPTION 'Warehouse ID is required for quick sales orders';
     END IF;
 
     IF v_customer_id IS NULL THEN
-        RAISE EXCEPTION 'Customer ID is required for quick orders';
+        RAISE EXCEPTION 'Customer ID is required for quick sales orders';
     END IF;
 
     -- Insert sales order with status 'completed'
@@ -91,7 +91,7 @@ BEGIN
             ARRAY[]::TEXT[]
         ),
         COALESCE(p_order_data->>'source', 'manual'),
-        'completed',  -- Quick orders are immediately completed
+        'completed',  -- Quick sales orders are immediately completed
         COALESCE((p_order_data->>'created_by')::UUID, auth.uid())
     )
     RETURNING id, sequence_number INTO v_order_id, v_sequence_number;
@@ -103,7 +103,7 @@ BEGIN
         sales_order_id,
         product_id,
         required_quantity,
-        dispatched_quantity,  -- Same as required for quick orders
+        dispatched_quantity,  -- Same as required for quick sales orders
         unit_rate
     )
     SELECT
@@ -207,4 +207,4 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION quick_order_with_outward IS 'Atomically create quick order (sales order with status completed + goods outward). Used when customer visits store and collects items immediately. Creates aggregated sales order items and individual goods outward items from stock units.';
+COMMENT ON FUNCTION quick_order_with_outward IS 'Atomically create quick sales order (sales order with status completed + goods outward). Used when customer visits store and collects items immediately. Creates aggregated sales order items and individual goods outward items from stock units.';

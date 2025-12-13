@@ -122,7 +122,12 @@ export async function getSalesOrders(
     if (Array.isArray(filters.status)) {
       query = query.in("status", filters.status);
     } else {
-      query = query.eq("status", filters.status);
+      if (filters.status === "overdue") {
+        query = query.eq("status", "in_progress");
+        query = query.lt("expected_delivery_date", new Date().toISOString());
+      } else {
+        query = query.eq("status", filters.status);
+      }
     }
   }
 
@@ -262,10 +267,10 @@ export async function createSalesOrder(
 }
 
 /**
- * Create a quick order (sales order + goods outward) atomically
+ * Create a quick sales order (sales order + goods outward) atomically
  * Used when customer visits store and collects items immediately
  */
-export async function createQuickOrder(
+export async function createQuickSalesOrder(
   orderData: CreateSalesOrderData,
   orderItems: CreateSalesOrderLineItem[],
   stockUnitItems: Array<{
@@ -286,7 +291,7 @@ export async function createQuickOrder(
   );
 
   if (error) {
-    console.error("Error creating quick order:", error);
+    console.error("Error creating quick sales order:", error);
     throw error;
   }
   if (!sequenceNumber) throw new Error("No sequence number returned");
