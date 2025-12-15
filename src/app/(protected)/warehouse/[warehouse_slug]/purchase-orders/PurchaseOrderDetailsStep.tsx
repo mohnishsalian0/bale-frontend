@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { InputWithIcon } from "@/components/ui/input-with-icon";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -22,10 +23,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
 import { createClient } from "@/lib/supabase/browser";
 import type { Tables } from "@/types/database/supabase";
 import { DatePicker } from "@/components/ui/date-picker";
 import { dateToISOString } from "@/lib/utils/date";
+import type { DiscountType } from "@/types/database/enums";
+import { PAYMENT_TERMS } from "@/types/database/enums";
+import { Badge } from "@/components/ui/badge";
 
 interface OrderFormData {
   warehouseId: string;
@@ -34,6 +39,7 @@ interface OrderFormData {
   orderDate: string;
   deliveryDate: string;
   advanceAmount: string;
+  discountType: DiscountType;
   discount: string;
   paymentTerms: string;
   supplierInvoiceNumber: string;
@@ -215,24 +221,27 @@ export function PurchaseOrderDetailsStep({
         <CollapsibleContent>
           <div className="flex flex-col gap-5">
             {/* Payment Terms */}
-            <Select
-              value={formData.paymentTerms || undefined}
-              onValueChange={(value) => setFormData({ paymentTerms: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Payment terms (Optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Cash on delivery">
-                  Cash on delivery
-                </SelectItem>
-                <SelectItem value="15 days net">NET 15</SelectItem>
-                <SelectItem value="30 days net">NET 30</SelectItem>
-                <SelectItem value="45 days net">NET 45</SelectItem>
-                <SelectItem value="60 days net">NET 60</SelectItem>
-                <SelectItem value="90 days net">NET 90</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Input
+                type="text"
+                placeholder="Payment terms (Optional)"
+                value={formData.paymentTerms}
+                onChange={(e) => setFormData({ paymentTerms: e.target.value })}
+              />
+              <div className="flex flex-wrap gap-2">
+                {PAYMENT_TERMS.map((term) => (
+                  <Badge
+                    key={term}
+                    variant="secondary"
+                    color="gray"
+                    onClick={() => setFormData({ paymentTerms: term })}
+                    className="cursor-pointer hover:bg-gray-200"
+                  >
+                    {term}
+                  </Badge>
+                ))}
+              </div>
+            </div>
 
             {/* Advance Amount */}
             <InputWithIcon
@@ -245,16 +254,45 @@ export function PurchaseOrderDetailsStep({
               step="0.01"
             />
 
-            {/* Discount */}
-            <InputWithIcon
-              type="number"
-              placeholder="Discount percent"
-              value={formData.discount}
-              onChange={(e) => setFormData({ discount: e.target.value })}
-              icon={<IconPercentage />}
-              min="0"
-              step="0.01"
-            />
+            {/* Discount Type */}
+            <div className="space-y-2">
+              <Label>Discount Type</Label>
+              <RadioGroup
+                value={formData.discountType}
+                onValueChange={(value) =>
+                  setFormData({ discountType: value as DiscountType })
+                }
+                name="discount-type"
+              >
+                <RadioGroupItem value="none">None</RadioGroupItem>
+                <RadioGroupItem value="percentage">Percentage</RadioGroupItem>
+                <RadioGroupItem value="flat_amount">Flat Amount</RadioGroupItem>
+              </RadioGroup>
+            </div>
+
+            {/* Discount Value */}
+            {formData.discountType !== "none" && (
+              <InputWithIcon
+                type="number"
+                placeholder={
+                  formData.discountType === "percentage"
+                    ? "Discount percent"
+                    : "Discount amount"
+                }
+                value={formData.discount}
+                onChange={(e) => setFormData({ discount: e.target.value })}
+                icon={
+                  formData.discountType === "percentage" ? (
+                    <IconPercentage />
+                  ) : (
+                    <IconCurrencyRupee />
+                  )
+                }
+                min="0"
+                max={formData.discountType === "percentage" ? "100" : undefined}
+                step={formData.discountType === "percentage" ? "1" : "0.01"}
+              />
+            )}
 
             {/* Notes */}
             <Textarea

@@ -406,7 +406,7 @@ export default function CreateGoodsInwardPage() {
 
           {currentStep === "linkTo" && (
             <InwardLinkToStep
-              customerId={selectedPartnerId}
+              partnerId={selectedPartnerId}
               linkToData={linkToData}
               onLinkToChange={setLinkToData}
             />

@@ -3,18 +3,15 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ProductQuantitySheet } from "@/components/layouts/product-quantity-sheet";
 import { ProductSelectionStep } from "@/components/layouts/product-selection-step";
-import { CustomerSelectionStep } from "../CustomerSelectionStep";
+import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
 import { OrderDetailsStep } from "../OrderDetailsStep";
-import { ProductFormSheet } from "../../inventory/ProductFormSheet";
-import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import { useSalesOrderMutations } from "@/lib/query/hooks/sales-orders";
-import type { ProductWithInventoryListView } from "@/types/products.types";
 import { CreateSalesOrderData } from "@/types/sales-orders.types";
+import type { DiscountType } from "@/types/database/enums";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
 
@@ -25,6 +22,7 @@ interface OrderFormData {
   orderDate: string;
   deliveryDate: string;
   advanceAmount: string;
+  discountType: DiscountType;
   discount: string;
   paymentTerms: string;
   notes: string;
@@ -47,11 +45,6 @@ export default function CreateSalesOrderPage() {
     Record<string, { selected: boolean; quantity: number }>
   >({});
 
-  const [selectedProduct, setSelectedProduct] =
-    useState<ProductWithInventoryListView | null>(null);
-  const [showQuantitySheet, setShowQuantitySheet] = useState(false);
-  const [showCreateProduct, setShowCreateProduct] = useState(false);
-  const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
     null,
   );
@@ -72,21 +65,15 @@ export default function CreateSalesOrderPage() {
     discount: "",
     paymentTerms: "",
     notes: "",
+    discountType: "none",
     files: [],
   });
 
-  const handleOpenQuantitySheet = (product: ProductWithInventoryListView) => {
-    setSelectedProduct(product);
-    setShowQuantitySheet(true);
-  };
-
-  const handleQuantityConfirm = (quantity: number) => {
-    if (selectedProduct) {
-      setProductSelections((prev) => ({
-        ...prev,
-        [selectedProduct.id]: { selected: true, quantity },
-      }));
-    }
+  const handleQuantityChange = (productId: string, quantity: number) => {
+    setProductSelections((prev) => ({
+      ...prev,
+      [productId]: { selected: true, quantity },
+    }));
   };
 
   const handleRemoveProduct = (productId: string) => {
@@ -162,8 +149,11 @@ export default function CreateSalesOrderPage() {
       advance_amount: formData.advanceAmount
         ? parseFloat(formData.advanceAmount)
         : 0,
-      discount_type: "none",
-      discount_value: 0,
+      discount_type: formData.discountType,
+      discount_value:
+        formData.discountType !== "none" && formData.discount
+          ? parseFloat(formData.discount)
+          : 0,
       notes: formData.notes || null,
       attachments: [], // TODO: Implement file upload
       status: "approval_pending",
@@ -214,15 +204,14 @@ export default function CreateSalesOrderPage() {
             <ProductSelectionStep
               warehouseId={warehouse.id}
               productSelections={productSelections}
-              onOpenQuantitySheet={handleOpenQuantitySheet}
-              onAddNewProduct={() => setShowCreateProduct(true)}
+              onQuantityChange={handleQuantityChange}
               onRemoveProduct={handleRemoveProduct}
             />
           ) : currentStep === "customer" ? (
-            <CustomerSelectionStep
-              selectedCustomerId={selectedCustomerId}
-              onSelectCustomer={handleSelectCustomer}
-              onAddNewCustomer={() => setShowAddCustomer(true)}
+            <PartnerSelectionStep
+              partnerType="customer"
+              selectedPartnerId={selectedCustomerId}
+              onSelectPartner={handleSelectCustomer}
             />
           ) : (
             <OrderDetailsStep
@@ -292,37 +281,6 @@ export default function CreateSalesOrderPage() {
             </>
           )}
         </FormFooter>
-
-        {/* Product Quantity Sheet */}
-        {showQuantitySheet && selectedProduct && (
-          <ProductQuantitySheet
-            open={showQuantitySheet}
-            onOpenChange={setShowQuantitySheet}
-            product={selectedProduct}
-            initialQuantity={
-              productSelections[selectedProduct.id]?.quantity || 0
-            }
-            onConfirm={handleQuantityConfirm}
-          />
-        )}
-
-        {/* Add Product Sheet */}
-        {showCreateProduct && (
-          <ProductFormSheet
-            key="new"
-            open={showCreateProduct}
-            onOpenChange={setShowCreateProduct}
-          />
-        )}
-
-        {/* Add Customer Sheet */}
-        {showAddCustomer && (
-          <PartnerFormSheet
-            open={showAddCustomer}
-            onOpenChange={setShowAddCustomer}
-            partnerType="customer"
-          />
-        )}
       </div>
     </div>
   );

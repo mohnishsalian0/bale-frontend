@@ -228,7 +228,7 @@ export default function QRCodesPage() {
                     size="sm"
                     onClick={() => handleShare(batch)}
                   >
-                    <IconShare className="size-5" />
+                    <IconShare />
                     <span className="hidden md:inline">Share</span>
                   </Button>
 
@@ -238,7 +238,7 @@ export default function QRCodesPage() {
                     size="sm"
                     onClick={() => handleDownload(batch)}
                   >
-                    <IconDownload className="size-5" />
+                    <IconDownload />
                     <span className="hidden md:inline">Download</span>
                   </Button>
                 </div>

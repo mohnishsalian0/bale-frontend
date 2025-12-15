@@ -49,7 +49,7 @@ export default function SummaryPage({ params }: PageParams) {
       <Section
         title={`0 ${unitAbbr} sold`}
         subtitle="Sales"
-        icon={() => <IconTrendingUp className="size-5" />}
+        icon={() => <IconTrendingUp />}
       >
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
@@ -64,11 +64,7 @@ export default function SummaryPage({ params }: PageParams) {
       </Section>
 
       {/* Stock Section */}
-      <Section
-        title="Stock information"
-        subtitle=""
-        icon={() => <IconBox className="size-5" />}
-      >
+      <Section title="Stock information" subtitle="" icon={() => <IconBox />}>
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-gray-700">Stock type</span>
@@ -95,7 +91,7 @@ export default function SummaryPage({ params }: PageParams) {
       <Section
         title="Product information"
         subtitle=""
-        icon={() => <IconInfoCircle className="size-5" />}
+        icon={() => <IconInfoCircle />}
       >
         <div className="space-y-3">
           {/* Product Images Carousel */}
@@ -164,7 +160,7 @@ export default function SummaryPage({ params }: PageParams) {
       <Section
         title="Inward notes"
         subtitle={product.notes || "No note added"}
-        icon={() => <IconNote className="size-5" />}
+        icon={() => <IconNote />}
       />
     </div>
   );

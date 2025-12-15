@@ -30,6 +30,7 @@ import { getPartnerName } from "@/lib/utils/partner";
 import { formatMonthHeader } from "@/lib/utils/date";
 import {
   calculateCompletionPercentage,
+  DisplayStatus,
   getOrderDisplayStatus,
   getProductSummary,
 } from "@/lib/utils/purchase-order";
@@ -96,7 +97,7 @@ export default function PurchaseOrdersPage() {
       search_term: debouncedSearchQuery || undefined,
       status:
         selectedStatus !== "all"
-          ? (selectedStatus as PurchaseOrderStatus)
+          ? (selectedStatus as DisplayStatus)
           : undefined,
       productId: selectedProduct !== "all" ? selectedProduct : undefined,
       supplierId: selectedSupplier !== "all" ? selectedSupplier : undefined,

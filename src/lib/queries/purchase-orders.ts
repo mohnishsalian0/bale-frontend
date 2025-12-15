@@ -10,6 +10,7 @@ import type {
   UpdatePurchaseOrderData,
   CancelPurchaseOrderData,
   CompletePurchaseOrderData,
+  PurchaseOrder,
 } from "@/types/purchase-orders.types";
 import type { ProductAttributeAssignmentsRaw } from "@/types/products.types";
 import { transformAttributes } from "./products";
@@ -122,7 +123,12 @@ export async function getPurchaseOrders(
     if (Array.isArray(filters.status)) {
       query = query.in("status", filters.status);
     } else {
-      query = query.eq("status", filters.status);
+      if (filters.status === "overdue") {
+        query = query.eq("status", "in_progress");
+        query = query.lt("expected_delivery_date", new Date().toISOString());
+      } else {
+        query = query.eq("status", filters.status);
+      }
     }
   }
 
@@ -339,4 +345,59 @@ export async function completePurchaseOrder(
     .eq("id", orderId);
 
   if (error) throw error;
+}
+
+/**
+ * Update purchase order fields (generic update for any fields)
+ */
+export async function updatePurchaseOrder(
+  orderId: string,
+  data: Partial<PurchaseOrder>,
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("purchase_orders")
+    .update(data)
+    .eq("id", orderId);
+
+  if (error) throw error;
+}
+
+/**
+ * Update line items for a purchase order (only when in approval_pending status)
+ * Deletes all existing items and inserts new ones in a transaction
+ */
+export async function updatePurchaseOrderLineItems(
+  orderId: string,
+  lineItems: CreatePurchaseOrderLineItem[],
+): Promise<void> {
+  const supabase = createClient();
+
+  if (lineItems.length === 0) {
+    throw new Error("At least one line item is required");
+  }
+
+  // Delete all existing line items
+  const { error: deleteError } = await supabase
+    .from("purchase_order_items")
+    .delete()
+    .eq("purchase_order_id", orderId);
+
+  if (deleteError) throw deleteError;
+
+  // Insert new line items
+  const lineItemsToInsert = lineItems.map((item) => ({
+    purchase_order_id: orderId,
+    product_id: item.product_id,
+    required_quantity: item.required_quantity,
+    unit_rate: item.unit_rate,
+    received_quantity: 0,
+  }));
+
+  const { error: insertError } = await supabase
+    .from("purchase_order_items")
+    .insert(lineItemsToInsert);
+
+  if (insertError) throw insertError;
 }

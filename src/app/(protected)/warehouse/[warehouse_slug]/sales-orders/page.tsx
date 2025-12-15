@@ -36,6 +36,7 @@ import { getPartnerName } from "@/lib/utils/partner";
 import { formatMonthHeader } from "@/lib/utils/date";
 import {
   calculateCompletionPercentage,
+  DisplayStatus,
   getOrderDisplayStatus,
   getProductSummary,
 } from "@/lib/utils/sales-order";
@@ -99,7 +100,7 @@ export default function OrdersPage() {
       search_term: debouncedSearchQuery || undefined,
       status:
         selectedStatus !== "all"
-          ? (selectedStatus as SalesOrderStatus)
+          ? (selectedStatus as DisplayStatus)
           : undefined,
       productId: selectedProduct !== "all" ? selectedProduct : undefined,
       customerId: selectedCustomer !== "all" ? selectedCustomer : undefined,
@@ -485,7 +486,7 @@ export default function OrdersPage() {
               }
             >
               <IconBolt className="mr-2 size-4" />
-              Quick Order
+              Quick Sale
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() =>

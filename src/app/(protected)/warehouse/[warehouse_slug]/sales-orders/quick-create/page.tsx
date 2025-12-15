@@ -7,12 +7,11 @@ import {
   StockUnitScannerStep,
   ScannedStockUnit,
 } from "@/components/layouts/stock-unit-scanner-step";
-import { CustomerSelectionStep } from "../CustomerSelectionStep";
+import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
 import {
   QuickOrderDetailsStep,
   QuickOrderFormData,
 } from "./QuickOrderDetailsStep";
-import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useSalesOrderMutations } from "@/lib/query/hooks/sales-orders";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
@@ -33,7 +32,6 @@ export default function QuickCreateOrderPage() {
     null,
   );
   const [saving, setSaving] = useState(false);
-  const [showCreateCustomer, setShowCreateCustomer] = useState(false);
 
   // Mutations
   const { quickCreate } = useSalesOrderMutations(warehouse.id);
@@ -177,20 +175,20 @@ export default function QuickCreateOrderPage() {
         status: "completed",
       };
 
-      // Call RPC function to create quick order
+      // Call RPC function to create quick sales
       const sequenceNumber = await quickCreate.mutateAsync({
         orderData,
         orderItems,
         stockUnitItems,
       });
 
-      toast.success("Quick order created successfully");
+      toast.success("Quick sale created successfully");
       router.push(
         `/warehouse/${warehouse.slug}/sales-orders/${sequenceNumber}`,
       );
     } catch (error) {
-      console.error("Error creating quick order:", error);
-      toast.error("Failed to create quick order");
+      console.error("Error creating quick sale:", error);
+      toast.error("Failed to create quick sale");
     } finally {
       setSaving(false);
     }
@@ -205,7 +203,7 @@ export default function QuickCreateOrderPage() {
       <div className="flex-1 flex flex-col w-full overflow-y-hidden">
         {/* Header - Fixed at top */}
         <FormHeader
-          title="Quick Order"
+          title="Quick Sales"
           currentStep={stepNumber}
           totalSteps={3}
           onCancel={handleCancel}
@@ -223,10 +221,10 @@ export default function QuickCreateOrderPage() {
           )}
 
           {currentStep === "customer" && (
-            <CustomerSelectionStep
-              selectedCustomerId={selectedCustomerId}
-              onSelectCustomer={handleSelectCustomer}
-              onAddNewCustomer={() => setShowCreateCustomer(true)}
+            <PartnerSelectionStep
+              partnerType="customer"
+              selectedPartnerId={selectedCustomerId}
+              onSelectPartner={handleSelectCustomer}
             />
           )}
 
@@ -281,15 +279,6 @@ export default function QuickCreateOrderPage() {
           )}
         </FormFooter>
       </div>
-
-      {/* Customer Form Sheet */}
-      {showCreateCustomer && (
-        <PartnerFormSheet
-          open={showCreateCustomer}
-          onOpenChange={setShowCreateCustomer}
-          partnerType="customer"
-        />
-      )}
     </div>
   );
 }

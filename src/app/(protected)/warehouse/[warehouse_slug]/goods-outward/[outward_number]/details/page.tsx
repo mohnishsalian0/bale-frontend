@@ -115,7 +115,7 @@ export default function OutwardDetailsPage({ params }: PageParams) {
         onEdit={() => {}}
         icon={
           isWarehouseTransfer
-            ? () => <IconBuildingWarehouse className="size-5" />
+            ? () => <IconBuildingWarehouse />
             : () => <>{getInitials(receiverName)}</>
         }
       >
@@ -139,7 +139,7 @@ export default function OutwardDetailsPage({ params }: PageParams) {
         title={outward.warehouse?.name || "Unknown Warehouse"}
         subtitle="Outward source"
         onEdit={() => {}}
-        icon={() => <IconBuildingWarehouse className="size-5" />}
+        icon={() => <IconBuildingWarehouse />}
       >
         {outward.warehouse &&
           getFormattedAddress(outward.warehouse).length > 0 && (
@@ -162,7 +162,7 @@ export default function OutwardDetailsPage({ params }: PageParams) {
         title={getTransportTypeDisplay(outward.transport_type)}
         subtitle="Transport"
         onEdit={() => {}}
-        icon={() => <TransportIcon className="size-5" />}
+        icon={() => <TransportIcon />}
       >
         <div className="space-y-3">
           {outward.transport_reference_number && (
@@ -201,7 +201,7 @@ export default function OutwardDetailsPage({ params }: PageParams) {
         title="Outward notes"
         subtitle={outward.notes || "No note added"}
         onEdit={() => {}}
-        icon={() => <IconNote className="size-5" />}
+        icon={() => <IconNote />}
       />
     </div>
   );

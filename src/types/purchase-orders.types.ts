@@ -1,9 +1,10 @@
 import { ProductAttribute } from "@/types/products.types";
-import type { Tables } from "./database/supabase";
-import { PurchaseOrderStatus } from "./database/enums";
+import type { Tables, TablesUpdate } from "./database/supabase";
+import { DisplayStatus } from "@/lib/utils/purchase-order";
 
-type PurchaseOrder = Tables<"purchase_orders">;
-type PurchaseOrderItem = Tables<"purchase_order_items">;
+export type PurchaseOrder = Tables<"purchase_orders">;
+export type PurchaseOrderUpdate = TablesUpdate<"purchase_orders">;
+export type PurchaseOrderItem = Tables<"purchase_order_items">;
 type Partner = Tables<"partners">;
 type Warehouse = Tables<"warehouses">;
 type Product = Tables<"products">;
@@ -14,7 +15,7 @@ type Product = Tables<"products">;
 
 export interface PurchaseOrderFilters extends Record<string, unknown> {
   warehouseId?: string;
-  status?: PurchaseOrderStatus | PurchaseOrderStatus[]; // Support single or array for IN queries
+  status?: DisplayStatus | DisplayStatus[]; // Support single or array for IN queries
   supplierId?: string;
   agentId?: string;
   productId?: string;

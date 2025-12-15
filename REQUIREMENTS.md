@@ -757,7 +757,7 @@ Permissions are organized hierarchically with the following top-level categories
 - Modified by (user ID)
 - Deleted at (soft delete timestamp)
 
-#### 4.3 Quick Order Creation
+#### 4.3 Quick Sales Order Creation
 
 **Feature Description:** Streamlined order fulfillment for walk-in customers who place orders and collect items immediately from the store/warehouse
 
@@ -771,7 +771,7 @@ Permissions are organized hierarchically with the following top-level categories
 **Key Difference from Regular Orders:**
 
 - Regular orders: Created first, then fulfilled via separate goods outward over time (installment deliveries)
-- Quick orders: Sales order and goods outward created together with status 'completed'
+- Quick sales: Sales order and goods outward created together with status 'completed'
 
 ### 5. Partner Management
 

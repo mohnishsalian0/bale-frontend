@@ -2,12 +2,7 @@
 
 import { use, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import {
-  IconPlus,
-  IconShoppingCart,
-  IconClockHour8,
-  IconTrash,
-} from "@tabler/icons-react";
+import { IconShoppingCart, IconClockHour8 } from "@tabler/icons-react";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
@@ -15,12 +10,6 @@ import { TabUnderline } from "@/components/ui/tab-underline";
 import { SalesStatusBadge } from "@/components/ui/sales-status-badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useSession } from "@/contexts/session-context";
 import { formatCurrency } from "@/lib/utils/financial";
 import { getPartnerName, getPartnerTypeLabel } from "@/lib/utils/partner";
@@ -39,6 +28,8 @@ import {
 import { useSalesOrders } from "@/lib/query/hooks/sales-orders";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { toast } from "sonner";
+import { ActionsFooter } from "@/components/layouts/actions-footer";
+import { getPartnerDetailFooterItems } from "@/lib/utils/context-menu-items";
 
 interface LayoutParams {
   params: Promise<{
@@ -281,59 +272,28 @@ export default function PartnerDetailLayout({
         <div className="relative flex-1">{children}</div>
 
         {/* Bottom Action Bar */}
-        <div className="sticky bottom-0 p-4 bg-background border-t border-border flex gap-3 z-10">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon-sm">
-                •••
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" side="top" sideOffset={8}>
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <IconTrash />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowEditPartner(true)}
-            className="flex-1"
-          >
-            Edit
-          </Button>
-
-          {isCustomer && (
-            <Button
-              size="sm"
-              onClick={() =>
-                router.push(`/warehouse/${warehouse.slug}/sales-orders/create`)
-              }
-              className="flex-2"
-            >
-              <IconPlus className="size-5" />
-              Sales order
-            </Button>
+        <ActionsFooter
+          items={getPartnerDetailFooterItems(
+            { partner_type: partner.partner_type as PartnerType },
+            {
+              onDelete: () => setShowDeleteDialog(true),
+              onEdit: () => setShowEditPartner(true),
+              onCreateSalesOrder: isCustomer
+                ? () =>
+                    router.push(
+                      `/warehouse/${warehouse.slug}/sales-orders/create`,
+                    )
+                : undefined,
+              onCreatePurchaseOrder: isSupplier
+                ? () =>
+                    router.push(
+                      `/warehouse/${warehouse.slug}/goods-inward/create`,
+                    )
+                : undefined,
+            },
           )}
-
-          {isSupplier && (
-            <Button
-              size="sm"
-              onClick={() =>
-                router.push(`/warehouse/${warehouse.slug}/goods-inward/create`)
-              }
-              className="flex-2"
-            >
-              <IconPlus className="size-5" />
-              Purchase order
-            </Button>
-          )}
-        </div>
+          dropdownSide="top"
+        />
 
         {/* Edit Partner Sheet */}
         {showEditPartner && partner && (

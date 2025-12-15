@@ -122,7 +122,7 @@ export function ResponsiveContextMenu({
                           : "cursor-pointer"
                       }`}
                     >
-                      <Icon className="size-5" />
+                      <Icon />
                       <span className="text-base font-medium">
                         {item.label}
                       </span>
