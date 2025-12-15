@@ -100,7 +100,7 @@ export default function InwardDetailsPage({ params }: PageParams) {
         onEdit={() => {}}
         icon={
           isWarehouseTransfer
-            ? () => <IconBuildingWarehouse className="size-5" />
+            ? () => <IconBuildingWarehouse />
             : () => <>{getInitials(sourceName)}</>
         }
       >
@@ -124,7 +124,7 @@ export default function InwardDetailsPage({ params }: PageParams) {
         title={inward.warehouse?.name || "Unknown Warehouse"}
         subtitle="Inward destination"
         onEdit={() => {}}
-        icon={() => <IconBuildingWarehouse className="size-5" />}
+        icon={() => <IconBuildingWarehouse />}
       >
         {inward.warehouse &&
           getFormattedAddress(inward.warehouse).length > 0 && (
@@ -147,7 +147,7 @@ export default function InwardDetailsPage({ params }: PageParams) {
         title={getTransportTypeDisplay(inward.transport_type)}
         subtitle="Transport"
         onEdit={() => {}}
-        icon={() => <TransportIcon className="size-5" />}
+        icon={() => <TransportIcon />}
       >
         <div className="space-y-3">
           {inward.transport_reference_number && (
@@ -196,7 +196,7 @@ export default function InwardDetailsPage({ params }: PageParams) {
         title="Inward notes"
         subtitle={inward.notes || "No note added"}
         onEdit={() => {}}
-        icon={() => <IconNote className="size-5" />}
+        icon={() => <IconNote />}
       />
     </div>
   );

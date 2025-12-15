@@ -151,7 +151,7 @@ export default function CompanyPage() {
             onClick={() => setShowEditCompany(true)}
             className="shrink-0"
           >
-            <IconPencil className="size-5" />
+            <IconPencil />
           </Button>
         </div>
       </div>
@@ -164,7 +164,7 @@ export default function CompanyPage() {
             <Section
               title="Address"
               subtitle="Company registered address"
-              icon={() => <IconMapPin className="size-5" />}
+              icon={() => <IconMapPin />}
             >
               <div className="space-y-1">
                 {addressLines.map((line, index) => (
@@ -181,7 +181,7 @@ export default function CompanyPage() {
             <Section
               title="Financial information"
               subtitle="Tax and business registration details"
-              icon={() => <IconCurrencyRupee className="size-5" />}
+              icon={() => <IconCurrencyRupee />}
             >
               <div className="space-y-3">
                 {company.gst_number && (

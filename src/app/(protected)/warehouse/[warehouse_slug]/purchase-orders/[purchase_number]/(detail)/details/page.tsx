@@ -159,7 +159,7 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
                   )
               : undefined
           }
-          icon={() => <IconPackage className="size-5" />}
+          icon={() => <IconPackage />}
         >
           <div>
             <ul className="space-y-6">
@@ -295,7 +295,7 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
           title={order.payment_terms || "NET 30"}
           subtitle="Payment terms"
           onEdit={isEditable ? () => setShowPaymentTermsEdit(true) : undefined}
-          icon={() => <IconCash className="size-5" />}
+          icon={() => <IconCash />}
         >
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
@@ -332,7 +332,7 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
           title={order.warehouse?.name || "Unknown Warehouse"}
           subtitle="Warehouse"
           onEdit={isEditable ? () => setShowWarehouseEdit(true) : undefined}
-          icon={() => <IconBuildingWarehouse className="size-5" />}
+          icon={() => <IconBuildingWarehouse />}
         >
           {order.warehouse &&
             getFormattedAddress(order.warehouse).length > 0 && (
@@ -355,7 +355,7 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
           title="Important dates"
           subtitle={formatAbsoluteDate(order.order_date)}
           onEdit={isEditable ? () => setShowTransportEdit(true) : undefined}
-          icon={() => <IconCalendar className="size-5" />}
+          icon={() => <IconCalendar />}
         >
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
@@ -380,30 +380,44 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
           <Section
             title={order.supplier_invoice_number}
             subtitle="Supplier invoice"
-            icon={() => <IconFileInvoice className="size-5" />}
+            icon={() => <IconFileInvoice />}
           />
         )}
 
         {/* Notes Section */}
         <Section
-          title="Order notes"
-          subtitle={order.notes || "No note added"}
+          title="Notes"
+          subtitle={!order.notes && !order.status_notes ? "No notes added" : ""}
           onEdit={isEditable ? () => setShowNotesEdit(true) : undefined}
-          icon={() => <IconNote className="size-5" />}
-        />
-
-        {/* Status Notes (for cancelled/completed orders) */}
-        {order.status_notes && (
-          <Section
-            title={
-              order.status === "cancelled"
-                ? "Cancellation reason"
-                : "Completion notes"
-            }
-            subtitle={order.status_notes}
-            icon={() => <IconNote className="size-5" />}
-          />
-        )}
+          icon={() => <IconNote />}
+        >
+          {(order.notes || order.status_notes) && (
+            <div className="space-y-4">
+              {order.notes && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-1">
+                    Order notes
+                  </p>
+                  <p className="text-sm text-gray-700">{order.notes}</p>
+                </div>
+              )}
+              {order.status_notes &&
+                (order.status === "completed" ||
+                  order.status === "cancelled") && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-1">
+                      {order.status === "completed"
+                        ? "Completion notes"
+                        : "Cancellation reason"}
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      {order.status_notes}
+                    </p>
+                  </div>
+                )}
+            </div>
+          )}
+        </Section>
       </div>
 
       {/* Edit Sheets */}

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 interface ApprovalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  orderNumber: string;
+  orderNumber: number;
   orderType: "SO" | "PO";
   onConfirm: () => void;
   loading?: boolean;

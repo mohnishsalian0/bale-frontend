@@ -211,7 +211,7 @@ export function ActiveSalesOrdersSection({
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Button variant="ghost" size="icon-sm">
-                          <IconDotsVertical className="size-5" />
+                          <IconDotsVertical />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

@@ -100,7 +100,7 @@ export function ActionsFooter({
             primaryButton.content
           ) : (
             <>
-              <primaryButton.icon className="size-5" />
+              <primaryButton.icon />
               {primaryButton.label}
             </>
           )}
