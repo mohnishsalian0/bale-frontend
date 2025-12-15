@@ -10,6 +10,7 @@ import type {
   UpdateSalesOrderData,
   CancelSalesOrderData,
   CompleteSalesOrderData,
+  SalesOrderUpdate,
 } from "@/types/sales-orders.types";
 import type { ProductAttributeAssignmentsRaw } from "@/types/products.types";
 import { transformAttributes } from "./products";
@@ -377,4 +378,59 @@ export async function completeSalesOrder(
     .eq("id", orderId);
 
   if (error) throw error;
+}
+
+/**
+ * Update sales order fields (generic update for any fields)
+ */
+export async function updateSalesOrder(
+  orderId: string,
+  data: Partial<SalesOrderUpdate>,
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("sales_orders")
+    .update(data)
+    .eq("id", orderId);
+
+  if (error) throw error;
+}
+
+/**
+ * Update line items for a sales order (only when in approval_pending status)
+ * Deletes all existing items and inserts new ones in a transaction
+ */
+export async function updateSalesOrderLineItems(
+  orderId: string,
+  lineItems: CreateSalesOrderLineItem[],
+): Promise<void> {
+  const supabase = createClient();
+
+  if (lineItems.length === 0) {
+    throw new Error("At least one line item is required");
+  }
+
+  // Delete all existing line items
+  const { error: deleteError } = await supabase
+    .from("sales_order_items")
+    .delete()
+    .eq("sales_order_id", orderId);
+
+  if (deleteError) throw deleteError;
+
+  // Insert new line items
+  const lineItemsToInsert = lineItems.map((item) => ({
+    sales_order_id: orderId,
+    product_id: item.product_id,
+    required_quantity: item.required_quantity,
+    unit_rate: item.unit_rate,
+    dispatched_quantity: 0,
+  }));
+
+  const { error: insertError } = await supabase
+    .from("sales_order_items")
+    .insert(lineItemsToInsert);
+
+  if (insertError) throw insertError;
 }

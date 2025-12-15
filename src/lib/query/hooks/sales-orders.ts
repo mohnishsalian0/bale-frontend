@@ -17,6 +17,8 @@ import {
   approveSalesOrder,
   cancelSalesOrder,
   completeSalesOrder,
+  updateSalesOrder,
+  updateSalesOrderLineItems,
   type SalesOrderFilters,
   type CreateSalesOrderData,
   type CreateSalesOrderLineItem,
@@ -24,6 +26,7 @@ import {
   type CancelSalesOrderData,
   type CompleteSalesOrderData,
 } from "@/lib/queries/sales-orders";
+import { SalesOrderUpdate } from "@/types/sales-orders.types";
 
 /**
  * Fetch sales orders for a warehouse with optional filters
@@ -198,11 +201,45 @@ export function useSalesOrderMutations(warehouseId: string | null) {
     },
   });
 
+  const update = useMutation({
+    mutationFn: ({
+      orderId,
+      data,
+    }: {
+      orderId: string;
+      data: Partial<SalesOrderUpdate>;
+    }) => updateSalesOrder(orderId, data),
+    onSuccess: () => {
+      // Invalidate all sales order queries
+      queryClient.invalidateQueries({
+        queryKey: ["sales-orders"],
+      });
+    },
+  });
+
+  const updateLineItems = useMutation({
+    mutationFn: ({
+      orderId,
+      lineItems,
+    }: {
+      orderId: string;
+      lineItems: CreateSalesOrderLineItem[];
+    }) => updateSalesOrderLineItems(orderId, lineItems),
+    onSuccess: () => {
+      // Invalidate all sales order queries
+      queryClient.invalidateQueries({
+        queryKey: ["sales-orders"],
+      });
+    },
+  });
+
   return {
     create,
     quickCreate,
     approve,
     cancel,
     complete,
+    update,
+    updateLineItems,
   };
 }

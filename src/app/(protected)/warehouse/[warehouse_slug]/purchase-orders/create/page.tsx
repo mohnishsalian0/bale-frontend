@@ -3,18 +3,15 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ProductQuantitySheet } from "@/components/layouts/product-quantity-sheet";
 import { ProductSelectionStep } from "@/components/layouts/product-selection-step";
-import { SupplierSelectionStep } from "../SupplierSelectionStep";
+import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
 import { PurchaseOrderDetailsStep } from "../PurchaseOrderDetailsStep";
-import { ProductFormSheet } from "../../inventory/ProductFormSheet";
-import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import { usePurchaseOrderMutations } from "@/lib/query/hooks/purchase-orders";
-import type { ProductWithInventoryListView } from "@/types/products.types";
 import { CreatePurchaseOrderData } from "@/types/purchase-orders.types";
+import type { DiscountType } from "@/types/database/enums";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
 
@@ -25,6 +22,7 @@ interface OrderFormData {
   orderDate: string;
   deliveryDate: string;
   advanceAmount: string;
+  discountType: DiscountType;
   discount: string;
   paymentTerms: string;
   supplierInvoiceNumber: string;
@@ -48,11 +46,6 @@ export default function CreatePurchaseOrderPage() {
     Record<string, { selected: boolean; quantity: number }>
   >({});
 
-  const [selectedProduct, setSelectedProduct] =
-    useState<ProductWithInventoryListView | null>(null);
-  const [showQuantitySheet, setShowQuantitySheet] = useState(false);
-  const [showCreateProduct, setShowCreateProduct] = useState(false);
-  const [showAddSupplier, setShowAddSupplier] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(
     null,
   );
@@ -74,21 +67,15 @@ export default function CreatePurchaseOrderPage() {
     paymentTerms: "",
     supplierInvoiceNumber: "",
     notes: "",
+    discountType: "none",
     files: [],
   });
 
-  const handleOpenQuantitySheet = (product: ProductWithInventoryListView) => {
-    setSelectedProduct(product);
-    setShowQuantitySheet(true);
-  };
-
-  const handleQuantityConfirm = (quantity: number) => {
-    if (selectedProduct) {
-      setProductSelections((prev) => ({
-        ...prev,
-        [selectedProduct.id]: { selected: true, quantity },
-      }));
-    }
+  const handleQuantityChange = (productId: string, quantity: number) => {
+    setProductSelections((prev) => ({
+      ...prev,
+      [productId]: { selected: true, quantity },
+    }));
   };
 
   const handleRemoveProduct = (productId: string) => {
@@ -164,8 +151,11 @@ export default function CreatePurchaseOrderPage() {
       advance_amount: formData.advanceAmount
         ? parseFloat(formData.advanceAmount)
         : 0,
-      discount_type: "none",
-      discount_value: 0,
+      discount_type: formData.discountType,
+      discount_value:
+        formData.discountType !== "none" && formData.discount
+          ? parseFloat(formData.discount)
+          : 0,
       notes: formData.notes || null,
       attachments: [], // TODO: Implement file upload
       status: "approval_pending",
@@ -216,15 +206,14 @@ export default function CreatePurchaseOrderPage() {
             <ProductSelectionStep
               warehouseId={warehouse.id}
               productSelections={productSelections}
-              onOpenQuantitySheet={handleOpenQuantitySheet}
-              onAddNewProduct={() => setShowCreateProduct(true)}
+              onQuantityChange={handleQuantityChange}
               onRemoveProduct={handleRemoveProduct}
             />
           ) : currentStep === "supplier" ? (
-            <SupplierSelectionStep
-              selectedSupplierId={selectedSupplierId}
-              onSelectSupplier={handleSelectSupplier}
-              onAddNewSupplier={() => setShowAddSupplier(true)}
+            <PartnerSelectionStep
+              partnerType="supplier"
+              selectedPartnerId={selectedSupplierId}
+              onSelectPartner={handleSelectSupplier}
             />
           ) : (
             <PurchaseOrderDetailsStep
@@ -294,37 +283,6 @@ export default function CreatePurchaseOrderPage() {
             </>
           )}
         </FormFooter>
-
-        {/* Product Quantity Sheet */}
-        {showQuantitySheet && selectedProduct && (
-          <ProductQuantitySheet
-            open={showQuantitySheet}
-            onOpenChange={setShowQuantitySheet}
-            product={selectedProduct}
-            initialQuantity={
-              productSelections[selectedProduct.id]?.quantity || 0
-            }
-            onConfirm={handleQuantityConfirm}
-          />
-        )}
-
-        {/* Add Product Sheet */}
-        {showCreateProduct && (
-          <ProductFormSheet
-            key="new"
-            open={showCreateProduct}
-            onOpenChange={setShowCreateProduct}
-          />
-        )}
-
-        {/* Add Supplier Sheet */}
-        {showAddSupplier && (
-          <PartnerFormSheet
-            open={showAddSupplier}
-            onOpenChange={setShowAddSupplier}
-            partnerType="supplier"
-          />
-        )}
       </div>
     </div>
   );

@@ -3,9 +3,8 @@
 import { useState, useMemo, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ProductQuantitySheet } from "@/components/layouts/product-quantity-sheet";
 import { ProductSelectionStep } from "@/components/layouts/product-selection-step";
-import { SupplierSelectionStep } from "../../SupplierSelectionStep";
+import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
 import { PurchaseOrderDetailsStep } from "../../PurchaseOrderDetailsStep";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
@@ -14,8 +13,8 @@ import {
   usePurchaseOrderByNumber,
   usePurchaseOrderMutations,
 } from "@/lib/query/hooks/purchase-orders";
-import type { ProductWithInventoryListView } from "@/types/products.types";
 import { UpdatePurchaseOrderData } from "@/types/purchase-orders.types";
+import type { DiscountType } from "@/types/database/enums";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
 import { LoadingState } from "@/components/layouts/loading-state";
@@ -28,6 +27,7 @@ interface OrderFormData {
   orderDate: string;
   deliveryDate: string;
   advanceAmount: string;
+  discountType: DiscountType;
   discount: string;
   paymentTerms: string;
   supplierInvoiceNumber: string;
@@ -63,9 +63,6 @@ export default function ApprovePurchaseOrderPage({
     Record<string, { selected: boolean; quantity: number }>
   >({});
 
-  const [selectedProduct, setSelectedProduct] =
-    useState<ProductWithInventoryListView | null>(null);
-  const [showQuantitySheet, setShowQuantitySheet] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(
     null,
   );
@@ -83,6 +80,7 @@ export default function ApprovePurchaseOrderPage({
     orderDate: "",
     deliveryDate: "",
     advanceAmount: "",
+    discountType: "none",
     discount: "",
     paymentTerms: "",
     supplierInvoiceNumber: "",
@@ -117,7 +115,8 @@ export default function ApprovePurchaseOrderPage({
         orderDate: order.order_date,
         deliveryDate: order.expected_delivery_date || "",
         advanceAmount: order.advance_amount?.toString() || "",
-        discount: "",
+        discountType: order.discount_type || "none",
+        discount: order.discount_value?.toString() || "",
         paymentTerms: order.payment_terms || "",
         supplierInvoiceNumber: order.supplier_invoice_number || "",
         notes: order.notes || "",
@@ -126,18 +125,11 @@ export default function ApprovePurchaseOrderPage({
     }
   }, [order, warehouse.id]);
 
-  const handleOpenQuantitySheet = (product: ProductWithInventoryListView) => {
-    setSelectedProduct(product);
-    setShowQuantitySheet(true);
-  };
-
-  const handleQuantityConfirm = (quantity: number) => {
-    if (selectedProduct) {
-      setProductSelections((prev) => ({
-        ...prev,
-        [selectedProduct.id]: { selected: true, quantity },
-      }));
-    }
+  const handleQuantityChange = (productId: string, quantity: number) => {
+    setProductSelections((prev) => ({
+      ...prev,
+      [productId]: { selected: true, quantity },
+    }));
   };
 
   const handleRemoveProduct = (productId: string) => {
@@ -213,8 +205,11 @@ export default function ApprovePurchaseOrderPage({
       advance_amount: formData.advanceAmount
         ? parseFloat(formData.advanceAmount)
         : 0,
-      discount_type: "none",
-      discount_value: 0,
+      discount_type: formData.discountType,
+      discount_value:
+        formData.discountType !== "none" && formData.discount
+          ? parseFloat(formData.discount)
+          : 0,
       notes: formData.notes || null,
       attachments: [],
       status: "in_progress",
@@ -293,15 +288,14 @@ export default function ApprovePurchaseOrderPage({
             <ProductSelectionStep
               warehouseId={warehouse.id}
               productSelections={productSelections}
-              onOpenQuantitySheet={handleOpenQuantitySheet}
-              onAddNewProduct={() => {}}
+              onQuantityChange={handleQuantityChange}
               onRemoveProduct={handleRemoveProduct}
             />
           ) : currentStep === "supplier" ? (
-            <SupplierSelectionStep
-              selectedSupplierId={selectedSupplierId}
-              onSelectSupplier={handleSelectSupplier}
-              onAddNewSupplier={() => {}}
+            <PartnerSelectionStep
+              partnerType="supplier"
+              selectedPartnerId={selectedSupplierId}
+              onSelectPartner={handleSelectSupplier}
             />
           ) : (
             <PurchaseOrderDetailsStep
@@ -370,18 +364,6 @@ export default function ApprovePurchaseOrderPage({
             </>
           )}
         </FormFooter>
-
-        {showQuantitySheet && selectedProduct && (
-          <ProductQuantitySheet
-            open={showQuantitySheet}
-            onOpenChange={setShowQuantitySheet}
-            product={selectedProduct}
-            initialQuantity={
-              productSelections[selectedProduct.id]?.quantity || 0
-            }
-            onConfirm={handleQuantityConfirm}
-          />
-        )}
       </div>
     </div>
   );

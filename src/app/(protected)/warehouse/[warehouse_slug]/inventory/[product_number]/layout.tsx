@@ -2,25 +2,13 @@
 
 import { use, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import {
-  IconBasket,
-  IconBasketOff,
-  IconBuildingWarehouse,
-  IconShare,
-  IconTrash,
-} from "@tabler/icons-react";
+import { IconBuildingWarehouse } from "@tabler/icons-react";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { GlowIndicator } from "@/components/ui/glow-indicator";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { TabUnderline } from "@/components/ui/tab-underline";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon } from "@/lib/utils/product";
 import { useSession } from "@/contexts/session-context";
@@ -35,6 +23,8 @@ import {
 } from "@/lib/query/hooks/products";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { toast } from "sonner";
+import { ActionsFooter } from "@/components/layouts/actions-footer";
+import { getProductDetailFooterItems } from "@/lib/utils/context-menu-items";
 
 interface LayoutParams {
   params: Promise<{
@@ -282,49 +272,18 @@ export default function ProductDetailLayout({
         <div className="flex-1 border-r border-border">{children}</div>
 
         {/* Bottom Action Bar */}
-        <div className="sticky bottom-0 p-4 bg-background border-t border-border flex gap-3 z-10">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon-sm">
-                •••
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" side="top" sideOffset={8}>
-              <DropdownMenuItem onClick={handleToggleCatalogVisibility}>
-                {product.show_on_catalog ? <IconBasketOff /> : <IconBasket />}
-                {product.show_on_catalog
-                  ? "Hide from catalog"
-                  : "Show on catalog"}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <IconTrash />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowEditProduct(true)}
-            className="flex-1"
-          >
-            Edit
-          </Button>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => console.log("Share")}
-            className="flex-2"
-          >
-            <IconShare className="size-5" />
-            Share
-          </Button>
-        </div>
+        <ActionsFooter
+          items={getProductDetailFooterItems(
+            { show_on_catalog: product.show_on_catalog },
+            {
+              onToggleCatalog: handleToggleCatalogVisibility,
+              onDelete: () => setShowDeleteDialog(true),
+              onEdit: () => setShowEditProduct(true),
+              onShare: () => console.log("Share"),
+            },
+          )}
+          dropdownSide="top"
+        />
 
         {/* Edit Product Sheet */}
         {showEditProduct && product && (

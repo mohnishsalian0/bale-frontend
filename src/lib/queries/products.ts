@@ -381,6 +381,33 @@ export async function getProductWithInventoryById(
 }
 
 /**
+ * Get multiple products with inventory (list view) by IDs
+ */
+export async function getProductsWithInventoryByIds(
+  productIds: string[],
+  warehouseId: string,
+): Promise<ProductWithInventoryListView[]> {
+  if (productIds.length === 0) return [];
+
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_WITH_INVENTORY_LIST_VIEW_SELECT)
+    .in("id", productIds)
+    .eq("product_inventory_aggregates.warehouse_id", warehouseId)
+    .is("deleted_at", null);
+
+  if (error) throw error;
+
+  const transformedData = (
+    (data as unknown as ProductWithInventoryListViewRaw[]) || []
+  ).map(transformProductWithInventoryListView);
+
+  return transformedData;
+}
+
+/**
  * Get a single product with inventory (detail view) by sequence number
  */
 export async function getProductWithInventoryByNumber(

@@ -2,14 +2,10 @@
 
 import { use, useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { IconArrowLeft } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { ProductQuantitySheet } from "@/components/layouts/product-quantity-sheet";
 import { ProductSelectionStep } from "@/components/layouts/product-selection-step";
-import { CustomerSelectionStep } from "../../CustomerSelectionStep";
+import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
 import { OrderDetailsStep } from "../../OrderDetailsStep";
-import { ProductFormSheet } from "../../../inventory/ProductFormSheet";
-import { PartnerFormSheet } from "../../../partners/PartnerFormSheet";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
@@ -19,8 +15,9 @@ import {
   useSalesOrderMutations,
   useSalesOrderByNumber,
 } from "@/lib/query/hooks/sales-orders";
-import type { ProductWithInventoryListView } from "@/types/products.types";
 import { UpdateSalesOrderData } from "@/types/sales-orders.types";
+import type { DiscountType } from "@/types/database/enums";
+import FormHeader from "@/components/ui/form-header";
 
 interface OrderFormData {
   warehouseId: string;
@@ -29,6 +26,7 @@ interface OrderFormData {
   orderDate: string;
   deliveryDate: string;
   advanceAmount: string;
+  discountType: DiscountType;
   discount: string;
   paymentTerms: string;
   notes: string;
@@ -81,13 +79,7 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
       });
       setProductSelections(selections);
     }
-  }, [existingOrder]);
-
-  const [selectedProduct, setSelectedProduct] =
-    useState<ProductWithInventoryListView | null>(null);
-  const [showQuantitySheet, setShowQuantitySheet] = useState(false);
-  const [showCreateProduct, setShowCreateProduct] = useState(false);
-  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  }, [existingOrder, productSelections]);
 
   // Customer selection state
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
@@ -102,6 +94,7 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
     orderDate: "",
     deliveryDate: "",
     advanceAmount: "",
+    discountType: "none",
     discount: "",
     paymentTerms: "",
     notes: "",
@@ -125,6 +118,7 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
         orderDate: existingOrder.order_date,
         deliveryDate: existingOrder.expected_delivery_date || "",
         advanceAmount: existingOrder.advance_amount?.toString() || "",
+        discountType: existingOrder.discount_type || "none",
         discount: existingOrder.discount_value?.toString() || "",
         paymentTerms: existingOrder.payment_terms || "",
         notes: existingOrder.notes || "",
@@ -139,18 +133,11 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
     return () => showChromeUI();
   }, [hideChrome, showChromeUI]);
 
-  const handleOpenQuantitySheet = (product: ProductWithInventoryListView) => {
-    setSelectedProduct(product);
-    setShowQuantitySheet(true);
-  };
-
-  const handleQuantityConfirm = (quantity: number) => {
-    if (selectedProduct) {
-      setProductSelections((prev) => ({
-        ...prev,
-        [selectedProduct.id]: { selected: true, quantity },
-      }));
-    }
+  const handleQuantityChange = (productId: string, quantity: number) => {
+    setProductSelections((prev) => ({
+      ...prev,
+      [productId]: { selected: true, quantity },
+    }));
   };
 
   const handleRemoveProduct = (productId: string) => {
@@ -229,8 +216,11 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
       advance_amount: formData.advanceAmount
         ? parseFloat(formData.advanceAmount)
         : 0,
-      discount_type: formData.discount ? "percentage" : "none",
-      discount_value: formData.discount ? parseFloat(formData.discount) : 0,
+      discount_type: formData.discountType,
+      discount_value:
+        formData.discountType !== "none" && formData.discount
+          ? parseFloat(formData.discount)
+          : 0,
       notes: formData.notes || null,
       attachments: [], // TODO: Implement file upload
       status: "in_progress",
@@ -294,47 +284,15 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
     <div className="h-full flex flex-col items-center">
       <div className="flex-1 flex flex-col w-full overflow-y-hidden">
         {/* Header - Fixed at top */}
-        <div className="shrink-0 border-b border-gray-200 bg-background">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCancel}
-              disabled={approveOrder.isPending}
-            >
-              <IconArrowLeft className="size-5" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-xl font-semibold text-gray-900">
-                Approve sales order
-              </h1>
-              <p className="text-sm text-gray-500">
-                SO-{existingOrder.sequence_number} · Step{" "}
-                {currentStep === "products"
-                  ? "1"
-                  : currentStep === "customer"
-                    ? "2"
-                    : "3"}{" "}
-                of 3
-              </p>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="h-1 bg-gray-200">
-            <div
-              className="h-full bg-primary-500 transition-all duration-300"
-              style={{
-                width:
-                  currentStep === "products"
-                    ? "33%"
-                    : currentStep === "customer"
-                      ? "66%"
-                      : "100%",
-              }}
-            />
-          </div>
-        </div>
+        <FormHeader
+          title="Approve Sales Order"
+          currentStep={
+            currentStep === "products" ? 1 : currentStep === "customer" ? 2 : 3
+          }
+          totalSteps={3}
+          onCancel={handleCancel}
+          disableCancel={approveOrder.isPending}
+        />
 
         {/* Main Content - Scrollable */}
         <div className="flex-1 flex-col overflow-y-auto flex">
@@ -342,15 +300,14 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
             <ProductSelectionStep
               warehouseId={warehouse.id}
               productSelections={productSelections}
-              onOpenQuantitySheet={handleOpenQuantitySheet}
-              onAddNewProduct={() => setShowCreateProduct(true)}
+              onQuantityChange={handleQuantityChange}
               onRemoveProduct={handleRemoveProduct}
             />
           ) : currentStep === "customer" ? (
-            <CustomerSelectionStep
-              selectedCustomerId={selectedCustomerId}
-              onSelectCustomer={handleSelectCustomer}
-              onAddNewCustomer={() => setShowAddCustomer(true)}
+            <PartnerSelectionStep
+              partnerType="customer"
+              selectedPartnerId={selectedCustomerId}
+              onSelectPartner={handleSelectCustomer}
             />
           ) : (
             <OrderDetailsStep
@@ -422,37 +379,6 @@ export default function ApproveSalesOrderPage({ params }: PageParams) {
             )}
           </div>
         </div>
-
-        {/* Product Quantity Sheet */}
-        {showQuantitySheet && selectedProduct && (
-          <ProductQuantitySheet
-            open={showQuantitySheet}
-            onOpenChange={setShowQuantitySheet}
-            product={selectedProduct}
-            initialQuantity={
-              productSelections[selectedProduct.id]?.quantity || 0
-            }
-            onConfirm={handleQuantityConfirm}
-          />
-        )}
-
-        {/* Add Product Sheet */}
-        {showCreateProduct && (
-          <ProductFormSheet
-            key="new"
-            open={showCreateProduct}
-            onOpenChange={setShowCreateProduct}
-          />
-        )}
-
-        {/* Add Customer Sheet */}
-        {showAddCustomer && (
-          <PartnerFormSheet
-            open={showAddCustomer}
-            onOpenChange={setShowAddCustomer}
-            partnerType="customer"
-          />
-        )}
       </div>
     </div>
   );

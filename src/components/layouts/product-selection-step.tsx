@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { IconSearch, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,9 @@ import {
   useInfiniteProductsWithInventory,
   useProductAttributes,
 } from "@/lib/query/hooks/products";
+import { ProductQuantitySheet } from "@/components/layouts/product-quantity-sheet";
+import { ProductFormSheet } from "@/app/(protected)/warehouse/[warehouse_slug]/inventory/ProductFormSheet";
+import { getProductsWithInventoryByIds } from "@/lib/queries/products";
 
 interface ProductWithSelection extends ProductWithInventoryListView {
   selected: boolean;
@@ -34,16 +37,14 @@ interface ProductWithSelection extends ProductWithInventoryListView {
 interface ProductSelectionStepProps {
   warehouseId: string;
   productSelections: Record<string, { selected: boolean; quantity: number }>;
-  onOpenQuantitySheet: (product: ProductWithInventoryListView) => void;
-  onAddNewProduct: () => void;
+  onQuantityChange: (productId: string, quantity: number) => void;
   onRemoveProduct: (productId: string) => void;
 }
 
 export function ProductSelectionStep({
   warehouseId,
   productSelections,
-  onOpenQuantitySheet,
-  onAddNewProduct,
+  onQuantityChange,
   onRemoveProduct,
 }: ProductSelectionStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,6 +52,29 @@ export function ProductSelectionStep({
   const [materialFilter, setMaterialFilter] = useState<string>("all");
   const [colorFilter, setColorFilter] = useState<string>("all");
   const [tagsFilter, setTagsFilter] = useState<string>("all");
+
+  // Internal state for sheets
+  const [selectedProduct, setSelectedProduct] =
+    useState<ProductWithInventoryListView | null>(null);
+  const [showQuantitySheet, setShowQuantitySheet] = useState(false);
+  const [showCreateProduct, setShowCreateProduct] = useState(false);
+
+  // State for all selected products (fetched separately)
+  const [selectedProducts, setSelectedProducts] = useState<
+    ProductWithInventoryListView[]
+  >([]);
+
+  // Handlers for internal sheets
+  const handleOpenQuantitySheet = (product: ProductWithInventoryListView) => {
+    setSelectedProduct(product);
+    setShowQuantitySheet(true);
+  };
+
+  const handleQuantityConfirm = (quantity: number) => {
+    if (selectedProduct) {
+      onQuantityChange(selectedProduct.id, quantity);
+    }
+  };
 
   // Build attribute filters
   const attributeFilters = [];
@@ -88,15 +112,52 @@ export function ProductSelectionStep({
   const tags = attributesData?.tags || [];
   const loading = productsLoading || attributesLoading;
 
+  // Fetch all selected products separately
+  useEffect(() => {
+    // Find selected product IDs
+    const selectedProductIds = Object.entries(productSelections)
+      .filter(([, selection]) => selection.selected && selection.quantity > 0)
+      .map(([productId]) => productId);
+
+    if (selectedProductIds.length === 0) {
+      setSelectedProducts([]);
+      return;
+    }
+
+    // Fetch all selected products
+    getProductsWithInventoryByIds(selectedProductIds, warehouseId)
+      .then((products) => {
+        setSelectedProducts(products);
+      })
+      .catch((error) => {
+        console.error("Error fetching selected products:", error);
+        setSelectedProducts([]);
+      });
+  }, [productSelections, warehouseId]);
+
+  // Combine selected products with infinite scroll results (excluding selected ones)
+  const allProducts = useMemo(() => {
+    // Create a set of selected product IDs
+    const selectedIds = new Set(selectedProducts.map((p) => p.id));
+
+    // Filter out selected products from infinite scroll results
+    const unselectedProducts = flatProducts.filter(
+      (p) => !selectedIds.has(p.id),
+    );
+
+    // Put selected products first, then unselected
+    return [...selectedProducts, ...unselectedProducts];
+  }, [selectedProducts, flatProducts]);
+
   // Combine products data with selection state
   const products: ProductWithSelection[] = useMemo(
     () =>
-      flatProducts.map((product) => ({
+      allProducts.map((product) => ({
         ...product,
         selected: productSelections[product.id]?.selected || false,
         quantity: productSelections[product.id]?.quantity || 0,
       })),
-    [flatProducts, productSelections],
+    [allProducts, productSelections],
   );
 
   // Handle scroll to trigger infinite loading
@@ -131,7 +192,7 @@ export function ProductSelectionStep({
           <h3 className="text-lg font-semibold text-gray-900">
             Select products
           </h3>
-          <Button variant="ghost" onClick={onAddNewProduct}>
+          <Button variant="ghost" onClick={() => setShowCreateProduct(true)}>
             <IconPlus className="size-4" />
             New product
           </Button>
@@ -242,7 +303,7 @@ export function ProductSelectionStep({
                       </p>
                       <p
                         title={productInfoText}
-                        className="text-xs text-gray-500 truncate mt-1"
+                        className="text-sm text-gray-500 truncate mt-1"
                       >
                         {productInfoText}
                       </p>
@@ -255,7 +316,7 @@ export function ProductSelectionStep({
                           <Button
                             type="button"
                             size="sm"
-                            onClick={() => onOpenQuantitySheet(product)}
+                            onClick={() => handleOpenQuantitySheet(product)}
                           >
                             {product.quantity} {unitAbbreviation}
                           </Button>
@@ -273,7 +334,7 @@ export function ProductSelectionStep({
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => onOpenQuantitySheet(product)}
+                          onClick={() => handleOpenQuantitySheet(product)}
                         >
                           <IconPlus />
                           Add {product.stock_type}
@@ -307,6 +368,25 @@ export function ProductSelectionStep({
           </>
         )}
       </div>
+
+      {/* Product Quantity Sheet */}
+      {selectedProduct && (
+        <ProductQuantitySheet
+          key={selectedProduct.id}
+          open={showQuantitySheet}
+          onOpenChange={setShowQuantitySheet}
+          product={selectedProduct}
+          initialQuantity={productSelections[selectedProduct.id]?.quantity || 0}
+          onConfirm={handleQuantityConfirm}
+        />
+      )}
+
+      {/* Add Product Sheet */}
+      <ProductFormSheet
+        key="new"
+        open={showCreateProduct}
+        onOpenChange={setShowCreateProduct}
+      />
     </>
   );
 }

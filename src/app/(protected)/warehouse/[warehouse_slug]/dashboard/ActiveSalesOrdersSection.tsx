@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SalesStatusBadge } from "@/components/ui/sales-status-badge";
@@ -22,8 +23,10 @@ import { getPartnerName } from "@/lib/utils/partner";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import type { SalesOrderListView } from "@/types/sales-orders.types";
 import type { SalesOrderStatus } from "@/types/database/enums";
-import { useRouter } from "next/navigation";
 import { useSession } from "@/contexts/session-context";
+import { useSalesOrderMutations } from "@/lib/query/hooks/sales-orders";
+import { toast } from "sonner";
+import { ApprovalDialog } from "@/components/layouts/approval-dialog";
 
 interface ActiveSalesOrdersSectionProps {
   orders: SalesOrderListView[];
@@ -36,8 +39,45 @@ export function ActiveSalesOrdersSection({
   warehouseSlug,
   onNavigate,
 }: ActiveSalesOrdersSectionProps) {
-  const router = useRouter();
   const { warehouse } = useSession();
+  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<SalesOrderListView | null>(
+    null,
+  );
+
+  const { update: updateOrder } = useSalesOrderMutations(warehouse.id);
+
+  const handleApproveClick = (
+    e: React.MouseEvent,
+    order: SalesOrderListView,
+  ) => {
+    e.stopPropagation();
+    setSelectedOrder(order);
+    setIsApproveDialogOpen(true);
+  };
+
+  const handleConfirmApprove = () => {
+    if (!selectedOrder) return;
+    updateOrder.mutate(
+      {
+        orderId: selectedOrder.id,
+        data: { status: "in_progress" },
+      },
+      {
+        onSuccess: () => {
+          toast.success(
+            `Sales Order SO-${selectedOrder.sequence_number} approved.`,
+          );
+          setIsApproveDialogOpen(false);
+          setSelectedOrder(null);
+        },
+        onError: (error) => {
+          toast.error("Failed to approve sales order.");
+          console.error("Error approving order:", error);
+        },
+      },
+    );
+  };
 
   return (
     <div className="flex flex-col mt-6">
@@ -135,12 +175,7 @@ export function ActiveSalesOrdersSection({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(
-                            `/warehouse/${warehouse.slug}/sales-orders/${order.sequence_number}/approve`,
-                          );
-                        }}
+                        onClick={(e) => handleApproveClick(e, order)}
                       >
                         Approve order
                       </Button>
@@ -228,6 +263,22 @@ export function ActiveSalesOrdersSection({
             );
           })}
         </div>
+      )}
+
+      {selectedOrder && (
+        <ApprovalDialog
+          open={isApproveDialogOpen}
+          onOpenChange={(isOpen) => {
+            setIsApproveDialogOpen(isOpen);
+            if (!isOpen) {
+              setSelectedOrder(null);
+            }
+          }}
+          orderNumber={selectedOrder.sequence_number}
+          orderType="SO"
+          onConfirm={handleConfirmApprove}
+          loading={updateOrder.isPending}
+        />
       )}
     </div>
   );

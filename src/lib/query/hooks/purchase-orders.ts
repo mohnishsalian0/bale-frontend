@@ -16,6 +16,8 @@ import {
   approvePurchaseOrder,
   cancelPurchaseOrder,
   completePurchaseOrder,
+  updatePurchaseOrder,
+  updatePurchaseOrderLineItems,
   type PurchaseOrderFilters,
   type CreatePurchaseOrderData,
   type CreatePurchaseOrderLineItem,
@@ -23,6 +25,7 @@ import {
   type CancelPurchaseOrderData,
   type CompletePurchaseOrderData,
 } from "@/lib/queries/purchase-orders";
+import { PurchaseOrderUpdate } from "@/types/purchase-orders.types";
 
 /**
  * Fetch purchase orders for a warehouse with optional filters
@@ -160,10 +163,44 @@ export function usePurchaseOrderMutations(warehouseId: string | null) {
     },
   });
 
+  const update = useMutation({
+    mutationFn: ({
+      orderId,
+      data,
+    }: {
+      orderId: string;
+      data: Partial<PurchaseOrderUpdate>;
+    }) => updatePurchaseOrder(orderId, data),
+    onSuccess: () => {
+      // Invalidate all purchase order queries
+      queryClient.invalidateQueries({
+        queryKey: ["purchase-orders"],
+      });
+    },
+  });
+
+  const updateLineItems = useMutation({
+    mutationFn: ({
+      orderId,
+      lineItems,
+    }: {
+      orderId: string;
+      lineItems: CreatePurchaseOrderLineItem[];
+    }) => updatePurchaseOrderLineItems(orderId, lineItems),
+    onSuccess: () => {
+      // Invalidate all purchase order queries
+      queryClient.invalidateQueries({
+        queryKey: ["purchase-orders"],
+      });
+    },
+  });
+
   return {
     create,
     approve,
     cancel,
     complete,
+    update,
+    updateLineItems,
   };
 }

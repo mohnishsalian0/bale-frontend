@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useMemo } from "react";
+import { use, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   IconPackage,
@@ -10,69 +10,102 @@ import {
   IconMapPin,
   IconCurrencyRupee,
   IconPercentage,
+  IconCalendar,
+  IconFileInvoice,
 } from "@tabler/icons-react";
 import { Progress } from "@/components/ui/progress";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getInitials } from "@/lib/utils/initials";
 import { formatCurrency } from "@/lib/utils/financial";
+import { formatAbsoluteDate } from "@/lib/utils/date";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getPartnerName, getFormattedAddress } from "@/lib/utils/partner";
 import {
+  DisplayStatus,
   getAgentName,
   getOrderDisplayStatus,
-  type DisplayStatus,
-} from "@/lib/utils/sales-order";
+} from "@/lib/utils/purchase-order";
 import type {
   MeasuringUnit,
   StockType,
   DiscountType,
-  SalesOrderStatus,
+  PurchaseOrderStatus,
 } from "@/types/database/enums";
+import type { PurchaseOrderUpdate } from "@/types/purchase-orders.types";
 import { Section } from "@/components/layouts/section";
 import { getProductIcon } from "@/lib/utils/product";
-import { useSalesOrderByNumber } from "@/lib/query/hooks/sales-orders";
-import { getStatusConfig } from "@/components/ui/sales-status-badge";
+import { usePurchaseOrderByNumber } from "@/lib/query/hooks/purchase-orders";
+import { getStatusConfig } from "@/components/ui/purchase-status-badge";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { calculateOrderFinancials } from "@/lib/utils/financial";
+import { usePurchaseOrderMutations } from "@/lib/query/hooks/purchase-orders";
+import { toast } from "sonner";
 
 // Import Edit Sheets
-import { NotesEditSheet } from "../NotesEditSheet";
-import { CustomerEditSheet } from "../CustomerEditSheet";
-import { AgentEditSheet } from "../AgentEditSheet";
-import { WarehouseEditSheet } from "../WarehouseEditSheet";
-import { PaymentTermsEditSheet } from "../PaymentTermsEditSheet";
-import { TransportEditSheet } from "../TransportEditSheet";
+import { PartnerEditSheet } from "@/components/layouts/partner-edit-sheet";
+import { PaymentTermsEditSheet } from "@/components/layouts/payment-terms-edit-sheet";
+import { WarehouseEditSheet } from "@/components/layouts/warehouse-edit-sheet";
+import { TransportEditSheet } from "@/components/layouts/transport-edit-sheet";
+import { NotesEditSheet } from "@/components/layouts/notes-edit-sheet";
 
 interface PageParams {
   params: Promise<{
-    sale_number: string;
+    purchase_number: string;
   }>;
 }
 
-export default function SalesOrderDetailsPage({ params }: PageParams) {
+export default function PurchaseOrderDetailsPage({ params }: PageParams) {
   const router = useRouter();
-  const { sale_number } = use(params);
+  const { purchase_number } = use(params);
 
   // Edit sheet states
-  const [showCustomerEdit, setShowCustomerEdit] = useState(false);
+  const [showSupplierEdit, setShowSupplierEdit] = useState(false);
   const [showAgentEdit, setShowAgentEdit] = useState(false);
   const [showPaymentTermsEdit, setShowPaymentTermsEdit] = useState(false);
   const [showWarehouseEdit, setShowWarehouseEdit] = useState(false);
   const [showTransportEdit, setShowTransportEdit] = useState(false);
   const [showNotesEdit, setShowNotesEdit] = useState(false);
 
-  // Fetch sales order using TanStack Query
+  // Fetch purchase order using TanStack Query
   const {
     data: order,
     isLoading,
     isError,
-  } = useSalesOrderByNumber(sale_number);
+  } = usePurchaseOrderByNumber(purchase_number);
+
+  // Get update mutation
+  const { update: updateMutation } = usePurchaseOrderMutations(null);
+
+  // Handler for updating purchase order
+  const handleUpdate = (
+    data: Partial<PurchaseOrderUpdate>,
+    onSuccessCallback?: () => void,
+  ) => {
+    if (!order) return;
+
+    updateMutation.mutate(
+      {
+        orderId: order.id,
+        data,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Purchase order updated successfully");
+          onSuccessCallback?.();
+        },
+        onError: (error) => {
+          console.error("Error updating purchase order:", error);
+          toast.error("Failed to update purchase order");
+        },
+      },
+    );
+  };
 
   // Calculate financials
   const financials = useMemo(() => {
     if (!order) return null;
-    const itemTotal = order.sales_order_items.reduce(
+    const itemTotal = order.purchase_order_items.reduce(
       (sum, item) => sum + (item.line_total || 0),
       0,
     );
@@ -88,7 +121,7 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
   const displayStatus: DisplayStatus = useMemo(() => {
     if (!order) return "in_progress";
     return getOrderDisplayStatus(
-      order.status as SalesOrderStatus,
+      order.status as PurchaseOrderStatus,
       order.expected_delivery_date,
     );
   }, [order]);
@@ -104,24 +137,33 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
       <ErrorState
         title="Could not load order"
         message="An error occurred while fetching the order details."
-        onRetry={() => router.refresh()}
       />
     );
   }
+
+  // Check if order is editable (only in approval_pending status)
+  const isEditable = order.status === "approval_pending";
 
   return (
     <>
       <div className="flex flex-col gap-3 p-4">
         {/* Line Items Section */}
         <Section
-          title={`${order.sales_order_items.length} items at ₹${formatCurrency(financials?.totalAmount || 0)}`}
+          title={`${order.purchase_order_items.length} items at ₹${formatCurrency(financials?.totalAmount || 0)}`}
           subtitle="Line items"
-          onEdit={() => {}} // TODO: Handle line item edit
+          onEdit={
+            isEditable
+              ? () =>
+                  router.push(
+                    `/warehouse/${order.warehouse?.slug || ""}/purchase-orders/${purchase_number}/edit-items`,
+                  )
+              : undefined
+          }
           icon={() => <IconPackage className="size-5" />}
         >
           <div>
             <ul className="space-y-6">
-              {order.sales_order_items.map((item) => (
+              {order.purchase_order_items.map((item) => (
                 <li key={item.id} className="flex gap-3">
                   <div className="mt-0.5">
                     <ImageWrapper
@@ -149,22 +191,22 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
                       {order.status !== "approval_pending" && (
                         <>
                           {" "}
-                          ({item.dispatched_quantity || 0}{" "}
+                          ({item.received_quantity || 0}{" "}
                           {getMeasuringUnitAbbreviation(
                             item.product?.measuring_unit as MeasuringUnit,
                           )}{" "}
-                          shipped)
+                          received)
                         </>
                       )}
                     </p>
                     {/* Progress bar */}
-                    {displayStatus !== "approval_pending" && (
+                    {order.status !== "approval_pending" && (
                       <Progress
                         size="sm"
                         color={progressBarColor}
                         value={
                           item.required_quantity > 0
-                            ? ((item.dispatched_quantity || 0) /
+                            ? ((item.received_quantity || 0) /
                                 item.required_quantity) *
                               100
                             : 0
@@ -188,7 +230,7 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
                     <span>
                       Discount
                       {order.discount_type === "percentage" &&
-                        ` (${order.discount_value}%)`}
+                        ` (${order.discount_value || 0}%)`}
                     </span>
                     <span className="font-semibold">
                       -₹{formatCurrency(financials.discountAmount)}
@@ -218,21 +260,21 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
           </div>
         </Section>
 
-        {/* Customer Section */}
+        {/* Supplier Section */}
         <Section
-          title={getPartnerName(order.customer)}
-          subtitle="Customer"
-          onEdit={() => setShowCustomerEdit(true)}
-          icon={() => <>{getInitials(getPartnerName(order.customer))}</>}
+          title={getPartnerName(order.supplier)}
+          subtitle="Supplier"
+          onEdit={isEditable ? () => setShowSupplierEdit(true) : undefined}
+          icon={() => <>{getInitials(getPartnerName(order.supplier))}</>}
         >
-          {getFormattedAddress(order.customer).length > 0 && (
+          {getFormattedAddress(order.supplier).length > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-700 flex items-center gap-2">
                 <IconMapPin className="size-4" />
                 Address
               </span>
               <div className="font-semibold text-gray-700 text-right max-w-[200px]">
-                {getFormattedAddress(order.customer).map((line, index) => (
+                {getFormattedAddress(order.supplier).map((line, index) => (
                   <p key={index}>{line}</p>
                 ))}
               </div>
@@ -240,11 +282,11 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
           )}
         </Section>
 
-        {/* Agent Section (Conditional) */}
+        {/* Agent Section */}
         <Section
           title={getAgentName(order.agent)}
           subtitle="Agent"
-          onEdit={() => setShowAgentEdit(true)}
+          onEdit={isEditable ? () => setShowAgentEdit(true) : undefined}
           icon={() => <>{getInitials(getPartnerName(order.agent))}</>}
         />
 
@@ -252,7 +294,7 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
         <Section
           title={order.payment_terms || "NET 30"}
           subtitle="Payment terms"
-          onEdit={() => setShowPaymentTermsEdit(true)}
+          onEdit={isEditable ? () => setShowPaymentTermsEdit(true) : undefined}
           icon={() => <IconCash className="size-5" />}
         >
           <div className="space-y-3">
@@ -277,7 +319,7 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
                 </div>
                 <span className="font-semibold text-gray-700">
                   {order.discount_type === "percentage"
-                    ? `${order.discount_value}%`
+                    ? `${order.discount_value || 0}%`
                     : `₹${formatCurrency(order.discount_value || 0)}`}
                 </span>
               </div>
@@ -289,7 +331,7 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
         <Section
           title={order.warehouse?.name || "Unknown Warehouse"}
           subtitle="Warehouse"
-          onEdit={() => setShowWarehouseEdit(true)}
+          onEdit={isEditable ? () => setShowWarehouseEdit(true) : undefined}
           icon={() => <IconBuildingWarehouse className="size-5" />}
         >
           {order.warehouse &&
@@ -308,34 +350,89 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
             )}
         </Section>
 
+        {/* Important Dates Section */}
+        <Section
+          title="Important dates"
+          subtitle={formatAbsoluteDate(order.order_date)}
+          onEdit={isEditable ? () => setShowTransportEdit(true) : undefined}
+          icon={() => <IconCalendar className="size-5" />}
+        >
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-700">Order date</span>
+              <span className="font-semibold text-gray-700">
+                {formatAbsoluteDate(order.order_date)}
+              </span>
+            </div>
+            {order.expected_delivery_date && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-700">Expected delivery</span>
+                <span className="font-semibold text-gray-700">
+                  {formatAbsoluteDate(order.expected_delivery_date)}
+                </span>
+              </div>
+            )}
+          </div>
+        </Section>
+
+        {/* Supplier Invoice Section */}
+        {order.supplier_invoice_number && (
+          <Section
+            title={order.supplier_invoice_number}
+            subtitle="Supplier invoice"
+            icon={() => <IconFileInvoice className="size-5" />}
+          />
+        )}
+
         {/* Notes Section */}
         <Section
           title="Order notes"
           subtitle={order.notes || "No note added"}
-          onEdit={() => setShowNotesEdit(true)}
+          onEdit={isEditable ? () => setShowNotesEdit(true) : undefined}
           icon={() => <IconNote className="size-5" />}
         />
+
+        {/* Status Notes (for cancelled/completed orders) */}
+        {order.status_notes && (
+          <Section
+            title={
+              order.status === "cancelled"
+                ? "Cancellation reason"
+                : "Completion notes"
+            }
+            subtitle={order.status_notes}
+            icon={() => <IconNote className="size-5" />}
+          />
+        )}
       </div>
 
       {/* Edit Sheets */}
-      <CustomerEditSheet
-        open={showCustomerEdit}
-        onOpenChange={setShowCustomerEdit}
-        orderId={order.id}
-        currentCustomerId={order.customer_id}
+      <PartnerEditSheet
+        key={`supplier-${order.id}-${showSupplierEdit}`}
+        open={showSupplierEdit}
+        onOpenChange={setShowSupplierEdit}
+        onSave={handleUpdate}
+        isPending={updateMutation.isPending}
+        partnerType="supplier"
+        currentPartnerId={order.supplier_id}
       />
 
-      <AgentEditSheet
+      <PartnerEditSheet
+        key={`agent-${order.id}-${showAgentEdit}`}
         open={showAgentEdit}
         onOpenChange={setShowAgentEdit}
-        orderId={order.id}
-        currentAgentId={order.agent_id}
+        onSave={handleUpdate}
+        isPending={updateMutation.isPending}
+        partnerType="agent"
+        currentPartnerId={order.agent_id}
       />
 
       <PaymentTermsEditSheet
+        key={`payment-${order.id}-${showPaymentTermsEdit}`}
         open={showPaymentTermsEdit}
         onOpenChange={setShowPaymentTermsEdit}
-        orderId={order.id}
+        onSave={handleUpdate}
+        isPending={updateMutation.isPending}
         currentPaymentTerms={order.payment_terms}
         currentAdvanceAmount={order.advance_amount || 0}
         currentDiscountType={order.discount_type as DiscountType}
@@ -343,24 +440,31 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
       />
 
       <WarehouseEditSheet
+        key={`warehouse-${order.id}-${showWarehouseEdit}`}
         open={showWarehouseEdit}
         onOpenChange={setShowWarehouseEdit}
-        orderId={order.id}
+        onSave={handleUpdate}
+        isPending={updateMutation.isPending}
         currentWarehouseId={order.warehouse_id || ""}
-        hasOutward={order.has_outward || false}
+        hasStockFlow={order.has_inward || false}
+        stockFlowLabel="inward"
       />
 
       <TransportEditSheet
+        key={`transport-${order.id}-${showTransportEdit}`}
         open={showTransportEdit}
         onOpenChange={setShowTransportEdit}
-        orderId={order.id}
+        onSave={handleUpdate}
+        isPending={updateMutation.isPending}
         currentExpectedDeliveryDate={order.expected_delivery_date}
       />
 
       <NotesEditSheet
+        key={`notes-${order.id}-${showNotesEdit}`}
         open={showNotesEdit}
         onOpenChange={setShowNotesEdit}
-        orderId={order.id}
+        onSave={handleUpdate}
+        isPending={updateMutation.isPending}
         initialNotes={order.notes}
       />
     </>

@@ -46,8 +46,7 @@ export function SalesOrderInfiniteList({
     search_term: searchQuery || undefined,
   });
 
-  const salesOrders =
-    salesOrdersData?.pages.flatMap((page) => page.data) || [];
+  const salesOrders = salesOrdersData?.pages.flatMap((page) => page.data) || [];
 
   // Handle scroll to trigger infinite loading
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {

@@ -8,8 +8,10 @@ import {
   IconTruck,
   IconUpload,
 } from "@tabler/icons-react";
+import { Input } from "@/components/ui/input";
 import { InputWithIcon } from "@/components/ui/input-with-icon";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -25,6 +27,7 @@ import {
 import { DatePicker } from "@/components/ui/date-picker";
 import { dateToISOString } from "@/lib/utils/date";
 import { usePartners } from "@/lib/query/hooks/partners";
+import { PAYMENT_TERMS } from "@/types/database/enums";
 
 export interface QuickOrderFormData {
   orderDate: string; // Same as outward date
@@ -151,24 +154,27 @@ export function QuickOrderDetailsStep({
         <CollapsibleContent>
           <div className="flex flex-col gap-5">
             {/* Payment Terms */}
-            <Select
-              value={formData.paymentTerms || undefined}
-              onValueChange={(value) => onChange({ paymentTerms: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Payment terms (Optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Cash on delivery">
-                  Cash on delivery
-                </SelectItem>
-                <SelectItem value="15 days net">NET 15</SelectItem>
-                <SelectItem value="30 days net">NET 30</SelectItem>
-                <SelectItem value="45 days net">NET 45</SelectItem>
-                <SelectItem value="60 days net">NET 60</SelectItem>
-                <SelectItem value="90 days net">NET 90</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Input
+                type="text"
+                placeholder="Payment terms (Optional)"
+                value={formData.paymentTerms}
+                onChange={(e) => onChange({ paymentTerms: e.target.value })}
+              />
+              <div className="flex flex-wrap gap-2">
+                {PAYMENT_TERMS.map((term) => (
+                  <Badge
+                    key={term}
+                    variant="secondary"
+                    color="gray"
+                    onClick={() => onChange({ paymentTerms: term })}
+                    className="cursor-pointer hover:bg-gray-200"
+                  >
+                    {term}
+                  </Badge>
+                ))}
+              </div>
+            </div>
 
             {/* Advance Amount */}
             <InputWithIcon

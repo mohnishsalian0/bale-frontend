@@ -1,9 +1,10 @@
 import { ProductAttribute } from "@/types/products.types";
-import type { Tables } from "./database/supabase";
+import type { Tables, TablesUpdate } from "./database/supabase";
 import { DisplayStatus } from "@/lib/utils/sales-order";
 
-type SalesOrder = Tables<"sales_orders">;
-type SalesOrderItem = Tables<"sales_order_items">;
+export type SalesOrder = Tables<"sales_orders">;
+export type SalesOrderUpdate = TablesUpdate<"sales_orders">;
+export type SalesOrderItem = Tables<"sales_order_items">;
 type Partner = Tables<"partners">;
 type Warehouse = Tables<"warehouses">;
 type Product = Tables<"products">;

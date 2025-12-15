@@ -7,12 +7,11 @@ import {
   StockUnitScannerStep,
   ScannedStockUnit,
 } from "@/components/layouts/stock-unit-scanner-step";
-import { CustomerSelectionStep } from "../CustomerSelectionStep";
+import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
 import {
   QuickOrderDetailsStep,
   QuickOrderFormData,
 } from "./QuickOrderDetailsStep";
-import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useSalesOrderMutations } from "@/lib/query/hooks/sales-orders";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
@@ -33,7 +32,6 @@ export default function QuickCreateOrderPage() {
     null,
   );
   const [saving, setSaving] = useState(false);
-  const [showCreateCustomer, setShowCreateCustomer] = useState(false);
 
   // Mutations
   const { quickCreate } = useSalesOrderMutations(warehouse.id);
@@ -223,10 +221,10 @@ export default function QuickCreateOrderPage() {
           )}
 
           {currentStep === "customer" && (
-            <CustomerSelectionStep
-              selectedCustomerId={selectedCustomerId}
-              onSelectCustomer={handleSelectCustomer}
-              onAddNewCustomer={() => setShowCreateCustomer(true)}
+            <PartnerSelectionStep
+              partnerType="customer"
+              selectedPartnerId={selectedCustomerId}
+              onSelectPartner={handleSelectCustomer}
             />
           )}
 
@@ -281,15 +279,6 @@ export default function QuickCreateOrderPage() {
           )}
         </FormFooter>
       </div>
-
-      {/* Customer Form Sheet */}
-      {showCreateCustomer && (
-        <PartnerFormSheet
-          open={showCreateCustomer}
-          onOpenChange={setShowCreateCustomer}
-          partnerType="customer"
-        />
-      )}
     </div>
   );
 }

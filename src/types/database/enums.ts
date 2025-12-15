@@ -95,6 +95,17 @@ export type PurchaseOrderStatus =
   | "cancelled";
 
 export type DiscountType = "none" | "percentage" | "flat_amount";
+export const DISCOUNT_TYPES = ["none", "percentage", "flat_amount"] as const;
+
+export const PAYMENT_TERMS = [
+  "Due on receipt",
+  "NET 7",
+  "NET 15",
+  "NET 30",
+  "NET 45",
+  "NET 60",
+  "NET 90",
+] as const;
 
 export type JobWorkStatus =
   | "pending"
