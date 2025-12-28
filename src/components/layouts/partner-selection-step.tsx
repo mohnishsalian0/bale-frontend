@@ -1,20 +1,33 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { IconSearch, IconPlus, IconCheck } from "@tabler/icons-react";
+import {
+  IconSearch,
+  IconPlus,
+  IconCheck,
+  IconAlertCircle,
+} from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ImageWrapper from "@/components/ui/image-wrapper";
-import { usePartners } from "@/lib/query/hooks/partners";
+import { usePartnersWithStats } from "@/lib/query/hooks/partners";
 import { getPartnerInfo, getPartnerName } from "@/lib/utils/partner";
 import { getInitials } from "@/lib/utils/initials";
+import { formatCurrency } from "@/lib/utils/currency";
 import type { PartnerType } from "@/types/database/enums";
 import { PartnerFormSheet } from "@/app/(protected)/warehouse/[warehouse_slug]/partners/PartnerFormSheet";
 
 interface PartnerSelectionStepProps {
   partnerType: PartnerType;
   selectedPartnerId: string | null;
-  onSelectPartner: (partnerId: string) => void;
+  onSelectPartner: (partnerId: string, ledgerId: string) => void;
+}
+
+interface CreditWarning {
+  level: "warning" | "critical";
+  outstanding: number;
+  limit: number;
+  percentage: number;
 }
 
 export function PartnerSelectionStep({
@@ -24,7 +37,7 @@ export function PartnerSelectionStep({
 }: PartnerSelectionStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddPartner, setShowAddPartner] = useState(false);
-  const { data: partners = [], isLoading: loading } = usePartners({
+  const { data: partners = [], isLoading: loading } = usePartnersWithStats({
     partner_type: partnerType,
   });
 
@@ -71,6 +84,38 @@ export function PartnerSelectionStep({
 
   const label = labels[partnerType];
 
+  // Helper function to get credit warning details
+  const getCreditWarning = (
+    partner: (typeof partners)[number],
+  ): CreditWarning | null => {
+    if (!partner.credit_limit_enabled || !partner.credit_limit) {
+      return null;
+    }
+
+    const outstanding =
+      partner.credit_aggregates?.total_outstanding_amount || 0;
+    const limit = partner.credit_limit;
+    const percentage = (outstanding / limit) * 100;
+
+    if (percentage >= 100) {
+      return {
+        level: "critical",
+        outstanding,
+        limit,
+        percentage,
+      };
+    } else if (percentage >= 75) {
+      return {
+        level: "warning",
+        outstanding,
+        limit,
+        percentage,
+      };
+    }
+
+    return null;
+  };
+
   // Filter and sort partners using useMemo
   const filteredPartners = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -79,15 +124,14 @@ export function PartnerSelectionStep({
     let filtered = partners.filter((partner) => {
       // Search filter (case-insensitive)
       if (query) {
-        const fullName =
-          `${partner.first_name} ${partner.last_name}`.toLowerCase();
-        const companyName = partner.company_name?.toLowerCase() || "";
+        const displayName = partner.display_name?.toLowerCase() || "";
         const phoneNumber = partner.phone_number?.toLowerCase() || "";
+        const email = partner.email?.toLowerCase() || "";
 
         return (
-          fullName.includes(query) ||
-          companyName.includes(query) ||
-          phoneNumber.includes(query)
+          displayName.includes(query) ||
+          phoneNumber.includes(query) ||
+          email.includes(query)
         );
       }
       return true;
@@ -99,9 +143,9 @@ export function PartnerSelectionStep({
       if (b.id === selectedPartnerId) return 1;
 
       // Sort by company name if exists, otherwise by first name
-      const aName = a.company_name || a.first_name;
-      const bName = b.company_name || b.first_name;
-      return aName.localeCompare(bName);
+      const aName = a.company_name || a.first_name || "";
+      const bName = b.company_name || b.first_name || "";
+      return (aName || "").localeCompare(bName || "");
     });
 
     return filtered;
@@ -147,11 +191,12 @@ export function PartnerSelectionStep({
               const isSelected = partner.id === selectedPartnerId;
               const partnerName = getPartnerName(partner);
               const partnerInfo = getPartnerInfo(partner);
+              const creditWarning = getCreditWarning(partner);
 
               return (
                 <button
                   key={partner.id}
-                  onClick={() => onSelectPartner(partner.id)}
+                  onClick={() => onSelectPartner(partner.id, partner.ledger.id)}
                   className="flex items-center gap-3 p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors text-left"
                 >
                   {/* Partner Image */}
@@ -173,10 +218,28 @@ export function PartnerSelectionStep({
                     </p>
                     <p
                       title={partnerInfo}
-                      className="text-xs text-gray-500 truncate"
+                      className="text-sm text-gray-500 truncate"
                     >
                       {partnerInfo}
                     </p>
+
+                    {/* Credit Warning */}
+                    {creditWarning && (
+                      <div
+                        className={`flex items-center gap-1 text-xs font-medium mt-0.5 ${
+                          creditWarning.level === "critical"
+                            ? "text-red-500"
+                            : "text-yellow-500"
+                        }`}
+                      >
+                        <IconAlertCircle className="size-3 shrink-0" />
+                        <span className="truncate">
+                          {creditWarning.level === "critical"
+                            ? `Outstanding: ${formatCurrency(creditWarning.outstanding)}`
+                            : `${formatCurrency(creditWarning.outstanding)} / ${formatCurrency(creditWarning.limit)}`}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Selection Checkmark */}

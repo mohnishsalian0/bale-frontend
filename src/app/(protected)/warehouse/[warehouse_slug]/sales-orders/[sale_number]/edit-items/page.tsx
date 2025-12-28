@@ -42,7 +42,7 @@ export default function EditSalesOrderItemsPage({ params }: PageParams) {
 
   // Track product selection state locally
   const [productSelections, setProductSelections] = useState<
-    Record<string, { selected: boolean; quantity: number }>
+    Record<string, { selected: boolean; quantity: number; rate: number }>
   >({});
 
   // Sales order mutations
@@ -55,29 +55,34 @@ export default function EditSalesOrderItemsPage({ params }: PageParams) {
     if (order?.sales_order_items) {
       const initialSelections: Record<
         string,
-        { selected: boolean; quantity: number }
+        { selected: boolean; quantity: number; rate: number }
       > = {};
       order.sales_order_items.forEach((item) => {
         initialSelections[item.product_id] = {
           selected: true,
           quantity: item.required_quantity,
+          rate: item.unit_rate || 0,
         };
       });
       setProductSelections(initialSelections);
     }
   }, [order?.sales_order_items]);
 
-  const handleQuantityChange = (productId: string, quantity: number) => {
+  const handleQuantityChange = (
+    productId: string,
+    quantity: number,
+    rate: number,
+  ) => {
     setProductSelections((prev) => ({
       ...prev,
-      [productId]: { selected: true, quantity },
+      [productId]: { selected: true, quantity, rate },
     }));
   };
 
   const handleRemoveProduct = (productId: string) => {
     setProductSelections((prev) => ({
       ...prev,
-      [productId]: { selected: false, quantity: 0 },
+      [productId]: { selected: false, quantity: 0, rate: 0 },
     }));
   };
 
@@ -110,10 +115,7 @@ export default function EditSalesOrderItemsPage({ params }: PageParams) {
       .map(([productId, selection]) => ({
         product_id: productId,
         required_quantity: selection.quantity,
-        // Find existing item to preserve price if exists
-        unit_rate:
-          order.sales_order_items.find((item) => item.product_id === productId)
-            ?.unit_rate || 0,
+        unit_rate: selection.rate,
       }));
 
     if (lineItems.length === 0) {
@@ -189,6 +191,7 @@ export default function EditSalesOrderItemsPage({ params }: PageParams) {
         {/* Product Selection - Full Page */}
         <ProductSelectionStep
           warehouseId={order.warehouse_id || ""}
+          contextType="sales"
           productSelections={productSelections}
           onQuantityChange={handleQuantityChange}
           onRemoveProduct={handleRemoveProduct}

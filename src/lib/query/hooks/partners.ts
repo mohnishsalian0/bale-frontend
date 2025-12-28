@@ -5,6 +5,7 @@ import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getPartners,
+  getPartnersWithStats,
   getPartnerById,
   getPartnerWithOrderStatsById,
   createPartner,
@@ -27,6 +28,23 @@ export function usePartners(filters?: PartnerFilters) {
   return useQuery({
     queryKey: queryKeys.partners.all(filters),
     queryFn: () => getPartners(filters),
+    ...getQueryOptions(STALE_TIME.PARTNERS, GC_TIME.MASTER_DATA),
+  });
+}
+
+/**
+ * Fetch partners with order stats and credit aggregates
+ * Used for: partner selection with credit warnings, partner list with stats
+ *
+ * Examples:
+ * - All partners with stats: usePartnersWithStats()
+ * - Customers with stats: usePartnersWithStats({ partner_type: 'customer' })
+ * - Suppliers with stats: usePartnersWithStats({ partner_type: 'supplier' })
+ */
+export function usePartnersWithStats(filters?: PartnerFilters) {
+  return useQuery({
+    queryKey: queryKeys.partners.all(filters),
+    queryFn: () => getPartnersWithStats(filters),
     ...getQueryOptions(STALE_TIME.PARTNERS, GC_TIME.MASTER_DATA),
   });
 }

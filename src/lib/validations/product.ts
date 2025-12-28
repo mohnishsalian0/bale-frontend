@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { STOCK_TYPES, MEASURING_UNITS } from "@/types/database/enums";
+import { STOCK_TYPES, MEASURING_UNITS, TAX_TYPES, GST_RATES } from "@/types/database/enums";
 import { optionalString, productNameSchema } from "./common";
 
 /**
@@ -94,6 +94,10 @@ export const productSchema = z
       )
       .or(z.null()),
 
+    // Tax fields
+    taxType: z.enum(TAX_TYPES).default("gst"),
+    gstRate: z.number().nullable().default(5),
+
     // Optional additional details
     hsnCode: optionalString,
     notes: optionalString,
@@ -122,6 +126,19 @@ export const productSchema = z
     {
       message: "Minimum stock threshold is required when alert is enabled",
       path: ["minStockThreshold"],
+    },
+  )
+  .refine(
+    (data) => {
+      // If tax type is gst, gst_rate must be set
+      if (data.taxType === "gst") {
+        return data.gstRate !== null;
+      }
+      return true;
+    },
+    {
+      message: "GST rate is required when tax type is GST",
+      path: ["gstRate"],
     },
   );
 

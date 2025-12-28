@@ -554,11 +554,18 @@ Permissions are organized hierarchically with the following top-level categories
   - Thread count (optional, in cms)
   - Tags (multi-select for categorization)
 - **Stock Information:**
-  - Measuring Unit (required: Meters, Yards, KG, Pieces)
+  - Stock Type (required: 'roll', 'batch', 'piece' - defines how the product is tracked)
+  - Measuring Unit (conditional based on stock type):
+    - For 'roll': metre, yard, or kilogram
+    - For 'batch': unit
+    - For 'piece': NULL (no measuring unit)
   - Cost Price Per Unit (optional, for margin calculation)
   - Selling Price Per Unit (optional, for quotations)
   - Product Images (max 5 images, 2MB each)
   - Min Stock Alert (toggle + threshold value)
+- **Tax Information:**
+  - Tax Type (required: 'no_tax', 'gst' - whether product has GST, default: 'gst')
+  - GST Rate (optional, stored as decimal e.g., 18.00 for 18%)
 - **Additional Information:**
   - HSN Code (optional, GST compliance)
   - Notes
@@ -666,10 +673,14 @@ Permissions are organized hierarchically with the following top-level categories
   - Product (searchable dropdown from product master)
   - Required Quantity (in product measuring unit)
   - Unit Rate (optional, from product master)
-  - Line Total (auto-calculated)
+  - Line Total (auto-calculated, quantity * rate before tax)
+- **Financial Information:**
+  - Tax Type (required: 'no_tax', 'gst', 'igst' - determines how GST is applied)
+  - Discount Type (required: 'none', 'percentage', 'flat_amount')
+  - Discount Value (required if discount type is not 'none')
+  - Payment Terms (optional: 'Due on receipt', 'NET 7/15/30/45/60/90')
+  - Advance Amount (optional, upfront payment)
 - **Additional Information:**
-  - Advance amount
-  - Discount (percentage value 0-100%)
   - Notes
   - Attachments
 - **Fulfillment Tracking:**
@@ -732,7 +743,16 @@ Permissions are organized hierarchically with the following top-level categories
 
 - Complete order information
 - Real-time fulfillment status (warehouse-specific)
+- Financial breakdown (item total, discount, GST calculated from product-level rates, total)
 - Linked job works and outwards (from assigned warehouse)
+
+**Tax Calculation:**
+
+- GST is calculated from product-level `gst_rate` field, not order-level
+- For 'gst' tax type: GST split into CGST + SGST (intra-state)
+- For 'igst' tax type: GST applied as IGST (inter-state)
+- For 'no_tax' tax type: No GST applied
+- Tax calculated after discount on proportionally discounted amounts per product
 
 **Sales Order Details Page:**
 
@@ -743,8 +763,14 @@ Permissions are organized hierarchically with the following top-level categories
   - Customer: Customer name with initials, address, phone number, email (using flex justify-between format)
   - Agent: Agent name with initials (conditionally shown if agent_id exists)
   - Order Date: Formatted absolute date
-  - Expected Date: Formatted absolute date (conditionally shown if expected_delivery_date exists)
-  - Financial Details: Advance amount, discount, payment terms (conditionally shown if any financial details exist)
+  - Expected Date: Formatted absolute date (conditionally shown if delivery_due_date exists)
+  - Financial Details:
+    - Item total (sum of all line totals)
+    - Discount (shows percentage or flat amount based on discount_type)
+    - GST (calculated from product-level rates, split by CGST/SGST or IGST based on tax_type)
+    - Total amount (item total - discount + GST)
+    - Advance amount
+    - Payment terms (conditionally shown if exists)
   - Notes: Order notes
 - **Outwards Tab**: List of linked goods outward records with GO-{number}, date, outward type, destination, and clickable navigation
 
@@ -849,12 +875,17 @@ Permissions are organized hierarchically with the following top-level categories
   - Product (searchable dropdown from product master)
   - Required Quantity (in product measuring unit)
   - Unit Rate (optional, typically from product cost price)
-  - Line Total (auto-calculated)
+  - Line Total (auto-calculated, quantity * rate before tax)
+- **Financial Information:**
+  - Tax Type (required: 'no_tax', 'gst', 'igst' - determines how GST is applied)
+  - Discount Type (required: 'none', 'percentage', 'flat_amount')
+  - Discount Value (required if discount type is not 'none')
+  - Payment Terms (optional: 'Due on receipt', 'NET 7/15/30/45/60/90')
+  - Advance Amount (optional, payment made upfront to supplier)
+- **Supplier Information:**
+  - Supplier Invoice Number (optional, for completed orders)
+  - Supplier Invoice Date (optional, for completed orders)
 - **Additional Information:**
-  - Advance Amount (payment made upfront to supplier)
-  - Discount (percentage or flat amount)
-  - Payment Terms (NET 15/30/45/60/90, Cash on delivery)
-  - Supplier Invoice Number (for completed orders)
   - Notes
   - Attachments
 - **Receipt Tracking:**
@@ -926,10 +957,16 @@ Permissions are organized hierarchically with the following top-level categories
   - Products: List of line items with product images, name, required quantity, received quantity, pending quantity, unit rate, line total
   - Supplier: Supplier name with initials, address, phone number (using flex justify-between format)
   - Agent: Agent name with initials (conditionally shown if agent_id exists)
-  - Payment Details: Advance amount, discount, payment terms, GST breakdown, total amount
+  - Payment Details:
+    - Item total (sum of all line totals)
+    - Discount (shows percentage or flat amount based on discount_type)
+    - GST (calculated from product-level rates, split by CGST/SGST or IGST based on tax_type)
+    - Total amount (item total - discount + GST)
+    - Advance amount
+    - Payment terms (conditionally shown if exists)
   - Warehouse: Receiving warehouse details
   - Important Dates: Order date, expected delivery date
-  - Supplier Invoice: Supplier invoice number (conditionally shown if exists)
+  - Supplier Invoice: Supplier invoice number and date (conditionally shown if exists)
   - Notes: Order notes
   - Status Notes: Completion notes or cancellation reason (conditionally shown for completed/cancelled orders)
 - **Inwards Tab**: List of linked goods inward records with GI-{number}, date, inward type, source, and clickable navigation

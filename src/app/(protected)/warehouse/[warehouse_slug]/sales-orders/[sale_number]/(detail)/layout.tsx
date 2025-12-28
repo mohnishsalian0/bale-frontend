@@ -22,7 +22,7 @@ import {
   useSalesOrderByNumber,
   useSalesOrderMutations,
 } from "@/lib/query/hooks/sales-orders";
-import { CancelOrderDialog } from "./CancelOrderDialog";
+import { CancelDialog } from "@/components/layouts/cancel-dialog";
 import { CompleteOrderDialog } from "./CompleteOrderDialog";
 import { toast } from "sonner";
 import { useCompany } from "@/lib/query/hooks/company";
@@ -31,6 +31,8 @@ import { pdf } from "@react-pdf/renderer";
 import { ActionsFooter } from "@/components/layouts/actions-footer";
 import { getSalesOrderDetailFooterItems } from "@/lib/utils/context-menu-items";
 import { ApprovalDialog } from "@/components/layouts/approval-dialog";
+import { DeleteDialog } from "@/components/layouts/delete-dialog";
+import { GoodsOutwardSelectionDialog } from "../GoodsOutwardSelectionDialog";
 
 interface LayoutParams {
   params: Promise<{
@@ -54,6 +56,8 @@ export default function SalesOrderDetailLayout({
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
 
   // Fetch company and sales order using TanStack Query hooks
   const {
@@ -72,6 +76,7 @@ export default function SalesOrderDetailLayout({
     cancel: cancelOrder,
     complete: completeOrder,
     update: updateOrder,
+    delete: deleteOrder,
   } = useSalesOrderMutations(warehouse?.id || null);
 
   // Calculate completion percentage using utility
@@ -85,7 +90,7 @@ export default function SalesOrderDetailLayout({
     if (!order) return "in_progress";
     return getOrderDisplayStatus(
       order.status as SalesOrderStatus,
-      order.expected_delivery_date,
+      order.delivery_due_date,
     );
   }, [order]);
   const progressBarColor = getStatusConfig(displayStatus).color;
@@ -201,6 +206,51 @@ export default function SalesOrderDetailLayout({
     }
   };
 
+  const handleDelete = () => {
+    if (!order) return;
+    deleteOrder.mutate(order.id, {
+      onSuccess: () => {
+        toast.success("Sales order deleted successfully");
+        router.push(`/warehouse/${warehouse.slug}/sales-orders`);
+        setShowDeleteDialog(false);
+      },
+      onError: (error) => {
+        console.error("Error deleting sales order:", error);
+        toast.error("Failed to delete sales order");
+      },
+    });
+  };
+
+  const handleCreateInvoice = () => {
+    setShowInvoiceDialog(true);
+  };
+
+  const handleInvoiceFromMovements = (selectedIds: string[]) => {
+    if (!order || selectedIds.length === 0) return;
+
+    const params = new URLSearchParams({
+      order: order.sequence_number.toString(),
+      movements: selectedIds.join(","),
+    });
+
+    router.push(
+      `/warehouse/${warehouse.slug}/invoices/create/sales?${params.toString()}`,
+    );
+  };
+
+  const handleInvoiceFullOrder = () => {
+    if (!order) return;
+
+    const params = new URLSearchParams({
+      order: order.sequence_number.toString(),
+      full_order: "true",
+    });
+
+    router.push(
+      `/warehouse/${warehouse.slug}/invoices/create/sales?${params.toString()}`,
+    );
+  };
+
   // Loading state
   if (companyLoading || loading) {
     return <LoadingState message="Loading order..." />;
@@ -225,7 +275,9 @@ export default function SalesOrderDetailLayout({
         <div className="p-4">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1
+                className={`text-2xl font-bold ${order.status === "cancelled" ? "text-gray-400" : "text-gray-900"}`}
+              >
                 SO-{order.sequence_number}
               </h1>
               <SalesStatusBadge status={displayStatus} />
@@ -263,18 +315,19 @@ export default function SalesOrderDetailLayout({
         <ActionsFooter
           items={getSalesOrderDetailFooterItems(
             displayStatus,
+            order.has_outward || false,
             {
               onApprove: handleApprove,
               onCreateOutward: () =>
                 router.push(
                   `/warehouse/${warehouse.slug}/goods-outward/create?order=${order.sequence_number}`,
                 ),
-              onCreateInvoice: () => {},
+              onCreateInvoice: handleCreateInvoice,
               onComplete: () => setShowCompleteDialog(true),
               onShare: handleShare,
               onDownload: handleDownloadPDF,
               onCancel: () => setShowCancelDialog(true),
-              onDelete: () => {},
+              onDelete: () => setShowDeleteDialog(true),
             },
             { downloading },
           )}
@@ -283,10 +336,12 @@ export default function SalesOrderDetailLayout({
         {/* Cancel/Complete Dialogs */}
         {order && (
           <>
-            <CancelOrderDialog
+            <CancelDialog
               open={showCancelDialog}
               onOpenChange={setShowCancelDialog}
               onConfirm={handleCancel}
+              title="Cancel sales order"
+              message="Please provide a reason for cancelling this order. This action cannot be undone."
               loading={cancelOrder.isPending}
             />
 
@@ -304,6 +359,25 @@ export default function SalesOrderDetailLayout({
               orderType="SO"
               onConfirm={handleConfirmApprove}
               loading={updateOrder.isPending}
+            />
+
+            {showDeleteDialog && (
+              <DeleteDialog
+                open={showDeleteDialog}
+                onOpenChange={setShowDeleteDialog}
+                onConfirm={handleDelete}
+                title="Delete sales order"
+                message={`Are you sure you want to delete SO-${order.sequence_number}? This action cannot be undone.`}
+                loading={deleteOrder.isPending}
+              />
+            )}
+
+            <GoodsOutwardSelectionDialog
+              open={showInvoiceDialog}
+              onOpenChange={setShowInvoiceDialog}
+              orderNumber={order.sequence_number.toString()}
+              onInvoiceFromMovements={handleInvoiceFromMovements}
+              onInvoiceFullOrder={handleInvoiceFullOrder}
             />
           </>
         )}

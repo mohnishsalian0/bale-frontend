@@ -167,4 +167,46 @@ export const queryKeys = {
     active: () => ["invites", "active"] as const,
     byCode: (code: string) => ["invites", "code", code] as const,
   },
+
+  // Invoices
+  invoices: {
+    all: (filters?: Record<string, unknown>, page?: number) =>
+      ["invoices", filters, page] as const,
+    detail: (invoiceNumber: string) =>
+      ["invoices", "detail", invoiceNumber] as const,
+    byParty: (partyLedgerId: string, page?: number) =>
+      ["invoices", "party", partyLedgerId, page] as const,
+  },
+
+  // Payments
+  payments: {
+    all: (filters?: Record<string, unknown>, page?: number) =>
+      ["payments", filters, page] as const,
+    detail: (paymentNumber: string) =>
+      ["payments", "detail", paymentNumber] as const,
+    byParty: (partyLedgerId: string, page?: number) =>
+      ["payments", "party", partyLedgerId, page] as const,
+    byInvoice: (invoiceId: string) =>
+      ["payments", "invoice", invoiceId] as const,
+    outstandingInvoices: (
+      partyLedgerId: string,
+      invoiceType: "sales" | "purchase",
+    ) => ["payments", "outstanding", partyLedgerId, invoiceType] as const,
+    counterLedgers: () => ["payments", "counter-ledgers"] as const,
+  },
+
+  // Ledgers
+  ledgers: {
+    all: (filters?: Record<string, unknown>) => ["ledgers", filters] as const,
+  },
+
+  // Adjustment Notes
+  adjustmentNotes: {
+    all: (filters?: Record<string, unknown>, page?: number) =>
+      ["adjustment-notes", filters, page] as const,
+    detail: (adjustmentNumber: string) =>
+      ["adjustment-notes", "detail", adjustmentNumber] as const,
+    byInvoice: (invoiceId: string, page?: number) =>
+      ["adjustment-notes", "invoice", invoiceId, page] as const,
+  },
 } as const;

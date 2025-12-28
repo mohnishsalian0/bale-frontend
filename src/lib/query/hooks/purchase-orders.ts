@@ -18,6 +18,7 @@ import {
   completePurchaseOrder,
   updatePurchaseOrder,
   updatePurchaseOrderLineItems,
+  deletePurchaseOrder,
   type PurchaseOrderFilters,
   type CreatePurchaseOrderData,
   type CreatePurchaseOrderLineItem,
@@ -195,6 +196,16 @@ export function usePurchaseOrderMutations(warehouseId: string | null) {
     },
   });
 
+  const delete_ = useMutation({
+    mutationFn: (orderId: string) => deletePurchaseOrder(orderId),
+    onSuccess: () => {
+      // Invalidate all purchase order queries
+      queryClient.invalidateQueries({
+        queryKey: ["purchase-orders"],
+      });
+    },
+  });
+
   return {
     create,
     approve,
@@ -202,5 +213,6 @@ export function usePurchaseOrderMutations(warehouseId: string | null) {
     complete,
     update,
     updateLineItems,
+    delete: delete_,
   };
 }

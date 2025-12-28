@@ -177,7 +177,7 @@ export async function getGoodsInwards(
     .select(
       `
       *,
-      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, company_name),
+      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name),
 			from_warehouse:warehouses!from_warehouse_id(id, name),
       stock_units(
         product:products(${PRODUCT_LIST_VIEW_SELECT}),
@@ -249,7 +249,7 @@ export async function getGoodsOutwards(
     .select(
       `
       *,
-      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name),
+      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name),
 			from_warehouse:warehouses!to_warehouse_id(id, name),
       goods_outward_items(
         quantity_dispatched,
@@ -322,7 +322,7 @@ export async function getGoodsOutwardsBySalesOrder(
     .select(
       `
       *,
-      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name),
+      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name),
 			from_warehouse:warehouses!to_warehouse_id(id, name),
 			sales_order:sales_orders!inner(id, sequence_number),
       goods_outward_items(
@@ -374,7 +374,7 @@ export async function getGoodsInwardsByPurchaseOrder(
     .select(
       `
       *,
-      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, company_name),
+      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name),
 			from_warehouse:warehouses!from_warehouse_id(id, name),
 			purchase_order:purchase_orders!inner(id, sequence_number),
       stock_units(
@@ -418,8 +418,8 @@ export async function getGoodsInwardByNumber(
     .select(
       `
       *,
-      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, company_name, address_line1, address_line2, city, state, pin_code, country),
-      agent:partners!goods_inwards_agent_id_fkey(first_name, last_name, company_name),
+      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name, address_line1, address_line2, city, state, pin_code, country),
+      agent:partners!goods_inwards_agent_id_fkey(first_name, last_name, display_name, company_name),
       warehouse:warehouses!goods_inwards_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       from_warehouse:warehouses!goods_inwards_from_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       sales_order:sales_orders(sequence_number),
@@ -452,8 +452,8 @@ export async function getGoodsOutwardByNumber(
     .select(
       `
       *,
-      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name, address_line1, address_line2, city, state, pin_code, country),
-      agent:partners!goods_outwards_agent_id_fkey(first_name, last_name, company_name),
+      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name, address_line1, address_line2, city, state, pin_code, country),
+      agent:partners!goods_outwards_agent_id_fkey(first_name, last_name, display_name, company_name),
       warehouse:warehouses!goods_outwards_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       sales_order:sales_orders(sequence_number),
@@ -500,7 +500,7 @@ export async function getOutwardItemsByProduct(
       outward:goods_outwards(
         id, sequence_number, outward_date, outward_type,
         partner:partners!goods_outwards_partner_id_fkey(
-          id, first_name, last_name, company_name
+          id, first_name, last_name, display_name, company_name
         ),
         to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(
           id, name

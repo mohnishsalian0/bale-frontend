@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/collapsible";
 import { DatePicker } from "@/components/ui/date-picker";
 import { dateToISOString } from "@/lib/utils/date";
-import { InputWithIcon } from "@/components/ui/input-with-icon";
+import { InputWrapper } from "@/components/ui/input-wrapper";
 
 interface DetailsFormData {
   inwardDate: string;
@@ -35,7 +35,7 @@ export function InwardDetailsStep({ formData, onChange }: DetailsStepProps) {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto flex flex-col gap-5 py-4">
+    <div className="flex-1 overflow-y-auto flex flex-col gap-6 py-4">
       <div className="flex flex-col gap-2 px-4 py-2">
         {/* Inward Date */}
         <DatePicker
@@ -72,7 +72,7 @@ export function InwardDetailsStep({ formData, onChange }: DetailsStepProps) {
 
         <CollapsibleContent className="flex flex-col gap-4 pt-4">
           {/* Invoice Number */}
-          <InputWithIcon
+          <InputWrapper
             type="text"
             placeholder="Invoice number"
             value={formData.invoiceNumber}

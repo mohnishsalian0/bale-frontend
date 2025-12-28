@@ -4,6 +4,8 @@ import { IconCylinder, IconPackage, IconShirt } from "@tabler/icons-react";
 import type { ProductWithInventoryListView } from "@/types/products.types";
 import { getMeasuringUnitAbbreviation } from "./measuring-units";
 import { pluralizeStockType } from "./pluralize";
+import { formatAbsoluteDate } from "./date";
+import { StockUnit } from "@/types/stock-units.types";
 
 // Type for attribute objects (materials, colors, tags)
 interface ProductAttribute {
@@ -185,6 +187,45 @@ export function formatStockUnitNumber(
           : "SU"; // fallback to generic SU if type unknown
 
   return `${prefix}-${sequenceNumber}`;
+}
+
+/**
+ * Get formatted stock unit info string
+ * Format: Grade: {quality_grade} • Supplier #: {supplier_number} • Location: {warehouse_location}
+ */
+export function getStockUnitInfo(
+  stockUnit:
+    | Pick<
+        StockUnit,
+        | "quality_grade"
+        | "supplier_number"
+        | "warehouse_location"
+        | "manufacturing_date"
+      >
+    | null
+    | undefined,
+): string {
+  if (!stockUnit) return "";
+
+  const parts: string[] = [];
+
+  if (stockUnit.quality_grade) {
+    parts.push(`Grade: ${stockUnit.quality_grade}`);
+  }
+
+  if (stockUnit.supplier_number) {
+    parts.push(`Supplier #: ${stockUnit.supplier_number}`);
+  }
+
+  if (stockUnit.warehouse_location) {
+    parts.push(`Location: ${stockUnit.warehouse_location}`);
+  }
+
+  if (stockUnit.manufacturing_date) {
+    parts.push(`Mfg on: ${formatAbsoluteDate(stockUnit.manufacturing_date)}`);
+  }
+
+  return parts.join(" • ");
 }
 
 // ============================================================================

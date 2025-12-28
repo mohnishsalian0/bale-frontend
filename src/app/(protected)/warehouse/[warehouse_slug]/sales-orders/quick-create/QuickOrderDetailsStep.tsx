@@ -9,8 +9,9 @@ import {
   IconUpload,
 } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
-import { InputWithIcon } from "@/components/ui/input-with-icon";
+import { InputWrapper } from "@/components/ui/input-wrapper";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -24,18 +25,22 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
 import { DatePicker } from "@/components/ui/date-picker";
 import { dateToISOString } from "@/lib/utils/date";
 import { usePartners } from "@/lib/query/hooks/partners";
 import { PAYMENT_TERMS } from "@/types/database/enums";
+import type { DiscountType, TaxType } from "@/types/database/enums";
 
 export interface QuickOrderFormData {
   orderDate: string; // Same as outward date
   deliveryDate: string; // Same for both order and outward
   agentId: string;
-  paymentTerms: string;
+  taxType: TaxType;
   advanceAmount: string;
+  discountType: DiscountType;
   discount: string;
+  paymentTerms: string;
   transportDetails: string;
   notes: string;
   documentFile: File | null;
@@ -50,6 +55,7 @@ export function QuickOrderDetailsStep({
   formData,
   onChange,
 }: QuickOrderDetailsStepProps) {
+  const [showFinancialDetails, setShowFinancialDetails] = useState(true);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
   const { data: agents = [] } = usePartners({ partner_type: "agent" });
 
@@ -76,7 +82,7 @@ export function QuickOrderDetailsStep({
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Main Fields */}
-      <div className="flex flex-col gap-5 px-4 py-6">
+      <div className="flex flex-col gap-6 px-4 py-6">
         {/* Date Fields */}
         <div className="flex gap-3">
           {/* Order Date */}
@@ -134,6 +140,95 @@ export function QuickOrderDetailsStep({
         </Select>
       </div>
 
+      {/* Financial Details Section */}
+      <Collapsible
+        open={showFinancialDetails}
+        onOpenChange={setShowFinancialDetails}
+        className="border-t border-gray-200 px-4 py-5"
+      >
+        <CollapsibleTrigger
+          className={`flex items-center justify-between w-full ${showFinancialDetails ? "mb-5" : "mb-0"}`}
+        >
+          <h3 className="text-lg font-medium text-gray-900">
+            Financial Details
+          </h3>
+          <IconChevronDown
+            className={`size-6 text-gray-500 transition-transform ${showFinancialDetails ? "rotate-180" : "rotate-0"}`}
+          />
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <div className="flex flex-col gap-6">
+            {/* Tax Type */}
+            <div className="space-y-2">
+              <Label>Tax Type</Label>
+              <RadioGroup
+                value={formData.taxType}
+                onValueChange={(value) =>
+                  onChange({ taxType: value as TaxType })
+                }
+                name="tax-type"
+              >
+                <RadioGroupItem value="no_tax">No Tax</RadioGroupItem>
+                <RadioGroupItem value="gst">GST (CGST + SGST)</RadioGroupItem>
+                <RadioGroupItem value="igst">IGST</RadioGroupItem>
+              </RadioGroup>
+            </div>
+
+            {/* Advance Amount */}
+            <InputWrapper
+              type="number"
+              placeholder="Advance amount"
+              value={formData.advanceAmount}
+              onChange={(e) => onChange({ advanceAmount: e.target.value })}
+              icon={<IconCurrencyRupee />}
+              min="0"
+              step="0.01"
+            />
+
+            {/* Discount Type */}
+            <div className="space-y-2">
+              <Label>Discount Type</Label>
+              <RadioGroup
+                value={formData.discountType}
+                onValueChange={(value) =>
+                  onChange({ discountType: value as DiscountType })
+                }
+                name="discount-type"
+              >
+                <RadioGroupItem value="none">None</RadioGroupItem>
+                <RadioGroupItem value="percentage">Percentage</RadioGroupItem>
+                <RadioGroupItem value="flat_amount">Flat Amount</RadioGroupItem>
+              </RadioGroup>
+            </div>
+
+            {/* Discount Value */}
+            {formData.discountType !== "none" && (
+              <InputWrapper
+                type="number"
+                placeholder={
+                  formData.discountType === "percentage"
+                    ? "Discount percent"
+                    : "Discount amount"
+                }
+                value={formData.discount}
+                onChange={(e) => onChange({ discount: e.target.value })}
+                icon={
+                  formData.discountType === "percentage" ? (
+                    <IconPercentage />
+                  ) : (
+                    <IconCurrencyRupee />
+                  )
+                }
+                min="0"
+                max={formData.discountType === "percentage" ? "100" : undefined}
+                step={formData.discountType === "percentage" ? "1" : "0.01"}
+              />
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
       {/* Additional Details Section */}
       <Collapsible
         open={showAdditionalDetails}
@@ -152,7 +247,7 @@ export function QuickOrderDetailsStep({
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-6">
             {/* Payment Terms */}
             <div className="space-y-2">
               <Input
@@ -176,30 +271,8 @@ export function QuickOrderDetailsStep({
               </div>
             </div>
 
-            {/* Advance Amount */}
-            <InputWithIcon
-              type="number"
-              placeholder="Advance amount"
-              value={formData.advanceAmount}
-              onChange={(e) => onChange({ advanceAmount: e.target.value })}
-              icon={<IconCurrencyRupee />}
-              min="0"
-              step="0.01"
-            />
-
-            {/* Discount */}
-            <InputWithIcon
-              type="number"
-              placeholder="Discount percent"
-              value={formData.discount}
-              onChange={(e) => onChange({ discount: e.target.value })}
-              icon={<IconPercentage />}
-              min="0"
-              step="0.01"
-            />
-
             {/* Transport Details */}
-            <InputWithIcon
+            <InputWrapper
               type="text"
               placeholder="Transport details"
               value={formData.transportDetails}

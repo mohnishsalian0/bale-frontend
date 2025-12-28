@@ -91,7 +91,7 @@ export function PurchaseOrderInfiniteList({
                   : "Unknown";
                 const displayStatus = getOrderDisplayStatus(
                   order.status as PurchaseOrderStatus,
-                  order.expected_delivery_date,
+                  order.delivery_due_date,
                 );
 
                 return (
@@ -107,11 +107,11 @@ export function PurchaseOrderInfiniteList({
                         </p>
                         <PurchaseStatusBadge status={displayStatus} />
                       </div>
-                      <p className="text-sm text-gray-500 truncate mt-1">
-                        {supplierName} · {formatAbsoluteDate(order.created_at)}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-gray-500">
                         {getFullProductInfo(order.purchase_order_items)}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {supplierName} · {formatAbsoluteDate(order.created_at)}
                       </p>
                     </div>
 

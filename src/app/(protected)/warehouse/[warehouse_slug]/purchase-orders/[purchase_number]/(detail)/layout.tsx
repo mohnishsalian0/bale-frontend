@@ -22,12 +22,14 @@ import {
   usePurchaseOrderByNumber,
   usePurchaseOrderMutations,
 } from "@/lib/query/hooks/purchase-orders";
-import { CancelOrderDialog } from "./CancelOrderDialog";
+import { CancelDialog } from "@/components/layouts/cancel-dialog";
 import { CompleteOrderDialog } from "./CompleteOrderDialog";
 import { toast } from "sonner";
 import { ActionsFooter } from "@/components/layouts/actions-footer";
 import { getPurchaseOrderDetailFooterItems } from "@/lib/utils/context-menu-items";
 import { ApprovalDialog } from "@/components/layouts/approval-dialog";
+import { DeleteDialog } from "@/components/layouts/delete-dialog";
+import { GoodsInwardSelectionDialog } from "../GoodsInwardSelectionDialog";
 
 interface LayoutParams {
   params: Promise<{
@@ -50,6 +52,8 @@ export default function PurchaseOrderDetailLayout({
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
 
   // Fetch purchase order using TanStack Query hooks
   const {
@@ -63,6 +67,7 @@ export default function PurchaseOrderDetailLayout({
     cancel: cancelOrder,
     complete: completeOrder,
     update: updateOrder,
+    delete: deleteOrder,
   } = usePurchaseOrderMutations(warehouse?.id || null);
 
   // Calculate completion percentage using utility
@@ -76,7 +81,7 @@ export default function PurchaseOrderDetailLayout({
     if (!order) return "in_progress";
     return getOrderDisplayStatus(
       order.status as PurchaseOrderStatus,
-      order.expected_delivery_date,
+      order.delivery_due_date,
     );
   }, [order]);
   const progressBarColor = getStatusConfig(displayStatus).color;
@@ -163,6 +168,51 @@ export default function PurchaseOrderDetailLayout({
     }
   };
 
+  const handleDelete = () => {
+    if (!order) return;
+    deleteOrder.mutate(order.id, {
+      onSuccess: () => {
+        toast.success("Purchase order deleted successfully");
+        router.push(`/warehouse/${warehouse.slug}/purchase-orders`);
+        setShowDeleteDialog(false);
+      },
+      onError: (error) => {
+        console.error("Error deleting purchase order:", error);
+        toast.error("Failed to delete purchase order");
+      },
+    });
+  };
+
+  const handleCreateInvoice = () => {
+    setShowInvoiceDialog(true);
+  };
+
+  const handleInvoiceFromMovements = (selectedIds: string[]) => {
+    if (!order || selectedIds.length === 0) return;
+
+    const params = new URLSearchParams({
+      order: order.sequence_number.toString(),
+      movements: selectedIds.join(","),
+    });
+
+    router.push(
+      `/warehouse/${warehouse.slug}/invoices/create/purchase?${params.toString()}`,
+    );
+  };
+
+  const handleInvoiceFullOrder = () => {
+    if (!order) return;
+
+    const params = new URLSearchParams({
+      order: order.sequence_number.toString(),
+      full_order: "true",
+    });
+
+    router.push(
+      `/warehouse/${warehouse.slug}/invoices/create/purchase?${params.toString()}`,
+    );
+  };
+
   // Loading state
   if (loading) {
     return <LoadingState message="Loading order..." />;
@@ -187,7 +237,9 @@ export default function PurchaseOrderDetailLayout({
         <div className="p-4">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1
+                className={`text-2xl font-bold ${order.status === "cancelled" ? "text-gray-400" : "text-gray-900"}`}
+              >
                 PO-{order.sequence_number}
               </h1>
               <PurchaseStatusBadge status={displayStatus} />
@@ -228,28 +280,34 @@ export default function PurchaseOrderDetailLayout({
 
         {/* Bottom Action Bar */}
         <ActionsFooter
-          items={getPurchaseOrderDetailFooterItems(displayStatus, {
-            onApprove: handleApprove,
-            onCreateInward: () =>
-              router.push(
-                `/warehouse/${warehouse.slug}/goods-inward/create?order=${order.sequence_number}`,
-              ),
-            onCreateInvoice: () => {},
-            onComplete: () => setShowCompleteDialog(true),
-            onShare: handleShare,
-            onDownload: () => {},
-            onCancel: () => setShowCancelDialog(true),
-            onDelete: () => {},
-          })}
+          items={getPurchaseOrderDetailFooterItems(
+            displayStatus,
+            order.has_inward || false,
+            {
+              onApprove: handleApprove,
+              onCreateInward: () =>
+                router.push(
+                  `/warehouse/${warehouse.slug}/goods-inward/create?order=${order.sequence_number}`,
+                ),
+              onCreateInvoice: handleCreateInvoice,
+              onComplete: () => setShowCompleteDialog(true),
+              onShare: handleShare,
+              onDownload: () => {},
+              onCancel: () => setShowCancelDialog(true),
+              onDelete: () => setShowDeleteDialog(true),
+            },
+          )}
         />
 
         {/* Cancel/Complete Dialogs */}
         {order && (
           <>
-            <CancelOrderDialog
+            <CancelDialog
               open={showCancelDialog}
               onOpenChange={setShowCancelDialog}
               onConfirm={handleCancel}
+              title="Cancel purchase order"
+              message="Please provide a reason for cancelling this order. This action cannot be undone."
               loading={cancelOrder.isPending}
             />
 
@@ -267,6 +325,25 @@ export default function PurchaseOrderDetailLayout({
               orderType="PO"
               onConfirm={handleConfirmApprove}
               loading={updateOrder.isPending}
+            />
+
+            {showDeleteDialog && (
+              <DeleteDialog
+                open={showDeleteDialog}
+                onOpenChange={setShowDeleteDialog}
+                onConfirm={handleDelete}
+                title="Delete purchase order"
+                message={`Are you sure you want to delete PO-${order.sequence_number}? This action cannot be undone.`}
+                loading={deleteOrder.isPending}
+              />
+            )}
+
+            <GoodsInwardSelectionDialog
+              open={showInvoiceDialog}
+              onOpenChange={setShowInvoiceDialog}
+              orderNumber={order.sequence_number.toString()}
+              onInvoiceFromMovements={handleInvoiceFromMovements}
+              onInvoiceFullOrder={handleInvoiceFullOrder}
             />
           </>
         )}

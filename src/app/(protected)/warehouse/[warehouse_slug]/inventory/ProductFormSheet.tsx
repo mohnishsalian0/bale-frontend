@@ -12,7 +12,6 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -35,7 +34,8 @@ import type {
   ProductDetailView,
   ProductUpsertData,
 } from "@/types/products.types";
-import type { StockType, MeasuringUnit } from "@/types/database/enums";
+import type { StockType, MeasuringUnit, TaxType } from "@/types/database/enums";
+import { GST_RATES } from "@/types/database/enums";
 import { useSession } from "@/contexts/session-context";
 import {
   useProductMutations,
@@ -43,7 +43,7 @@ import {
   useProductImageMutations,
   useProductAttributes,
 } from "@/lib/query/hooks/products";
-import { InputWithIcon } from "@/components/ui/input-with-icon";
+import { InputWrapper } from "@/components/ui/input-wrapper";
 import { productSchema, ProductFormData } from "@/lib/validations/product";
 import IconGSM from "@/components/icons/IconGSM";
 import IconThreadCount from "@/components/icons/IconThreadCount";
@@ -99,21 +99,25 @@ export function ProductFormSheet({
       sellingPrice: productToEdit?.selling_price_per_unit?.toString() || "",
       minStockAlert: productToEdit?.min_stock_alert ?? false,
       minStockThreshold: productToEdit?.min_stock_threshold?.toString() || "",
+      taxType: (productToEdit?.tax_type as TaxType) || "gst",
+      gstRate: productToEdit?.gst_rate ?? 5,
       hsnCode: productToEdit?.hsn_code || "",
       notes: productToEdit?.notes || "",
     },
   });
 
-  // Watch stockType and measuringUnit for conditional rendering
+  // Watch stockType, measuringUnit, taxType and minStockAlert for conditional rendering
   const stockType = useWatch({ control, name: "stockType" });
   const measuringUnit = useWatch({ control, name: "measuringUnit" });
   const minStockAlert = useWatch({ control, name: "minStockAlert" });
+  const taxType = useWatch({ control, name: "taxType" });
 
   // Image handling state (not part of form validation)
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
   const [showFeaturesImages, setShowFeaturesImages] = useState(true);
+  const [showPricingTax, setShowPricingTax] = useState(true);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [originalImages, setOriginalImages] = useState<string[]>([]); // Track original images to detect removals
@@ -262,6 +266,8 @@ export function ProductFormSheet({
         selling_price_per_unit: data.sellingPrice || null,
         min_stock_alert: data.minStockAlert,
         min_stock_threshold: data.minStockThreshold || null,
+        tax_type: data.taxType,
+        gst_rate: data.taxType === "gst" ? data.gstRate : null,
         hsn_code: data.hsnCode || null,
         notes: data.notes || null,
       };
@@ -369,19 +375,16 @@ export function ProductFormSheet({
         >
           <div className="flex-1 overflow-y-auto">
             {/* Basic Info */}
-            <div className="flex flex-col gap-5 px-4 py-5">
+            <div className="flex flex-col gap-6 px-4 py-5">
               {/* Product Name */}
-              <div className="flex flex-col gap-2">
-                <InputWithIcon
-                  label="Product name"
-                  placeholder="Enter a name"
-                  {...register("name")}
-                  required
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-700">{errors.name.message}</p>
-                )}
-              </div>
+              <InputWrapper
+                label="Product name"
+                placeholder="Enter a name"
+                {...register("name")}
+                required
+                isError={!!errors.name}
+                errorText={errors.name?.message}
+              />
 
               {/* Stock Type */}
               <div className="flex flex-col gap-2">
@@ -476,20 +479,15 @@ export function ProductFormSheet({
 
               {/* Minimum Stock Threshold */}
               {minStockAlert && (
-                <div className="flex flex-col gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Minimum stock threshold"
-                    {...register("minStockThreshold")}
-                    step="1"
-                    min="0"
-                  />
-                  {errors.minStockThreshold && (
-                    <p className="text-sm text-red-700">
-                      {errors.minStockThreshold.message}
-                    </p>
-                  )}
-                </div>
+                <InputWrapper
+                  type="number"
+                  placeholder="Minimum stock threshold"
+                  {...register("minStockThreshold")}
+                  step="1"
+                  min="0"
+                  isError={!!errors.minStockThreshold}
+                  errorText={errors.minStockThreshold?.message}
+                />
               )}
             </div>
 
@@ -656,38 +654,175 @@ export function ProductFormSheet({
 
                   {/* GSM & Thread Count */}
                   <div className="flex gap-4">
-                    <div className="flex-1 flex flex-col gap-2">
-                      <InputWithIcon
-                        type="number"
-                        placeholder="GSM"
-                        icon={<IconGSM />}
-                        {...register("gsm")}
-                        step="1"
-                        min="50"
-                        max="500"
-                      />
-                      {errors.gsm && (
-                        <p className="text-sm text-red-700">
-                          {errors.gsm.message}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex-1 flex flex-col gap-2">
-                      <InputWithIcon
-                        type="number"
-                        placeholder="Thread count"
-                        icon={<IconThreadCount />}
-                        {...register("threadCount")}
-                        step="1"
-                        min="1"
-                      />
-                      {errors.threadCount && (
-                        <p className="text-sm text-red-700">
-                          {errors.threadCount.message}
-                        </p>
-                      )}
-                    </div>
+                    <InputWrapper
+                      type="number"
+                      placeholder="GSM"
+                      icon={<IconGSM />}
+                      {...register("gsm")}
+                      step="1"
+                      min="50"
+                      max="500"
+                      className="flex-1"
+                      isError={!!errors.gsm}
+                      errorText={errors.gsm?.message}
+                    />
+                    <InputWrapper
+                      type="number"
+                      placeholder="Thread count"
+                      icon={<IconThreadCount />}
+                      {...register("threadCount")}
+                      step="1"
+                      min="1"
+                      className="flex-1"
+                      isError={!!errors.threadCount}
+                      errorText={errors.threadCount?.message}
+                    />
                   </div>
+
+                  {/* Show on Catalog */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-col">
+                      <Label>Show on catalog</Label>
+                      <span className="text-xs font-light text-gray-500 mt-1">
+                        Display this product on your public sales catalog
+                      </span>
+                    </div>
+                    <Controller
+                      name="showOnCatalog"
+                      control={control}
+                      render={({ field }) => (
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="mt-2"
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Pricing & Tax Section */}
+            <Collapsible
+              open={showPricingTax}
+              onOpenChange={setShowPricingTax}
+              className="border-t border-gray-200 px-4 py-5"
+            >
+              <CollapsibleTrigger
+                className={`flex items-center justify-between w-full ${showPricingTax ? "mb-5" : "mb-0"}`}
+              >
+                <h3 className="text-lg font-medium text-gray-900">
+                  Pricing & Tax
+                </h3>
+                <IconChevronDown
+                  className={`size-6 text-gray-500 transition-transform ${showPricingTax ? "rotate-180" : "rotate-0"}`}
+                />
+              </CollapsibleTrigger>
+
+              <CollapsibleContent>
+                <div className="flex flex-col gap-6">
+                  {/* Purchase & Sale Price */}
+                  <div className="flex gap-4">
+                    <InputWrapper
+                      type="number"
+                      placeholder="Purchase price"
+                      icon={<IconCurrencyRupee />}
+                      {...register("costPrice")}
+                      className="flex-1"
+                      step="0.01"
+                      min="0"
+                      isError={!!errors.costPrice}
+                      errorText={errors.costPrice?.message}
+                    />
+                    <InputWrapper
+                      type="number"
+                      placeholder="Sale price"
+                      icon={<IconCurrencyRupee />}
+                      {...register("sellingPrice")}
+                      className="flex-1"
+                      step="0.01"
+                      min="0"
+                      isError={!!errors.sellingPrice}
+                      errorText={errors.sellingPrice?.message}
+                    />
+                  </div>
+
+                  {/* HSN Code */}
+                  <InputWrapper
+                    placeholder="HSN code"
+                    {...register("hsnCode")}
+                    isError={!!errors.hsnCode}
+                    errorText={errors.hsnCode?.message}
+                  />
+
+                  {/* Tax Type */}
+                  <div className="flex flex-col gap-2">
+                    <Label>Tax Type</Label>
+                    <Controller
+                      name="taxType"
+                      control={control}
+                      render={({ field }) => (
+                        <RadioGroup
+                          value={field.value as string}
+                          onValueChange={(value) => {
+                            const taxType = value as TaxType;
+                            field.onChange(taxType);
+                            // Reset GST rate if switching to no_tax
+                            if (taxType === "no_tax") {
+                              setValue("gstRate", null);
+                            } else if (taxType === "gst" && !taxType) {
+                              // Set default GST rate when switching to GST
+                              setValue("gstRate", 5);
+                            }
+                          }}
+                          name="tax-type"
+                        >
+                          <RadioGroupItem value="no_tax">No Tax</RadioGroupItem>
+                          <RadioGroupItem value="gst">GST</RadioGroupItem>
+                        </RadioGroup>
+                      )}
+                    />
+                    {errors.taxType && (
+                      <p className="text-sm text-red-700">
+                        {errors.taxType.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* GST Rate - Only show when tax type is GST */}
+                  {taxType === "gst" && (
+                    <div className="flex flex-col gap-2">
+                      <Label required>GST Rate</Label>
+                      <Controller
+                        name="gstRate"
+                        control={control}
+                        render={({ field }) => (
+                          <RadioGroup
+                            value={field.value?.toString() || ""}
+                            onValueChange={(value) =>
+                              field.onChange(parseFloat(value))
+                            }
+                            name="gst-rate"
+                          >
+                            {GST_RATES.map((rate) => (
+                              <RadioGroupItem
+                                key={rate}
+                                value={rate.toString()}
+                              >
+                                {rate}%
+                              </RadioGroupItem>
+                            ))}
+                          </RadioGroup>
+                        )}
+                      />
+                      {errors.gstRate && (
+                        <p className="text-sm text-red-700">
+                          {errors.gstRate.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </CollapsibleContent>
             </Collapsible>
@@ -711,73 +846,6 @@ export function ProductFormSheet({
 
               <CollapsibleContent>
                 <div className="flex flex-col gap-6">
-                  {/* Show on Catalog */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex flex-col">
-                      <Label>Show on catalog</Label>
-                      <span className="text-xs font-light text-gray-500 mt-1">
-                        Display this product on your public sales catalog
-                      </span>
-                    </div>
-                    <Controller
-                      name="showOnCatalog"
-                      control={control}
-                      render={({ field }) => (
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          className="mt-2"
-                        />
-                      )}
-                    />
-                  </div>
-
-                  {/* Purchase & Sale Price */}
-                  <div className="flex gap-4">
-                    <div className="flex-1 flex flex-col gap-2">
-                      <InputWithIcon
-                        type="number"
-                        placeholder="Purchase price"
-                        icon={<IconCurrencyRupee />}
-                        {...register("costPrice")}
-                        className="flex-1"
-                        step="0.01"
-                        min="0"
-                      />
-                      {errors.costPrice && (
-                        <p className="text-sm text-red-700">
-                          {errors.costPrice.message}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex-1 flex flex-col gap-2">
-                      <InputWithIcon
-                        type="number"
-                        placeholder="Sale price"
-                        icon={<IconCurrencyRupee />}
-                        {...register("sellingPrice")}
-                        className="flex-1"
-                        step="0.01"
-                        min="0"
-                      />
-                      {errors.sellingPrice && (
-                        <p className="text-sm text-red-700">
-                          {errors.sellingPrice.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* HSN Code */}
-                  <div className="flex flex-col gap-2">
-                    <Input placeholder="HSN code" {...register("hsnCode")} />
-                    {errors.hsnCode && (
-                      <p className="text-sm text-red-700">
-                        {errors.hsnCode.message}
-                      </p>
-                    )}
-                  </div>
-
                   {/* Notes */}
                   <div className="flex flex-col gap-2">
                     <Textarea

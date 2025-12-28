@@ -107,7 +107,7 @@ export default function OrderConfirmationPage() {
   // Compute display status (includes 'overdue' logic) using utility
   const displayStatus = getOrderDisplayStatus(
     order.status as SalesOrderStatus,
-    order.expected_delivery_date,
+    order.delivery_due_date,
   );
 
   const showProgressBar =

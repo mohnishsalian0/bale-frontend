@@ -27,9 +27,13 @@ export const PRODUCT_LIST_VIEW_SELECT = `
 	is_active,
 	stock_type,
 	measuring_unit,
+	cost_price_per_unit,
+	selling_price_per_unit,
 	product_images,
   min_stock_alert,
   min_stock_threshold,
+	tax_type,
+	gst_rate,
 	attributes:product_attributes!inner(id, name, group_name, color_hex)
 `;
 
@@ -66,9 +70,13 @@ export type ProductListViewRaw = Pick<
   | "is_active"
   | "stock_type"
   | "measuring_unit"
+  | "cost_price_per_unit"
+  | "selling_price_per_unit"
   | "product_images"
   | "min_stock_alert"
   | "min_stock_threshold"
+  | "tax_type"
+  | "gst_rate"
 > &
   ProductAttributeAssignmentsRaw;
 
@@ -749,9 +757,13 @@ type LowStockProductRaw = {
   is_active: boolean;
   stock_type: string;
   measuring_unit: string | null;
+  cost_price_per_unit: number | null;
+  selling_price_per_unit: number | null;
   product_images: string[] | null;
   min_stock_alert: boolean;
   min_stock_threshold: number | null;
+  tax_type: string;
+  gst_rate: number | null;
   inventory: {
     in_stock_units: number;
     in_stock_quantity: number;
@@ -786,8 +798,12 @@ function transformLowStockProduct(
     is_active: raw.is_active,
     stock_type: raw.stock_type,
     measuring_unit: raw.measuring_unit,
+    cost_price_per_unit: raw.cost_price_per_unit,
+    selling_price_per_unit: raw.selling_price_per_unit,
     product_images: raw.product_images,
     min_stock_alert: raw.min_stock_alert,
+    tax_type: raw.tax_type,
+    gst_rate: raw.gst_rate,
     min_stock_threshold: raw.min_stock_threshold,
     materials,
     colors,

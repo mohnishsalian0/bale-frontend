@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { IconPhoto } from "@tabler/icons-react";
+import { IconBox } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { StockStatusBadge } from "@/components/ui/stock-status-badge";
 import { formatAbsoluteDate } from "@/lib/utils/date";
@@ -86,7 +86,7 @@ export function StockUnitListStep({
     return (
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-200 shrink-0">
+        <div className="flex items-center gap-3 px-4 py-4 shrink-0">
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 truncate">
               Select stock unit
@@ -116,7 +116,7 @@ export function StockUnitListStep({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-200 shrink-0">
+      <div className="flex items-center gap-3 px-4 py-4 shrink-0">
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-semibold text-gray-900 truncate">
             Select stock unit
@@ -129,8 +129,8 @@ export function StockUnitListStep({
       <div className="flex-1 overflow-y-auto">
         {groupedUnits.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4">
-            <IconPhoto className="size-12 text-gray-400 mb-3" />
-            <h3 className="text-lg font-medium text-gray-900 mb-1">
+            <IconBox className="size-12 text-gray-500 mb-3" />
+            <h3 className="text-lg font-medium text-gray-700 mb-1">
               No stock units found
             </h3>
             <p className="text-sm text-gray-500 text-center">

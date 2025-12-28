@@ -37,7 +37,7 @@ export function TransportEditSheet({
   const handleSave = () => {
     onSave(
       {
-        expected_delivery_date: expectedDeliveryDate
+        delivery_due_date: expectedDeliveryDate
           ? expectedDeliveryDate.toISOString()
           : null,
       },

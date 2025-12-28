@@ -3,6 +3,8 @@
  * Type definitions for database enum fields
  */
 
+import type { Database } from "./supabase";
+
 export type UserRole = "admin" | "staff";
 export const USER_ROLES = ["admin", "staff"] as const;
 
@@ -153,3 +155,93 @@ export function isValidSource(value: string): value is Source {
     "email",
   ].includes(value);
 }
+
+// =====================================================
+// ACCOUNTING/INVOICE ENUMS
+// =====================================================
+
+/**
+ * Invoice type (sales or purchase)
+ */
+export type InvoiceType = Database["public"]["Enums"]["invoice_type_enum"];
+export const INVOICE_TYPES: readonly InvoiceType[] = [
+  "sales",
+  "purchase",
+] as const;
+
+/**
+ * Invoice tax type (determines how GST is split)
+ * - no_tax: No tax applied on entire invoice
+ * - gst: Tax split into CGST + SGST (same state)
+ * - igst: Tax applied as IGST (different state)
+ */
+export type InvoiceTaxType = Database["public"]["Enums"]["tax_type_enum"];
+export const INVOICE_TAX_TYPES: readonly InvoiceTaxType[] = [
+  "no_tax",
+  "gst",
+  "igst",
+] as const;
+
+/**
+ * Product-level tax type
+ * - no_tax: Product has no GST
+ * - gst: Product has GST (rate stored in gst_rate field)
+ */
+export type TaxType = Database["public"]["Enums"]["tax_type_enum"];
+export const TAX_TYPES: readonly TaxType[] = ["no_tax", "gst"] as const;
+
+/**
+ * GST Rate percentages
+ * Common GST rates in India
+ */
+export type GSTRate = 0 | 5 | 12 | 18 | 28;
+export const GST_RATES = [0, 5, 12, 18, 28] as const;
+
+/**
+ * Adjustment note type
+ */
+export type AdjustmentType =
+  Database["public"]["Enums"]["adjustment_type_enum"];
+export const ADJUSTMENT_TYPES: readonly AdjustmentType[] = [
+  "credit",
+  "debit",
+] as const;
+
+/**
+ * Payment voucher type
+ */
+export type VoucherType = Database["public"]["Enums"]["voucher_type_enum"];
+export const VOUCHER_TYPES: readonly VoucherType[] = [
+  "payment",
+  "receipt",
+] as const;
+
+/**
+ * Payment mode
+ */
+export type PaymentMode = Database["public"]["Enums"]["payment_mode_enum"];
+export const PAYMENT_MODES: readonly PaymentMode[] = [
+  "cash",
+  "cheque",
+  "neft",
+  "rtgs",
+  "upi",
+  "card",
+  "other",
+] as const;
+
+/**
+ * Payment allocation type
+ */
+export type AllocationType =
+  Database["public"]["Enums"]["allocation_type_enum"];
+export const ALLOCATION_TYPES: readonly AllocationType[] = [
+  "against_ref",
+  "advance",
+] as const;
+
+/**
+ * Invoice status (computed based on outstanding amount, stored in database as VARCHAR)
+ */
+export type InvoiceStatus = "open" | "partially_paid" | "settled" | "cancelled";
+export const INVOICE_STATUSES = ["open", "partially_paid", "settled"] as const;

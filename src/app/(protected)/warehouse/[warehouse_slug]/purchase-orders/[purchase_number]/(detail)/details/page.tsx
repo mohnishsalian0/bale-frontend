@@ -38,7 +38,6 @@ import { usePurchaseOrderByNumber } from "@/lib/query/hooks/purchase-orders";
 import { getStatusConfig } from "@/components/ui/purchase-status-badge";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
-import { calculateOrderFinancials } from "@/lib/utils/financial";
 import { usePurchaseOrderMutations } from "@/lib/query/hooks/purchase-orders";
 import { toast } from "sonner";
 
@@ -102,19 +101,20 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
     );
   };
 
-  // Calculate financials
+  // Get financials from database-calculated values
   const financials = useMemo(() => {
     if (!order) return null;
     const itemTotal = order.purchase_order_items.reduce(
       (sum, item) => sum + (item.line_total || 0),
       0,
     );
-    return calculateOrderFinancials(
-      itemTotal,
-      order.discount_type as DiscountType,
-      order.discount_value || 0,
-      order.gst_rate || 10,
-    );
+    return {
+      subtotal: itemTotal,
+      discountAmount: order.discount_amount || 0,
+      afterDiscount: itemTotal - (order.discount_amount || 0),
+      gstAmount: order.gst_amount || 0,
+      finalTotal: order.total_amount || 0,
+    };
   }, [order]);
 
   // Compute display status (includes 'overdue' logic) using utility
@@ -122,7 +122,7 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
     if (!order) return "in_progress";
     return getOrderDisplayStatus(
       order.status as PurchaseOrderStatus,
-      order.expected_delivery_date,
+      order.delivery_due_date,
     );
   }, [order]);
 
@@ -149,7 +149,7 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
       <div className="flex flex-col gap-3 p-4">
         {/* Line Items Section */}
         <Section
-          title={`${order.purchase_order_items.length} items at ₹${formatCurrency(financials?.totalAmount || 0)}`}
+          title={`${order.purchase_order_items.length} items at ₹${formatCurrency(financials?.finalTotal || 0)}`}
           subtitle="Line items"
           onEdit={
             isEditable
@@ -183,20 +183,10 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
                     >
                       {item.product?.name || "Unknown Product"}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-gray-500">
                       {item.required_quantity}{" "}
                       {getMeasuringUnitAbbreviation(
                         item.product?.measuring_unit as MeasuringUnit,
-                      )}
-                      {order.status !== "approval_pending" && (
-                        <>
-                          {" "}
-                          ({item.received_quantity || 0}{" "}
-                          {getMeasuringUnitAbbreviation(
-                            item.product?.measuring_unit as MeasuringUnit,
-                          )}{" "}
-                          received)
-                        </>
                       )}
                     </p>
                     {/* Progress bar */}
@@ -240,11 +230,11 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
                 <div className="flex justify-between text-sm text-gray-700">
                   <span>Item total</span>
                   <span className="font-semibold">
-                    ₹{formatCurrency(financials.itemTotal)}
+                    ₹{formatCurrency(financials.subtotal)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-700">
-                  <span>GST ({order.gst_rate}%)</span>
+                  <span>GST</span>
                   <span className="font-semibold">
                     ₹{formatCurrency(financials.gstAmount)}
                   </span>
@@ -252,7 +242,7 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
                 <div className="flex justify-between font-semibold text-gray-700 pt-2 border-t">
                   <span>Total</span>
                   <span className="font-semibold">
-                    ₹{formatCurrency(financials.totalAmount)}
+                    ₹{formatCurrency(financials.finalTotal)}
                   </span>
                 </div>
               </div>
@@ -364,11 +354,11 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
                 {formatAbsoluteDate(order.order_date)}
               </span>
             </div>
-            {order.expected_delivery_date && (
+            {order.delivery_due_date && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-700">Expected delivery</span>
                 <span className="font-semibold text-gray-700">
-                  {formatAbsoluteDate(order.expected_delivery_date)}
+                  {formatAbsoluteDate(order.delivery_due_date)}
                 </span>
               </div>
             )}
@@ -470,7 +460,7 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
         onOpenChange={setShowTransportEdit}
         onSave={handleUpdate}
         isPending={updateMutation.isPending}
-        currentExpectedDeliveryDate={order.expected_delivery_date}
+        currentExpectedDeliveryDate={order.delivery_due_date}
       />
 
       <NotesEditSheet

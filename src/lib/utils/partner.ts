@@ -6,18 +6,15 @@ type Partner = Tables<"partners">;
 /**
  * Partial partner with only the fields needed for name formatting
  */
-export type PartnerNameFields = Pick<
-  Partner,
-  "first_name" | "last_name" | "company_name"
->;
+export type PartnerNameFields = Pick<Partner, "display_name">;
 
 /**
  * Get formatted name for a partner (customer/vendor/agent)
- * Returns company name if available, otherwise first name + last name
+ * Uses the computed display_name field from database
  */
 export function getPartnerName(partner: PartnerNameFields | null): string {
   if (!partner) return "Unknown Partner";
-  return partner.company_name || `${partner.first_name} ${partner.last_name}`;
+  return partner.display_name || "Unknown Partner";
 }
 
 /**
@@ -29,8 +26,8 @@ type PartnerInfoFields = Pick<
 >;
 
 /**
- * Get formatted name for a partner (customer/vendor/agent)
- * Returns company name if available, otherwise first name + last name
+ * Get formatted info for a partner (customer/vendor/agent)
+ * Displays: Type • Contact Name • Phone
  */
 export function getPartnerInfo(partner: PartnerInfoFields | null): string {
   let partnerInfo: string = "";
@@ -40,18 +37,16 @@ export function getPartnerInfo(partner: PartnerInfoFields | null): string {
     partnerInfo += `${type[0].toUpperCase()}${partner.partner_type.slice(1)}`;
   }
 
-  if (partner?.first_name) {
+  // Build contact person name (both fields optional)
+  const contactPerson = [partner?.first_name, partner?.last_name]
+    .filter(Boolean)
+    .join(" ");
+
+  if (contactPerson) {
     if (partnerInfo) {
       partnerInfo += " • ";
     }
-    partnerInfo += `${partner.first_name}`;
-  }
-
-  if (partner?.last_name) {
-    if (partnerInfo) {
-      partnerInfo += " ";
-    }
-    partnerInfo += `${partner.last_name}`;
+    partnerInfo += contactPerson;
   }
 
   if (partner?.phone_number) {

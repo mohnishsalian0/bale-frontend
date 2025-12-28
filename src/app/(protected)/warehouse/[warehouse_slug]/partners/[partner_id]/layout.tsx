@@ -204,7 +204,7 @@ export default function PartnerDetailLayout({
             (() => {
               const displayStatus = getOrderDisplayStatus(
                 pendingOrder.status as SalesOrderStatus,
-                pendingOrder.expected_delivery_date,
+                pendingOrder.delivery_due_date,
               );
               const completionPercentage = calculateCompletionPercentage(
                 pendingOrder.sales_order_items,

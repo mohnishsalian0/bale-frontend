@@ -94,9 +94,9 @@ export function PartnerSelectionStep({
       if (b.id === selectedPartnerId) return 1;
 
       // Sort by company name if exists, otherwise by first name
-      const aName = a.company_name || a.first_name;
-      const bName = b.company_name || b.first_name;
-      return aName.localeCompare(bName);
+      const aName = a.company_name || a.first_name || "";
+      const bName = b.company_name || b.first_name || "";
+      return (aName || "").localeCompare(bName || "");
     });
 
     return filtered;
@@ -188,7 +188,7 @@ export function PartnerSelectionStep({
                         </p>
                         <p
                           title={partnerInfo}
-                          className="text-xs text-gray-500 truncate mt-1"
+                          className="text-sm text-gray-500 truncate"
                         >
                           {partnerInfo}
                         </p>

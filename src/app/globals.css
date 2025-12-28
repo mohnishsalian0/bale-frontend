@@ -51,7 +51,8 @@
   --font-heading: "Literata", "Georgia", "Times New Roman", serif;
 
   /* Custom line heights */
-  --text-sm--line-height: calc(1.5 / 0.875); /* 21px instead of 20px */
+  --text-sm--line-height: calc(1.5 / 0.875); /* 24px instead of 20px */
+  --text-xs--line-height: calc(1.5 / 0.9); /* 20px */
 
   /* Shadows */
   --shadow-gray-md: 0 4px 0 0 var(--color-gray-300);
@@ -65,6 +66,8 @@
   --shadow-dark-primary-md: 0 4px 0 0 var(--color-primary-800);
   --shadow-dark-primary-sm: 0 2px 0 0 var(--color-primary-800);
   --shadow-xs-reverse: 0 -1px -1px rgb(0 0 0 / 0.05);
+  --shadow-red-md: 0 4px 0 0 var(--color-red-400);
+  --shadow-red-sm: 0 2px 0 0 var(--color-red-400);
 }
 
 :root {

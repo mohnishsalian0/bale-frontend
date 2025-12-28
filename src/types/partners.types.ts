@@ -2,6 +2,8 @@ import type { Tables, TablesInsert, TablesUpdate } from "./database/supabase";
 
 type Partner = Tables<"partners">;
 type PartnerOrderAggregate = Tables<"partner_order_aggregates">;
+type PartnerCreditAggregate = Tables<"partner_credit_aggregates">;
+type Ledger = Tables<"ledgers">;
 
 // ============================================================================
 // FILTERS
@@ -20,22 +22,28 @@ export interface PartnerFilters extends Record<string, unknown> {
 
 /**
  * Partner with minimal details for list views
- * Used in: partners list page
+ * Used in: partners list page, partner selection in invoices/payments
  */
-export type PartnerListView = Pick<
-  Partner,
-  | "id"
-  | "first_name"
-  | "last_name"
-  | "company_name"
-  | "partner_type"
-  | "is_active"
-  | "phone_number"
-  | "email"
-  | "city"
-  | "state"
-  | "image_url"
->;
+export interface PartnerListView
+  extends Pick<
+    Partner,
+    | "id"
+    | "first_name"
+    | "last_name"
+    | "company_name"
+    | "display_name"
+    | "partner_type"
+    | "is_active"
+    | "phone_number"
+    | "email"
+    | "city"
+    | "state"
+    | "image_url"
+    | "credit_limit_enabled"
+    | "credit_limit"
+  > {
+  ledger: Pick<Ledger, "id" | "name">;
+}
 
 /**
  * Partner with all details for detail views
@@ -57,6 +65,13 @@ export interface PartnerWithOrderStatsListView extends PartnerListView {
     | "total_orders"
     | "lifetime_order_value"
   > | null;
+  credit_aggregates: Pick<
+    PartnerCreditAggregate,
+    | "total_invoice_amount"
+    | "total_outstanding_amount"
+    | "total_paid_amount"
+    | "invoice_count"
+  > | null;
 }
 
 /**
@@ -65,6 +80,7 @@ export interface PartnerWithOrderStatsListView extends PartnerListView {
  */
 export interface PartnerWithOrderStatsDetailView extends PartnerDetailView {
   order_stats: PartnerOrderAggregate | null;
+  credit_aggregates: PartnerCreditAggregate | null;
 }
 
 // ============================================================================

@@ -7,11 +7,10 @@ import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useGoodsInwardBySequenceNumber } from "@/lib/query/hooks/stock-flow";
 import ImageWrapper from "@/components/ui/image-wrapper";
-import { getProductIcon } from "@/lib/utils/product";
+import { getProductIcon, getStockUnitInfo } from "@/lib/utils/product";
 import { formatStockUnitNumber } from "@/lib/utils/product";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
-import { formatAbsoluteDate } from "@/lib/utils/date";
 import type { Tables } from "@/types/database/supabase";
 import { Separator } from "@/components/ui/separator";
 
@@ -103,39 +102,25 @@ export default function StockUnitsPage({ params }: PageParams) {
               {/* Stock Unit Details */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
-                  <h3
-                    className="font-medium text-gray-900 truncate"
+                  <p
+                    className="font-medium text-gray-700 truncate"
                     title={productName}
                   >
                     {productName}
-                  </h3>
+                  </p>
                   <span className="shrink-0 text-sm font-bold text-gray-700">
                     {item.initial_quantity} {unitAbbreviation}
                   </span>
                 </div>
 
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-sm text-gray-500">
                   {formatStockUnitNumber(item.sequence_number, stockType)}
                 </p>
 
                 {/* Additional Details */}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-0.5">
-                  {item.quality_grade && (
-                    <span>Grade: {item.quality_grade}</span>
-                  )}
-                  {item.supplier_number && (
-                    <span>Supplier #: {item.supplier_number}</span>
-                  )}
-                  {item.warehouse_location && (
-                    <span>Location: {item.warehouse_location}</span>
-                  )}
-                  {item.manufacturing_date && (
-                    <span>
-                      Manufactured on:{" "}
-                      {formatAbsoluteDate(item.manufacturing_date)}
-                    </span>
-                  )}
-                </div>
+                <p className="text-sm text-gray-500">
+                  {getStockUnitInfo(item)}
+                </p>
               </div>
             </div>
             <Separator />

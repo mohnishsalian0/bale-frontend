@@ -41,6 +41,9 @@ CREATE TABLE goods_outwards (
     cancelled_by UUID,
     cancellation_reason TEXT,
 
+    -- Invoice tracking
+    has_invoice BOOLEAN DEFAULT false,
+
     notes TEXT,
     attachments TEXT[], -- Array of file URLs
 
@@ -83,6 +86,7 @@ CREATE INDEX idx_goods_outwards_partner ON goods_outwards(partner_id);
 CREATE INDEX idx_goods_outwards_sales_order ON goods_outwards(sales_order_id);
 CREATE INDEX idx_goods_outwards_job_work ON goods_outwards(job_work_id);
 CREATE INDEX idx_goods_outwards_purchase_order ON goods_outwards(purchase_order_id);
+CREATE INDEX idx_goods_outwards_has_invoice ON goods_outwards(company_id, has_invoice) WHERE has_invoice = false;
 
 -- Full-text search index
 CREATE INDEX idx_goods_outwards_search ON goods_outwards USING GIN(search_vector);
@@ -122,6 +126,42 @@ CREATE TRIGGER trigger_goods_outwards_update_partner_interaction
     FOR EACH ROW
     WHEN (NEW.deleted_at IS NULL AND NEW.partner_id IS NOT NULL)
     EXECUTE FUNCTION update_partner_last_interaction();
+
+-- Prevent goods_outward deletion if invoiced
+CREATE OR REPLACE FUNCTION prevent_invoiced_outward_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.has_invoice = true THEN
+        RAISE EXCEPTION 'Cannot delete goods outward - linked to invoice';
+    END IF;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_prevent_invoiced_outward_delete
+    BEFORE DELETE ON goods_outwards
+    FOR EACH ROW EXECUTE FUNCTION prevent_invoiced_outward_delete();
+
+-- Prevent critical field edits if invoiced
+CREATE OR REPLACE FUNCTION prevent_invoiced_outward_edit()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.has_invoice = true THEN
+        RAISE EXCEPTION 'Cannot edit goods outward - linked to invoice. Critical fields are locked.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_prevent_invoiced_outward_edit
+    BEFORE UPDATE ON goods_outwards
+    FOR EACH ROW
+    WHEN (
+        OLD.outward_date IS DISTINCT FROM NEW.outward_date OR
+        OLD.partner_id IS DISTINCT FROM NEW.partner_id OR
+        OLD.to_warehouse_id IS DISTINCT FROM NEW.to_warehouse_id
+    )
+    EXECUTE FUNCTION prevent_invoiced_outward_edit();
 
 -- =====================================================
 -- GOODS OUTWARD TABLE RLS POLICIES

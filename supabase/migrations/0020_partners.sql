@@ -10,9 +10,9 @@ CREATE TABLE partners (
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_jwt_company_id(),
     
     -- Identity
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
-    company_name VARCHAR(200),
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    company_name VARCHAR(200) NOT NULL,
     phone_number VARCHAR(15) NOT NULL,
     email VARCHAR(100),
     
@@ -27,7 +27,10 @@ CREATE TABLE partners (
     registered_at TIMESTAMPTZ,
 
     -- Tax information
-    gst_number VARCHAR(15),
+    gst_number VARCHAR(15) CHECK (
+        gst_number IS NULL OR
+        gst_number ~ '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$'
+    ),
     pan_number VARCHAR(10),
     
     -- Address
@@ -43,6 +46,10 @@ CREATE TABLE partners (
 
     notes TEXT,
 
+    -- Credit limit
+    credit_limit_enabled BOOLEAN DEFAULT FALSE,
+    credit_limit DECIMAL(15,2) DEFAULT 0,
+
     -- Interaction tracking
     last_interaction_at TIMESTAMPTZ,
 
@@ -55,6 +62,9 @@ CREATE TABLE partners (
 
     -- Full-text search
     search_vector tsvector,
+
+    -- Computed display name (defaults to company_name)
+    display_name TEXT GENERATED ALWAYS AS (company_name) STORED,
 
 		UNIQUE (company_id, phone_number)
 );
@@ -96,6 +106,9 @@ CREATE INDEX idx_partners_last_interaction ON partners(company_id, last_interact
 
 -- Full-text search index
 CREATE INDEX idx_partners_search ON partners USING GIN(search_vector);
+
+-- Display name search/filtering
+CREATE INDEX idx_partners_display_name ON partners(company_id, display_name);
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES
@@ -190,6 +203,17 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- COLUMN COMMENTS
+-- =====================================================
+
+COMMENT ON COLUMN partners.company_name IS 'Primary business/partner name (NOT NULL)';
+COMMENT ON COLUMN partners.first_name IS 'Contact person first name (optional)';
+COMMENT ON COLUMN partners.last_name IS 'Contact person last name (optional)';
+COMMENT ON COLUMN partners.display_name IS 'Computed display name (defaults to company_name)';
+COMMENT ON COLUMN partners.credit_limit_enabled IS 'Whether credit limit tracking is enabled for this partner';
+COMMENT ON COLUMN partners.credit_limit IS 'Maximum credit limit allowed for this partner';
 
 -- =====================================================
 -- GRANT PERMISSIONS

@@ -19,7 +19,7 @@ CREATE TABLE purchase_order_items (
     pending_quantity DECIMAL(10,3) GENERATED ALWAYS AS (required_quantity - received_quantity) STORED,
 
     -- Pricing
-    unit_rate DECIMAL(10,2),
+    unit_rate DECIMAL(10,2) NOT NULL,
     line_total DECIMAL(10,2) GENERATED ALWAYS AS (required_quantity * COALESCE(unit_rate, 0)) STORED,
 
     notes TEXT,
@@ -71,88 +71,8 @@ CREATE TRIGGER trigger_auto_populate_purchase_unit_rate
     BEFORE INSERT OR UPDATE ON purchase_order_items
     FOR EACH ROW EXECUTE FUNCTION auto_populate_purchase_unit_rate();
 
--- Update purchase order total when line items change
-CREATE OR REPLACE FUNCTION update_purchase_order_total()
-RETURNS TRIGGER AS $$
-DECLARE
-    order_id UUID;
-    subtotal DECIMAL(10,2);
-    disc_type discount_type_enum;
-    disc_value DECIMAL(10,2);
-    gst_rate_val DECIMAL(5,2);
-    discount_amount DECIMAL(10,2);
-    discounted_total DECIMAL(10,2);
-    gst_amt DECIMAL(10,2);
-    final_total DECIMAL(10,2);
-BEGIN
-    -- Get the purchase order ID from the affected row
-    order_id := COALESCE(NEW.purchase_order_id, OLD.purchase_order_id);
-
-    -- Calculate subtotal from all line items
-    SELECT COALESCE(SUM(line_total), 0)
-    INTO subtotal
-    FROM purchase_order_items
-    WHERE purchase_order_id = order_id;
-
-    -- Get discount info and GST rate from purchase order
-    SELECT discount_type, discount_value, gst_rate
-    INTO disc_type, disc_value, gst_rate_val
-    FROM purchase_orders
-    WHERE id = order_id;
-
-    -- Calculate discount amount based on type
-    IF disc_type = 'none' THEN
-        discount_amount := 0;
-    ELSIF disc_type = 'percentage' THEN
-        discount_amount := subtotal * (COALESCE(disc_value, 0) / 100);
-    ELSIF disc_type = 'flat_amount' THEN
-        discount_amount := COALESCE(disc_value, 0);
-    ELSE
-        discount_amount := 0;
-    END IF;
-
-    -- Calculate discounted total
-    discounted_total := subtotal - discount_amount;
-
-    -- Calculate GST amount (applied after discount)
-    gst_amt := discounted_total * (COALESCE(gst_rate_val, 0) / 100);
-
-    -- Calculate final total
-    final_total := discounted_total + gst_amt;
-
-    -- Update the purchase order totals
-    UPDATE purchase_orders
-    SET total_amount = final_total,
-        gst_amount = gst_amt
-    WHERE id = order_id;
-
-    RETURN COALESCE(NEW, OLD);
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_update_purchase_order_total
-    AFTER INSERT OR UPDATE OR DELETE ON purchase_order_items
-    FOR EACH ROW EXECUTE FUNCTION update_purchase_order_total();
-
--- Prevent reducing required quantity below received quantity
-CREATE OR REPLACE FUNCTION validate_purchase_required_quantity()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Check if required_quantity is being reduced below received_quantity
-    IF NEW.required_quantity < NEW.received_quantity THEN
-        RAISE EXCEPTION 'Cannot reduce required quantity (%) below received quantity (%). Please cancel existing inwards first.',
-            NEW.required_quantity, NEW.received_quantity
-            USING HINT = 'To reduce quantity: 1) Cancel existing inwards, 2) Update required quantity, 3) Create new inwards if needed',
-                  ERRCODE = 'check_violation';
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_validate_purchase_required_quantity
-    BEFORE UPDATE ON purchase_order_items
-    FOR EACH ROW EXECUTE FUNCTION validate_purchase_required_quantity();
+-- Note: update_purchase_order_total() and validate_purchase_required_quantity() have been removed
+-- All calculations are now handled by reconcile_purchase_order() in migration 0061
 
 
 -- =====================================================

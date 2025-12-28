@@ -61,15 +61,19 @@ export function useGoodsOutwards(
  * Fetch goods inwards for a purchase order
  */
 export function useGoodsInwardsByPurchaseOrder(
-  orderNumber: string,
+  orderNumber: string | null,
   page: number = 1,
   pageSize: number = 25,
 ) {
   return useQuery({
-    queryKey: queryKeys.stockFlow.inwardsByPurchaseOrder(orderNumber, page),
-    queryFn: () => getGoodsInwardsByPurchaseOrder(orderNumber, page, pageSize),
+    queryKey: queryKeys.stockFlow.inwardsByPurchaseOrder(
+      orderNumber || "",
+      page,
+    ),
+    queryFn: () => getGoodsInwardsByPurchaseOrder(orderNumber!, page, pageSize),
     ...getQueryOptions(STALE_TIME.STOCK_FLOW, GC_TIME.TRANSACTIONAL),
     placeholderData: keepPreviousData,
+    enabled: !!orderNumber,
   });
 }
 
@@ -77,15 +81,16 @@ export function useGoodsInwardsByPurchaseOrder(
  * Fetch goods outwards for a sales order
  */
 export function useGoodsOutwardsBySalesOrder(
-  orderNumber: string,
+  orderNumber: string | null,
   page: number = 1,
   pageSize: number = 25,
 ) {
   return useQuery({
-    queryKey: queryKeys.stockFlow.outwardsBySalesOrder(orderNumber, page),
-    queryFn: () => getGoodsOutwardsBySalesOrder(orderNumber, page, pageSize),
+    queryKey: queryKeys.stockFlow.outwardsBySalesOrder(orderNumber || "", page),
+    queryFn: () => getGoodsOutwardsBySalesOrder(orderNumber!, page, pageSize),
     ...getQueryOptions(STALE_TIME.STOCK_FLOW, GC_TIME.TRANSACTIONAL),
     placeholderData: keepPreviousData,
+    enabled: !!orderNumber,
   });
 }
 

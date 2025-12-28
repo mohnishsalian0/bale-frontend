@@ -147,7 +147,7 @@ export default function PartnerOrdersPage({ params }: PageParams) {
               );
               const displayStatus: DisplayStatus = getOrderDisplayStatus(
                 order.status as SalesOrderStatus,
-                order.expected_delivery_date,
+                order.delivery_due_date,
               );
               const showProgressBar =
                 displayStatus === "in_progress" || displayStatus === "overdue";
@@ -169,8 +169,8 @@ export default function PartnerOrdersPage({ params }: PageParams) {
                     <p className="text-base font-medium text-gray-700 text-left">
                       {"SO-"}
                       {order.sequence_number}
-                      {order.expected_delivery_date &&
-                        ` • Due on ${formatAbsoluteDate(order.expected_delivery_date)}`}
+                      {order.delivery_due_date &&
+                        ` • Due on ${formatAbsoluteDate(order.delivery_due_date)}`}
                     </p>
                     <SalesStatusBadge status={displayStatus} />
                   </div>

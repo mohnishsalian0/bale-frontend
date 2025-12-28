@@ -42,7 +42,7 @@ export interface InwardWithPartnerListView extends Pick<
 > {
   partner: Pick<
     Partner,
-    "id" | "first_name" | "last_name" | "company_name"
+    "id" | "first_name" | "last_name" | "company_name" | "display_name"
   > | null;
   from_warehouse: Pick<Warehouse, "id" | "name"> | null;
 }
@@ -52,7 +52,7 @@ export interface InwardWithPartnerListView extends Pick<
  * Used in: inward list page
  */
 export interface InwardWithStockUnitListView extends GoodsInward {
-  partner: Pick<Partner, "first_name" | "last_name" | "company_name"> | null;
+  partner: Pick<Partner, "first_name" | "last_name" | "company_name" | "display_name"> | null;
   from_warehouse: Pick<Warehouse, "id" | "name"> | null;
   stock_units: Array<{
     initial_quantity: number;
@@ -65,7 +65,7 @@ export interface InwardWithStockUnitListView extends GoodsInward {
  * Used in: outward list page
  */
 export interface OutwardWithOutwardItemListView extends GoodsOutward {
-  partner: Pick<Partner, "first_name" | "last_name" | "company_name"> | null;
+  partner: Pick<Partner, "first_name" | "last_name" | "company_name" | "display_name"> | null;
   to_warehouse: Pick<Warehouse, "id" | "name"> | null;
   goods_outward_items: Array<{
     quantity_dispatched: number;
@@ -87,6 +87,7 @@ export interface InwardDetailView extends GoodsInward {
     | "first_name"
     | "last_name"
     | "company_name"
+    | "display_name"
     | "address_line1"
     | "address_line2"
     | "city"
@@ -94,7 +95,7 @@ export interface InwardDetailView extends GoodsInward {
     | "pin_code"
     | "country"
   > | null;
-  agent: Pick<Partner, "first_name" | "last_name" | "company_name"> | null;
+  agent: Pick<Partner, "first_name" | "last_name" | "company_name" | "display_name"> | null;
   warehouse: Pick<
     Warehouse,
     | "name"
@@ -139,6 +140,7 @@ export interface OutwardDetailView extends GoodsOutward {
     | "first_name"
     | "last_name"
     | "company_name"
+    | "display_name"
     | "address_line1"
     | "address_line2"
     | "city"
@@ -146,7 +148,7 @@ export interface OutwardDetailView extends GoodsOutward {
     | "pin_code"
     | "country"
   > | null;
-  agent: Pick<Partner, "first_name" | "last_name" | "company_name"> | null;
+  agent: Pick<Partner, "first_name" | "last_name" | "company_name" | "display_name"> | null;
   warehouse: Pick<
     Warehouse,
     | "name"
@@ -184,7 +186,7 @@ export interface OutwardItemWithOutwardDetailView extends GoodsOutwardItem {
       > & {
         partner: Pick<
           Partner,
-          "id" | "first_name" | "last_name" | "company_name"
+          "id" | "first_name" | "last_name" | "company_name" | "display_name"
         > | null;
         to_warehouse: Pick<Warehouse, "id" | "name"> | null;
       })

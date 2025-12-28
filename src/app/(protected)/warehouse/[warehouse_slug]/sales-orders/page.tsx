@@ -49,6 +49,9 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { SalesOrderItemListView } from "@/types/sales-orders.types";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
 
 interface OrderListItem {
   id: string;
@@ -84,6 +87,7 @@ export default function OrdersPage() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState("all");
   const [selectedCustomer, setSelectedCustomer] = useState("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   // Get current page from URL (default to 1)
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
@@ -104,6 +108,10 @@ export default function OrdersPage() {
           : undefined,
       productId: selectedProduct !== "all" ? selectedProduct : undefined,
       customerId: selectedCustomer !== "all" ? selectedCustomer : undefined,
+      date_from: dateRange?.from
+        ? format(dateRange.from, "yyyy-MM-dd")
+        : undefined,
+      date_to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
     },
     page: currentPage,
     pageSize: PAGE_SIZE,
@@ -139,7 +147,13 @@ export default function OrdersPage() {
     if (currentPage !== 1) {
       router.push(`/warehouse/${warehouse.slug}/sales-orders?page=1`);
     }
-  }, [debouncedSearchQuery, selectedStatus, selectedProduct, selectedCustomer]);
+  }, [
+    debouncedSearchQuery,
+    selectedStatus,
+    selectedProduct,
+    selectedCustomer,
+    dateRange,
+  ]);
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -171,7 +185,7 @@ export default function OrdersPage() {
         // Determine status (including overdue) using utility
         const status = getOrderDisplayStatus(
           order.status as SalesOrderStatus,
-          order.expected_delivery_date,
+          order.delivery_due_date,
         );
 
         return {
@@ -180,7 +194,7 @@ export default function OrdersPage() {
           customerId: order.customer_id,
           customerName,
           items,
-          dueDate: order.expected_delivery_date,
+          dueDate: order.delivery_due_date,
           orderDate: order.order_date,
           status,
           completionPercentage,
@@ -380,6 +394,7 @@ export default function OrdersPage() {
             ))}
           </SelectContent>
         </Select>
+        <DateRangePicker date={dateRange} onDateChange={setDateRange} />
       </div>
 
       {/* Sales Orders List */}
@@ -388,7 +403,11 @@ export default function OrdersPage() {
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-gray-600 mb-2">No orders found</p>
             <p className="text-sm text-gray-500">
-              {searchQuery
+              {searchQuery ||
+              selectedStatus !== "all" ||
+              selectedProduct !== "all" ||
+              selectedCustomer !== "all" ||
+              dateRange
                 ? "Try adjusting your search or filters"
                 : "Start by adding a sales order"}
             </p>

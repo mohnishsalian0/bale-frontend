@@ -11,7 +11,7 @@ import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import { usePurchaseOrderMutations } from "@/lib/query/hooks/purchase-orders";
 import { CreatePurchaseOrderData } from "@/types/purchase-orders.types";
-import type { DiscountType } from "@/types/database/enums";
+import type { DiscountType, TaxType } from "@/types/database/enums";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
 
@@ -20,7 +20,8 @@ interface OrderFormData {
   supplierId: string;
   agentId: string;
   orderDate: string;
-  deliveryDate: string;
+  deliveryDueDate: string;
+  taxType: TaxType;
   advanceAmount: string;
   discountType: DiscountType;
   discount: string;
@@ -30,20 +31,20 @@ interface OrderFormData {
   files: File[];
 }
 
-type FormStep = "products" | "supplier" | "details";
+type FormStep = "supplier" | "products" | "details";
 
 export default function CreatePurchaseOrderPage() {
   const router = useRouter();
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
-  const [currentStep, setCurrentStep] = useState<FormStep>("products");
+  const [currentStep, setCurrentStep] = useState<FormStep>("supplier");
 
   // Purchase order mutations
   const { create: createOrder } = usePurchaseOrderMutations(warehouse.id);
 
   // Track product selection state locally
   const [productSelections, setProductSelections] = useState<
-    Record<string, { selected: boolean; quantity: number }>
+    Record<string, { selected: boolean; quantity: number; rate: number }>
   >({});
 
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(
@@ -61,7 +62,8 @@ export default function CreatePurchaseOrderPage() {
     supplierId: "",
     agentId: "",
     orderDate: "",
-    deliveryDate: "",
+    deliveryDueDate: "",
+    taxType: "gst",
     advanceAmount: "",
     discount: "",
     paymentTerms: "",
@@ -71,17 +73,21 @@ export default function CreatePurchaseOrderPage() {
     files: [],
   });
 
-  const handleQuantityChange = (productId: string, quantity: number) => {
+  const handleQuantityChange = (
+    productId: string,
+    quantity: number,
+    rate: number,
+  ) => {
     setProductSelections((prev) => ({
       ...prev,
-      [productId]: { selected: true, quantity },
+      [productId]: { selected: true, quantity, rate },
     }));
   };
 
   const handleRemoveProduct = (productId: string) => {
     setProductSelections((prev) => ({
       ...prev,
-      [productId]: { selected: false, quantity: 0 },
+      [productId]: { selected: false, quantity: 0, rate: 0 },
     }));
   };
 
@@ -99,31 +105,31 @@ export default function CreatePurchaseOrderPage() {
   );
 
   const handleNext = () => {
-    if (currentStep === "products") {
-      setCurrentStep("supplier");
-    } else if (currentStep === "supplier") {
+    if (currentStep === "supplier") {
       // Transfer selected supplier to formData
       if (selectedSupplierId) {
         setFormData((prev) => ({ ...prev, supplierId: selectedSupplierId }));
       }
+      setCurrentStep("products");
+    } else if (currentStep === "products") {
       setCurrentStep("details");
     }
   };
 
   const handleBack = () => {
     if (currentStep === "details") {
-      setCurrentStep("supplier");
-    } else if (currentStep === "supplier") {
       setCurrentStep("products");
+    } else if (currentStep === "products") {
+      setCurrentStep("supplier");
     }
   };
 
-  const handleSelectSupplier = (supplierId: string) => {
+  const handleSelectSupplier = (supplierId: string, _ledger_id: string) => {
     setSelectedSupplierId(supplierId);
     // Auto-advance to next step
     setTimeout(() => {
       setFormData((prev) => ({ ...prev, supplierId }));
-      setCurrentStep("details");
+      setCurrentStep("products");
     }, 300); // Small delay for visual feedback
   };
 
@@ -147,7 +153,11 @@ export default function CreatePurchaseOrderPage() {
       supplier_id: formData.supplierId,
       agent_id: formData.agentId || null,
       order_date: formData.orderDate,
-      expected_delivery_date: formData.deliveryDate || null,
+      delivery_due_date: formData.deliveryDueDate || null,
+      tax_type: formData.taxType,
+      payment_terms: formData.paymentTerms || null,
+      supplier_invoice_number: formData.supplierInvoiceNumber || null,
+      supplier_invoice_date: null,
       advance_amount: formData.advanceAmount
         ? parseFloat(formData.advanceAmount)
         : 0,
@@ -165,7 +175,7 @@ export default function CreatePurchaseOrderPage() {
     const lineItems = selectedProducts.map((product) => ({
       product_id: product.id,
       required_quantity: product.quantity,
-      unit_rate: 0,
+      unit_rate: productSelections[product.id]?.rate || 0,
     }));
 
     // Create purchase order using mutation
@@ -193,7 +203,7 @@ export default function CreatePurchaseOrderPage() {
         <FormHeader
           title="Create Purchase Order"
           currentStep={
-            currentStep === "products" ? 1 : currentStep === "supplier" ? 2 : 3
+            currentStep === "supplier" ? 1 : currentStep === "products" ? 2 : 3
           }
           totalSteps={3}
           onCancel={handleCancel}
@@ -202,18 +212,19 @@ export default function CreatePurchaseOrderPage() {
 
         {/* Main Content - Scrollable */}
         <div className="flex-1 flex-col overflow-y-auto flex">
-          {currentStep === "products" ? (
-            <ProductSelectionStep
-              warehouseId={warehouse.id}
-              productSelections={productSelections}
-              onQuantityChange={handleQuantityChange}
-              onRemoveProduct={handleRemoveProduct}
-            />
-          ) : currentStep === "supplier" ? (
+          {currentStep === "supplier" ? (
             <PartnerSelectionStep
               partnerType="supplier"
               selectedPartnerId={selectedSupplierId}
               onSelectPartner={handleSelectSupplier}
+            />
+          ) : currentStep === "products" ? (
+            <ProductSelectionStep
+              warehouseId={warehouse.id}
+              contextType="purchase"
+              productSelections={productSelections}
+              onQuantityChange={handleQuantityChange}
+              onRemoveProduct={handleRemoveProduct}
             />
           ) : (
             <PurchaseOrderDetailsStep
@@ -227,7 +238,7 @@ export default function CreatePurchaseOrderPage() {
 
         {/* Footer - Fixed at bottom */}
         <FormFooter>
-          {currentStep === "products" ? (
+          {currentStep === "supplier" ? (
             <>
               <Button
                 variant="outline"
@@ -239,13 +250,13 @@ export default function CreatePurchaseOrderPage() {
               </Button>
               <Button
                 onClick={handleNext}
-                disabled={!canProceed || createOrder.isPending}
+                disabled={!selectedSupplierId || createOrder.isPending}
                 className="flex-1"
               >
                 Next
               </Button>
             </>
-          ) : currentStep === "supplier" ? (
+          ) : currentStep === "products" ? (
             <>
               <Button
                 variant="outline"
@@ -257,7 +268,7 @@ export default function CreatePurchaseOrderPage() {
               </Button>
               <Button
                 onClick={handleNext}
-                disabled={!selectedSupplierId || createOrder.isPending}
+                disabled={!canProceed || createOrder.isPending}
                 className="flex-1"
               >
                 Next

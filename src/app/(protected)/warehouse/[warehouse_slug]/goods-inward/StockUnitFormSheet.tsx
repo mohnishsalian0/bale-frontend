@@ -12,7 +12,7 @@ import {
   IconHash,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { InputWithIcon } from "@/components/ui/input-with-icon";
+import { InputWrapper } from "@/components/ui/input-wrapper";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Collapsible,
@@ -20,12 +20,9 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { DatePicker } from "@/components/ui/date-picker";
-import ImageWrapper from "@/components/ui/image-wrapper";
-import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import type { ProductListView } from "@/types/products.types";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import type { StockUnitSpec } from "./ProductSelectionStep";
-import { Input } from "@/components/ui/input";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import {
@@ -117,13 +114,12 @@ export function StockUnitFormSheet({
     product.measuring_unit as MeasuringUnit | null,
   );
 
-  const productInfoText = getProductInfo(product);
-
   return (
     <ResponsiveDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Stock unit"
+      title="Add stock unit"
+      description={product.name}
       footer={
         <div className="flex gap-3 w-full">
           <Button
@@ -148,63 +144,37 @@ export function StockUnitFormSheet({
       <form
         id="stock-unit-form"
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-8 p-4 md:px-0 overflow-x-hidden"
+        className="flex flex-col gap-8 md:px-0 overflow-x-hidden"
       >
         <div className="flex flex-col gap-4">
           <div className="flex gap-4">
-            {/* Product Info */}
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <ImageWrapper
-                size="md"
-                shape="square"
-                imageUrl={product.product_images?.[0]}
-                alt={product.name}
-                placeholderIcon={getProductIcon(
-                  product.stock_type as StockType,
-                )}
-              />
-              <div className="flex-1 min-w-0">
-                <p
-                  title={product.name}
-                  className="text-base font-medium text-gray-700 truncate"
-                >
-                  {product.name}
-                </p>
-                <p
-                  title={productInfoText}
-                  className="text-xs text-gray-500 truncate"
-                >
-                  {productInfoText}
-                </p>
-              </div>
-            </div>
-
             {/* Quantity Input */}
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex flex-1 items-end gap-2 shrink-0">
+              <InputWrapper
+                type="number"
+                label="Quantity"
+                rightText={unitAbbreviation}
+                min="0"
+                step={product.stock_type === "roll" ? "0.1" : "1"}
+                placeholder={product.stock_type === "roll" ? "0.0" : "0"}
+                value={quantity}
+                className="flex-1"
+                {...register("quantity", { valueAsNumber: true })}
+              />
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
+                className="mb-1"
                 onClick={handleDecrement}
               >
                 <IconMinus />
               </Button>
-              <div className="relative">
-                <Input
-                  type="number"
-                  {...register("quantity", { valueAsNumber: true })}
-                  className="text-center font-medium max-w-25 pr-10"
-                  min="0"
-                  step={product.stock_type === "roll" ? "0.1" : "1"}
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
-                  {unitAbbreviation}
-                </span>
-              </div>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
+                className="mb-1"
                 onClick={handleIncrement}
               >
                 <IconPlus />
@@ -237,7 +207,7 @@ export function StockUnitFormSheet({
 
         <div className="flex flex-col gap-4">
           {/* Supplier Number - Full Width */}
-          <InputWithIcon
+          <InputWrapper
             type="text"
             placeholder="Supplier number"
             {...register("supplier_number")}
@@ -246,7 +216,7 @@ export function StockUnitFormSheet({
 
           <div className="flex gap-4">
             {/* Quality - Input with Icon */}
-            <InputWithIcon
+            <InputWrapper
               type="text"
               placeholder="Quality"
               {...register("grade")}
@@ -270,7 +240,7 @@ export function StockUnitFormSheet({
           </div>
 
           {/* Location - Full Width */}
-          <InputWithIcon
+          <InputWrapper
             type="text"
             placeholder="Location"
             {...register("location")}

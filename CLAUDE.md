@@ -57,11 +57,14 @@ npm run build
 # Start production server
 npm start
 
-# Run linting
-npm run lint
+# Generate supabase types
+npm run db:types
 
 # Type checking
-npx tsc --noEmit
+npm run ts
+
+# Run linting
+npm run lint
 
 # Create test invite links
 npx tsx scripts/create-invite.ts

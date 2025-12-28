@@ -39,7 +39,7 @@ export type InwardListView = Pick<
 export interface InwardWithPartnerListView extends InwardListView {
   partner: Pick<
     Partner,
-    "id" | "first_name" | "last_name" | "company_name"
+    "id" | "first_name" | "last_name" | "company_name" | "display_name"
   > | null;
   from_warehouse: Pick<Warehouse, "id" | "name"> | null;
 }

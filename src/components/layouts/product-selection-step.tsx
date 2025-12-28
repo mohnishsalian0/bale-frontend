@@ -36,13 +36,18 @@ interface ProductWithSelection extends ProductWithInventoryListView {
 
 interface ProductSelectionStepProps {
   warehouseId: string;
-  productSelections: Record<string, { selected: boolean; quantity: number }>;
-  onQuantityChange: (productId: string, quantity: number) => void;
+  contextType: "sales" | "purchase";
+  productSelections: Record<
+    string,
+    { selected: boolean; quantity: number; rate: number }
+  >;
+  onQuantityChange: (productId: string, quantity: number, rate: number) => void;
   onRemoveProduct: (productId: string) => void;
 }
 
 export function ProductSelectionStep({
   warehouseId,
+  contextType,
   productSelections,
   onQuantityChange,
   onRemoveProduct,
@@ -70,9 +75,9 @@ export function ProductSelectionStep({
     setShowQuantitySheet(true);
   };
 
-  const handleQuantityConfirm = (quantity: number) => {
+  const handleQuantityConfirm = (data: { quantity: number; rate: number }) => {
     if (selectedProduct) {
-      onQuantityChange(selectedProduct.id, quantity);
+      onQuantityChange(selectedProduct.id, data.quantity, data.rate);
     }
   };
 
@@ -183,6 +188,28 @@ export function ProductSelectionStep({
 
     return sorted;
   }, [products]);
+
+  const rateForSheet = useMemo(() => {
+    if (!selectedProduct) return 0;
+
+    const existingSelection = productSelections[selectedProduct.id];
+
+    // If an existing selection for this product has a rate, use it.
+    if (existingSelection) {
+      return existingSelection.rate;
+    }
+
+    // Otherwise, set a default rate based on contextType
+    if (contextType === "sales") {
+      return selectedProduct.selling_price_per_unit || 0;
+    }
+
+    if (contextType === "purchase") {
+      return selectedProduct.cost_price_per_unit || 0;
+    }
+
+    return 0; // Fallback
+  }, [selectedProduct, productSelections, contextType]);
 
   return (
     <>
@@ -323,7 +350,7 @@ export function ProductSelectionStep({
                           <Button
                             type="button"
                             variant="destructive"
-                            size="icon"
+                            size="icon-sm"
                             onClick={() => onRemoveProduct(product.id)}
                           >
                             <IconTrash />
@@ -377,6 +404,7 @@ export function ProductSelectionStep({
           onOpenChange={setShowQuantitySheet}
           product={selectedProduct}
           initialQuantity={productSelections[selectedProduct.id]?.quantity || 0}
+          initialRate={rateForSheet}
           onConfirm={handleQuantityConfirm}
         />
       )}

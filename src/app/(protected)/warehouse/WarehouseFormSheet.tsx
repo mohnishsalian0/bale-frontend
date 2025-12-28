@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { IconUser, IconPhone, IconChevronDown } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -21,7 +20,7 @@ import {
 } from "@/components/ui/collapsible";
 import { useWarehouseMutations } from "@/lib/query/hooks/warehouses";
 import { Warehouse, WarehouseInsert } from "@/types/warehouses.types";
-import { InputWithIcon } from "@/components/ui/input-with-icon";
+import { InputWrapper } from "@/components/ui/input-wrapper";
 import {
   warehouseSchema,
   WarehouseFormData,
@@ -137,37 +136,31 @@ export function WarehouseFormSheet({
             {/* Basic Info */}
             <div className="flex flex-col gap-5 px-4 py-5">
               {/* Warehouse Name */}
-              <InputWithIcon
+              <InputWrapper
                 label="Warehouse name"
                 placeholder="Enter a name"
                 {...register("name")}
                 required
+                isError={!!errors.name}
+                errorText={errors.name?.message}
               />
-              {errors.name && (
-                <p className="text-sm text-red-500">{errors.name.message}</p>
-              )}
 
               {/* Contact Person Name */}
-              <InputWithIcon
+              <InputWrapper
                 placeholder="Contact person name"
                 {...register("contactName")}
                 icon={<IconUser />}
               />
 
               {/* Contact Person Number */}
-              <div className="flex flex-col gap-2">
-                <InputWithIcon
-                  type="tel"
-                  placeholder="Contact person number"
-                  {...register("contactNumber")}
-                  icon={<IconPhone />}
-                />
-                {errors.contactNumber && (
-                  <p className="text-sm text-red-500">
-                    {errors.contactNumber.message}
-                  </p>
-                )}
-              </div>
+              <InputWrapper
+                type="tel"
+                placeholder="Contact person number"
+                {...register("contactNumber")}
+                icon={<IconPhone />}
+                isError={!!errors.contactNumber}
+                errorText={errors.contactNumber?.message}
+              />
             </div>
 
             {/* Address Section */}
@@ -187,28 +180,26 @@ export function WarehouseFormSheet({
 
               <CollapsibleContent>
                 <div className="flex flex-col gap-5">
-                  <Input
+                  <InputWrapper
                     placeholder="Address line 1"
                     {...register("addressLine1")}
                   />
-                  <Input
+                  <InputWrapper
                     placeholder="Address line 2"
                     {...register("addressLine2")}
                   />
                   <div className="flex gap-4">
-                    <Input placeholder="City" {...register("city")} />
-                    <Input placeholder="State" {...register("state")} />
+                    <InputWrapper placeholder="City" {...register("city")} />
+                    <InputWrapper placeholder="State" {...register("state")} />
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex gap-4">
-                      <Input placeholder="Country" {...register("country")} />
-                      <Input placeholder="Pin code" {...register("pinCode")} />
-                    </div>
-                    {errors.pinCode && (
-                      <p className="text-sm text-red-500">
-                        {errors.pinCode.message}
-                      </p>
-                    )}
+                  <div className="flex gap-4">
+                    <InputWrapper placeholder="Country" {...register("country")} />
+                    <InputWrapper
+                      placeholder="Pin code"
+                      {...register("pinCode")}
+                      isError={!!errors.pinCode}
+                      errorText={errors.pinCode?.message}
+                    />
                   </div>
                 </div>
               </CollapsibleContent>

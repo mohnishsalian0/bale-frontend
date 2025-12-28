@@ -106,7 +106,7 @@ export function ActiveSalesOrdersSection({
           {orders.map((order) => {
             const displayStatus: DisplayStatus = getOrderDisplayStatus(
               order.status as SalesOrderStatus,
-              order.expected_delivery_date,
+              order.delivery_due_date,
             );
             const completionPercentage = calculateCompletionPercentage(
               order.sales_order_items,
@@ -149,8 +149,8 @@ export function ActiveSalesOrdersSection({
                       <div className="flex items-center justify-between mt-1">
                         <p className="text-xs text-gray-500">
                           SO-{order.sequence_number}
-                          {order.expected_delivery_date &&
-                            ` • Due on ${formatAbsoluteDate(order.expected_delivery_date)}`}
+                          {order.delivery_due_date &&
+                            ` • Due on ${formatAbsoluteDate(order.delivery_due_date)}`}
                         </p>
                         {order.status !== "approval_pending" && (
                           <p className="text-xs text-gray-500">

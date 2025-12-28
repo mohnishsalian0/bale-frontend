@@ -11,7 +11,7 @@ import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import { useSalesOrderMutations } from "@/lib/query/hooks/sales-orders";
 import { CreateSalesOrderData } from "@/types/sales-orders.types";
-import type { DiscountType } from "@/types/database/enums";
+import type { DiscountType, TaxType } from "@/types/database/enums";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
 
@@ -20,7 +20,8 @@ interface OrderFormData {
   customerId: string;
   agentId: string;
   orderDate: string;
-  deliveryDate: string;
+  deliveryDueDate: string;
+  taxType: TaxType;
   advanceAmount: string;
   discountType: DiscountType;
   discount: string;
@@ -29,20 +30,20 @@ interface OrderFormData {
   files: File[];
 }
 
-type FormStep = "products" | "customer" | "details";
+type FormStep = "customer" | "products" | "details";
 
 export default function CreateSalesOrderPage() {
   const router = useRouter();
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
-  const [currentStep, setCurrentStep] = useState<FormStep>("products");
+  const [currentStep, setCurrentStep] = useState<FormStep>("customer");
 
   // Sales order mutations
   const { create: createOrder } = useSalesOrderMutations(warehouse.id);
 
   // Track product selection state locally
   const [productSelections, setProductSelections] = useState<
-    Record<string, { selected: boolean; quantity: number }>
+    Record<string, { selected: boolean; quantity: number; rate: number }>
   >({});
 
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
@@ -60,7 +61,8 @@ export default function CreateSalesOrderPage() {
     customerId: "",
     agentId: "",
     orderDate: "",
-    deliveryDate: "",
+    deliveryDueDate: "",
+    taxType: "gst",
     advanceAmount: "",
     discount: "",
     paymentTerms: "",
@@ -69,17 +71,21 @@ export default function CreateSalesOrderPage() {
     files: [],
   });
 
-  const handleQuantityChange = (productId: string, quantity: number) => {
+  const handleQuantityChange = (
+    productId: string,
+    quantity: number,
+    rate: number,
+  ) => {
     setProductSelections((prev) => ({
       ...prev,
-      [productId]: { selected: true, quantity },
+      [productId]: { selected: true, quantity, rate },
     }));
   };
 
   const handleRemoveProduct = (productId: string) => {
     setProductSelections((prev) => ({
       ...prev,
-      [productId]: { selected: false, quantity: 0 },
+      [productId]: { selected: false, quantity: 0, rate: 0 },
     }));
   };
 
@@ -97,31 +103,31 @@ export default function CreateSalesOrderPage() {
   );
 
   const handleNext = () => {
-    if (currentStep === "products") {
-      setCurrentStep("customer");
-    } else if (currentStep === "customer") {
+    if (currentStep === "customer") {
       // Transfer selected customer to formData
       if (selectedCustomerId) {
         setFormData((prev) => ({ ...prev, customerId: selectedCustomerId }));
       }
+      setCurrentStep("products");
+    } else if (currentStep === "products") {
       setCurrentStep("details");
     }
   };
 
   const handleBack = () => {
     if (currentStep === "details") {
-      setCurrentStep("customer");
-    } else if (currentStep === "customer") {
       setCurrentStep("products");
+    } else if (currentStep === "products") {
+      setCurrentStep("customer");
     }
   };
 
-  const handleSelectCustomer = (customerId: string) => {
+  const handleSelectCustomer = (customerId: string, _ledger_id: string) => {
     setSelectedCustomerId(customerId);
     // Auto-advance to next step
     setTimeout(() => {
       setFormData((prev) => ({ ...prev, customerId }));
-      setCurrentStep("details");
+      setCurrentStep("products");
     }, 300); // Small delay for visual feedback
   };
 
@@ -145,7 +151,9 @@ export default function CreateSalesOrderPage() {
       customer_id: formData.customerId,
       agent_id: formData.agentId || null,
       order_date: formData.orderDate,
-      expected_delivery_date: formData.deliveryDate || null,
+      delivery_due_date: formData.deliveryDueDate || null,
+      tax_type: formData.taxType,
+      payment_terms: formData.paymentTerms || null,
       advance_amount: formData.advanceAmount
         ? parseFloat(formData.advanceAmount)
         : 0,
@@ -163,7 +171,7 @@ export default function CreateSalesOrderPage() {
     const lineItems = selectedProducts.map((product) => ({
       product_id: product.id,
       required_quantity: product.quantity,
-      unit_rate: 0,
+      unit_rate: productSelections[product.id]?.rate || 0,
     }));
 
     // Create sales order using mutation
@@ -191,7 +199,7 @@ export default function CreateSalesOrderPage() {
         <FormHeader
           title="Create Sales Order"
           currentStep={
-            currentStep === "products" ? 1 : currentStep === "customer" ? 2 : 3
+            currentStep === "customer" ? 1 : currentStep === "products" ? 2 : 3
           }
           totalSteps={3}
           onCancel={handleCancel}
@@ -200,18 +208,19 @@ export default function CreateSalesOrderPage() {
 
         {/* Main Content - Scrollable */}
         <div className="flex-1 flex-col overflow-y-auto flex">
-          {currentStep === "products" ? (
-            <ProductSelectionStep
-              warehouseId={warehouse.id}
-              productSelections={productSelections}
-              onQuantityChange={handleQuantityChange}
-              onRemoveProduct={handleRemoveProduct}
-            />
-          ) : currentStep === "customer" ? (
+          {currentStep === "customer" ? (
             <PartnerSelectionStep
               partnerType="customer"
               selectedPartnerId={selectedCustomerId}
               onSelectPartner={handleSelectCustomer}
+            />
+          ) : currentStep === "products" ? (
+            <ProductSelectionStep
+              warehouseId={warehouse.id}
+              contextType="sales"
+              productSelections={productSelections}
+              onQuantityChange={handleQuantityChange}
+              onRemoveProduct={handleRemoveProduct}
             />
           ) : (
             <OrderDetailsStep
@@ -225,7 +234,7 @@ export default function CreateSalesOrderPage() {
 
         {/* Footer - Fixed at bottom */}
         <FormFooter>
-          {currentStep === "products" ? (
+          {currentStep === "customer" ? (
             <>
               <Button
                 variant="outline"
@@ -237,13 +246,13 @@ export default function CreateSalesOrderPage() {
               </Button>
               <Button
                 onClick={handleNext}
-                disabled={!canProceed || createOrder.isPending}
+                disabled={!selectedCustomerId || createOrder.isPending}
                 className="flex-1"
               >
                 Next
               </Button>
             </>
-          ) : currentStep === "customer" ? (
+          ) : currentStep === "products" ? (
             <>
               <Button
                 variant="outline"
@@ -255,7 +264,7 @@ export default function CreateSalesOrderPage() {
               </Button>
               <Button
                 onClick={handleNext}
-                disabled={!selectedCustomerId || createOrder.isPending}
+                disabled={!canProceed || createOrder.isPending}
                 className="flex-1"
               >
                 Next

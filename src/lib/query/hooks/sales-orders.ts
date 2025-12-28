@@ -18,6 +18,7 @@ import {
   cancelSalesOrder,
   completeSalesOrder,
   updateSalesOrder,
+  deleteSalesOrder,
   updateSalesOrderLineItems,
   type SalesOrderFilters,
   type CreateSalesOrderData,
@@ -233,6 +234,16 @@ export function useSalesOrderMutations(warehouseId: string | null) {
     },
   });
 
+  const delete_ = useMutation({
+    mutationFn: (orderId: string) => deleteSalesOrder(orderId),
+    onSuccess: () => {
+      // Invalidate all sales order queries
+      queryClient.invalidateQueries({
+        queryKey: ["sales-orders"],
+      });
+    },
+  });
+
   return {
     create,
     quickCreate,
@@ -241,5 +252,6 @@ export function useSalesOrderMutations(warehouseId: string | null) {
     complete,
     update,
     updateLineItems,
+    delete: delete_,
   };
 }

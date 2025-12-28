@@ -104,6 +104,7 @@ export interface PublicSalesOrder extends SalesOrder {
     | "pin_code"
     | "company_name"
     | "gst_number"
+    | "display_name"
   > | null;
   sales_order_items: PublicSalesOrderItem[];
 }

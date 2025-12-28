@@ -7,7 +7,7 @@ import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useGoodsOutwardBySequenceNumber } from "@/lib/query/hooks/stock-flow";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
-import { formatStockUnitNumber } from "@/lib/utils/product";
+import { formatStockUnitNumber, getStockUnitInfo } from "@/lib/utils/product";
 import type { Tables } from "@/types/database/supabase";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon } from "@/lib/utils/product";
@@ -136,7 +136,7 @@ export default function StockUnitsPage({ params }: PageParams) {
                     {product?.name || "Unknown Product"}
                   </p>
 
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-sm text-gray-500">
                     {stockUnit?.sequence_number
                       ? formatStockUnitNumber(
                           stockUnit.sequence_number,
@@ -146,16 +146,8 @@ export default function StockUnitsPage({ params }: PageParams) {
                   </p>
 
                   {/* Additional Details */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-0.5">
-                    {stockUnit?.quality_grade && (
-                      <span>Grade: {stockUnit.quality_grade}</span>
-                    )}
-                    {stockUnit?.supplier_number && (
-                      <span>Supplier #: {stockUnit.supplier_number}</span>
-                    )}
-                    {stockUnit?.warehouse_location && (
-                      <span>Location: {stockUnit.warehouse_location}</span>
-                    )}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
+                    {getStockUnitInfo(stockUnit)}
                   </div>
                 </div>
 
@@ -165,7 +157,7 @@ export default function StockUnitsPage({ params }: PageParams) {
                     {item.quantity_dispatched}{" "}
                     {getMeasuringUnitAbbreviation(measuringUnit)}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">Dispatched</p>
+                  <p className="text-sm text-gray-500">Dispatched</p>
                 </div>
               </div>
               <Separator />

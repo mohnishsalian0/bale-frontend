@@ -38,7 +38,6 @@ import {
 import { getStatusConfig } from "@/components/ui/sales-status-badge";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
-import { calculateOrderFinancials } from "@/lib/utils/financial";
 import { toast } from "sonner";
 
 // Import Edit Sheets
@@ -101,19 +100,20 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
     );
   };
 
-  // Calculate financials
+  // Get financials from database-calculated values
   const financials = useMemo(() => {
     if (!order) return null;
     const itemTotal = order.sales_order_items.reduce(
       (sum, item) => sum + (item.line_total || 0),
       0,
     );
-    return calculateOrderFinancials(
-      itemTotal,
-      order.discount_type as DiscountType,
-      order.discount_value || 0,
-      order.gst_rate || 10,
-    );
+    return {
+      subtotal: itemTotal,
+      discountAmount: order.discount_amount || 0,
+      afterDiscount: itemTotal - (order.discount_amount || 0),
+      gstAmount: order.gst_amount || 0,
+      finalTotal: order.total_amount || 0,
+    };
   }, [order]);
 
   // Compute display status (includes 'overdue' logic) using utility
@@ -121,7 +121,7 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
     if (!order) return "in_progress";
     return getOrderDisplayStatus(
       order.status as SalesOrderStatus,
-      order.expected_delivery_date,
+      order.delivery_due_date,
     );
   }, [order]);
 
@@ -149,7 +149,7 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
       <div className="flex flex-col gap-3 p-4">
         {/* Line Items Section */}
         <Section
-          title={`${order.sales_order_items.length} items at ₹${formatCurrency(financials?.totalAmount || 0)}`}
+          title={`${order.sales_order_items.length} items at ₹${formatCurrency(financials?.finalTotal || 0)}`}
           subtitle="Line items"
           onEdit={
             isEditable
@@ -183,21 +183,14 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
                     >
                       {item.product?.name || "Unknown Product"}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-gray-500">
+                      {item.dispatched_quantity || 0}
+                      {" / "}
                       {item.required_quantity}{" "}
                       {getMeasuringUnitAbbreviation(
                         item.product?.measuring_unit as MeasuringUnit,
-                      )}
-                      {order.status !== "approval_pending" && (
-                        <>
-                          {" "}
-                          ({item.dispatched_quantity || 0}{" "}
-                          {getMeasuringUnitAbbreviation(
-                            item.product?.measuring_unit as MeasuringUnit,
-                          )}{" "}
-                          shipped)
-                        </>
-                      )}
+                      )}{" "}
+                      shipped
                     </p>
                     {/* Progress bar */}
                     {displayStatus !== "approval_pending" && (
@@ -240,11 +233,11 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
                 <div className="flex justify-between text-sm text-gray-700">
                   <span>Item total</span>
                   <span className="font-semibold">
-                    ₹{formatCurrency(financials.itemTotal)}
+                    ₹{formatCurrency(financials.subtotal)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-700">
-                  <span>GST ({order.gst_rate}%)</span>
+                  <span>GST</span>
                   <span className="font-semibold">
                     ₹{formatCurrency(financials.gstAmount)}
                   </span>
@@ -252,7 +245,7 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
                 <div className="flex justify-between font-semibold text-gray-700 pt-2 border-t">
                   <span>Total</span>
                   <span className="font-semibold">
-                    ₹{formatCurrency(financials.totalAmount)}
+                    ₹{formatCurrency(financials.finalTotal)}
                   </span>
                 </div>
               </div>
@@ -436,7 +429,7 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
         onOpenChange={setShowTransportEdit}
         onSave={handleUpdate}
         isPending={updateMutation.isPending}
-        currentExpectedDeliveryDate={order.expected_delivery_date}
+        currentExpectedDeliveryDate={order.delivery_due_date}
       />
 
       <NotesEditSheet

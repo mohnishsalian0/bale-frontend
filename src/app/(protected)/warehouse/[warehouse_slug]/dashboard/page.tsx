@@ -14,7 +14,7 @@ import {
   IconShirt,
   IconQrcode,
   IconScan,
-  IconShoppingCart,
+  IconTruckLoading,
 } from "@tabler/icons-react";
 import IconGoodsInward from "@/components/icons/IconGoodsInward";
 import IconGoodsOutward from "@/components/icons/IconGoodsOutward";
@@ -62,7 +62,7 @@ export default function DashboardPage() {
       href: `/warehouse/${warehouse.slug}/goods-inward/create`,
     },
     {
-      icon: IconShoppingCart,
+      icon: IconTruckLoading,
       label: "Purchase order",
       href: `/warehouse/${warehouse.slug}/purchase-orders`,
     },

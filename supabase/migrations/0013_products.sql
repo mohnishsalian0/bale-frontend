@@ -22,11 +22,15 @@ CREATE TABLE products (
     -- Stock information
     stock_type VARCHAR(10) NOT NULL CHECK (stock_type IN ('roll', 'batch', 'piece')),
     measuring_unit VARCHAR(20) CHECK (measuring_unit IN ('metre', 'yard', 'kilogram', 'unit')),
-    cost_price_per_unit DECIMAL(10,2),
-    selling_price_per_unit DECIMAL(10,2),
+    cost_price_per_unit DECIMAL(15,2),
+    selling_price_per_unit DECIMAL(15,2),
     min_stock_alert BOOLEAN DEFAULT FALSE,
     min_stock_threshold INTEGER DEFAULT 0,
-    
+
+    -- Tax information
+    tax_type VARCHAR(10) NOT NULL DEFAULT 'gst' CHECK (tax_type IN ('no_tax', 'gst')),
+    gst_rate DECIMAL(5,2),
+
     -- Additional information
     hsn_code VARCHAR(20),
     notes TEXT,
@@ -76,6 +80,9 @@ CREATE INDEX idx_products_selling_price ON products(company_id, selling_price_pe
 
 -- Stock type filtering
 CREATE INDEX idx_products_stock_type ON products(company_id, stock_type);
+
+-- Tax type filtering
+CREATE INDEX idx_products_tax_type ON products(company_id, tax_type);
 
 -- Full-text search index
 CREATE INDEX idx_products_search ON products USING GIN(search_vector);

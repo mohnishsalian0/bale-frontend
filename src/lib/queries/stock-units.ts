@@ -32,9 +32,13 @@ type StockUnitWithProductListViewRaw = StockUnitListView & {
         | "is_active"
         | "stock_type"
         | "measuring_unit"
+        | "cost_price_per_unit"
+        | "selling_price_per_unit"
         | "product_images"
         | "min_stock_alert"
         | "min_stock_threshold"
+        | "tax_type"
+        | "gst_rate"
       > & {
         attributes: ProductAttribute[] | null;
       })
@@ -213,7 +217,7 @@ export async function getStockUnitsWithInward(
       goods_inward:goods_inwards!created_from_inward_id(
         id, sequence_number, inward_date, inward_type,
         partner:partners!goods_inwards_partner_id_fkey(
-          id, first_name, last_name, company_name
+          id, first_name, last_name, display_name, company_name
         ),
         from_warehouse:warehouses!goods_inwards_from_warehouse_id_fkey(
           id, name
