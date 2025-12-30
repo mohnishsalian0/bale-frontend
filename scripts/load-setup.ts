@@ -500,24 +500,6 @@ async function generateGoodsInwards(
   partnerIds: string[],
   productIds: string[],
   year: number,
-  purchaseOrders: Array<{
-    id: string;
-    status: string;
-    items: Array<{
-      product_id: string;
-      required_quantity: number;
-      received_quantity: number;
-    }>;
-  }>,
-  salesOrders: Array<{
-    id: string;
-    status: string;
-    items: Array<{
-      product_id: string;
-      required_quantity: number;
-      dispatched_quantity: number;
-    }>;
-  }>,
 ) {
   console.log("\n📥 Generating 600 goods inwards entries...\n");
   console.log(
@@ -1061,15 +1043,6 @@ async function generateGoodsOutwards(
   companyId: string,
   warehouseId: string,
   userId: string,
-  salesOrders: Array<{
-    id: string;
-    status: string;
-    items: Array<{
-      product_id: string;
-      required_quantity: number;
-      dispatched_quantity: number;
-    }>;
-  }>,
   year: number,
 ) {
   console.log(
@@ -1108,78 +1081,80 @@ async function generateGoodsOutwards(
     .eq("status", "in_progress"); // Only process in_progress orders
 
   if (!ordersFromDb || ordersFromDb.length === 0) {
-    console.log("   ⚠️  No in_progress sales orders found, skipping order-linked outwards");
+    console.log(
+      "   ⚠️  No in_progress sales orders found, skipping order-linked outwards",
+    );
   } else {
     console.log(`   Found ${ordersFromDb.length} in_progress orders`);
 
     // 1. Create outwards for sales orders (60% of in_progress orders get outwards)
     for (const order of ordersFromDb) {
-    // 60% chance to create outward for this order
-    if (Math.random() > 0.6) continue;
+      // 60% chance to create outward for this order
+      if (Math.random() > 0.6) continue;
 
-    if (!order.sales_order_items || order.sales_order_items.length === 0)
-      continue;
+      if (!order.sales_order_items || order.sales_order_items.length === 0)
+        continue;
 
-    // Prepare stock unit items - dispatch 50-100% of each item randomly
-    const stockUnitItems: Array<{ stock_unit_id: string; quantity: number }> =
-      [];
+      // Prepare stock unit items - dispatch 50-100% of each item randomly
+      const stockUnitItems: Array<{ stock_unit_id: string; quantity: number }> =
+        [];
 
-    for (const item of order.sales_order_items) {
-      // Randomly dispatch 50-100% of required quantity
-      const dispatchPercentage = randomFloat(0.5, 1.0);
-      const quantityToDispatch = Math.ceil(
-        item.required_quantity * dispatchPercentage,
-      );
+      for (const item of order.sales_order_items) {
+        // Randomly dispatch 50-100% of required quantity
+        const dispatchPercentage = randomFloat(0.5, 1.0);
+        const quantityToDispatch = Math.ceil(
+          item.required_quantity * dispatchPercentage,
+        );
 
-      if (quantityToDispatch === 0) continue;
+        if (quantityToDispatch === 0) continue;
 
-      const preferFifo = Math.random() < 0.7; // 70% use FIFO
-      const selected = await selectStockUnitsForDispatch(
-        companyId,
-        warehouseId,
-        item.product_id,
-        quantityToDispatch,
-        preferFifo,
-      );
+        const preferFifo = Math.random() < 0.7; // 70% use FIFO
+        const selected = await selectStockUnitsForDispatch(
+          companyId,
+          warehouseId,
+          item.product_id,
+          quantityToDispatch,
+          preferFifo,
+        );
 
-      stockUnitItems.push(...selected);
-    }
+        stockUnitItems.push(...selected);
+      }
 
-    if (stockUnitItems.length === 0) {
-      // No stock available, skip this order
-      continue;
-    }
+      if (stockUnitItems.length === 0) {
+        // No stock available, skip this order
+        continue;
+      }
 
-    // Get a random customer partner_id (constraint requires partner_id OR to_warehouse_id)
-    const partnerId =
-      customerPartnerIds.length > 0
-        ? customerPartnerIds[
-            Math.floor(Math.random() * customerPartnerIds.length)
-          ]
-        : null;
+      // Get a random customer partner_id (constraint requires partner_id OR to_warehouse_id)
+      const partnerId =
+        customerPartnerIds.length > 0
+          ? customerPartnerIds[
+              Math.floor(Math.random() * customerPartnerIds.length)
+            ]
+          : null;
 
-    if (!partnerId) {
-      console.log(
-        `   ⚠️  No customer partner available, skipping order ${order.id}...`,
-      );
-      continue;
-    }
+      if (!partnerId) {
+        console.log(
+          `   ⚠️  No customer partner available, skipping order ${order.id}...`,
+        );
+        continue;
+      }
 
-    // Create outward using RPC function
-    const outwardDate = getRandomDate(randomInt(1, 12), year);
-    const { error } = await supabase.rpc("create_goods_outward_with_items", {
-      p_outward_data: {
-        company_id: companyId,
-        warehouse_id: warehouseId,
-        partner_id: partnerId,
-        outward_type: "sales_order",
-        sales_order_id: order.id,
-        outward_date: outwardDate,
-        notes: "Sales order dispatch - auto-generated",
-        created_by: userId,
-      },
-      p_stock_unit_items: stockUnitItems,
-    });
+      // Create outward using RPC function
+      const outwardDate = getRandomDate(randomInt(1, 12), year);
+      const { error } = await supabase.rpc("create_goods_outward_with_items", {
+        p_outward_data: {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          partner_id: partnerId,
+          outward_type: "sales_order",
+          sales_order_id: order.id,
+          outward_date: outwardDate,
+          notes: "Sales order dispatch - auto-generated",
+          created_by: userId,
+        },
+        p_stock_unit_items: stockUnitItems,
+      });
 
       if (error) {
         console.error(
@@ -1909,7 +1884,9 @@ async function generateAdjustmentNotes(
   }
 
   // Filter invoices with outstanding > 0 (can apply adjustments) - use rounding to avoid precision issues
-  const eligibleInvoices = invoices.filter((inv) => roundTo2(inv.outstanding_amount) > 0);
+  const eligibleInvoices = invoices.filter(
+    (inv) => roundTo2(inv.outstanding_amount) > 0,
+  );
 
   // Select 20-25% of eligible invoices
   const targetCount = Math.floor(
@@ -2372,15 +2349,17 @@ async function generatePaymentsAndReceipts(
     console.log(`\n✨ Successfully created ${totalCreated} payments/receipts!`);
     console.log(`   • Receipts (sales): ${receipts}`);
     console.log(`   • Payments (purchase): ${payments}`);
-    console.log(`   • Cancelled: ${cancelled} (${Math.round((cancelled / totalCreated) * 100)}%)`);
+    console.log(
+      `   • Cancelled: ${cancelled} (${Math.round((cancelled / totalCreated) * 100)}%)`,
+    );
     return;
   }
 
   const freshSalesInvoices = freshInvoices.filter(
-    (inv) => inv.invoice_type === "sales_invoice"
+    (inv) => inv.invoice_type === "sales_invoice",
   );
   const freshPurchaseInvoices = freshInvoices.filter(
-    (inv) => inv.invoice_type === "purchase_invoice"
+    (inv) => inv.invoice_type === "purchase_invoice",
   );
 
   const complexCount = 425;
@@ -2803,18 +2782,10 @@ async function loadTestData() {
     supplierIds,
     productIds,
     2025,
-    purchaseOrders,
-    salesOrders,
   );
 
   // Generate goods outwards
-  await generateGoodsOutwards(
-    companyId,
-    warehouseId,
-    userId,
-    salesOrders,
-    2025,
-  );
+  await generateGoodsOutwards(companyId, warehouseId, userId, 2025);
 
   // PHASE 2: Finalize order statuses after goods movements
   await finalizeOrderStatuses(purchaseOrders, salesOrders);
