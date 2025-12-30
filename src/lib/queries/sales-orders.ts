@@ -45,6 +45,7 @@ type SalesOrderItemDetailViewRaw = Tables<"sales_order_items"> & {
         | "measuring_unit"
         | "product_images"
         | "sequence_number"
+        | "product_code"
       > &
         ProductAttributeAssignmentsRaw)
     | null;
@@ -55,10 +56,14 @@ type SalesOrderItemDetailViewRaw = Tables<"sales_order_items"> & {
  * Includes nested customer, agent, warehouse, and items with raw attributes
  */
 type SalesOrderDetailViewRaw = Tables<"sales_orders"> & {
-  customer: Tables<"partners"> | null;
+  customer:
+    | (Tables<"partners"> & {
+        ledger: Pick<Tables<"ledgers">, "id" | "name">[];
+      })
+    | null;
   agent: Pick<
     Tables<"partners">,
-    "id" | "first_name" | "last_name" | "company_name"
+    "id" | "first_name" | "last_name" | "company_name" | "display_name"
   > | null;
   warehouse: Tables<"warehouses"> | null;
   sales_order_items: SalesOrderItemDetailViewRaw[];
@@ -95,10 +100,10 @@ export async function getSalesOrders(
       `
         *,
         customer:customer_id(
-          id, first_name, last_name, company_name
+          id, first_name, last_name, display_name, company_name
         ),
         agent:agent_id(
-          id, first_name, last_name, company_name
+          id, first_name, last_name, display_name, company_name
         ),
         sales_order_items!inner(
           *,
@@ -125,7 +130,7 @@ export async function getSalesOrders(
     } else {
       if (filters.status === "overdue") {
         query = query.eq("status", "in_progress");
-        query = query.lt("expected_delivery_date", new Date().toISOString());
+        query = query.lt("delivery_due_date", new Date().toISOString());
       } else {
         query = query.eq("status", filters.status);
       }
@@ -153,6 +158,14 @@ export async function getSalesOrders(
       type: "websearch",
       config: "english",
     });
+  }
+
+  // Apply date range filter
+  if (filters?.date_from) {
+    query = query.gte("order_date", filters.date_from);
+  }
+  if (filters?.date_to) {
+    query = query.lte("order_date", filters.date_to);
   }
 
   // Apply ordering (defaults to order_date descending)
@@ -186,9 +199,12 @@ export async function getSalesOrderByNumber(
     .select(
       `
 			*,
-			customer:customer_id(*),
+			customer:customer_id(
+				*,
+				ledger:ledgers!partner_id(id, name)
+			),
 			agent:agent_id(
-				id, first_name, last_name, company_name
+				id, first_name, last_name, display_name, company_name
 			),
 			warehouse:warehouse_id(*),
 			sales_order_items(
@@ -200,6 +216,7 @@ export async function getSalesOrderByNumber(
 					measuring_unit,
 					product_images,
 					sequence_number,
+					product_code,
 					attributes:product_attributes!inner(id, name, group_name, color_hex)
 				)
 			)
@@ -400,6 +417,7 @@ export async function updateSalesOrder(
 /**
  * Update line items for a sales order (only when in approval_pending status)
  * Deletes all existing items and inserts new ones in a transaction
+ * @deprecated Use updateSalesOrderWithItems instead for atomic updates
  */
 export async function updateSalesOrderLineItems(
   orderId: string,
@@ -433,4 +451,45 @@ export async function updateSalesOrderLineItems(
     .insert(lineItemsToInsert);
 
   if (insertError) throw insertError;
+}
+
+/**
+ * Update sales order with items atomically via RPC function
+ * Validates business rules (approval_pending status, no outward records)
+ * Deletes old items and inserts new ones in a single transaction
+ */
+export async function updateSalesOrderWithItems(
+  orderId: string,
+  orderData: UpdateSalesOrderData,
+  lineItems: CreateSalesOrderLineItem[],
+): Promise<void> {
+  const supabase = createClient();
+
+  if (lineItems.length === 0) {
+    throw new Error("At least one line item is required");
+  }
+
+  const { error } = await supabase.rpc("update_sales_order_with_items", {
+    p_order_id: orderId,
+    p_order_data: orderData,
+    p_line_items: lineItems,
+  });
+
+  if (error) throw error;
+}
+
+/**
+ * Delete sales order (soft delete)
+ */
+export async function deleteSalesOrder(orderId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("sales_orders")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", orderId);
+
+  if (error) {
+    throw error;
+  }
 }

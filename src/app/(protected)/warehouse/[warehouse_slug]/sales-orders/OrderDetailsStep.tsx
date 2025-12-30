@@ -8,7 +8,7 @@ import {
   IconPercentage,
 } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
-import { InputWithIcon } from "@/components/ui/input-with-icon";
+import { InputWrapper } from "@/components/ui/input-wrapper";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { dateToISOString } from "@/lib/utils/date";
 import { usePartners } from "@/lib/query/hooks/partners";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
-import type { DiscountType } from "@/types/database/enums";
+import type { DiscountType, TaxType } from "@/types/database/enums";
 import { PAYMENT_TERMS } from "@/types/database/enums";
 
 interface OrderFormData {
@@ -37,7 +37,8 @@ interface OrderFormData {
   customerId: string;
   agentId: string;
   orderDate: string;
-  deliveryDate: string;
+  deliveryDueDate: string;
+  taxType: TaxType;
   advanceAmount: string;
   discountType: DiscountType;
   discount: string;
@@ -55,6 +56,7 @@ export function OrderDetailsStep({
   formData,
   setFormData,
 }: OrderDetailsStepProps) {
+  const [showFinancialDetails, setShowFinancialDetails] = useState(true);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
   const { data: warehouses = [] } = useWarehouses();
   const { data: agents = [] } = usePartners({ partner_type: "agent" });
@@ -73,7 +75,7 @@ export function OrderDetailsStep({
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Main Fields */}
-      <div className="flex flex-col gap-5 px-4 py-6">
+      <div className="flex flex-col gap-6 px-4 py-6">
         {/* Warehouse Dropdown */}
         <Select
           value={formData.warehouseId}
@@ -113,19 +115,19 @@ export function OrderDetailsStep({
             className="flex-1"
           />
 
-          {/* Delivery Date */}
+          {/* Delivery Due Date */}
           <DatePicker
-            label="Delivery date"
+            label="Delivery due date"
             placeholder="Pick a date"
             value={
-              formData.deliveryDate
-                ? new Date(formData.deliveryDate)
+              formData.deliveryDueDate
+                ? new Date(formData.deliveryDueDate)
                 : undefined
             }
             onChange={(date) =>
               setFormData({
                 ...formData,
-                deliveryDate: date ? dateToISOString(date) : "",
+                deliveryDueDate: date ? dateToISOString(date) : "",
               })
             }
             required
@@ -154,54 +156,46 @@ export function OrderDetailsStep({
         </Select>
       </div>
 
-      {/* Additional Details Section */}
+      {/* Financial Details Section */}
       <Collapsible
-        open={showAdditionalDetails}
-        onOpenChange={setShowAdditionalDetails}
+        open={showFinancialDetails}
+        onOpenChange={setShowFinancialDetails}
         className="border-t border-gray-200 px-4 py-5"
       >
         <CollapsibleTrigger
-          className={`flex items-center justify-between w-full ${showAdditionalDetails ? "mb-5" : "mb-0"}`}
+          className={`flex items-center justify-between w-full ${showFinancialDetails ? "mb-5" : "mb-0"}`}
         >
           <h3 className="text-lg font-medium text-gray-900">
-            Additional Details
+            Financial Details
           </h3>
           <IconChevronDown
-            className={`size-6 text-gray-500 transition-transform ${showAdditionalDetails ? "rotate-180" : "rotate-0"}`}
+            className={`size-6 text-gray-500 transition-transform ${showFinancialDetails ? "rotate-180" : "rotate-0"}`}
           />
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <div className="flex flex-col gap-5">
-            {/* Payment Terms */}
+          <div className="flex flex-col gap-6">
+            {/* Tax Type */}
             <div className="space-y-2">
-              <Input
-                type="text"
-                placeholder="Payment terms (Optional)"
-                value={formData.paymentTerms}
-                onChange={(e) =>
-                  setFormData({ ...formData, paymentTerms: e.target.value })
+              <Label>Tax Type</Label>
+              <RadioGroup
+                value={formData.taxType}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    taxType: value as TaxType,
+                  })
                 }
-              />
-              <div className="flex flex-wrap gap-2">
-                {PAYMENT_TERMS.map((term) => (
-                  <Badge
-                    key={term}
-                    variant="secondary"
-                    color="gray"
-                    onClick={() =>
-                      setFormData({ ...formData, paymentTerms: term })
-                    }
-                    className="cursor-pointer hover:bg-gray-200"
-                  >
-                    {term}
-                  </Badge>
-                ))}
-              </div>
+                name="tax-type"
+              >
+                <RadioGroupItem value="no_tax">No Tax</RadioGroupItem>
+                <RadioGroupItem value="gst">GST (CGST + SGST)</RadioGroupItem>
+                <RadioGroupItem value="igst">IGST</RadioGroupItem>
+              </RadioGroup>
             </div>
 
             {/* Advance Amount */}
-            <InputWithIcon
+            <InputWrapper
               type="number"
               placeholder="Advance amount"
               value={formData.advanceAmount}
@@ -234,7 +228,7 @@ export function OrderDetailsStep({
 
             {/* Discount Value */}
             {formData.discountType !== "none" && (
-              <InputWithIcon
+              <InputWrapper
                 type="number"
                 placeholder={
                   formData.discountType === "percentage"
@@ -257,6 +251,55 @@ export function OrderDetailsStep({
                 step={formData.discountType === "percentage" ? "1" : "0.01"}
               />
             )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Additional Details Section */}
+      <Collapsible
+        open={showAdditionalDetails}
+        onOpenChange={setShowAdditionalDetails}
+        className="border-t border-gray-200 px-4 py-5"
+      >
+        <CollapsibleTrigger
+          className={`flex items-center justify-between w-full ${showAdditionalDetails ? "mb-5" : "mb-0"}`}
+        >
+          <h3 className="text-lg font-medium text-gray-900">
+            Additional Details
+          </h3>
+          <IconChevronDown
+            className={`size-6 text-gray-500 transition-transform ${showAdditionalDetails ? "rotate-180" : "rotate-0"}`}
+          />
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <div className="flex flex-col gap-6">
+            {/* Payment Terms */}
+            <div className="space-y-2">
+              <Input
+                type="text"
+                placeholder="Payment terms (Optional)"
+                value={formData.paymentTerms}
+                onChange={(e) =>
+                  setFormData({ ...formData, paymentTerms: e.target.value })
+                }
+              />
+              <div className="flex flex-wrap gap-2">
+                {PAYMENT_TERMS.map((term) => (
+                  <Badge
+                    key={term}
+                    variant="secondary"
+                    color="gray"
+                    onClick={() =>
+                      setFormData({ ...formData, paymentTerms: term })
+                    }
+                    className="cursor-pointer hover:bg-gray-200"
+                  >
+                    {term}
+                  </Badge>
+                ))}
+              </div>
+            </div>
 
             {/* Notes */}
             <Textarea

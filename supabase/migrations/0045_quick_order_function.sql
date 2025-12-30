@@ -63,11 +63,12 @@ BEGIN
         customer_id,
         agent_id,
         order_date,
-        expected_delivery_date,
+        delivery_due_date,
+        payment_terms,
+        tax_type,
         advance_amount,
         discount_type,
         discount_value,
-        payment_terms,
         notes,
         attachments,
         source,
@@ -80,11 +81,12 @@ BEGIN
         v_customer_id,
         NULLIF((p_order_data->>'agent_id'), '')::UUID,
         (p_order_data->>'order_date')::DATE,
-        NULLIF((p_order_data->>'expected_delivery_date'), '')::DATE,
+        NULLIF((p_order_data->>'delivery_due_date'), '')::DATE,
+        NULLIF(p_order_data->>'payment_terms', ''),
+        COALESCE(p_order_data->>'tax_type', 'gst')::tax_type_enum,
         COALESCE((p_order_data->>'advance_amount')::DECIMAL, 0),
         COALESCE(p_order_data->>'discount_type', 'none')::discount_type_enum,
         COALESCE((p_order_data->>'discount_value')::DECIMAL, 0),
-        NULLIF(p_order_data->>'payment_terms', ''),
         NULLIF(p_order_data->>'notes', ''),
         COALESCE(
             ARRAY(SELECT jsonb_array_elements_text(p_order_data->'attachments')),
@@ -140,7 +142,7 @@ BEGIN
         NULLIF((p_order_data->>'agent_id'), '')::UUID,
         'sales_order',
         (p_order_data->>'order_date')::DATE,  -- Same as order date
-        NULLIF((p_order_data->>'expected_delivery_date'), '')::DATE,
+        NULLIF((p_order_data->>'delivery_due_date'), '')::DATE,
         NULLIF(p_order_data->>'transport_reference_number', ''),
         NULLIF(p_order_data->>'transport_type', '')::VARCHAR(20),
         NULLIF(p_order_data->>'transport_details', ''),
@@ -155,10 +157,26 @@ BEGIN
         v_stock_unit_id := (v_stock_unit_item->>'stock_unit_id')::UUID;
         v_dispatch_quantity := (v_stock_unit_item->>'quantity')::DECIMAL;
 
+        -- Validate stock unit belongs to the order warehouse
+        IF NOT EXISTS (
+            SELECT 1
+            FROM stock_units
+            WHERE id = v_stock_unit_id
+            AND warehouse_id = v_warehouse_id
+        ) THEN
+            RAISE EXCEPTION 'Stock unit % does not belong to warehouse %', v_stock_unit_id, v_warehouse_id;
+        END IF;
+
         -- Get current quantity
         SELECT remaining_quantity INTO v_current_quantity
         FROM stock_units
         WHERE id = v_stock_unit_id;
+
+        -- Validate sufficient quantity available
+        IF v_current_quantity < v_dispatch_quantity THEN
+            RAISE EXCEPTION 'Insufficient quantity for stock unit %. Available: %, Required: %',
+                v_stock_unit_id, v_current_quantity, v_dispatch_quantity;
+        END IF;
 
         -- Calculate new quantity
         v_new_quantity := v_current_quantity - v_dispatch_quantity;

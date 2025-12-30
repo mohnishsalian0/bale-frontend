@@ -31,6 +31,9 @@ CREATE TABLE stock_units (
     -- Inward tracking (links back to goods inward that created this unit)
     created_from_inward_id UUID, -- FK will be added in goods movement migration
 
+    -- Outward tracking (has this unit ever been dispatched)
+    has_outward BOOLEAN DEFAULT false,
+
     notes TEXT,
 
     -- QR Code tracking

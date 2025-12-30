@@ -4,6 +4,7 @@ import type { SalesOrderStatus } from "@/types/database/enums";
 
 interface CatalogOrderStatusBadgeProps {
   status: SalesOrderStatus | "overdue";
+  text?: string;
   className?: string;
 }
 
@@ -41,6 +42,7 @@ function getStatusConfig(
  */
 export function CatalogOrderStatusBadge({
   status,
+  text,
   className,
 }: CatalogOrderStatusBadgeProps) {
   const config = getStatusConfig(status);
@@ -49,9 +51,9 @@ export function CatalogOrderStatusBadge({
     <Badge
       color={config.color}
       variant={config.variant}
-      className={cn("rounded-2xl text-nowrap", className)}
+      className={cn("text-nowrap", className)}
     >
-      {config.label}
+      {text || config.label}
     </Badge>
   );
 }

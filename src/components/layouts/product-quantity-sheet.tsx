@@ -1,22 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { IconMinus, IconPlus } from "@tabler/icons-react";
+import { IconCurrencyRupee, IconMinus, IconPlus } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import ImageWrapper from "@/components/ui/image-wrapper";
-import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import type { ProductWithInventoryListView } from "@/types/products.types";
-import type { MeasuringUnit, StockType } from "@/types/database/enums";
+import type { MeasuringUnit } from "@/types/database/enums";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import { InputWrapper } from "../ui/input-wrapper";
 
 interface ProductQuantitySheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product: ProductWithInventoryListView | null;
   initialQuantity?: number;
-  onConfirm: (quantity: number) => void;
+  initialRate?: number;
+  onConfirm: (data: { quantity: number; rate: number }) => void;
 }
 
 export function ProductQuantitySheet({
@@ -24,9 +23,11 @@ export function ProductQuantitySheet({
   onOpenChange,
   product,
   initialQuantity = 0,
+  initialRate = 0,
   onConfirm,
 }: ProductQuantitySheetProps) {
   const [quantity, setQuantity] = useState(initialQuantity);
+  const [rate, setRate] = useState(initialRate);
 
   const handleCancel = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -37,8 +38,8 @@ export function ProductQuantitySheet({
   const handleConfirm = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (quantity > 0) {
-      onConfirm(quantity);
+    if (quantity > 0 && rate > 0) {
+      onConfirm({ quantity, rate });
       onOpenChange(false);
     }
   };
@@ -65,6 +66,11 @@ export function ProductQuantitySheet({
     setQuantity(Math.max(0, quantity));
   };
 
+  const handleRateChange = (value: string) => {
+    const rate = parseFloat(value) || 0;
+    setRate(Math.max(0, Math.round(rate * 100) / 100));
+  };
+
   const presetAmounts = [5, 10, 25, 50, 100, 250];
 
   if (!product) return null;
@@ -73,86 +79,99 @@ export function ProductQuantitySheet({
     product.measuring_unit as MeasuringUnit | null,
   );
 
-  const productInfoText = getProductInfo(product);
+  // Calculate line total and tax
+  const lineTotal = quantity * rate;
+  const hasTax = product.tax_type === "gst";
+  const gstRate = product.gst_rate || 0;
+  const taxAmount = hasTax ? (lineTotal * gstRate) / 100 : 0;
+  const grandTotal = lineTotal + taxAmount;
 
   const formContent = (
-    <div className="flex flex-col gap-4 p-4 md:px-0 overflow-x-hidden">
-      <div className="flex gap-4">
-        {/* Product Info */}
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <ImageWrapper
-            size="md"
-            shape="square"
-            imageUrl={product.product_images?.[0]}
-            alt={product.name}
-            placeholderIcon={getProductIcon(product.stock_type as StockType)}
+    <div className="flex flex-col gap-6 md:px-0 overflow-x-hidden">
+      {/* Quantity Input */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-1 items-end gap-2">
+          <InputWrapper
+            type="number"
+            value={quantity}
+            label={`Quantity (${product.inventory.in_stock_quantity} ${unitAbbreviation} avail.)`}
+            rightText={unitAbbreviation}
+            min="0"
+            step={product.stock_type === "roll" ? "0.1" : "1"}
+            placeholder={product.stock_type === "roll" ? "0.0" : "0"}
+            onFocus={(e) => e.target.select()}
+            onChange={(e) => handleQuantityChange(e.target.value)}
+            className="flex-1"
           />
-          <div className="flex-1 min-w-0">
-            <p
-              title={product.name}
-              className="text-base font-medium text-gray-700 truncate"
-            >
-              {product.name}
-            </p>
-            <p
-              title={productInfoText}
-              className="text-xs text-gray-500 truncate"
-            >
-              {productInfoText}
-            </p>
-          </div>
-        </div>
-
-        {/* Quantity Input */}
-        <div className="flex items-center gap-1 shrink-0">
           <Button
             type="button"
             variant="ghost"
             size="icon"
+            className="mb-1"
             onClick={handleDecrement}
           >
             <IconMinus />
           </Button>
-          <div className="relative">
-            <Input
-              type="number"
-              value={quantity}
-              onChange={(e) => handleQuantityChange(e.target.value)}
-              className="text-center text-lg font-medium max-w-25 pr-10"
-              min="0"
-              step={product.stock_type === "roll" ? "0.1" : "1"}
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
-              {unitAbbreviation}
-            </span>
-          </div>
           <Button
             type="button"
             variant="ghost"
             size="icon"
+            className="mb-1"
             onClick={handleIncrement}
           >
             <IconPlus />
           </Button>
         </div>
+
+        {/* Preset size options */}
+        <div className="flex flex-wrap items-center gap-2">
+          {presetAmounts.map((amount) => (
+            <Button
+              key={amount}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-border shadow-gray-sm text-foreground"
+              onClick={() => handlePresetAdd(amount)}
+            >
+              <IconPlus />
+              {amount}
+            </Button>
+          ))}
+        </div>
       </div>
 
-      {/* Preset size options */}
-      <div className="flex flex-wrap items-center gap-2 flex-2">
-        {presetAmounts.map((amount) => (
-          <Button
-            key={amount}
-            type="button"
-            variant="outline"
-            size="sm"
-            className="border-border shadow-gray-sm text-foreground"
-            onClick={() => handlePresetAdd(amount)}
-          >
-            <IconPlus />
-            {amount}
-          </Button>
-        ))}
-      </div>
+      {/* Rate Input */}
+      <InputWrapper
+        type="number"
+        value={rate}
+        label={`Rate per ${unitAbbreviation}`}
+        icon={<IconCurrencyRupee />}
+        min="0"
+        step="1"
+        placeholder="0.00"
+        onChange={(e) => handleRateChange(e.target.value)}
+      />
+
+      {/* Totals Summary */}
+      {quantity > 0 && rate > 0 && (
+        <div className="flex flex-col gap-2 rounded-lg">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-500">Subtotal</span>
+            <span className="font-medium">₹{lineTotal.toFixed(2)}</span>
+          </div>
+          {hasTax && (
+            <div className="flex justify-between text-sm text-gray-500">
+              <span>GST ({gstRate}%)</span>
+              <span className="font-medium">₹{taxAmount.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-base font-semibold border-t pt-2">
+            <span>Total</span>
+            <span>₹{grandTotal.toFixed(2)}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -169,7 +188,7 @@ export function ProductQuantitySheet({
       <Button
         type="button"
         onClick={handleConfirm}
-        disabled={quantity <= 0}
+        disabled={quantity <= 0 || rate <= 0}
         className="flex-1"
       >
         Confirm
@@ -181,7 +200,8 @@ export function ProductQuantitySheet({
     <ResponsiveDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Add quantity"
+      title="Add product"
+      description={product.name}
       footer={footerButtons}
     >
       {formContent}

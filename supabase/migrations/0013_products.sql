@@ -11,6 +11,7 @@ CREATE TABLE products (
     
     -- Identity
     sequence_number INTEGER NOT NULL,
+    product_code VARCHAR(50),
     name VARCHAR(200) NOT NULL,
     show_on_catalog BOOLEAN DEFAULT TRUE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -22,11 +23,15 @@ CREATE TABLE products (
     -- Stock information
     stock_type VARCHAR(10) NOT NULL CHECK (stock_type IN ('roll', 'batch', 'piece')),
     measuring_unit VARCHAR(20) CHECK (measuring_unit IN ('metre', 'yard', 'kilogram', 'unit')),
-    cost_price_per_unit DECIMAL(10,2),
-    selling_price_per_unit DECIMAL(10,2),
+    cost_price_per_unit DECIMAL(15,2),
+    selling_price_per_unit DECIMAL(15,2),
     min_stock_alert BOOLEAN DEFAULT FALSE,
     min_stock_threshold INTEGER DEFAULT 0,
-    
+
+    -- Tax information
+    tax_type VARCHAR(10) NOT NULL DEFAULT 'gst' CHECK (tax_type IN ('no_tax', 'gst')),
+    gst_rate DECIMAL(5,2),
+
     -- Additional information
     hsn_code VARCHAR(20),
     notes TEXT,
@@ -49,7 +54,8 @@ CREATE TABLE products (
         (stock_type = 'piece' AND measuring_unit IS NULL)
     ),
 
-    UNIQUE(company_id, sequence_number)
+    UNIQUE(company_id, sequence_number),
+    UNIQUE(company_id, product_code)
 );
 
 -- =====================================================
@@ -61,6 +67,9 @@ CREATE INDEX idx_products_company_id ON products(company_id);
 
 -- Sequence number lookup within company
 CREATE INDEX idx_products_sequence_number ON products(company_id, sequence_number);
+
+-- Product code lookup within company
+CREATE INDEX idx_products_product_code ON products(company_id, product_code);
 
 -- Product name search
 CREATE INDEX idx_products_name ON products(company_id, name);
@@ -76,6 +85,9 @@ CREATE INDEX idx_products_selling_price ON products(company_id, selling_price_pe
 
 -- Stock type filtering
 CREATE INDEX idx_products_stock_type ON products(company_id, stock_type);
+
+-- Tax type filtering
+CREATE INDEX idx_products_tax_type ON products(company_id, tax_type);
 
 -- Full-text search index
 CREATE INDEX idx_products_search ON products USING GIN(search_vector);
@@ -94,13 +106,19 @@ CREATE TRIGGER set_products_modified_by
     BEFORE UPDATE ON products
     FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
--- Auto-generate sequence numbers
+-- Auto-generate sequence numbers and product codes
 CREATE OR REPLACE FUNCTION auto_generate_product_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.sequence_number IS NULL THEN
         NEW.sequence_number := get_next_sequence('products', NEW.company_id);
     END IF;
+
+    -- Auto-generate product_code if not provided
+    IF NEW.product_code IS NULL THEN
+        NEW.product_code := 'PROD-' || NEW.sequence_number;
+    END IF;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

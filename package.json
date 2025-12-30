@@ -13,6 +13,7 @@
     "format": "npx prettier --write .",
     "format:check": "npx prettier --check .",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "db:reset": "npx supabase db reset",
     "db:types": "npx supabase gen types typescript --local > src/types/database/supabase.ts",
     "setup:test": "npx tsx scripts/setup.ts local",
     "setup:staging": "npx tsx scripts/setup.ts staging",

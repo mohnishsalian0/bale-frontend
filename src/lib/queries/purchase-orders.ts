@@ -55,10 +55,14 @@ type PurchaseOrderItemDetailViewRaw = Tables<"purchase_order_items"> & {
  * Includes nested supplier, agent, warehouse, and items with raw attributes
  */
 type PurchaseOrderDetailViewRaw = Tables<"purchase_orders"> & {
-  supplier: Tables<"partners"> | null;
+  supplier:
+    | (Tables<"partners"> & {
+        ledger: Pick<Tables<"ledgers">, "id" | "name">[];
+      })
+    | null;
   agent: Pick<
     Tables<"partners">,
-    "id" | "first_name" | "last_name" | "company_name"
+    "id" | "first_name" | "last_name" | "company_name" | "display_name"
   > | null;
   warehouse: Tables<"warehouses"> | null;
   purchase_order_items: PurchaseOrderItemDetailViewRaw[];
@@ -95,10 +99,10 @@ export async function getPurchaseOrders(
       `
         *,
         supplier:supplier_id(
-          id, first_name, last_name, company_name
+          id, first_name, last_name, display_name, company_name
         ),
         agent:agent_id(
-          id, first_name, last_name, company_name
+          id, first_name, last_name, display_name, company_name
         ),
         purchase_order_items!inner(
           *,
@@ -125,7 +129,7 @@ export async function getPurchaseOrders(
     } else {
       if (filters.status === "overdue") {
         query = query.eq("status", "in_progress");
-        query = query.lt("expected_delivery_date", new Date().toISOString());
+        query = query.lt("delivery_due_date", new Date().toISOString());
       } else {
         query = query.eq("status", filters.status);
       }
@@ -153,6 +157,14 @@ export async function getPurchaseOrders(
       type: "websearch",
       config: "english",
     });
+  }
+
+  // Apply date range filter
+  if (filters?.date_from) {
+    query = query.gte("order_date", filters.date_from);
+  }
+  if (filters?.date_to) {
+    query = query.lte("order_date", filters.date_to);
   }
 
   // Apply ordering (defaults to order_date descending)
@@ -186,9 +198,12 @@ export async function getPurchaseOrderByNumber(
     .select(
       `
 			*,
-			supplier:supplier_id(*),
+			supplier:supplier_id(
+				*,
+				ledger:ledgers!partner_id(id, name)
+			),
 			agent:agent_id(
-				id, first_name, last_name, company_name
+				id, first_name, last_name, display_name, company_name
 			),
 			warehouse:warehouse_id(*),
 			purchase_order_items(
@@ -367,6 +382,7 @@ export async function updatePurchaseOrder(
 /**
  * Update line items for a purchase order (only when in approval_pending status)
  * Deletes all existing items and inserts new ones in a transaction
+ * @deprecated Use updatePurchaseOrderWithItems instead for atomic updates
  */
 export async function updatePurchaseOrderLineItems(
   orderId: string,
@@ -400,4 +416,45 @@ export async function updatePurchaseOrderLineItems(
     .insert(lineItemsToInsert);
 
   if (insertError) throw insertError;
+}
+
+/**
+ * Update purchase order with items atomically via RPC function
+ * Validates business rules (approval_pending status, no inward records)
+ * Deletes old items and inserts new ones in a single transaction
+ */
+export async function updatePurchaseOrderWithItems(
+  orderId: string,
+  orderData: UpdatePurchaseOrderData,
+  lineItems: CreatePurchaseOrderLineItem[],
+): Promise<void> {
+  const supabase = createClient();
+
+  if (lineItems.length === 0) {
+    throw new Error("At least one line item is required");
+  }
+
+  const { error } = await supabase.rpc("update_purchase_order_with_items", {
+    p_order_id: orderId,
+    p_order_data: orderData,
+    p_line_items: lineItems,
+  });
+
+  if (error) throw error;
+}
+
+/**
+ * Delete purchase order (soft delete)
+ */
+export async function deletePurchaseOrder(orderId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("purchase_orders")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", orderId);
+
+  if (error) {
+    throw error;
+  }
 }

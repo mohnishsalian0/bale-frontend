@@ -88,9 +88,9 @@ export function SalesOrderInfiniteList({
                 const customerName = order.customer
                   ? getPartnerName(order.customer)
                   : "Unknown";
-                const displayStatus = getOrderDisplayStatus(
+                const displayStatusData = getOrderDisplayStatus(
                   order.status as SalesOrderStatus,
-                  order.expected_delivery_date,
+                  order.delivery_due_date,
                 );
 
                 return (
@@ -104,13 +104,16 @@ export function SalesOrderInfiniteList({
                         <p className="text-base font-medium text-gray-700">
                           SO-{order.sequence_number}
                         </p>
-                        <SalesStatusBadge status={displayStatus} />
+                        <SalesStatusBadge
+                          status={displayStatusData.status}
+                          text={displayStatusData.text}
+                        />
                       </div>
-                      <p className="text-sm text-gray-500 truncate mt-1">
-                        {customerName} · {formatAbsoluteDate(order.created_at)}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-gray-500">
                         {getFullProductInfo(order.sales_order_items)}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {customerName} · {formatAbsoluteDate(order.created_at)}
                       </p>
                     </div>
 

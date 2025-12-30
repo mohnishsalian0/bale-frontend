@@ -32,7 +32,15 @@ CREATE TABLE goods_inwards (
     expected_delivery_date DATE,
     transport_reference_number VARCHAR(50),
     transport_type VARCHAR(20) CHECK (transport_type IN ('road', 'rail', 'air', 'sea', 'courier')),
-    transport_details TEXT,
+
+    -- Invoice tracking
+    has_invoice BOOLEAN DEFAULT false,
+
+    -- Cancellation/Reversal tracking
+    is_cancelled BOOLEAN DEFAULT FALSE,
+    cancelled_at TIMESTAMPTZ,
+    cancelled_by UUID,
+    cancellation_reason TEXT,
 
     notes TEXT,
     attachments TEXT[], -- Array of file URLs
@@ -82,6 +90,7 @@ CREATE INDEX idx_goods_inwards_partner ON goods_inwards(partner_id);
 CREATE INDEX idx_goods_inwards_sales_order ON goods_inwards(sales_order_id);
 CREATE INDEX idx_goods_inwards_job_work ON goods_inwards(job_work_id);
 CREATE INDEX idx_goods_inwards_purchase_order ON goods_inwards(purchase_order_id);
+CREATE INDEX idx_goods_inwards_has_invoice ON goods_inwards(company_id, has_invoice) WHERE has_invoice = false;
 
 -- Full-text search index
 CREATE INDEX idx_goods_inwards_search ON goods_inwards USING GIN(search_vector);
@@ -121,6 +130,42 @@ CREATE TRIGGER trigger_goods_inwards_update_partner_interaction
     FOR EACH ROW
     WHEN (NEW.deleted_at IS NULL AND NEW.partner_id IS NOT NULL)
     EXECUTE FUNCTION update_partner_last_interaction();
+
+-- Prevent goods_inward deletion if invoiced
+CREATE OR REPLACE FUNCTION prevent_invoiced_inward_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.has_invoice = true THEN
+        RAISE EXCEPTION 'Cannot delete goods inward - linked to invoice';
+    END IF;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_prevent_invoiced_inward_delete
+    BEFORE DELETE ON goods_inwards
+    FOR EACH ROW EXECUTE FUNCTION prevent_invoiced_inward_delete();
+
+-- Prevent critical field edits if invoiced
+CREATE OR REPLACE FUNCTION prevent_invoiced_inward_edit()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.has_invoice = true THEN
+        RAISE EXCEPTION 'Cannot edit goods inward - linked to invoice. Critical fields are locked.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_prevent_invoiced_inward_edit
+    BEFORE UPDATE ON goods_inwards
+    FOR EACH ROW
+    WHEN (
+        OLD.inward_date IS DISTINCT FROM NEW.inward_date OR
+        OLD.partner_id IS DISTINCT FROM NEW.partner_id OR
+        OLD.from_warehouse_id IS DISTINCT FROM NEW.from_warehouse_id
+    )
+    EXECUTE FUNCTION prevent_invoiced_inward_edit();
 
 -- =====================================================
 -- GOODS INWARD TABLE RLS POLICIES

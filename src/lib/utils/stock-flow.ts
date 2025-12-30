@@ -11,6 +11,30 @@ import {
 import { MeasuringUnit } from "@/types/database/enums";
 
 /**
+ * Get formatted movement number based on type
+ * Returns "GI-{number}" for inward or "GO-{number}" for outward
+ *
+ * @example
+ * // Returns "GI-123"
+ * getMovementNumber("inward", 123)
+ *
+ * @example
+ * // Returns "GO-456"
+ * getMovementNumber("outward", 456)
+ *
+ * @param type - The movement type ("inward" or "outward")
+ * @param sequenceNumber - The sequence number of the movement
+ * @returns A formatted movement number string
+ */
+export function getMovementNumber(
+  type: "inward" | "outward",
+  sequenceNumber: number,
+): string {
+  const prefix = type === "inward" ? "GI" : "GO";
+  return `${prefix}-${sequenceNumber}`;
+}
+
+/**
  * Get formatted name for a sender
  * Returns partner name if received from partner, otherwise warehouse name if warehouse transfer
  */

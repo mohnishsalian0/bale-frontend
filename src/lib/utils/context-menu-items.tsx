@@ -11,8 +11,13 @@ import {
   IconTrash,
   IconCheck,
   IconReceiptRupee,
+  IconCurrencyRupee,
+  IconFileText,
 } from "@tabler/icons-react";
 import type { SalesOrderStatus, PartnerType } from "@/types/database/enums";
+import type { Invoice } from "@/types/invoices.types";
+import type { Payment } from "@/types/payments.types";
+import type { AdjustmentNote } from "@/types/adjustment-notes.types";
 
 export type ContextMenuItem = {
   label: string;
@@ -40,14 +45,15 @@ export interface SalesOrderContextCallbacks {
 export function getSalesOrderContextMenuItems(
   order: {
     status: SalesOrderStatus;
-    expected_delivery_date: string | null;
+    delivery_due_date: string | null;
+    has_outward: boolean;
   },
   callbacks: SalesOrderContextCallbacks,
 ): ContextMenuItem[] {
   const now = new Date();
   const isOverdue =
-    order.expected_delivery_date &&
-    new Date(order.expected_delivery_date) < now &&
+    order.delivery_due_date &&
+    new Date(order.delivery_due_date) < now &&
     order.status === "in_progress";
 
   const items: ContextMenuItem[] = [
@@ -98,7 +104,10 @@ export function getSalesOrderContextMenuItems(
       onClick: callbacks.onCancel,
       variant: "destructive",
       disabled: order.status === "cancelled",
-      hidden: order.status === "completed" || order.status === "cancelled",
+      hidden:
+        order.status === "completed" ||
+        order.status === "cancelled" ||
+        order.has_outward,
     },
   ];
 
@@ -207,6 +216,7 @@ export function getProductContextMenuItems(
 // Sales Order Detail Footer Items
 export interface SalesOrderDetailFooterCallbacks {
   onApprove: () => void;
+  onEdit: () => void;
   onCreateOutward: () => void;
   onCreateInvoice: () => void;
   onComplete: () => void;
@@ -218,6 +228,7 @@ export interface SalesOrderDetailFooterCallbacks {
 
 export function getSalesOrderDetailFooterItems(
   displayStatus: SalesOrderStatus | "overdue",
+  has_outward: boolean,
   callbacks: SalesOrderDetailFooterCallbacks,
   options?: {
     downloading?: boolean;
@@ -226,47 +237,46 @@ export function getSalesOrderDetailFooterItems(
   const items: ContextMenuItem[] = [];
 
   // Primary CTA (first button - flex-2)
-  if (displayStatus === "approval_pending") {
-    items.push({
-      label: "Approve order",
-      icon: IconCheck,
-      onClick: callbacks.onApprove,
-      variant: "default",
-    });
-  }
+  items.push({
+    label: "Approve order",
+    icon: IconCheck,
+    onClick: callbacks.onApprove,
+    variant: "default",
+    hidden: !(displayStatus === "approval_pending"),
+  });
 
-  if (displayStatus === "in_progress" || displayStatus === "overdue") {
-    items.push({
-      label: "Create outward",
-      icon: IconPlus,
-      onClick: callbacks.onCreateOutward,
-      variant: "default",
-    });
-  }
+  items.push({
+    label: "Create outward",
+    icon: IconPlus,
+    onClick: callbacks.onCreateOutward,
+    variant: "default",
+    hidden: !(displayStatus === "in_progress" || displayStatus === "overdue"),
+  });
 
   // Secondary button (flex-1)
-  if (
-    displayStatus === "in_progress" ||
-    displayStatus === "overdue" ||
-    displayStatus === "completed"
-  ) {
-    items.push({
-      label: "Create invoice",
-      icon: IconReceiptRupee,
-      onClick: callbacks.onCreateInvoice,
-      variant: "outline",
-      disabled: true,
-    });
-  }
+  items.push({
+    label: "Create invoice",
+    icon: IconReceiptRupee,
+    onClick: callbacks.onCreateInvoice,
+    variant: "outline",
+    hidden:
+      displayStatus === "approval_pending" || displayStatus === "cancelled",
+  });
 
   // Dropdown menu items
-  if (displayStatus === "in_progress" || displayStatus === "overdue") {
-    items.push({
-      label: "Mark as complete",
-      icon: IconCheck,
-      onClick: callbacks.onComplete,
-    });
-  }
+  items.push({
+    label: "Edit order",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    hidden: displayStatus !== "approval_pending",
+  });
+
+  items.push({
+    label: "Mark as complete",
+    icon: IconCheck,
+    onClick: callbacks.onComplete,
+    hidden: !(displayStatus === "in_progress" || displayStatus === "overdue"),
+  });
 
   items.push({
     label: "Share",
@@ -306,7 +316,8 @@ export function getSalesOrderDetailFooterItems(
     hidden:
       displayStatus === "approval_pending" ||
       displayStatus === "completed" ||
-      displayStatus === "cancelled",
+      displayStatus === "cancelled" ||
+      has_outward,
   });
 
   return items;
@@ -315,6 +326,7 @@ export function getSalesOrderDetailFooterItems(
 // Purchase Order Detail Footer Items
 export interface PurchaseOrderDetailFooterCallbacks {
   onApprove: () => void;
+  onEdit: () => void;
   onCreateInward: () => void;
   onCreateInvoice: () => void;
   onComplete: () => void;
@@ -326,6 +338,7 @@ export interface PurchaseOrderDetailFooterCallbacks {
 
 export function getPurchaseOrderDetailFooterItems(
   displayStatus: SalesOrderStatus | "overdue",
+  has_inward: boolean,
   callbacks: PurchaseOrderDetailFooterCallbacks,
   options?: {
     downloading?: boolean;
@@ -334,47 +347,46 @@ export function getPurchaseOrderDetailFooterItems(
   const items: ContextMenuItem[] = [];
 
   // Primary CTA (first button - flex-2)
-  if (displayStatus === "approval_pending") {
-    items.push({
-      label: "Approve order",
-      icon: IconCheck,
-      onClick: callbacks.onApprove,
-      variant: "default",
-    });
-  }
+  items.push({
+    label: "Approve order",
+    icon: IconCheck,
+    onClick: callbacks.onApprove,
+    variant: "default",
+    hidden: !(displayStatus === "approval_pending"),
+  });
 
-  if (displayStatus === "in_progress" || displayStatus === "overdue") {
-    items.push({
-      label: "Create inward",
-      icon: IconPlus,
-      onClick: callbacks.onCreateInward,
-      variant: "default",
-    });
-  }
+  items.push({
+    label: "Create inward",
+    icon: IconPlus,
+    onClick: callbacks.onCreateInward,
+    variant: "default",
+    hidden: !(displayStatus === "in_progress" || displayStatus === "overdue"),
+  });
 
   // Create invoice
-  if (
-    displayStatus === "in_progress" ||
-    displayStatus === "overdue" ||
-    displayStatus === "completed"
-  ) {
-    items.push({
-      label: "Create invoice",
-      icon: IconReceiptRupee,
-      onClick: callbacks.onCreateInvoice,
-      variant: "outline",
-      disabled: true,
-    });
-  }
+  items.push({
+    label: "Create invoice",
+    icon: IconReceiptRupee,
+    onClick: callbacks.onCreateInvoice,
+    variant: "outline",
+    hidden:
+      displayStatus === "approval_pending" || displayStatus === "cancelled",
+  });
 
   // Dropdown menu items
-  if (displayStatus === "in_progress" || displayStatus === "overdue") {
-    items.push({
-      label: "Mark as complete",
-      icon: IconCheck,
-      onClick: callbacks.onComplete,
-    });
-  }
+  items.push({
+    label: "Edit order",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    hidden: displayStatus !== "approval_pending",
+  });
+
+  items.push({
+    label: "Mark as complete",
+    icon: IconCheck,
+    onClick: callbacks.onComplete,
+    hidden: !(displayStatus === "in_progress" || displayStatus === "overdue"),
+  });
 
   items.push({
     label: "Share",
@@ -517,6 +529,291 @@ export function getPartnerDetailFooterItems(
     onClick: callbacks.onDelete,
     variant: "destructive",
     size: "icon-sm",
+  });
+
+  return items;
+}
+
+// Invoice Detail Footer Items
+export interface InvoiceDetailFooterCallbacks {
+  onMakePayment: () => void;
+  onDownload: () => void;
+  onCreateAdjustment: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onCancel: () => void;
+}
+
+export function getInvoiceDetailFooterItems(
+  invoice: Pick<
+    Invoice,
+    | "status"
+    | "invoice_type"
+    | "is_cancelled"
+    | "has_payment"
+    | "has_adjustment"
+    | "exported_to_tally_at"
+  >,
+  callbacks: InvoiceDetailFooterCallbacks,
+): ContextMenuItem[] {
+  const items: ContextMenuItem[] = [];
+
+  // Primary CTA (first button - flex-2): Make payment
+  items.push({
+    label: "Make payment",
+    icon: IconCurrencyRupee,
+    onClick: callbacks.onMakePayment,
+    variant: "default",
+    hidden: invoice.status === "settled" || invoice.is_cancelled,
+  });
+
+  // Secondary button (flex-1): Download
+  items.push({
+    label: "Download",
+    icon: IconDownload,
+    onClick: callbacks.onDownload,
+    variant: "outline",
+  });
+
+  // Dropdown menu items
+  // Create adjustment note: hidden if cancelled
+  items.push({
+    label:
+      invoice.invoice_type === "sales"
+        ? "Create credit note"
+        : "Create debit note",
+    icon: IconFileText,
+    onClick: callbacks.onCreateAdjustment,
+    hidden: invoice.is_cancelled,
+  });
+
+  // Edit: hidden if cancelled or exported to Tally
+  items.push({
+    label: "Edit",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    hidden:
+      invoice.is_cancelled ||
+      invoice.has_adjustment ||
+      invoice.has_payment ||
+      invoice.exported_to_tally_at !== null,
+  });
+
+  // Delete: shown only if not cancelled, no payments, no adjustments, not exported
+  items.push({
+    label: "Delete",
+    icon: IconTrash,
+    onClick: callbacks.onDelete,
+    variant: "destructive",
+    hidden:
+      invoice.is_cancelled ||
+      invoice.has_payment ||
+      invoice.has_adjustment ||
+      invoice.exported_to_tally_at !== null,
+  });
+
+  // Cancel: shown only if not cancelled, no payments, no adjustments
+  items.push({
+    label: "Cancel",
+    icon: IconX,
+    onClick: callbacks.onCancel,
+    variant: "destructive",
+    hidden:
+      invoice.is_cancelled || invoice.has_payment || invoice.has_adjustment,
+  });
+
+  return items;
+}
+
+// Payment Detail Footer Items
+export interface PaymentDetailFooterCallbacks {
+  onEdit: () => void;
+  onDelete: () => void;
+  onCancel: () => void;
+}
+
+export function getPaymentDetailFooterItems(
+  payment: Pick<Payment, "is_cancelled" | "exported_to_tally_at">,
+  callbacks: PaymentDetailFooterCallbacks,
+): ContextMenuItem[] {
+  const items: ContextMenuItem[] = [];
+
+  // Primary button (flex-2): Edit
+  // Hidden if cancelled or exported to Tally
+  items.push({
+    label: "Edit",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    variant: "outline",
+    hidden: payment.is_cancelled || payment.exported_to_tally_at !== null,
+  });
+
+  // Secondary button (flex-1): Delete
+  items.push({
+    label: "Delete",
+    icon: IconTrash,
+    onClick: callbacks.onDelete,
+    variant: "destructive",
+    hidden: payment.is_cancelled || payment.exported_to_tally_at !== null,
+  });
+
+  // Dropdown menu items: Cancel
+  items.push({
+    label: "Cancel",
+    icon: IconX,
+    onClick: callbacks.onCancel,
+    variant: "destructive",
+    hidden: payment.is_cancelled,
+  });
+
+  return items;
+}
+
+// Adjustment Note Detail Footer Items
+export interface AdjustmentNoteDetailFooterCallbacks {
+  onEdit: () => void;
+  onDelete: () => void;
+  onCancel: () => void;
+}
+
+export function getAdjustmentNoteDetailFooterItems(
+  adjustmentNote: Pick<AdjustmentNote, "is_cancelled" | "exported_to_tally_at">,
+  callbacks: AdjustmentNoteDetailFooterCallbacks,
+): ContextMenuItem[] {
+  const items: ContextMenuItem[] = [];
+
+  // Primary button (flex-2): Edit
+  // Hidden if cancelled or exported to Tally
+  items.push({
+    label: "Edit",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    variant: "outline",
+    hidden:
+      adjustmentNote.is_cancelled ||
+      adjustmentNote.exported_to_tally_at !== null,
+  });
+
+  // Secondary button (flex-1): Delete
+  items.push({
+    label: "Delete",
+    icon: IconTrash,
+    onClick: callbacks.onDelete,
+    variant: "destructive",
+    hidden:
+      adjustmentNote.is_cancelled ||
+      adjustmentNote.exported_to_tally_at !== null,
+  });
+
+  // Dropdown menu items: Cancel
+  items.push({
+    label: "Cancel",
+    icon: IconX,
+    onClick: callbacks.onCancel,
+    variant: "destructive",
+    hidden: adjustmentNote.is_cancelled,
+  });
+
+  return items;
+}
+
+// ============================================================================
+// GOODS INWARD DETAIL FOOTER ITEMS
+// ============================================================================
+
+export interface GoodsInwardDetailFooterCallbacks {
+  onEdit: () => void;
+  onDelete: () => void;
+  onCancel: () => void;
+}
+
+/**
+ * Get footer action items for goods inward detail page
+ * Shows edit button if not invoiced or cancelled
+ */
+export function getGoodsInwardDetailFooterItems(
+  hasInvoice: boolean,
+  isCancelled: boolean,
+  callbacks: GoodsInwardDetailFooterCallbacks,
+): ContextMenuItem[] {
+  const items: ContextMenuItem[] = [];
+
+  // Primary CTA: Edit button - hidden if invoiced or cancelled
+  items.push({
+    label: "Edit inward",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    variant: "default",
+    hidden: hasInvoice || isCancelled,
+  });
+
+  // Dropdown menu items: Delete - hidden if invoiced or cancelled
+  items.push({
+    label: "Delete inward",
+    icon: IconTrash,
+    onClick: callbacks.onDelete,
+    variant: "destructive",
+    hidden: hasInvoice || isCancelled,
+  });
+
+  // Dropdown menu items: Cancel - hidden if already cancelled or invoiced
+  items.push({
+    label: "Cancel inward",
+    icon: IconX,
+    onClick: callbacks.onCancel,
+    variant: "destructive",
+    hidden: isCancelled || hasInvoice,
+  });
+
+  return items;
+}
+
+// ============================================================================
+// GOODS OUTWARD DETAIL FOOTER ITEMS
+// ============================================================================
+
+export interface GoodsOutwardDetailFooterCallbacks {
+  onEdit: () => void;
+  onDelete: () => void;
+  onCancel: () => void;
+}
+
+/**
+ * Get footer action items for goods outward detail page
+ * Shows edit button if not invoiced or cancelled
+ */
+export function getGoodsOutwardDetailFooterItems(
+  hasInvoice: boolean,
+  isCancelled: boolean,
+  callbacks: GoodsOutwardDetailFooterCallbacks,
+): ContextMenuItem[] {
+  const items: ContextMenuItem[] = [];
+
+  // Primary CTA: Edit button - hidden if invoiced or cancelled
+  items.push({
+    label: "Edit outward",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    variant: "default",
+    hidden: hasInvoice || isCancelled,
+  });
+
+  // Dropdown menu items: Delete - hidden if invoiced or cancelled
+  items.push({
+    label: "Delete outward",
+    icon: IconTrash,
+    onClick: callbacks.onDelete,
+    variant: "destructive",
+    hidden: hasInvoice || isCancelled,
+  });
+
+  // Dropdown menu items: Cancel - hidden if already cancelled or invoiced
+  items.push({
+    label: "Cancel outward",
+    icon: IconX,
+    onClick: callbacks.onCancel,
+    variant: "destructive",
+    hidden: isCancelled || hasInvoice,
   });
 
   return items;

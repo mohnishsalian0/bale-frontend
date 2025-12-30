@@ -43,6 +43,11 @@ export function DatePicker({
     return `${day}-${month}-${year}`;
   }, [value]);
 
+  // Calculate year range for dropdown (10 years in past, 10 years in future)
+  const currentYear = new Date().getFullYear();
+  const fromYear = currentYear - 20;
+  const toYear = currentYear + 20;
+
   return (
     <div className={`${className || ""}`}>
       {label && (
@@ -77,6 +82,8 @@ export function DatePicker({
             mode="single"
             selected={value}
             captionLayout="dropdown"
+            fromYear={fromYear}
+            toYear={toYear}
             disabled={disabled}
             onSelect={(date) => {
               if (onChange) {

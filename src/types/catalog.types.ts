@@ -31,6 +31,7 @@ export interface PublicProduct extends Pick<
   Product,
   | "id"
   | "sequence_number"
+  | "product_code"
   | "name"
   | "stock_type"
   | "measuring_unit"
@@ -80,6 +81,7 @@ export interface PublicSalesOrderItem extends SalesOrderItem {
     | "product_images"
     | "measuring_unit"
     | "sequence_number"
+    | "product_code"
     | "stock_type"
   > | null;
 }
@@ -104,6 +106,7 @@ export interface PublicSalesOrder extends SalesOrder {
     | "pin_code"
     | "company_name"
     | "gst_number"
+    | "display_name"
   > | null;
   sales_order_items: PublicSalesOrderItem[];
 }

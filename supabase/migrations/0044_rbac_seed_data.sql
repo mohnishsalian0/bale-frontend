@@ -109,6 +109,34 @@ INSERT INTO permissions (permission_path, display_name, description, category) V
 ('storage.upload', 'Upload Files', 'Upload files and images to storage', 'storage'),
 ('storage.delete', 'Delete Files', 'Remove files from storage', 'storage');
 
+-- Purchase Orders (Top Level)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('purchase_orders.read', 'View Purchase Orders', 'View purchase order list and details', 'purchase_orders'),
+('purchase_orders.create', 'Create Purchase Orders', 'Create new purchase orders', 'purchase_orders'),
+('purchase_orders.update', 'Update Purchase Orders', 'Edit existing purchase orders', 'purchase_orders'),
+('purchase_orders.delete', 'Delete Purchase Orders', 'Cancel or delete purchase orders', 'purchase_orders');
+
+-- Invoices (Top Level)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('invoices.read', 'View Invoices', 'View sales and purchase invoice list and details', 'invoices'),
+('invoices.create', 'Create Invoices', 'Create new sales and purchase invoices', 'invoices'),
+('invoices.update', 'Update Invoices', 'Edit existing invoices', 'invoices'),
+('invoices.delete', 'Delete Invoices', 'Cancel or delete invoices', 'invoices');
+
+-- Adjustment Notes (Top Level)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('adjustment_notes.read', 'View Adjustment Notes', 'View credit and debit notes', 'adjustment_notes'),
+('adjustment_notes.create', 'Create Adjustment Notes', 'Create credit and debit notes', 'adjustment_notes'),
+('adjustment_notes.update', 'Update Adjustment Notes', 'Edit adjustment notes', 'adjustment_notes'),
+('adjustment_notes.delete', 'Delete Adjustment Notes', 'Cancel or delete adjustment notes', 'adjustment_notes');
+
+-- Payments (Top Level)
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('payments.read', 'View Payments', 'View payment and receipt vouchers', 'payments'),
+('payments.create', 'Create Payments', 'Create payment and receipt vouchers', 'payments'),
+('payments.update', 'Update Payments', 'Edit payment vouchers', 'payments'),
+('payments.delete', 'Delete Payments', 'Cancel or delete payment vouchers', 'payments');
+
 -- =====================================================
 -- ASSIGN PERMISSIONS TO ADMIN ROLE
 -- =====================================================
@@ -151,6 +179,14 @@ AND p.permission_path IN (
 
     -- Read-only for sales orders in assigned warehouse
     'sales_orders.read',
+
+    -- Read-only for purchase orders in assigned warehouse
+    'purchase_orders.read',
+
+    -- Read-only for accounting features
+    'invoices.read',
+    'adjustment_notes.read',
+    'payments.read',
 
     -- Full CRUD for job work in assigned warehouse
     'job_works.read',

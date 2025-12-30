@@ -18,6 +18,8 @@ import {
   completePurchaseOrder,
   updatePurchaseOrder,
   updatePurchaseOrderLineItems,
+  updatePurchaseOrderWithItems,
+  deletePurchaseOrder,
   type PurchaseOrderFilters,
   type CreatePurchaseOrderData,
   type CreatePurchaseOrderLineItem,
@@ -195,6 +197,34 @@ export function usePurchaseOrderMutations(warehouseId: string | null) {
     },
   });
 
+  const updateWithItems = useMutation({
+    mutationFn: ({
+      orderId,
+      orderData,
+      lineItems,
+    }: {
+      orderId: string;
+      orderData: UpdatePurchaseOrderData;
+      lineItems: CreatePurchaseOrderLineItem[];
+    }) => updatePurchaseOrderWithItems(orderId, orderData, lineItems),
+    onSuccess: () => {
+      // Invalidate all purchase order queries
+      queryClient.invalidateQueries({
+        queryKey: ["purchase-orders"],
+      });
+    },
+  });
+
+  const delete_ = useMutation({
+    mutationFn: (orderId: string) => deletePurchaseOrder(orderId),
+    onSuccess: () => {
+      // Invalidate all purchase order queries
+      queryClient.invalidateQueries({
+        queryKey: ["purchase-orders"],
+      });
+    },
+  });
+
   return {
     create,
     approve,
@@ -202,5 +232,7 @@ export function usePurchaseOrderMutations(warehouseId: string | null) {
     complete,
     update,
     updateLineItems,
+    updateWithItems,
+    delete: delete_,
   };
 }

@@ -47,16 +47,18 @@ export default function QuickCreateOrderPage() {
     orderDate: dateToISOString(new Date()),
     deliveryDate: "",
     agentId: "",
-    paymentTerms: "",
+    taxType: "gst",
     advanceAmount: "",
+    discountType: "none",
     discount: "",
+    paymentTerms: "",
     transportDetails: "",
     notes: "",
     documentFile: null,
   });
 
   // Customer selection handler with auto-advance
-  const handleSelectCustomer = (customerId: string) => {
+  const handleSelectCustomer = (customerId: string, _ledger_id: string) => {
     setSelectedCustomerId(customerId);
     // Auto-advance to next step after selection
     setTimeout(() => {
@@ -160,14 +162,16 @@ export default function QuickCreateOrderPage() {
         customer_id: selectedCustomerId,
         agent_id: detailsFormData.agentId || null,
         order_date: detailsFormData.orderDate,
-        expected_delivery_date: detailsFormData.deliveryDate || null,
+        delivery_due_date: detailsFormData.deliveryDate || null,
+        tax_type: detailsFormData.taxType,
         advance_amount: detailsFormData.advanceAmount
           ? parseFloat(detailsFormData.advanceAmount)
           : 0,
-        discount_type: detailsFormData.discount ? "percentage" : "none",
-        discount_value: detailsFormData.discount
-          ? parseFloat(detailsFormData.discount)
-          : 0,
+        discount_type: detailsFormData.discountType,
+        discount_value:
+          detailsFormData.discountType !== "none" && detailsFormData.discount
+            ? parseFloat(detailsFormData.discount)
+            : 0,
         payment_terms: detailsFormData.paymentTerms || null,
         transport_details: detailsFormData.transportDetails || null,
         notes: detailsFormData.notes || null,

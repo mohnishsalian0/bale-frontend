@@ -14,6 +14,10 @@ CREATE TABLE goods_outward_items (
     stock_unit_id UUID NOT NULL REFERENCES stock_units(id),
     quantity_dispatched DECIMAL(10,3) NOT NULL,
 
+    -- Cancellation tracking (auto-cancelled when parent outward is cancelled)
+    is_cancelled BOOLEAN NOT NULL DEFAULT FALSE,
+    cancelled_at TIMESTAMPTZ,
+
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

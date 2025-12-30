@@ -20,9 +20,11 @@ export interface SalesOrderFilters extends Record<string, unknown> {
   agentId?: string;
   productId?: string;
   limit?: number;
-  order_by?: "order_date" | "expected_delivery_date" | "created_at";
+  order_by?: "order_date" | "delivery_due_date" | "created_at";
   ascending?: boolean;
   search_term?: string;
+  date_from?: string;
+  date_to?: string;
 }
 
 // =====================================================
@@ -43,6 +45,7 @@ export interface SalesOrderItemListView extends SalesOrderItem {
     | "measuring_unit"
     | "product_images"
     | "sequence_number"
+    | "product_code"
   > | null;
 }
 
@@ -53,11 +56,11 @@ export interface SalesOrderItemListView extends SalesOrderItem {
 export interface SalesOrderListView extends SalesOrder {
   customer: Pick<
     Partner,
-    "id" | "first_name" | "last_name" | "company_name"
+    "id" | "first_name" | "last_name" | "company_name" | "display_name"
   > | null;
   agent: Pick<
     Partner,
-    "id" | "first_name" | "last_name" | "company_name"
+    "id" | "first_name" | "last_name" | "company_name" | "display_name"
   > | null;
   sales_order_items: SalesOrderItemListView[];
 }
@@ -80,6 +83,7 @@ export interface SalesOrderItemDetailView extends SalesOrderItem {
         | "measuring_unit"
         | "product_images"
         | "sequence_number"
+        | "product_code"
         | "stock_type"
       > & {
         materials: ProductAttribute[];
@@ -94,10 +98,14 @@ export interface SalesOrderItemDetailView extends SalesOrderItem {
  * Includes customer address, agent (minimal fields), warehouse, and full product details
  */
 export interface SalesOrderDetailView extends SalesOrder {
-  customer: Partner | null;
+  customer:
+    | (Partner & {
+        ledger: Pick<Tables<"ledgers">, "id" | "name">[];
+      })
+    | null;
   agent: Pick<
     Partner,
-    "id" | "first_name" | "last_name" | "company_name"
+    "id" | "first_name" | "last_name" | "company_name" | "display_name"
   > | null;
   warehouse: Warehouse | null;
   sales_order_items: SalesOrderItemDetailView[];
@@ -116,10 +124,12 @@ export interface CreateSalesOrderData {
   customer_id: string;
   agent_id: string | null;
   order_date: string;
-  expected_delivery_date: string | null;
+  delivery_due_date: string | null;
   advance_amount: number;
   discount_type: string;
   discount_value: number;
+  payment_terms: string | null;
+  tax_type: string;
   notes: string | null;
   attachments: string[];
   status: string;
@@ -144,10 +154,12 @@ export interface UpdateSalesOrderData {
   customer_id: string;
   agent_id: string | null;
   order_date: string;
-  expected_delivery_date: string | null;
+  delivery_due_date: string | null;
   advance_amount: number;
   discount_type: string;
   discount_value: number;
+  payment_terms: string | null;
+  tax_type: string;
   notes: string | null;
   attachments: string[];
   status: string;

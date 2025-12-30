@@ -202,17 +202,18 @@ export default function PartnerDetailLayout({
           {pendingOrdersCount > 0 &&
             pendingOrder &&
             (() => {
-              const displayStatus = getOrderDisplayStatus(
+              const displayStatusData = getOrderDisplayStatus(
                 pendingOrder.status as SalesOrderStatus,
-                pendingOrder.expected_delivery_date,
+                pendingOrder.delivery_due_date,
               );
               const completionPercentage = calculateCompletionPercentage(
                 pendingOrder.sales_order_items,
               );
               const showProgressBar =
-                displayStatus === "in_progress" || displayStatus === "overdue";
+                displayStatusData.status === "in_progress" ||
+                displayStatusData.status === "overdue";
               const progressColor =
-                displayStatus === "overdue" ? "yellow" : "blue";
+                displayStatusData.status === "overdue" ? "yellow" : "blue";
 
               return (
                 <button
@@ -231,7 +232,10 @@ export default function PartnerDetailLayout({
                         {pendingOrdersCount === 1 ? "order" : "orders"}
                       </span>
                     </div>
-                    <SalesStatusBadge status={displayStatus} />
+                    <SalesStatusBadge
+                      status={displayStatusData.status}
+                      text={displayStatusData.text}
+                    />
                   </div>
                   <p className="text-sm font-medium text-gray-700">
                     {getProductSummary(pendingOrder.sales_order_items)}
@@ -240,7 +244,7 @@ export default function PartnerDetailLayout({
                     <p className="text-xs text-gray-500">
                       SO-{pendingOrder.sequence_number}
                     </p>
-                    {displayStatus !== "approval_pending" && (
+                    {displayStatusData.status !== "approval_pending" && (
                       <p className="text-xs text-gray-500">
                         {completionPercentage}% completed
                       </p>

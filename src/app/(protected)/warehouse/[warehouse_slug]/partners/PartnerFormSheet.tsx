@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import {
@@ -9,17 +9,16 @@ import {
   IconPhone,
   IconAt,
   IconChevronDown,
-  IconBuildingFactory2,
-  IconBuilding,
   IconId,
+  IconCurrencyRupee,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { usePartnerMutations } from "@/lib/query/hooks/partners";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Sheet,
   SheetContent,
@@ -40,7 +39,7 @@ import type {
   PartnerUpdate,
 } from "@/types/partners.types";
 import { useSession } from "@/contexts/session-context";
-import { InputWithIcon } from "@/components/ui/input-with-icon";
+import { InputWrapper } from "@/components/ui/input-wrapper";
 import { PartnerFormData, partnerSchema } from "@/lib/validations/partner";
 
 interface PartnerFormSheetProps {
@@ -76,8 +75,9 @@ export function PartnerFormSheet({
       lastName: partnerToEdit?.last_name || "",
       phoneNumber: partnerToEdit?.phone_number || "",
       email: partnerToEdit?.email || "",
-      businessType: "",
       companyName: partnerToEdit?.company_name || "",
+      creditLimitEnabled: partnerToEdit?.credit_limit_enabled || false,
+      creditLimit: partnerToEdit?.credit_limit || "",
       addressLine1: partnerToEdit?.address_line1 || "",
       addressLine2: partnerToEdit?.address_line2 || "",
       city: partnerToEdit?.city || "",
@@ -90,6 +90,12 @@ export function PartnerFormSheet({
     },
   });
 
+  // Watch credit limit enabled to conditionally show credit limit input
+  const creditLimitEnabled = useWatch({
+    control,
+    name: "creditLimitEnabled",
+  });
+
   // Keep image handling separate from form state
   const [image, setImage] = useState<File | null>(null);
 
@@ -97,7 +103,7 @@ export function PartnerFormSheet({
     partnerToEdit?.image_url || null,
   );
   const [imageError, setImageError] = useState<string | null>(null);
-  const [showBusinessDetails, setShowBusinessDetails] = useState(true);
+  const [showContactDetails, setShowContactDetails] = useState(true);
   const [showAddress, setShowAddress] = useState(true);
   const [showTaxDetails, setShowTaxDetails] = useState(true);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
@@ -165,7 +171,9 @@ export function PartnerFormSheet({
         last_name: data.lastName,
         phone_number: data.phoneNumber,
         email: data.email || null,
-        company_name: data.companyName || null,
+        company_name: data.companyName,
+        credit_limit_enabled: data.creditLimitEnabled,
+        credit_limit: data.creditLimitEnabled ? data.creditLimit : 0,
         address_line1: data.addressLine1 || null,
         address_line2: data.addressLine2 || null,
         city: data.city || null,
@@ -190,11 +198,13 @@ export function PartnerFormSheet({
     } else {
       const newPartner: Omit<PartnerInsert, "image_url"> = {
         partner_type: data.partnerType,
-        first_name: data.firstName,
-        last_name: data.lastName,
+        first_name: data.firstName || null,
+        last_name: data.lastName || null,
         phone_number: data.phoneNumber,
         email: data.email || null,
-        company_name: data.companyName || null,
+        company_name: data.companyName,
+        credit_limit_enabled: data.creditLimitEnabled,
+        credit_limit: data.creditLimitEnabled ? data.creditLimit : 0,
         address_line1: data.addressLine1 || null,
         address_line2: data.addressLine2 || null,
         city: data.city || null,
@@ -246,7 +256,7 @@ export function PartnerFormSheet({
         >
           <div className="flex-1 overflow-y-auto">
             {/* Image Upload & Basic Info */}
-            <div className="flex flex-col gap-5 px-4 py-5">
+            <div className="flex flex-col gap-6 px-4 py-5">
               {/* Image Upload */}
               <div className="flex flex-col items-center gap-3">
                 <label
@@ -317,106 +327,77 @@ export function PartnerFormSheet({
                 )}
               </div>
 
-              {/* Name Fields */}
-              <div className="flex flex-col gap-2">
-                <div className="flex gap-4">
-                  <InputWithIcon
-                    label="First name"
-                    placeholder="Enter first name"
-                    {...register("firstName")}
-                    required
-                    className="flex-1"
-                  />
-                  <InputWithIcon
-                    label="Last name"
-                    placeholder="Enter last name"
-                    {...register("lastName")}
-                    required
-                    className="flex-1"
-                  />
-                </div>
-                {(errors.firstName || errors.lastName) && (
-                  <div className="flex gap-4">
-                    {errors.firstName && (
-                      <p className="text-sm text-red-600 flex-1">
-                        {errors.firstName.message}
-                      </p>
-                    )}
-                    {errors.lastName && (
-                      <p className="text-sm text-red-600 flex-1">
-                        {errors.lastName.message}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
+              {/* Partner name */}
+              <InputWrapper
+                label="Partner name"
+                placeholder="Enter partner name"
+                {...register("companyName")}
+                required
+                isError={!!errors.companyName}
+                errorText={errors.companyName?.message}
+              />
 
               {/* Phone Number */}
-              <div className="flex flex-col gap-2">
-                <InputWithIcon
-                  type="tel"
-                  label="Phone number"
-                  icon={<IconPhone />}
-                  placeholder="Enter phone number"
-                  {...register("phoneNumber")}
-                  required
-                />
-                {errors.phoneNumber && (
-                  <p className="text-sm text-red-600">
-                    {errors.phoneNumber.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Email */}
-              <div className="flex flex-col gap-2">
-                <InputWithIcon
-                  type="email"
-                  icon={<IconAt />}
-                  placeholder="Email address"
-                  {...register("email")}
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-600">{errors.email.message}</p>
-                )}
-              </div>
+              <InputWrapper
+                type="tel"
+                label="Phone number"
+                icon={<IconPhone />}
+                placeholder="Enter phone number"
+                {...register("phoneNumber")}
+                required
+                isError={!!errors.phoneNumber}
+                errorText={errors.phoneNumber?.message}
+              />
             </div>
 
             {/* Business Details Section */}
             <Collapsible
-              open={showBusinessDetails}
-              onOpenChange={setShowBusinessDetails}
+              open={showContactDetails}
+              onOpenChange={setShowContactDetails}
               className="border-t border-gray-200 px-4 py-5"
             >
               <CollapsibleTrigger
-                className={`flex items-center justify-between w-full ${showBusinessDetails ? "mb-5" : "mb-0"}`}
+                className={`flex items-center justify-between w-full ${showContactDetails ? "mb-5" : "mb-0"}`}
               >
                 <h3 className="text-lg font-medium text-gray-900">
-                  Business details
+                  Contact details
                 </h3>
                 <IconChevronDown
-                  className={`size-6 text-gray-500 transition-transform ${showBusinessDetails ? "rotate-180" : "rotate-0"}`}
+                  className={`size-6 text-gray-500 transition-transform ${showContactDetails ? "rotate-180" : "rotate-0"}`}
                 />
               </CollapsibleTrigger>
 
               <CollapsibleContent>
-                <div className="flex flex-col gap-5">
-                  <div className="relative">
-                    <IconBuildingFactory2 className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-                    <Input
-                      placeholder="Business type"
-                      {...register("businessType")}
-                      className="pl-12"
+                <div className="flex flex-col gap-6">
+                  {/* Name Fields */}
+                  <div className="flex gap-4">
+                    <InputWrapper
+                      label="First name"
+                      placeholder="Enter first name"
+                      {...register("firstName")}
+                      className="flex-1"
+                      isError={!!errors.firstName}
+                      errorText={errors.firstName?.message}
+                    />
+                    <InputWrapper
+                      label="Last name"
+                      placeholder="Enter last name"
+                      {...register("lastName")}
+                      className="flex-1"
+                      isError={!!errors.lastName}
+                      errorText={errors.lastName?.message}
                     />
                   </div>
-                  <div className="relative">
-                    <IconBuilding className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-                    <Input
-                      placeholder="Company name"
-                      {...register("companyName")}
-                      className="pl-12"
-                    />
-                  </div>
+
+                  {/* Email */}
+                  <InputWrapper
+                    type="email"
+                    icon={<IconAt />}
+                    placeholder="Email address"
+                    {...register("email")}
+                    isError={!!errors.email}
+                    errorText={errors.email?.message}
+                  />
                 </div>
               </CollapsibleContent>
             </Collapsible>
@@ -437,35 +418,36 @@ export function PartnerFormSheet({
               </CollapsibleTrigger>
 
               <CollapsibleContent>
-                <div className="flex flex-col gap-5">
-                  <Input
+                <div className="flex flex-col gap-6">
+                  <InputWrapper
                     placeholder="Address line 1"
                     {...register("addressLine1")}
                   />
-                  <Input
+                  <InputWrapper
                     placeholder="Address line 2"
                     {...register("addressLine2")}
                   />
                   <div className="flex gap-4">
-                    <Input placeholder="City" {...register("city")} />
-                    <Input placeholder="State" {...register("state")} />
+                    <InputWrapper placeholder="City" {...register("city")} />
+                    <InputWrapper placeholder="State" {...register("state")} />
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex gap-4">
-                      <Input placeholder="Country" {...register("country")} />
-                      <Input placeholder="Pin code" {...register("pinCode")} />
-                    </div>
-                    {errors.pinCode && (
-                      <p className="text-sm text-red-600">
-                        {errors.pinCode.message}
-                      </p>
-                    )}
+                  <div className="flex gap-4">
+                    <InputWrapper
+                      placeholder="Country"
+                      {...register("country")}
+                    />
+                    <InputWrapper
+                      placeholder="Pin code"
+                      {...register("pinCode")}
+                      isError={!!errors.pinCode}
+                      errorText={errors.pinCode?.message}
+                    />
                   </div>
                 </div>
               </CollapsibleContent>
             </Collapsible>
 
-            {/* Tax Details Section */}
+            {/* Tax & Credit Details Section */}
             <Collapsible
               open={showTaxDetails}
               onOpenChange={setShowTaxDetails}
@@ -475,7 +457,7 @@ export function PartnerFormSheet({
                 className={`flex items-center justify-between w-full ${showTaxDetails ? "mb-5" : "mb-0"}`}
               >
                 <h3 className="text-lg font-medium text-gray-900">
-                  Tax Details
+                  Tax & Credit Details
                 </h3>
                 <IconChevronDown
                   className={`size-6 text-gray-500 transition-transform ${showTaxDetails ? "rotate-180" : "rotate-0"}`}
@@ -483,37 +465,56 @@ export function PartnerFormSheet({
               </CollapsibleTrigger>
 
               <CollapsibleContent>
-                <div className="flex flex-col gap-5">
-                  <div className="flex flex-col gap-2">
-                    <div className="relative">
-                      <IconId className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-                      <Input
-                        placeholder="GST number"
-                        {...register("gstNumber")}
-                        className="pl-12"
-                      />
-                    </div>
-                    {errors.gstNumber && (
-                      <p className="text-sm text-red-600">
-                        {errors.gstNumber.message}
-                      </p>
-                    )}
+                <div className="flex flex-col gap-6">
+                  {/* GST Number */}
+                  <InputWrapper
+                    placeholder="GST number"
+                    icon={<IconId />}
+                    {...register("gstNumber")}
+                    isError={!!errors.gstNumber}
+                    errorText={errors.gstNumber?.message}
+                  />
+
+                  {/* PAN Number */}
+                  <InputWrapper
+                    placeholder="PAN number"
+                    icon={<IconId />}
+                    {...register("panNumber")}
+                    isError={!!errors.panNumber}
+                    errorText={errors.panNumber?.message}
+                  />
+
+                  {/* Credit Limit Toggle */}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="credit-limit-toggle">
+                      Enable credit limit
+                    </Label>
+                    <Controller
+                      name="creditLimitEnabled"
+                      control={control}
+                      render={({ field }) => (
+                        <Switch
+                          id="credit-limit-toggle"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      )}
+                    />
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <div className="relative">
-                      <IconId className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
-                      <Input
-                        placeholder="PAN number"
-                        {...register("panNumber")}
-                        className="pl-12"
-                      />
-                    </div>
-                    {errors.panNumber && (
-                      <p className="text-sm text-red-600">
-                        {errors.panNumber.message}
-                      </p>
-                    )}
-                  </div>
+
+                  {/* Credit Limit Amount */}
+                  {creditLimitEnabled && (
+                    <InputWrapper
+                      type="number"
+                      placeholder="Credit limit amount"
+                      icon={<IconCurrencyRupee />}
+                      {...register("creditLimit")}
+                      min="0"
+                      step="0.01"
+                      isError={!!errors.creditLimit}
+                      errorText={errors.creditLimit?.message}
+                    />
+                  )}
                 </div>
               </CollapsibleContent>
             </Collapsible>

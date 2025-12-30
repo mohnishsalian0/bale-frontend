@@ -22,14 +22,19 @@ import { uploadProductImage, deleteProductImagesByUrls } from "@/lib/storage";
 export const PRODUCT_LIST_VIEW_SELECT = `
 	id,
 	sequence_number,
+	product_code,
 	name,
 	show_on_catalog,
 	is_active,
 	stock_type,
 	measuring_unit,
+	cost_price_per_unit,
+	selling_price_per_unit,
 	product_images,
   min_stock_alert,
   min_stock_threshold,
+	tax_type,
+	gst_rate,
 	attributes:product_attributes!inner(id, name, group_name, color_hex)
 `;
 
@@ -61,14 +66,19 @@ export type ProductListViewRaw = Pick<
   Tables<"products">,
   | "id"
   | "sequence_number"
+  | "product_code"
   | "name"
   | "show_on_catalog"
   | "is_active"
   | "stock_type"
   | "measuring_unit"
+  | "cost_price_per_unit"
+  | "selling_price_per_unit"
   | "product_images"
   | "min_stock_alert"
   | "min_stock_threshold"
+  | "tax_type"
+  | "gst_rate"
 > &
   ProductAttributeAssignmentsRaw;
 
@@ -286,6 +296,27 @@ export async function getProductByNumber(
     .from("products")
     .select(PRODUCT_DETAIL_VIEW_SELECT)
     .eq("sequence_number", sequenceNumber)
+    .is("deleted_at", null)
+    .single<ProductDetailViewRaw>();
+
+  if (error) throw error;
+  if (!data) throw new Error("Product not found");
+
+  return transformProductDetailView(data);
+}
+
+/**
+ * Get a single product by product code (detail view with all fields)
+ */
+export async function getProductByCode(
+  productCode: string,
+): Promise<ProductDetailView> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_DETAIL_VIEW_SELECT)
+    .eq("product_code", productCode)
     .is("deleted_at", null)
     .single<ProductDetailViewRaw>();
 
@@ -744,14 +775,19 @@ export async function updateProductActiveStatus(
 type LowStockProductRaw = {
   id: string;
   sequence_number: number;
+  product_code: string | null;
   name: string;
   show_on_catalog: boolean;
   is_active: boolean;
   stock_type: string;
   measuring_unit: string | null;
+  cost_price_per_unit: number | null;
+  selling_price_per_unit: number | null;
   product_images: string[] | null;
   min_stock_alert: boolean;
   min_stock_threshold: number | null;
+  tax_type: string;
+  gst_rate: number | null;
   inventory: {
     in_stock_units: number;
     in_stock_quantity: number;
@@ -781,13 +817,18 @@ function transformLowStockProduct(
   return {
     id: raw.id,
     sequence_number: raw.sequence_number,
+    product_code: raw.product_code,
     name: raw.name,
     show_on_catalog: raw.show_on_catalog,
     is_active: raw.is_active,
     stock_type: raw.stock_type,
     measuring_unit: raw.measuring_unit,
+    cost_price_per_unit: raw.cost_price_per_unit,
+    selling_price_per_unit: raw.selling_price_per_unit,
     product_images: raw.product_images,
     min_stock_alert: raw.min_stock_alert,
+    tax_type: raw.tax_type,
+    gst_rate: raw.gst_rate,
     min_stock_threshold: raw.min_stock_threshold,
     materials,
     colors,

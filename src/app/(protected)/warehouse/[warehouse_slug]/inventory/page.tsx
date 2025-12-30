@@ -197,7 +197,7 @@ export default function InventoryPage() {
           <div className="mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Inventory</h1>
             <p className="text-sm font-medium text-gray-500 mt-2">
-              <span>{stats.availableProducts} available products</span>
+              <span>{stats.availableProducts} products available</span>
               <span> &nbsp;•&nbsp; </span>
               <span className="text-teal-700">
                 {stats.liveProducts} live products
@@ -319,7 +319,7 @@ export default function InventoryPage() {
                   )
                 }
               >
-                <CardContent className="p-4 flex gap-4 items-center">
+                <CardContent className="p-4 flex gap-4">
                   {/* Product Image */}
                   <ImageWrapper
                     size="md"
@@ -342,7 +342,7 @@ export default function InventoryPage() {
                   </div>
 
                   {/* Quantity */}
-                  <div className="flex flex-inline gap-1 items-center">
+                  <div className="flex gap-1 items-center h-fit">
                     {lowStock && (
                       <IconAlertTriangle className="size-4 text-yellow-700" />
                     )}

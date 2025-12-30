@@ -172,7 +172,7 @@ export default function WarehouseSelector({
                         className={`flex gap-3 p-4 cursor-pointer select-none transition-all bg-background border-t border-border ${isSelected && "bg-primary-100 border border-primary-500"}`}
                       >
                         {/* Content */}
-                        <div className="flex-1 min-w-0 flex flex-col gap-1">
+                        <div className="flex-1 min-w-0 flex flex-col">
                           <p
                             className="text-base font-medium text-gray-700 truncate"
                             title={warehouse.name}

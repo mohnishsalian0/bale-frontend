@@ -55,6 +55,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Function to set cancelled_at on UPDATE
+CREATE OR REPLACE FUNCTION set_cancelled_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.cancelled_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to set cancelled_by on UPDATE
+CREATE OR REPLACE FUNCTION set_cancelled_by()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.cancelled_by := get_jwt_user_id();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- =====================================================
 -- JWT HELPER FUNCTIONS
 -- =====================================================

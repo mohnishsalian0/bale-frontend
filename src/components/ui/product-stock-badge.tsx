@@ -36,7 +36,7 @@ export function ProductStockStatusBadge({
     <Badge
       color={config.color}
       variant={config.variant}
-      className={cn("rounded-2xl text-nowrap", className)}
+      className={cn("text-nowrap", className)}
     >
       {config.label}
     </Badge>

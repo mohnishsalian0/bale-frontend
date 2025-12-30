@@ -60,14 +60,19 @@ export interface ProductListView extends Pick<
   Product,
   | "id"
   | "sequence_number"
+  | "product_code"
   | "name"
   | "show_on_catalog"
   | "is_active"
   | "stock_type"
   | "measuring_unit"
+  | "cost_price_per_unit"
+  | "selling_price_per_unit"
   | "product_images"
   | "min_stock_alert"
   | "min_stock_threshold"
+  | "tax_type"
+  | "gst_rate"
 > {
   materials: ProductAttribute[];
   colors: ProductAttribute[];

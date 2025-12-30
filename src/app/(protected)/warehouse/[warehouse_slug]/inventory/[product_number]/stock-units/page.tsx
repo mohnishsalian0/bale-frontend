@@ -18,7 +18,7 @@ import { ErrorState } from "@/components/layouts/error-state";
 import { StockUnitDetailsModal } from "@/components/layouts/stock-unit-modal";
 import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
-import { formatStockUnitNumber } from "@/lib/utils/product";
+import { formatStockUnitNumber, getStockUnitInfo } from "@/lib/utils/product";
 import { useSession } from "@/contexts/session-context";
 import { useProductWithInventoryByNumber } from "@/lib/query/hooks/products";
 import {
@@ -234,8 +234,8 @@ export default function StockUnitsPage({ params }: PageParams) {
       <div className="flex-1 overflow-y-auto">
         {filteredAndSortedUnits.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4">
-            <IconBox className="size-12 text-gray-400 mb-3" />
-            <h3 className="text-lg font-medium text-gray-900 mb-1">
+            <IconBox className="size-12 text-gray-500 mb-3" />
+            <h3 className="text-lg font-medium text-gray-700 mb-1">
               No stock units found
             </h3>
             <p className="text-sm text-gray-500 text-center">
@@ -259,13 +259,6 @@ export default function StockUnitsPage({ params }: PageParams) {
 
               {/* Stock Units */}
               {group.units.map((unit) => {
-                const subtitleParts: string[] = [];
-                if (unit.warehouse_location)
-                  subtitleParts.push(unit.warehouse_location);
-                if (unit.quality_grade) subtitleParts.push(unit.quality_grade);
-                if (unit.supplier_number)
-                  subtitleParts.push(unit.supplier_number);
-
                 return (
                   <button
                     key={unit.id}
@@ -306,17 +299,9 @@ export default function StockUnitsPage({ params }: PageParams) {
                       </p>
 
                       {/* Additional Details */}
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
-                        {unit.quality_grade && (
-                          <span>Grade: {unit.quality_grade}</span>
-                        )}
-                        {unit.supplier_number && (
-                          <span>Supplier #: {unit.supplier_number}</span>
-                        )}
-                        {unit.warehouse_location && (
-                          <span>Location: {unit.warehouse_location}</span>
-                        )}
-                      </div>
+                      <p className="text-sm text-gray-500">
+                        {getStockUnitInfo(unit)}
+                      </p>
                     </div>
 
                     <div className="shrink-0 text-right">

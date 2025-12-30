@@ -43,7 +43,6 @@ BEGIN
         expected_delivery_date,
         transport_reference_number,
         transport_type,
-        transport_details,
         partner_id,
         from_warehouse_id,
         job_work_id,
@@ -61,7 +60,6 @@ BEGIN
         (p_inward_data->>'expected_delivery_date')::DATE,
         p_inward_data->>'transport_reference_number',
         p_inward_data->>'transport_type',
-        p_inward_data->>'transport_details',
         (p_inward_data->>'partner_id')::UUID,
         (p_inward_data->>'from_warehouse_id')::UUID,
         (p_inward_data->>'job_work_id')::UUID,
@@ -183,8 +181,6 @@ DECLARE
     v_stock_unit_item JSONB;
     v_stock_unit_id UUID;
     v_dispatch_quantity DECIMAL;
-    v_current_quantity DECIMAL;
-    v_new_quantity DECIMAL;
 BEGIN
     -- Derive company_id from JWT if not provided (short-circuit evaluation)
     v_company_id := COALESCE(
@@ -207,7 +203,6 @@ BEGIN
         expected_delivery_date,
         transport_reference_number,
         transport_type,
-        transport_details,
         notes,
         created_by
     )
@@ -225,7 +220,6 @@ BEGIN
         (p_outward_data->>'expected_delivery_date')::DATE,
         p_outward_data->>'transport_reference_number',
         p_outward_data->>'transport_type',
-        p_outward_data->>'transport_details',
         p_outward_data->>'notes',
         COALESCE((p_outward_data->>'created_by')::UUID, auth.uid())
     )
@@ -237,15 +231,8 @@ BEGIN
         v_stock_unit_id := (v_stock_unit_item->>'stock_unit_id')::UUID;
         v_dispatch_quantity := (v_stock_unit_item->>'quantity')::DECIMAL;
 
-        -- Get current quantity
-        SELECT remaining_quantity INTO v_current_quantity
-        FROM stock_units
-        WHERE id = v_stock_unit_id;
-
-        -- Calculate new quantity
-        v_new_quantity := v_current_quantity - v_dispatch_quantity;
-
         -- Insert goods outward item
+        -- Stock unit remaining_quantity will be auto-reconciled by trigger
         INSERT INTO goods_outward_items (
             company_id,
             warehouse_id,
@@ -260,89 +247,12 @@ BEGIN
             v_stock_unit_id,
             v_dispatch_quantity
         );
-
-        -- Update stock unit
-        IF v_new_quantity <= 0 THEN
-            -- Full dispatch - set status to dispatched and quantity to 0
-            UPDATE stock_units
-            SET
-                remaining_quantity = 0,
-                updated_at = NOW()
-            WHERE id = v_stock_unit_id;
-        ELSE
-            -- Partial dispatch - reduce quantity but keep in_stock
-            UPDATE stock_units
-            SET
-                remaining_quantity = v_new_quantity,
-                updated_at = NOW()
-            WHERE id = v_stock_unit_id;
-        END IF;
     END LOOP;
 
     -- Return the outward ID
     RETURN v_outward_id;
 END;
 $$;
-
--- =====================================================
--- SALES ORDER HAS_OUTWARD FLAG TRIGGER
--- =====================================================
-
--- Function to update has_outward flag when goods_outward linked/unlinked
-CREATE OR REPLACE FUNCTION update_sales_order_outward_flag()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF TG_OP = 'INSERT' AND NEW.sales_order_id IS NOT NULL THEN
-    -- Outward created with sales order link
-    UPDATE sales_orders
-    SET has_outward = true
-    WHERE id = NEW.sales_order_id;
-
-  ELSIF TG_OP = 'DELETE' AND OLD.sales_order_id IS NOT NULL THEN
-    -- Outward deleted, check if any other outwards still linked
-    UPDATE sales_orders
-    SET has_outward = EXISTS(
-      SELECT 1 FROM goods_outwards
-      WHERE sales_order_id = OLD.sales_order_id
-      AND id != OLD.id
-      AND deleted_at IS NULL
-    )
-    WHERE id = OLD.sales_order_id;
-
-  ELSIF TG_OP = 'UPDATE' THEN
-    -- Outward link changed
-    IF OLD.sales_order_id IS DISTINCT FROM NEW.sales_order_id THEN
-      -- Update old order if exists
-      IF OLD.sales_order_id IS NOT NULL THEN
-        UPDATE sales_orders
-        SET has_outward = EXISTS(
-          SELECT 1 FROM goods_outwards
-          WHERE sales_order_id = OLD.sales_order_id
-          AND deleted_at IS NULL
-        )
-        WHERE id = OLD.sales_order_id;
-      END IF;
-
-      -- Update new order if exists
-      IF NEW.sales_order_id IS NOT NULL THEN
-        UPDATE sales_orders
-        SET has_outward = true
-        WHERE id = NEW.sales_order_id;
-      END IF;
-    END IF;
-  END IF;
-
-  RETURN COALESCE(NEW, OLD);
-END;
-$$ LANGUAGE plpgsql;
-
--- Trigger on goods_outwards
-CREATE TRIGGER sales_order_outward_link_trigger
-AFTER INSERT OR UPDATE OR DELETE ON goods_outwards
-FOR EACH ROW
-EXECUTE FUNCTION update_sales_order_outward_flag();
-
-COMMENT ON FUNCTION update_sales_order_outward_flag IS 'Automatically maintains has_outward flag on sales_orders when goods_outwards are linked or unlinked';
 
 -- =====================================================
 -- GOODS INWARD SEARCH VECTOR UPDATE FUNCTION
@@ -352,7 +262,7 @@ COMMENT ON FUNCTION update_sales_order_outward_flag IS 'Automatically maintains 
 -- Weight A: sequence_number, partner name, warehouse name
 -- Weight B: product names (via stock_units join)
 -- Weight C: inward_type, sales_order_sequence, purchase_order_sequence, other_reason
--- Weight D: transport_reference_number, transport_type, transport_details
+-- Weight D: transport_reference_number, transport_type
 CREATE OR REPLACE FUNCTION update_goods_inward_search_vector()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -425,8 +335,7 @@ BEGIN
 
         -- Weight D: Transport details
         setweight(to_tsvector('simple', COALESCE(NEW.transport_reference_number, '')), 'D') ||
-        setweight(to_tsvector('english', COALESCE(NEW.transport_type, '')), 'D') ||
-        setweight(to_tsvector('english', COALESCE(NEW.transport_details, '')), 'D');
+        setweight(to_tsvector('english', COALESCE(NEW.transport_type, '')), 'D');
 
     RETURN NEW;
 END;
@@ -442,7 +351,7 @@ COMMENT ON FUNCTION update_goods_inward_search_vector() IS 'Automatically update
 -- Weight A: sequence_number, partner name, warehouse name
 -- Weight B: product names (via goods_outward_items join)
 -- Weight C: outward_type, sales_order_sequence, purchase_order_sequence, other_reason
--- Weight D: transport_reference_number, transport_type, transport_details, cancellation_reason
+-- Weight D: transport_reference_number, transport_type, cancellation_reason
 CREATE OR REPLACE FUNCTION update_goods_outward_search_vector()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -517,7 +426,6 @@ BEGIN
         -- Weight D: Transport and cancellation details
         setweight(to_tsvector('simple', COALESCE(NEW.transport_reference_number, '')), 'D') ||
         setweight(to_tsvector('english', COALESCE(NEW.transport_type, '')), 'D') ||
-        setweight(to_tsvector('english', COALESCE(NEW.transport_details, '')), 'D') ||
         setweight(to_tsvector('english', COALESCE(NEW.cancellation_reason, '')), 'D');
 
     RETURN NEW;

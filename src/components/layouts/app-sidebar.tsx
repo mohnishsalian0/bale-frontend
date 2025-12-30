@@ -6,7 +6,10 @@ import {
   IconChartBar,
   IconIdBadge2,
   IconQrcode,
+  IconReceipt,
   IconUsers,
+  IconCash,
+  IconReceiptRefund,
 } from "@tabler/icons-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -38,6 +41,24 @@ const NAV_ITEMS: NavItem[] = [
     path: "partners",
     icon: IconUsers,
     permission: "partners.read",
+  },
+  {
+    label: "Invoices",
+    path: "invoices",
+    icon: IconReceipt,
+    permission: "invoices.read",
+  },
+  {
+    label: "Payments",
+    path: "payments",
+    icon: IconCash,
+    permission: "payments.read",
+  },
+  {
+    label: "Adjustment Notes",
+    path: "adjustment-notes",
+    icon: IconReceiptRefund,
+    permission: "invoices.read",
   },
   {
     label: "QR codes",

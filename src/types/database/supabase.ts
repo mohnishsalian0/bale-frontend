@@ -34,6 +34,353 @@ export type Database = {
   };
   public: {
     Tables: {
+      adjustment_note_items: {
+        Row: {
+          adjustment_note_id: string;
+          amount: number | null;
+          cgst_amount: number | null;
+          cgst_rate: number | null;
+          company_id: string;
+          created_at: string;
+          gst_rate: number | null;
+          id: string;
+          igst_amount: number | null;
+          igst_rate: number | null;
+          notes: string | null;
+          product_hsn_code: string | null;
+          product_id: string;
+          product_measuring_unit: string | null;
+          product_name: string | null;
+          product_stock_type: string | null;
+          quantity: number;
+          rate: number;
+          sgst_amount: number | null;
+          sgst_rate: number | null;
+          tax_type: Database["public"]["Enums"]["tax_type_enum"];
+          total_tax_amount: number | null;
+          updated_at: string;
+          warehouse_id: string;
+        };
+        Insert: {
+          adjustment_note_id: string;
+          amount?: number | null;
+          cgst_amount?: number | null;
+          cgst_rate?: number | null;
+          company_id?: string;
+          created_at?: string;
+          gst_rate?: number | null;
+          id?: string;
+          igst_amount?: number | null;
+          igst_rate?: number | null;
+          notes?: string | null;
+          product_hsn_code?: string | null;
+          product_id: string;
+          product_measuring_unit?: string | null;
+          product_name?: string | null;
+          product_stock_type?: string | null;
+          quantity: number;
+          rate: number;
+          sgst_amount?: number | null;
+          sgst_rate?: number | null;
+          tax_type: Database["public"]["Enums"]["tax_type_enum"];
+          total_tax_amount?: number | null;
+          updated_at?: string;
+          warehouse_id: string;
+        };
+        Update: {
+          adjustment_note_id?: string;
+          amount?: number | null;
+          cgst_amount?: number | null;
+          cgst_rate?: number | null;
+          company_id?: string;
+          created_at?: string;
+          gst_rate?: number | null;
+          id?: string;
+          igst_amount?: number | null;
+          igst_rate?: number | null;
+          notes?: string | null;
+          product_hsn_code?: string | null;
+          product_id?: string;
+          product_measuring_unit?: string | null;
+          product_name?: string | null;
+          product_stock_type?: string | null;
+          quantity?: number;
+          rate?: number;
+          sgst_amount?: number | null;
+          sgst_rate?: number | null;
+          tax_type?: Database["public"]["Enums"]["tax_type_enum"];
+          total_tax_amount?: number | null;
+          updated_at?: string;
+          warehouse_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "adjustment_note_items_adjustment_note_id_fkey";
+            columns: ["adjustment_note_id"];
+            isOneToOne: false;
+            referencedRelation: "adjustment_notes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "adjustment_note_items_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "adjustment_note_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "adjustment_note_items_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      adjustment_notes: {
+        Row: {
+          adjustment_date: string;
+          adjustment_number: string;
+          adjustment_type: Database["public"]["Enums"]["adjustment_type_enum"];
+          cancellation_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          company_address_line1: string | null;
+          company_address_line2: string | null;
+          company_city: string | null;
+          company_country: string | null;
+          company_email: string | null;
+          company_gst_number: string | null;
+          company_id: string;
+          company_name: string | null;
+          company_pan_number: string | null;
+          company_phone: string | null;
+          company_pincode: string | null;
+          company_state: string | null;
+          counter_ledger_id: string;
+          counter_ledger_name: string | null;
+          created_at: string;
+          created_by: string | null;
+          deleted_at: string | null;
+          exported_to_tally_at: string | null;
+          id: string;
+          invoice_id: string;
+          is_cancelled: boolean;
+          modified_by: string | null;
+          notes: string | null;
+          party_address_line1: string | null;
+          party_address_line2: string | null;
+          party_city: string | null;
+          party_country: string | null;
+          party_display_name: string | null;
+          party_email: string | null;
+          party_gst_number: string | null;
+          party_ledger_id: string;
+          party_ledger_name: string | null;
+          party_name: string | null;
+          party_pan_number: string | null;
+          party_phone: string | null;
+          party_pincode: string | null;
+          party_state: string | null;
+          reason: string;
+          round_off_amount: number | null;
+          sequence_number: number;
+          slug: string;
+          subtotal_amount: number | null;
+          tally_guid: string | null;
+          tax_type: Database["public"]["Enums"]["tax_type_enum"] | null;
+          total_amount: number | null;
+          total_cgst_amount: number | null;
+          total_igst_amount: number | null;
+          total_sgst_amount: number | null;
+          total_tax_amount: number | null;
+          updated_at: string;
+          warehouse_address_line1: string | null;
+          warehouse_address_line2: string | null;
+          warehouse_city: string | null;
+          warehouse_country: string | null;
+          warehouse_id: string;
+          warehouse_name: string | null;
+          warehouse_pincode: string | null;
+          warehouse_state: string | null;
+        };
+        Insert: {
+          adjustment_date?: string;
+          adjustment_number: string;
+          adjustment_type: Database["public"]["Enums"]["adjustment_type_enum"];
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          company_address_line1?: string | null;
+          company_address_line2?: string | null;
+          company_city?: string | null;
+          company_country?: string | null;
+          company_email?: string | null;
+          company_gst_number?: string | null;
+          company_id?: string;
+          company_name?: string | null;
+          company_pan_number?: string | null;
+          company_phone?: string | null;
+          company_pincode?: string | null;
+          company_state?: string | null;
+          counter_ledger_id: string;
+          counter_ledger_name?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          deleted_at?: string | null;
+          exported_to_tally_at?: string | null;
+          id?: string;
+          invoice_id: string;
+          is_cancelled?: boolean;
+          modified_by?: string | null;
+          notes?: string | null;
+          party_address_line1?: string | null;
+          party_address_line2?: string | null;
+          party_city?: string | null;
+          party_country?: string | null;
+          party_display_name?: string | null;
+          party_email?: string | null;
+          party_gst_number?: string | null;
+          party_ledger_id: string;
+          party_ledger_name?: string | null;
+          party_name?: string | null;
+          party_pan_number?: string | null;
+          party_phone?: string | null;
+          party_pincode?: string | null;
+          party_state?: string | null;
+          reason: string;
+          round_off_amount?: number | null;
+          sequence_number: number;
+          slug: string;
+          subtotal_amount?: number | null;
+          tally_guid?: string | null;
+          tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
+          total_amount?: number | null;
+          total_cgst_amount?: number | null;
+          total_igst_amount?: number | null;
+          total_sgst_amount?: number | null;
+          total_tax_amount?: number | null;
+          updated_at?: string;
+          warehouse_address_line1?: string | null;
+          warehouse_address_line2?: string | null;
+          warehouse_city?: string | null;
+          warehouse_country?: string | null;
+          warehouse_id: string;
+          warehouse_name?: string | null;
+          warehouse_pincode?: string | null;
+          warehouse_state?: string | null;
+        };
+        Update: {
+          adjustment_date?: string;
+          adjustment_number?: string;
+          adjustment_type?: Database["public"]["Enums"]["adjustment_type_enum"];
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          company_address_line1?: string | null;
+          company_address_line2?: string | null;
+          company_city?: string | null;
+          company_country?: string | null;
+          company_email?: string | null;
+          company_gst_number?: string | null;
+          company_id?: string;
+          company_name?: string | null;
+          company_pan_number?: string | null;
+          company_phone?: string | null;
+          company_pincode?: string | null;
+          company_state?: string | null;
+          counter_ledger_id?: string;
+          counter_ledger_name?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          deleted_at?: string | null;
+          exported_to_tally_at?: string | null;
+          id?: string;
+          invoice_id?: string;
+          is_cancelled?: boolean;
+          modified_by?: string | null;
+          notes?: string | null;
+          party_address_line1?: string | null;
+          party_address_line2?: string | null;
+          party_city?: string | null;
+          party_country?: string | null;
+          party_display_name?: string | null;
+          party_email?: string | null;
+          party_gst_number?: string | null;
+          party_ledger_id?: string;
+          party_ledger_name?: string | null;
+          party_name?: string | null;
+          party_pan_number?: string | null;
+          party_phone?: string | null;
+          party_pincode?: string | null;
+          party_state?: string | null;
+          reason?: string;
+          round_off_amount?: number | null;
+          sequence_number?: number;
+          slug?: string;
+          subtotal_amount?: number | null;
+          tally_guid?: string | null;
+          tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
+          total_amount?: number | null;
+          total_cgst_amount?: number | null;
+          total_igst_amount?: number | null;
+          total_sgst_amount?: number | null;
+          total_tax_amount?: number | null;
+          updated_at?: string;
+          warehouse_address_line1?: string | null;
+          warehouse_address_line2?: string | null;
+          warehouse_city?: string | null;
+          warehouse_country?: string | null;
+          warehouse_id?: string;
+          warehouse_name?: string | null;
+          warehouse_pincode?: string | null;
+          warehouse_state?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "adjustment_notes_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "adjustment_notes_counter_ledger_id_fkey";
+            columns: ["counter_ledger_id"];
+            isOneToOne: false;
+            referencedRelation: "ledgers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "adjustment_notes_invoice_id_fkey";
+            columns: ["invoice_id"];
+            isOneToOne: false;
+            referencedRelation: "invoices";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "adjustment_notes_party_ledger_id_fkey";
+            columns: ["party_ledger_id"];
+            isOneToOne: false;
+            referencedRelation: "ledgers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "adjustment_notes_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       catalog_configurations: {
         Row: {
           accepting_orders: boolean | null;
@@ -196,15 +543,20 @@ export type Database = {
         Row: {
           agent_id: string | null;
           attachments: string[] | null;
+          cancellation_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
           company_id: string;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
           expected_delivery_date: string | null;
           from_warehouse_id: string | null;
+          has_invoice: boolean | null;
           id: string;
           inward_date: string;
           inward_type: string;
+          is_cancelled: boolean | null;
           job_work_id: string | null;
           modified_by: string | null;
           notes: string | null;
@@ -214,7 +566,6 @@ export type Database = {
           sales_order_id: string | null;
           search_vector: unknown;
           sequence_number: number;
-          transport_details: string | null;
           transport_reference_number: string | null;
           transport_type: string | null;
           updated_at: string;
@@ -223,15 +574,20 @@ export type Database = {
         Insert: {
           agent_id?: string | null;
           attachments?: string[] | null;
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
           company_id?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
           expected_delivery_date?: string | null;
           from_warehouse_id?: string | null;
+          has_invoice?: boolean | null;
           id?: string;
           inward_date?: string;
           inward_type: string;
+          is_cancelled?: boolean | null;
           job_work_id?: string | null;
           modified_by?: string | null;
           notes?: string | null;
@@ -241,7 +597,6 @@ export type Database = {
           sales_order_id?: string | null;
           search_vector?: unknown;
           sequence_number: number;
-          transport_details?: string | null;
           transport_reference_number?: string | null;
           transport_type?: string | null;
           updated_at?: string;
@@ -250,15 +605,20 @@ export type Database = {
         Update: {
           agent_id?: string | null;
           attachments?: string[] | null;
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
           company_id?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
           expected_delivery_date?: string | null;
           from_warehouse_id?: string | null;
+          has_invoice?: boolean | null;
           id?: string;
           inward_date?: string;
           inward_type?: string;
+          is_cancelled?: boolean | null;
           job_work_id?: string | null;
           modified_by?: string | null;
           notes?: string | null;
@@ -268,7 +628,6 @@ export type Database = {
           sales_order_id?: string | null;
           search_vector?: unknown;
           sequence_number?: number;
-          transport_details?: string | null;
           transport_reference_number?: string | null;
           transport_type?: string | null;
           updated_at?: string;
@@ -335,9 +694,11 @@ export type Database = {
       };
       goods_outward_items: {
         Row: {
+          cancelled_at: string | null;
           company_id: string;
           created_at: string;
           id: string;
+          is_cancelled: boolean;
           outward_id: string;
           quantity_dispatched: number;
           stock_unit_id: string;
@@ -345,9 +706,11 @@ export type Database = {
           warehouse_id: string;
         };
         Insert: {
+          cancelled_at?: string | null;
           company_id: string;
           created_at?: string;
           id?: string;
+          is_cancelled?: boolean;
           outward_id: string;
           quantity_dispatched: number;
           stock_unit_id: string;
@@ -355,9 +718,11 @@ export type Database = {
           warehouse_id: string;
         };
         Update: {
+          cancelled_at?: string | null;
           company_id?: string;
           created_at?: string;
           id?: string;
+          is_cancelled?: boolean;
           outward_id?: string;
           quantity_dispatched?: number;
           stock_unit_id?: string;
@@ -407,6 +772,7 @@ export type Database = {
           created_by: string;
           deleted_at: string | null;
           expected_delivery_date: string | null;
+          has_invoice: boolean | null;
           id: string;
           is_cancelled: boolean | null;
           job_work_id: string | null;
@@ -421,7 +787,6 @@ export type Database = {
           search_vector: unknown;
           sequence_number: number;
           to_warehouse_id: string | null;
-          transport_details: string | null;
           transport_reference_number: string | null;
           transport_type: string | null;
           updated_at: string;
@@ -438,6 +803,7 @@ export type Database = {
           created_by: string;
           deleted_at?: string | null;
           expected_delivery_date?: string | null;
+          has_invoice?: boolean | null;
           id?: string;
           is_cancelled?: boolean | null;
           job_work_id?: string | null;
@@ -452,7 +818,6 @@ export type Database = {
           search_vector?: unknown;
           sequence_number: number;
           to_warehouse_id?: string | null;
-          transport_details?: string | null;
           transport_reference_number?: string | null;
           transport_type?: string | null;
           updated_at?: string;
@@ -469,6 +834,7 @@ export type Database = {
           created_by?: string;
           deleted_at?: string | null;
           expected_delivery_date?: string | null;
+          has_invoice?: boolean | null;
           id?: string;
           is_cancelled?: boolean | null;
           job_work_id?: string | null;
@@ -483,7 +849,6 @@ export type Database = {
           search_vector?: unknown;
           sequence_number?: number;
           to_warehouse_id?: string | null;
-          transport_details?: string | null;
           transport_reference_number?: string | null;
           transport_type?: string | null;
           updated_at?: string;
@@ -640,6 +1005,524 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      invoice_inwards: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          goods_inward_id: string;
+          id: string;
+          invoice_id: string;
+        };
+        Insert: {
+          company_id?: string;
+          created_at?: string;
+          goods_inward_id: string;
+          id?: string;
+          invoice_id: string;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          goods_inward_id?: string;
+          id?: string;
+          invoice_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invoice_inwards_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoice_inwards_goods_inward_id_fkey";
+            columns: ["goods_inward_id"];
+            isOneToOne: false;
+            referencedRelation: "goods_inwards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoice_inwards_invoice_id_fkey";
+            columns: ["invoice_id"];
+            isOneToOne: false;
+            referencedRelation: "invoices";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      invoice_items: {
+        Row: {
+          amount: number | null;
+          cgst_amount: number | null;
+          cgst_rate: number | null;
+          company_id: string;
+          created_at: string;
+          discount_amount: number | null;
+          discount_type: Database["public"]["Enums"]["discount_type_enum"];
+          discount_value: number | null;
+          gst_rate: number | null;
+          id: string;
+          igst_amount: number | null;
+          igst_rate: number | null;
+          invoice_id: string;
+          notes: string | null;
+          product_hsn_code: string | null;
+          product_id: string;
+          product_measuring_unit: string | null;
+          product_name: string | null;
+          product_stock_type: string | null;
+          quantity: number;
+          rate: number;
+          sgst_amount: number | null;
+          sgst_rate: number | null;
+          tax_type: Database["public"]["Enums"]["product_tax_applicability_enum"];
+          taxable_amount: number | null;
+          total_tax_amount: number | null;
+          updated_at: string;
+          warehouse_id: string;
+        };
+        Insert: {
+          amount?: number | null;
+          cgst_amount?: number | null;
+          cgst_rate?: number | null;
+          company_id?: string;
+          created_at?: string;
+          discount_amount?: number | null;
+          discount_type?: Database["public"]["Enums"]["discount_type_enum"];
+          discount_value?: number | null;
+          gst_rate?: number | null;
+          id?: string;
+          igst_amount?: number | null;
+          igst_rate?: number | null;
+          invoice_id: string;
+          notes?: string | null;
+          product_hsn_code?: string | null;
+          product_id: string;
+          product_measuring_unit?: string | null;
+          product_name?: string | null;
+          product_stock_type?: string | null;
+          quantity: number;
+          rate: number;
+          sgst_amount?: number | null;
+          sgst_rate?: number | null;
+          tax_type: Database["public"]["Enums"]["product_tax_applicability_enum"];
+          taxable_amount?: number | null;
+          total_tax_amount?: number | null;
+          updated_at?: string;
+          warehouse_id: string;
+        };
+        Update: {
+          amount?: number | null;
+          cgst_amount?: number | null;
+          cgst_rate?: number | null;
+          company_id?: string;
+          created_at?: string;
+          discount_amount?: number | null;
+          discount_type?: Database["public"]["Enums"]["discount_type_enum"];
+          discount_value?: number | null;
+          gst_rate?: number | null;
+          id?: string;
+          igst_amount?: number | null;
+          igst_rate?: number | null;
+          invoice_id?: string;
+          notes?: string | null;
+          product_hsn_code?: string | null;
+          product_id?: string;
+          product_measuring_unit?: string | null;
+          product_name?: string | null;
+          product_stock_type?: string | null;
+          quantity?: number;
+          rate?: number;
+          sgst_amount?: number | null;
+          sgst_rate?: number | null;
+          tax_type?: Database["public"]["Enums"]["product_tax_applicability_enum"];
+          taxable_amount?: number | null;
+          total_tax_amount?: number | null;
+          updated_at?: string;
+          warehouse_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey";
+            columns: ["invoice_id"];
+            isOneToOne: false;
+            referencedRelation: "invoices";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoice_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoice_items_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      invoice_outwards: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          goods_outward_id: string;
+          id: string;
+          invoice_id: string;
+        };
+        Insert: {
+          company_id?: string;
+          created_at?: string;
+          goods_outward_id: string;
+          id?: string;
+          invoice_id: string;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          goods_outward_id?: string;
+          id?: string;
+          invoice_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invoice_outwards_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoice_outwards_goods_outward_id_fkey";
+            columns: ["goods_outward_id"];
+            isOneToOne: false;
+            referencedRelation: "goods_outwards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoice_outwards_invoice_id_fkey";
+            columns: ["invoice_id"];
+            isOneToOne: false;
+            referencedRelation: "invoices";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      invoices: {
+        Row: {
+          attachments: string[] | null;
+          cancellation_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          company_address_line1: string | null;
+          company_address_line2: string | null;
+          company_city: string | null;
+          company_country: string | null;
+          company_email: string | null;
+          company_gst_number: string | null;
+          company_id: string;
+          company_name: string | null;
+          company_pan_number: string | null;
+          company_phone: string | null;
+          company_pincode: string | null;
+          company_state: string | null;
+          counter_ledger_id: string;
+          counter_ledger_name: string | null;
+          created_at: string;
+          created_by: string | null;
+          deleted_at: string | null;
+          direct_tax_amount: number | null;
+          direct_tax_rate: number | null;
+          direct_tax_type: Database["public"]["Enums"]["direct_tax_type_enum"];
+          discount_amount: number | null;
+          discount_type: Database["public"]["Enums"]["discount_type_enum"];
+          discount_value: number | null;
+          due_date: string | null;
+          exported_to_tally_at: string | null;
+          has_adjustment: boolean;
+          has_payment: boolean | null;
+          id: string;
+          invoice_date: string;
+          invoice_number: string;
+          invoice_type: Database["public"]["Enums"]["invoice_type_enum"];
+          is_cancelled: boolean;
+          modified_by: string | null;
+          notes: string | null;
+          outstanding_amount: number | null;
+          party_address_line1: string | null;
+          party_address_line2: string | null;
+          party_city: string | null;
+          party_country: string | null;
+          party_display_name: string | null;
+          party_email: string | null;
+          party_gst_number: string | null;
+          party_ledger_id: string;
+          party_ledger_name: string | null;
+          party_name: string | null;
+          party_pan_number: string | null;
+          party_phone: string | null;
+          party_pincode: string | null;
+          party_state: string | null;
+          payment_terms: string | null;
+          round_off_amount: number | null;
+          search_vector: unknown;
+          sequence_number: number;
+          slug: string;
+          source: string;
+          source_purchase_order_id: string | null;
+          source_sales_order_id: string | null;
+          status: string;
+          subtotal_amount: number | null;
+          supplier_invoice_date: string | null;
+          supplier_invoice_number: string | null;
+          tally_export_error: string | null;
+          tally_export_status: string | null;
+          tally_guid: string | null;
+          tax_type: Database["public"]["Enums"]["tax_type_enum"] | null;
+          taxable_amount: number | null;
+          total_amount: number | null;
+          total_cgst_amount: number | null;
+          total_igst_amount: number | null;
+          total_sgst_amount: number | null;
+          total_tax_amount: number | null;
+          updated_at: string;
+          warehouse_address_line1: string | null;
+          warehouse_address_line2: string | null;
+          warehouse_city: string | null;
+          warehouse_country: string | null;
+          warehouse_id: string;
+          warehouse_name: string | null;
+          warehouse_pincode: string | null;
+          warehouse_state: string | null;
+        };
+        Insert: {
+          attachments?: string[] | null;
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          company_address_line1?: string | null;
+          company_address_line2?: string | null;
+          company_city?: string | null;
+          company_country?: string | null;
+          company_email?: string | null;
+          company_gst_number?: string | null;
+          company_id?: string;
+          company_name?: string | null;
+          company_pan_number?: string | null;
+          company_phone?: string | null;
+          company_pincode?: string | null;
+          company_state?: string | null;
+          counter_ledger_id: string;
+          counter_ledger_name?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          deleted_at?: string | null;
+          direct_tax_amount?: number | null;
+          direct_tax_rate?: number | null;
+          direct_tax_type?: Database["public"]["Enums"]["direct_tax_type_enum"];
+          discount_amount?: number | null;
+          discount_type?: Database["public"]["Enums"]["discount_type_enum"];
+          discount_value?: number | null;
+          due_date?: string | null;
+          exported_to_tally_at?: string | null;
+          has_adjustment?: boolean;
+          has_payment?: boolean | null;
+          id?: string;
+          invoice_date?: string;
+          invoice_number: string;
+          invoice_type: Database["public"]["Enums"]["invoice_type_enum"];
+          is_cancelled?: boolean;
+          modified_by?: string | null;
+          notes?: string | null;
+          outstanding_amount?: number | null;
+          party_address_line1?: string | null;
+          party_address_line2?: string | null;
+          party_city?: string | null;
+          party_country?: string | null;
+          party_display_name?: string | null;
+          party_email?: string | null;
+          party_gst_number?: string | null;
+          party_ledger_id: string;
+          party_ledger_name?: string | null;
+          party_name?: string | null;
+          party_pan_number?: string | null;
+          party_phone?: string | null;
+          party_pincode?: string | null;
+          party_state?: string | null;
+          payment_terms?: string | null;
+          round_off_amount?: number | null;
+          search_vector?: unknown;
+          sequence_number: number;
+          slug: string;
+          source?: string;
+          source_purchase_order_id?: string | null;
+          source_sales_order_id?: string | null;
+          status?: string;
+          subtotal_amount?: number | null;
+          supplier_invoice_date?: string | null;
+          supplier_invoice_number?: string | null;
+          tally_export_error?: string | null;
+          tally_export_status?: string | null;
+          tally_guid?: string | null;
+          tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
+          taxable_amount?: number | null;
+          total_amount?: number | null;
+          total_cgst_amount?: number | null;
+          total_igst_amount?: number | null;
+          total_sgst_amount?: number | null;
+          total_tax_amount?: number | null;
+          updated_at?: string;
+          warehouse_address_line1?: string | null;
+          warehouse_address_line2?: string | null;
+          warehouse_city?: string | null;
+          warehouse_country?: string | null;
+          warehouse_id: string;
+          warehouse_name?: string | null;
+          warehouse_pincode?: string | null;
+          warehouse_state?: string | null;
+        };
+        Update: {
+          attachments?: string[] | null;
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          company_address_line1?: string | null;
+          company_address_line2?: string | null;
+          company_city?: string | null;
+          company_country?: string | null;
+          company_email?: string | null;
+          company_gst_number?: string | null;
+          company_id?: string;
+          company_name?: string | null;
+          company_pan_number?: string | null;
+          company_phone?: string | null;
+          company_pincode?: string | null;
+          company_state?: string | null;
+          counter_ledger_id?: string;
+          counter_ledger_name?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          deleted_at?: string | null;
+          direct_tax_amount?: number | null;
+          direct_tax_rate?: number | null;
+          direct_tax_type?: Database["public"]["Enums"]["direct_tax_type_enum"];
+          discount_amount?: number | null;
+          discount_type?: Database["public"]["Enums"]["discount_type_enum"];
+          discount_value?: number | null;
+          due_date?: string | null;
+          exported_to_tally_at?: string | null;
+          has_adjustment?: boolean;
+          has_payment?: boolean | null;
+          id?: string;
+          invoice_date?: string;
+          invoice_number?: string;
+          invoice_type?: Database["public"]["Enums"]["invoice_type_enum"];
+          is_cancelled?: boolean;
+          modified_by?: string | null;
+          notes?: string | null;
+          outstanding_amount?: number | null;
+          party_address_line1?: string | null;
+          party_address_line2?: string | null;
+          party_city?: string | null;
+          party_country?: string | null;
+          party_display_name?: string | null;
+          party_email?: string | null;
+          party_gst_number?: string | null;
+          party_ledger_id?: string;
+          party_ledger_name?: string | null;
+          party_name?: string | null;
+          party_pan_number?: string | null;
+          party_phone?: string | null;
+          party_pincode?: string | null;
+          party_state?: string | null;
+          payment_terms?: string | null;
+          round_off_amount?: number | null;
+          search_vector?: unknown;
+          sequence_number?: number;
+          slug?: string;
+          source?: string;
+          source_purchase_order_id?: string | null;
+          source_sales_order_id?: string | null;
+          status?: string;
+          subtotal_amount?: number | null;
+          supplier_invoice_date?: string | null;
+          supplier_invoice_number?: string | null;
+          tally_export_error?: string | null;
+          tally_export_status?: string | null;
+          tally_guid?: string | null;
+          tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
+          taxable_amount?: number | null;
+          total_amount?: number | null;
+          total_cgst_amount?: number | null;
+          total_igst_amount?: number | null;
+          total_sgst_amount?: number | null;
+          total_tax_amount?: number | null;
+          updated_at?: string;
+          warehouse_address_line1?: string | null;
+          warehouse_address_line2?: string | null;
+          warehouse_city?: string | null;
+          warehouse_country?: string | null;
+          warehouse_id?: string;
+          warehouse_name?: string | null;
+          warehouse_pincode?: string | null;
+          warehouse_state?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invoices_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoices_counter_ledger_id_fkey";
+            columns: ["counter_ledger_id"];
+            isOneToOne: false;
+            referencedRelation: "ledgers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoices_party_ledger_id_fkey";
+            columns: ["party_ledger_id"];
+            isOneToOne: false;
+            referencedRelation: "ledgers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoices_source_purchase_order_id_fkey";
+            columns: ["source_purchase_order_id"];
+            isOneToOne: false;
+            referencedRelation: "purchase_orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoices_source_sales_order_id_fkey";
+            columns: ["source_sales_order_id"];
+            isOneToOne: false;
+            referencedRelation: "sales_orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoices_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
             referencedColumns: ["id"];
           },
         ];
@@ -888,6 +1771,216 @@ export type Database = {
           },
         ];
       };
+      ledgers: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          created_by: string | null;
+          deleted_at: string | null;
+          dr_cr: Database["public"]["Enums"]["dr_cr_enum"] | null;
+          exported_to_tally_at: string | null;
+          gst_applicable: boolean | null;
+          gst_rate: number | null;
+          gst_type: string | null;
+          id: string;
+          is_active: boolean | null;
+          is_bill_wise: boolean | null;
+          is_default: boolean | null;
+          ledger_type: Database["public"]["Enums"]["ledger_type_enum"];
+          modified_by: string | null;
+          name: string;
+          opening_balance: number | null;
+          parent_group_id: string;
+          partner_id: string | null;
+          tally_guid: string | null;
+          tds_applicable: boolean | null;
+          tds_rate: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          company_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          deleted_at?: string | null;
+          dr_cr?: Database["public"]["Enums"]["dr_cr_enum"] | null;
+          exported_to_tally_at?: string | null;
+          gst_applicable?: boolean | null;
+          gst_rate?: number | null;
+          gst_type?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          is_bill_wise?: boolean | null;
+          is_default?: boolean | null;
+          ledger_type: Database["public"]["Enums"]["ledger_type_enum"];
+          modified_by?: string | null;
+          name: string;
+          opening_balance?: number | null;
+          parent_group_id: string;
+          partner_id?: string | null;
+          tally_guid?: string | null;
+          tds_applicable?: boolean | null;
+          tds_rate?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          deleted_at?: string | null;
+          dr_cr?: Database["public"]["Enums"]["dr_cr_enum"] | null;
+          exported_to_tally_at?: string | null;
+          gst_applicable?: boolean | null;
+          gst_rate?: number | null;
+          gst_type?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          is_bill_wise?: boolean | null;
+          is_default?: boolean | null;
+          ledger_type?: Database["public"]["Enums"]["ledger_type_enum"];
+          modified_by?: string | null;
+          name?: string;
+          opening_balance?: number | null;
+          parent_group_id?: string;
+          partner_id?: string | null;
+          tally_guid?: string | null;
+          tds_applicable?: boolean | null;
+          tds_rate?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ledgers_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ledgers_parent_group_id_fkey";
+            columns: ["parent_group_id"];
+            isOneToOne: false;
+            referencedRelation: "parent_groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ledgers_partner_id_fkey";
+            columns: ["partner_id"];
+            isOneToOne: false;
+            referencedRelation: "partners";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      parent_groups: {
+        Row: {
+          category: Database["public"]["Enums"]["parent_group_category_enum"];
+          created_at: string;
+          description: string | null;
+          id: string;
+          is_system: boolean | null;
+          name: string;
+          parent_group_id: string | null;
+          reserved_name: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          category: Database["public"]["Enums"]["parent_group_category_enum"];
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_system?: boolean | null;
+          name: string;
+          parent_group_id?: string | null;
+          reserved_name?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          category?: Database["public"]["Enums"]["parent_group_category_enum"];
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_system?: boolean | null;
+          name?: string;
+          parent_group_id?: string | null;
+          reserved_name?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "parent_groups_parent_group_id_fkey";
+            columns: ["parent_group_id"];
+            isOneToOne: false;
+            referencedRelation: "parent_groups";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      partner_credit_aggregates: {
+        Row: {
+          company_id: string;
+          created_at: string | null;
+          first_invoice_date: string | null;
+          id: string;
+          invoice_count: number | null;
+          last_invoice_date: string | null;
+          last_payment_date: string | null;
+          last_updated_at: string | null;
+          partner_id: string;
+          total_credit_notes: number | null;
+          total_debit_notes: number | null;
+          total_invoice_amount: number | null;
+          total_outstanding_amount: number | null;
+          total_paid_amount: number | null;
+        };
+        Insert: {
+          company_id: string;
+          created_at?: string | null;
+          first_invoice_date?: string | null;
+          id?: string;
+          invoice_count?: number | null;
+          last_invoice_date?: string | null;
+          last_payment_date?: string | null;
+          last_updated_at?: string | null;
+          partner_id: string;
+          total_credit_notes?: number | null;
+          total_debit_notes?: number | null;
+          total_invoice_amount?: number | null;
+          total_outstanding_amount?: number | null;
+          total_paid_amount?: number | null;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string | null;
+          first_invoice_date?: string | null;
+          id?: string;
+          invoice_count?: number | null;
+          last_invoice_date?: string | null;
+          last_payment_date?: string | null;
+          last_updated_at?: string | null;
+          partner_id?: string;
+          total_credit_notes?: number | null;
+          total_debit_notes?: number | null;
+          total_invoice_amount?: number | null;
+          total_outstanding_amount?: number | null;
+          total_paid_amount?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "partner_credit_aggregates_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "partner_credit_aggregates_partner_id_fkey";
+            columns: ["partner_id"];
+            isOneToOne: true;
+            referencedRelation: "partners";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       partner_order_aggregates: {
         Row: {
           approval_pending_count: number | null;
@@ -969,20 +2062,23 @@ export type Database = {
           address_line2: string | null;
           city: string | null;
           company_id: string;
-          company_name: string | null;
+          company_name: string;
           country: string | null;
           created_at: string;
           created_by: string | null;
+          credit_limit: number | null;
+          credit_limit_enabled: boolean | null;
           deleted_at: string | null;
+          display_name: string | null;
           email: string | null;
-          first_name: string;
+          first_name: string | null;
           gst_number: string | null;
           id: string;
           image_url: string | null;
           is_active: boolean;
           is_guest: boolean | null;
           last_interaction_at: string | null;
-          last_name: string;
+          last_name: string | null;
           modified_by: string | null;
           notes: string | null;
           pan_number: string | null;
@@ -1000,20 +2096,23 @@ export type Database = {
           address_line2?: string | null;
           city?: string | null;
           company_id?: string;
-          company_name?: string | null;
+          company_name: string;
           country?: string | null;
           created_at?: string;
           created_by?: string | null;
+          credit_limit?: number | null;
+          credit_limit_enabled?: boolean | null;
           deleted_at?: string | null;
+          display_name?: string | null;
           email?: string | null;
-          first_name: string;
+          first_name?: string | null;
           gst_number?: string | null;
           id?: string;
           image_url?: string | null;
           is_active?: boolean;
           is_guest?: boolean | null;
           last_interaction_at?: string | null;
-          last_name: string;
+          last_name?: string | null;
           modified_by?: string | null;
           notes?: string | null;
           pan_number?: string | null;
@@ -1031,20 +2130,23 @@ export type Database = {
           address_line2?: string | null;
           city?: string | null;
           company_id?: string;
-          company_name?: string | null;
+          company_name?: string;
           country?: string | null;
           created_at?: string;
           created_by?: string | null;
+          credit_limit?: number | null;
+          credit_limit_enabled?: boolean | null;
           deleted_at?: string | null;
+          display_name?: string | null;
           email?: string | null;
-          first_name?: string;
+          first_name?: string | null;
           gst_number?: string | null;
           id?: string;
           image_url?: string | null;
           is_active?: boolean;
           is_guest?: boolean | null;
           last_interaction_at?: string | null;
-          last_name?: string;
+          last_name?: string | null;
           modified_by?: string | null;
           notes?: string | null;
           pan_number?: string | null;
@@ -1063,6 +2165,213 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      payment_allocations: {
+        Row: {
+          allocation_type: Database["public"]["Enums"]["allocation_type_enum"];
+          amount_applied: number;
+          cancelled_at: string | null;
+          company_id: string;
+          created_at: string;
+          id: string;
+          invoice_id: string | null;
+          is_cancelled: boolean;
+          payment_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          allocation_type: Database["public"]["Enums"]["allocation_type_enum"];
+          amount_applied: number;
+          cancelled_at?: string | null;
+          company_id?: string;
+          created_at?: string;
+          id?: string;
+          invoice_id?: string | null;
+          is_cancelled?: boolean;
+          payment_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          allocation_type?: Database["public"]["Enums"]["allocation_type_enum"];
+          amount_applied?: number;
+          cancelled_at?: string | null;
+          company_id?: string;
+          created_at?: string;
+          id?: string;
+          invoice_id?: string | null;
+          is_cancelled?: boolean;
+          payment_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payment_allocations_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payment_allocations_invoice_id_fkey";
+            columns: ["invoice_id"];
+            isOneToOne: false;
+            referencedRelation: "invoices";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payment_allocations_payment_id_fkey";
+            columns: ["payment_id"];
+            isOneToOne: false;
+            referencedRelation: "payments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      payments: {
+        Row: {
+          attachments: string[] | null;
+          cancellation_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          company_id: string;
+          counter_ledger_id: string;
+          counter_ledger_name: string | null;
+          created_at: string;
+          created_by: string | null;
+          deleted_at: string | null;
+          exported_to_tally_at: string | null;
+          id: string;
+          is_cancelled: boolean;
+          modified_by: string | null;
+          net_amount: number | null;
+          notes: string | null;
+          party_display_name: string | null;
+          party_gst_number: string | null;
+          party_ledger_id: string;
+          party_name: string | null;
+          party_pan_number: string | null;
+          payment_date: string;
+          payment_mode: Database["public"]["Enums"]["payment_mode_enum"];
+          payment_number: string;
+          reference_date: string | null;
+          reference_number: string | null;
+          sequence_number: number;
+          slug: string;
+          tally_guid: string | null;
+          tds_amount: number | null;
+          tds_applicable: boolean | null;
+          tds_ledger_id: string | null;
+          tds_rate: number | null;
+          total_amount: number;
+          updated_at: string;
+          voucher_type: Database["public"]["Enums"]["voucher_type_enum"];
+        };
+        Insert: {
+          attachments?: string[] | null;
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          company_id?: string;
+          counter_ledger_id: string;
+          counter_ledger_name?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          deleted_at?: string | null;
+          exported_to_tally_at?: string | null;
+          id?: string;
+          is_cancelled?: boolean;
+          modified_by?: string | null;
+          net_amount?: number | null;
+          notes?: string | null;
+          party_display_name?: string | null;
+          party_gst_number?: string | null;
+          party_ledger_id: string;
+          party_name?: string | null;
+          party_pan_number?: string | null;
+          payment_date?: string;
+          payment_mode?: Database["public"]["Enums"]["payment_mode_enum"];
+          payment_number: string;
+          reference_date?: string | null;
+          reference_number?: string | null;
+          sequence_number: number;
+          slug: string;
+          tally_guid?: string | null;
+          tds_amount?: number | null;
+          tds_applicable?: boolean | null;
+          tds_ledger_id?: string | null;
+          tds_rate?: number | null;
+          total_amount: number;
+          updated_at?: string;
+          voucher_type: Database["public"]["Enums"]["voucher_type_enum"];
+        };
+        Update: {
+          attachments?: string[] | null;
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          company_id?: string;
+          counter_ledger_id?: string;
+          counter_ledger_name?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          deleted_at?: string | null;
+          exported_to_tally_at?: string | null;
+          id?: string;
+          is_cancelled?: boolean;
+          modified_by?: string | null;
+          net_amount?: number | null;
+          notes?: string | null;
+          party_display_name?: string | null;
+          party_gst_number?: string | null;
+          party_ledger_id?: string;
+          party_name?: string | null;
+          party_pan_number?: string | null;
+          payment_date?: string;
+          payment_mode?: Database["public"]["Enums"]["payment_mode_enum"];
+          payment_number?: string;
+          reference_date?: string | null;
+          reference_number?: string | null;
+          sequence_number?: number;
+          slug?: string;
+          tally_guid?: string | null;
+          tds_amount?: number | null;
+          tds_applicable?: boolean | null;
+          tds_ledger_id?: string | null;
+          tds_rate?: number | null;
+          total_amount?: number;
+          updated_at?: string;
+          voucher_type?: Database["public"]["Enums"]["voucher_type_enum"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payments_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payments_counter_ledger_id_fkey";
+            columns: ["counter_ledger_id"];
+            isOneToOne: false;
+            referencedRelation: "ledgers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payments_party_ledger_id_fkey";
+            columns: ["party_ledger_id"];
+            isOneToOne: false;
+            referencedRelation: "ledgers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payments_tds_ledger_id_fkey";
+            columns: ["tds_ledger_id"];
+            isOneToOne: false;
+            referencedRelation: "ledgers";
             referencedColumns: ["id"];
           },
         ];
@@ -1342,6 +2651,7 @@ export type Database = {
           created_by: string;
           deleted_at: string | null;
           gsm: number | null;
+          gst_rate: number | null;
           hsn_code: string | null;
           id: string;
           is_active: boolean;
@@ -1351,12 +2661,14 @@ export type Database = {
           modified_by: string | null;
           name: string;
           notes: string | null;
+          product_code: string | null;
           product_images: string[] | null;
           search_vector: unknown;
           selling_price_per_unit: number | null;
           sequence_number: number;
           show_on_catalog: boolean | null;
           stock_type: string;
+          tax_type: string;
           thread_count_cm: number | null;
           updated_at: string;
         };
@@ -1367,6 +2679,7 @@ export type Database = {
           created_by?: string;
           deleted_at?: string | null;
           gsm?: number | null;
+          gst_rate?: number | null;
           hsn_code?: string | null;
           id?: string;
           is_active?: boolean;
@@ -1376,12 +2689,14 @@ export type Database = {
           modified_by?: string | null;
           name: string;
           notes?: string | null;
+          product_code?: string | null;
           product_images?: string[] | null;
           search_vector?: unknown;
           selling_price_per_unit?: number | null;
           sequence_number: number;
           show_on_catalog?: boolean | null;
           stock_type: string;
+          tax_type?: string;
           thread_count_cm?: number | null;
           updated_at?: string;
         };
@@ -1392,6 +2707,7 @@ export type Database = {
           created_by?: string;
           deleted_at?: string | null;
           gsm?: number | null;
+          gst_rate?: number | null;
           hsn_code?: string | null;
           id?: string;
           is_active?: boolean;
@@ -1401,12 +2717,14 @@ export type Database = {
           modified_by?: string | null;
           name?: string;
           notes?: string | null;
+          product_code?: string | null;
           product_images?: string[] | null;
           search_vector?: unknown;
           selling_price_per_unit?: number | null;
           sequence_number?: number;
           show_on_catalog?: boolean | null;
           stock_type?: string;
+          tax_type?: string;
           thread_count_cm?: number | null;
           updated_at?: string;
         };
@@ -1432,7 +2750,7 @@ export type Database = {
           purchase_order_id: string;
           received_quantity: number | null;
           required_quantity: number;
-          unit_rate: number | null;
+          unit_rate: number;
           updated_at: string;
           warehouse_id: string | null;
         };
@@ -1447,7 +2765,7 @@ export type Database = {
           purchase_order_id: string;
           received_quantity?: number | null;
           required_quantity: number;
-          unit_rate?: number | null;
+          unit_rate: number;
           updated_at?: string;
           warehouse_id?: string | null;
         };
@@ -1462,7 +2780,7 @@ export type Database = {
           purchase_order_id?: string;
           received_quantity?: number | null;
           required_quantity?: number;
-          unit_rate?: number | null;
+          unit_rate?: number;
           updated_at?: string;
           warehouse_id?: string | null;
         };
@@ -1506,11 +2824,11 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           deleted_at: string | null;
+          delivery_due_date: string | null;
+          discount_amount: number | null;
           discount_type: Database["public"]["Enums"]["discount_type_enum"];
           discount_value: number | null;
-          expected_delivery_date: string | null;
           gst_amount: number | null;
-          gst_rate: number | null;
           has_inward: boolean | null;
           id: string;
           modified_by: string | null;
@@ -1525,7 +2843,9 @@ export type Database = {
           status_changed_by: string | null;
           status_notes: string | null;
           supplier_id: string;
+          supplier_invoice_date: string | null;
           supplier_invoice_number: string | null;
+          tax_type: Database["public"]["Enums"]["tax_type_enum"] | null;
           total_amount: number | null;
           updated_at: string;
           warehouse_id: string | null;
@@ -1538,11 +2858,11 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
+          delivery_due_date?: string | null;
+          discount_amount?: number | null;
           discount_type?: Database["public"]["Enums"]["discount_type_enum"];
           discount_value?: number | null;
-          expected_delivery_date?: string | null;
           gst_amount?: number | null;
-          gst_rate?: number | null;
           has_inward?: boolean | null;
           id?: string;
           modified_by?: string | null;
@@ -1557,7 +2877,9 @@ export type Database = {
           status_changed_by?: string | null;
           status_notes?: string | null;
           supplier_id: string;
+          supplier_invoice_date?: string | null;
           supplier_invoice_number?: string | null;
+          tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
           total_amount?: number | null;
           updated_at?: string;
           warehouse_id?: string | null;
@@ -1570,11 +2892,11 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
+          delivery_due_date?: string | null;
+          discount_amount?: number | null;
           discount_type?: Database["public"]["Enums"]["discount_type_enum"];
           discount_value?: number | null;
-          expected_delivery_date?: string | null;
           gst_amount?: number | null;
-          gst_rate?: number | null;
           has_inward?: boolean | null;
           id?: string;
           modified_by?: string | null;
@@ -1589,7 +2911,9 @@ export type Database = {
           status_changed_by?: string | null;
           status_notes?: string | null;
           supplier_id?: string;
+          supplier_invoice_date?: string | null;
           supplier_invoice_number?: string | null;
+          tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
           total_amount?: number | null;
           updated_at?: string;
           warehouse_id?: string | null;
@@ -1813,7 +3137,7 @@ export type Database = {
           product_id: string;
           required_quantity: number;
           sales_order_id: string;
-          unit_rate: number | null;
+          unit_rate: number;
           updated_at: string;
           warehouse_id: string | null;
         };
@@ -1828,7 +3152,7 @@ export type Database = {
           product_id: string;
           required_quantity: number;
           sales_order_id: string;
-          unit_rate?: number | null;
+          unit_rate: number;
           updated_at?: string;
           warehouse_id?: string | null;
         };
@@ -1843,7 +3167,7 @@ export type Database = {
           product_id?: string;
           required_quantity?: number;
           sales_order_id?: string;
-          unit_rate?: number | null;
+          unit_rate?: number;
           updated_at?: string;
           warehouse_id?: string | null;
         };
@@ -1888,14 +3212,13 @@ export type Database = {
           created_by: string | null;
           customer_id: string;
           deleted_at: string | null;
+          delivery_due_date: string | null;
+          discount_amount: number | null;
           discount_type: Database["public"]["Enums"]["discount_type_enum"];
           discount_value: number | null;
-          expected_delivery_date: string | null;
           gst_amount: number | null;
-          gst_rate: number | null;
           has_outward: boolean | null;
           id: string;
-          invoice_number: string | null;
           modified_by: string | null;
           notes: string | null;
           order_date: string;
@@ -1907,6 +3230,7 @@ export type Database = {
           status_changed_at: string | null;
           status_changed_by: string | null;
           status_notes: string | null;
+          tax_type: Database["public"]["Enums"]["tax_type_enum"] | null;
           total_amount: number | null;
           updated_at: string;
           warehouse_id: string | null;
@@ -1920,14 +3244,13 @@ export type Database = {
           created_by?: string | null;
           customer_id: string;
           deleted_at?: string | null;
+          delivery_due_date?: string | null;
+          discount_amount?: number | null;
           discount_type?: Database["public"]["Enums"]["discount_type_enum"];
           discount_value?: number | null;
-          expected_delivery_date?: string | null;
           gst_amount?: number | null;
-          gst_rate?: number | null;
           has_outward?: boolean | null;
           id?: string;
-          invoice_number?: string | null;
           modified_by?: string | null;
           notes?: string | null;
           order_date?: string;
@@ -1939,6 +3262,7 @@ export type Database = {
           status_changed_at?: string | null;
           status_changed_by?: string | null;
           status_notes?: string | null;
+          tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
           total_amount?: number | null;
           updated_at?: string;
           warehouse_id?: string | null;
@@ -1952,14 +3276,13 @@ export type Database = {
           created_by?: string | null;
           customer_id?: string;
           deleted_at?: string | null;
+          delivery_due_date?: string | null;
+          discount_amount?: number | null;
           discount_type?: Database["public"]["Enums"]["discount_type_enum"];
           discount_value?: number | null;
-          expected_delivery_date?: string | null;
           gst_amount?: number | null;
-          gst_rate?: number | null;
           has_outward?: boolean | null;
           id?: string;
-          invoice_number?: string | null;
           modified_by?: string | null;
           notes?: string | null;
           order_date?: string;
@@ -1971,6 +3294,7 @@ export type Database = {
           status_changed_at?: string | null;
           status_changed_by?: string | null;
           status_notes?: string | null;
+          tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
           total_amount?: number | null;
           updated_at?: string;
           warehouse_id?: string | null;
@@ -2006,41 +3330,6 @@ export type Database = {
           },
         ];
       };
-      sequence_counters: {
-        Row: {
-          company_id: string;
-          created_at: string;
-          current_value: number;
-          id: string;
-          table_name: string;
-          updated_at: string;
-        };
-        Insert: {
-          company_id: string;
-          created_at?: string;
-          current_value?: number;
-          id?: string;
-          table_name: string;
-          updated_at?: string;
-        };
-        Update: {
-          company_id?: string;
-          created_at?: string;
-          current_value?: number;
-          id?: string;
-          table_name?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "sequence_counters_company_id_fkey";
-            columns: ["company_id"];
-            isOneToOne: false;
-            referencedRelation: "companies";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       stock_units: {
         Row: {
           company_id: string;
@@ -2048,6 +3337,7 @@ export type Database = {
           created_by: string;
           created_from_inward_id: string | null;
           deleted_at: string | null;
+          has_outward: boolean | null;
           id: string;
           initial_quantity: number;
           manufacturing_date: string | null;
@@ -2070,6 +3360,7 @@ export type Database = {
           created_by?: string;
           created_from_inward_id?: string | null;
           deleted_at?: string | null;
+          has_outward?: boolean | null;
           id?: string;
           initial_quantity: number;
           manufacturing_date?: string | null;
@@ -2092,6 +3383,7 @@ export type Database = {
           created_by?: string;
           created_from_inward_id?: string | null;
           deleted_at?: string | null;
+          has_outward?: boolean | null;
           id?: string;
           initial_quantity?: number;
           manufacturing_date?: string | null;
@@ -2356,12 +3648,71 @@ export type Database = {
       };
       authorize: { Args: { required_permission: string }; Returns: boolean };
       cleanup_expired_tokens: { Args: never; Returns: number };
+      create_adjustment_note_with_items: {
+        Args: {
+          p_adjustment_date: string;
+          p_adjustment_type: string;
+          p_attachments: string[];
+          p_company_id?: string;
+          p_counter_ledger_id: string;
+          p_invoice_id: string;
+          p_items: Json;
+          p_notes: string;
+          p_reason: string;
+          p_warehouse_id: string;
+        };
+        Returns: string;
+      };
       create_goods_inward_with_units: {
         Args: { p_inward_data: Json; p_stock_units: Json[] };
         Returns: string;
       };
       create_goods_outward_with_items: {
         Args: { p_outward_data: Json; p_stock_unit_items: Json[] };
+        Returns: string;
+      };
+      create_invoice_with_items: {
+        Args: {
+          p_attachments: string[];
+          p_company_id?: string;
+          p_counter_ledger_id: string;
+          p_discount_type: string;
+          p_discount_value: number;
+          p_due_date: string;
+          p_goods_movement_ids?: string[];
+          p_invoice_date: string;
+          p_invoice_type: string;
+          p_items: Json;
+          p_notes: string;
+          p_party_ledger_id: string;
+          p_payment_terms: string;
+          p_source_purchase_order_id?: string;
+          p_source_sales_order_id?: string;
+          p_supplier_invoice_date: string;
+          p_supplier_invoice_number: string;
+          p_tax_type: string;
+          p_warehouse_id: string;
+        };
+        Returns: string;
+      };
+      create_payment_with_allocations: {
+        Args: {
+          p_allocations: Json;
+          p_attachments: string[];
+          p_company_id?: string;
+          p_counter_ledger_id: string;
+          p_notes: string;
+          p_party_ledger_id: string;
+          p_payment_date: string;
+          p_payment_mode: string;
+          p_reference_date: string;
+          p_reference_number: string;
+          p_tds_applicable: boolean;
+          p_tds_ledger_id: string;
+          p_tds_rate: number;
+          p_total_amount: number;
+          p_voucher_type: string;
+        };
         Returns: string;
       };
       create_purchase_order_with_items: {
@@ -2398,18 +3749,6 @@ export type Database = {
         Returns: string;
       };
       custom_access_auth_hook: { Args: { event: Json }; Returns: Json };
-      dispatch_pieces_fifo: {
-        Args: {
-          p_company_id: string;
-          p_outward_id: string;
-          p_product_id: string;
-          p_quantity_to_dispatch: number;
-        };
-        Returns: {
-          quantity_dispatched: number;
-          stock_unit_id: string;
-        }[];
-      };
       generate_company_slug: {
         Args: { company_name: string };
         Returns: string;
@@ -2417,10 +3756,6 @@ export type Database = {
       generate_warehouse_slug: {
         Args: { warehouse_name: string };
         Returns: string;
-      };
-      get_available_pieces_quantity: {
-        Args: { p_company_id: string; p_product_id: string };
-        Returns: number;
       };
       get_current_user_id: { Args: never; Returns: string };
       get_job_type_suggestions: {
@@ -2469,6 +3804,10 @@ export type Database = {
         };
         Returns: number;
       };
+      recalculate_partner_credit_aggregates: {
+        Args: { p_partner_id: string };
+        Returns: undefined;
+      };
       recalculate_partner_order_aggregates: {
         Args: { p_partner_id: string };
         Returns: undefined;
@@ -2477,9 +3816,98 @@ export type Database = {
         Args: { p_product_id: string; p_warehouse_id: string };
         Returns: undefined;
       };
+      update_adjustment_note_with_items: {
+        Args: {
+          p_adjustment_date: string;
+          p_adjustment_note_id: string;
+          p_attachments: string[];
+          p_counter_ledger_id: string;
+          p_invoice_id: string;
+          p_items: Json;
+          p_notes: string;
+          p_reason: string;
+          p_warehouse_id: string;
+        };
+        Returns: undefined;
+      };
+      update_invoice_with_items: {
+        Args: {
+          p_attachments: string[];
+          p_counter_ledger_id: string;
+          p_discount_type: string;
+          p_discount_value: number;
+          p_due_date: string;
+          p_invoice_date: string;
+          p_invoice_id: string;
+          p_items: Json;
+          p_notes: string;
+          p_party_ledger_id: string;
+          p_payment_terms: string;
+          p_supplier_invoice_date: string;
+          p_supplier_invoice_number: string;
+          p_tax_type: string;
+          p_warehouse_id: string;
+        };
+        Returns: undefined;
+      };
+      update_payment_with_allocations: {
+        Args: {
+          p_allocations: Json;
+          p_attachments: string[];
+          p_counter_ledger_id: string;
+          p_notes: string;
+          p_party_ledger_id: string;
+          p_payment_date: string;
+          p_payment_id: string;
+          p_payment_mode: string;
+          p_reference_date: string;
+          p_reference_number: string;
+          p_tds_applicable: boolean;
+          p_tds_ledger_id: string;
+          p_tds_rate: number;
+          p_total_amount: number;
+        };
+        Returns: undefined;
+      };
+      update_purchase_order_with_items: {
+        Args: { p_line_items: Json[]; p_order_data: Json; p_order_id: string };
+        Returns: undefined;
+      };
+      update_sales_order_with_items: {
+        Args: { p_line_items: Json[]; p_order_data: Json; p_order_id: string };
+        Returns: undefined;
+      };
     };
     Enums: {
+      adjustment_type_enum: "credit" | "debit";
+      allocation_type_enum: "against_ref" | "advance";
+      direct_tax_type_enum: "none" | "tds" | "tcs";
       discount_type_enum: "none" | "percentage" | "flat_amount";
+      dr_cr_enum: "debit" | "credit";
+      invoice_type_enum: "sales" | "purchase";
+      ledger_type_enum:
+        | "party"
+        | "sales"
+        | "purchase"
+        | "tax"
+        | "bank"
+        | "cash"
+        | "asset"
+        | "liability"
+        | "income"
+        | "expense";
+      parent_group_category_enum: "asset" | "liability" | "income" | "expense";
+      payment_mode_enum:
+        | "cash"
+        | "cheque"
+        | "neft"
+        | "rtgs"
+        | "upi"
+        | "card"
+        | "other";
+      product_tax_applicability_enum: "no_tax" | "gst";
+      tax_type_enum: "no_tax" | "gst" | "igst";
+      voucher_type_enum: "payment" | "receipt";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -2613,7 +4041,37 @@ export const Constants = {
   },
   public: {
     Enums: {
+      adjustment_type_enum: ["credit", "debit"],
+      allocation_type_enum: ["against_ref", "advance"],
+      direct_tax_type_enum: ["none", "tds", "tcs"],
       discount_type_enum: ["none", "percentage", "flat_amount"],
+      dr_cr_enum: ["debit", "credit"],
+      invoice_type_enum: ["sales", "purchase"],
+      ledger_type_enum: [
+        "party",
+        "sales",
+        "purchase",
+        "tax",
+        "bank",
+        "cash",
+        "asset",
+        "liability",
+        "income",
+        "expense",
+      ],
+      parent_group_category_enum: ["asset", "liability", "income", "expense"],
+      payment_mode_enum: [
+        "cash",
+        "cheque",
+        "neft",
+        "rtgs",
+        "upi",
+        "card",
+        "other",
+      ],
+      product_tax_applicability_enum: ["no_tax", "gst"],
+      tax_type_enum: ["no_tax", "gst", "igst"],
+      voucher_type_enum: ["payment", "receipt"],
     },
   },
 } as const;

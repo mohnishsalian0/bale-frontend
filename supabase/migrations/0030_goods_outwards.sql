@@ -33,13 +33,15 @@ CREATE TABLE goods_outwards (
     expected_delivery_date DATE,
     transport_reference_number VARCHAR(50),
     transport_type VARCHAR(20) CHECK (transport_type IN ('road', 'rail', 'air', 'sea', 'courier')),
-    transport_details TEXT,
 
     -- Cancellation/Reversal tracking
     is_cancelled BOOLEAN DEFAULT FALSE,
     cancelled_at TIMESTAMPTZ,
     cancelled_by UUID,
     cancellation_reason TEXT,
+
+    -- Invoice tracking
+    has_invoice BOOLEAN DEFAULT false,
 
     notes TEXT,
     attachments TEXT[], -- Array of file URLs
@@ -83,6 +85,7 @@ CREATE INDEX idx_goods_outwards_partner ON goods_outwards(partner_id);
 CREATE INDEX idx_goods_outwards_sales_order ON goods_outwards(sales_order_id);
 CREATE INDEX idx_goods_outwards_job_work ON goods_outwards(job_work_id);
 CREATE INDEX idx_goods_outwards_purchase_order ON goods_outwards(purchase_order_id);
+CREATE INDEX idx_goods_outwards_has_invoice ON goods_outwards(company_id, has_invoice) WHERE has_invoice = false;
 
 -- Full-text search index
 CREATE INDEX idx_goods_outwards_search ON goods_outwards USING GIN(search_vector);
@@ -122,6 +125,62 @@ CREATE TRIGGER trigger_goods_outwards_update_partner_interaction
     FOR EACH ROW
     WHEN (NEW.deleted_at IS NULL AND NEW.partner_id IS NOT NULL)
     EXECUTE FUNCTION update_partner_last_interaction();
+
+-- Prevent goods_outward deletion if invoiced
+CREATE OR REPLACE FUNCTION prevent_invoiced_outward_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.has_invoice = true THEN
+        RAISE EXCEPTION 'Cannot delete goods outward - linked to invoice';
+    END IF;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_prevent_invoiced_outward_delete
+    BEFORE DELETE ON goods_outwards
+    FOR EACH ROW EXECUTE FUNCTION prevent_invoiced_outward_delete();
+
+-- Note: Edit guards moved to 0063_goods_movement_guards.sql
+-- The prevent_invoiced_outward_edit() function has been replaced by
+-- the unified prevent_goods_outward_edit() function that consolidates
+-- all edit validation rules (cancelled, deleted, invoice blocking, etc.)
+
+-- Auto-cancel all outward items when outward is cancelled
+CREATE OR REPLACE FUNCTION auto_cancel_outward_items_on_outward_cancel()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- When outward is cancelled, cancel all its items
+    IF NEW.is_cancelled = TRUE AND OLD.is_cancelled = FALSE THEN
+        UPDATE goods_outward_items
+        SET
+            is_cancelled = TRUE,
+            cancelled_at = NOW()
+        WHERE outward_id = NEW.id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_auto_cancel_outward_items
+    AFTER UPDATE ON goods_outwards
+    FOR EACH ROW
+    WHEN (OLD.is_cancelled IS FALSE AND NEW.is_cancelled IS TRUE)
+    EXECUTE FUNCTION auto_cancel_outward_items_on_outward_cancel();
+
+-- Triggers to populate cancelled_at and cancelled_by fields
+CREATE TRIGGER set_goods_outwards_cancelled_at
+    BEFORE UPDATE ON goods_outwards
+    FOR EACH ROW
+    WHEN (OLD.is_cancelled IS FALSE AND NEW.is_cancelled IS TRUE)
+    EXECUTE FUNCTION set_cancelled_at();
+
+CREATE TRIGGER set_goods_outwards_cancelled_by
+    BEFORE UPDATE ON goods_outwards
+    FOR EACH ROW
+    WHEN (OLD.is_cancelled IS FALSE AND NEW.is_cancelled IS TRUE)
+    EXECUTE FUNCTION set_cancelled_by();
 
 -- =====================================================
 -- GOODS OUTWARD TABLE RLS POLICIES

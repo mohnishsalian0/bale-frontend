@@ -20,9 +20,11 @@ export interface PurchaseOrderFilters extends Record<string, unknown> {
   agentId?: string;
   productId?: string;
   limit?: number;
-  order_by?: "order_date" | "expected_delivery_date" | "created_at";
+  order_by?: "order_date" | "delivery_due_date" | "created_at";
   ascending?: boolean;
   search_term?: string;
+  date_from?: string;
+  date_to?: string;
 }
 
 // =====================================================
@@ -53,11 +55,11 @@ export interface PurchaseOrderItemListView extends PurchaseOrderItem {
 export interface PurchaseOrderListView extends PurchaseOrder {
   supplier: Pick<
     Partner,
-    "id" | "first_name" | "last_name" | "company_name"
+    "id" | "first_name" | "last_name" | "company_name" | "display_name"
   > | null;
   agent: Pick<
     Partner,
-    "id" | "first_name" | "last_name" | "company_name"
+    "id" | "first_name" | "last_name" | "company_name" | "display_name"
   > | null;
   purchase_order_items: PurchaseOrderItemListView[];
 }
@@ -94,10 +96,14 @@ export interface PurchaseOrderItemDetailView extends PurchaseOrderItem {
  * Includes supplier address, agent (minimal fields), warehouse, and full product details
  */
 export interface PurchaseOrderDetailView extends PurchaseOrder {
-  supplier: Partner | null;
+  supplier:
+    | (Partner & {
+        ledger: Pick<Tables<"ledgers">, "id" | "name">[];
+      })
+    | null;
   agent: Pick<
     Partner,
-    "id" | "first_name" | "last_name" | "company_name"
+    "id" | "first_name" | "last_name" | "company_name" | "display_name"
   > | null;
   warehouse: Warehouse | null;
   purchase_order_items: PurchaseOrderItemDetailView[];
@@ -116,10 +122,14 @@ export interface CreatePurchaseOrderData {
   supplier_id: string;
   agent_id: string | null;
   order_date: string;
-  expected_delivery_date: string | null;
+  delivery_due_date: string | null;
   advance_amount: number;
   discount_type: string;
   discount_value: number;
+  payment_terms: string | null;
+  tax_type: string;
+  supplier_invoice_number: string | null;
+  supplier_invoice_date: string | null;
   notes: string | null;
   attachments: string[];
   status: string;
@@ -144,10 +154,14 @@ export interface UpdatePurchaseOrderData {
   supplier_id: string;
   agent_id: string | null;
   order_date: string;
-  expected_delivery_date: string | null;
+  delivery_due_date: string | null;
   advance_amount: number;
   discount_type: string;
   discount_value: number;
+  payment_terms: string | null;
+  tax_type: string;
+  supplier_invoice_number: string | null;
+  supplier_invoice_date: string | null;
   notes: string | null;
   attachments: string[];
   status: string;
