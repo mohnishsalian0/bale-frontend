@@ -291,7 +291,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_validate_sales_order_status_for_outward
-    BEFORE INSERT OR UPDATE ON goods_outwards
+    BEFORE INSERT ON goods_outwards
     FOR EACH ROW EXECUTE FUNCTION validate_sales_order_status_for_outward();
 
 COMMENT ON FUNCTION validate_sales_order_status_for_outward() IS 'Prevents creating goods outward for sales orders that are not in in_progress status';

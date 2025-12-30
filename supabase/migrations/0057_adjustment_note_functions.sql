@@ -142,9 +142,9 @@ BEGIN
     raw_items AS (
         SELECT
             (elem->>'product_id')::UUID as product_id,
-            (elem->>'quantity')::DECIMAL as qty,
-            (elem->>'rate')::DECIMAL as rate,
-            COALESCE((elem->>'gst_rate')::DECIMAL, 0) as gst_rate
+            ROUND((elem->>'quantity')::DECIMAL, 2) as qty,
+            ROUND((elem->>'rate')::DECIMAL, 2) as rate,
+            ROUND(COALESCE((elem->>'gst_rate')::DECIMAL, 0), 2) as gst_rate
         FROM jsonb_array_elements(p_items) as elem
     ),
     -- Step 4.2: Calculate line amounts
@@ -417,9 +417,9 @@ BEGIN
     raw_items AS (
         SELECT
             (elem->>'product_id')::UUID as product_id,
-            (elem->>'quantity')::DECIMAL as qty,
-            (elem->>'rate')::DECIMAL as rate,
-            COALESCE((elem->>'gst_rate')::DECIMAL, 0) as gst_rate
+            ROUND((elem->>'quantity')::DECIMAL, 2) as qty,
+            ROUND((elem->>'rate')::DECIMAL, 2) as rate,
+            ROUND(COALESCE((elem->>'gst_rate')::DECIMAL, 0), 2) as gst_rate
         FROM jsonb_array_elements(p_items) as elem
     ),
     initial_calc AS (

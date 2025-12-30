@@ -139,8 +139,8 @@ BEGIN
         SELECT
             ROW_NUMBER() OVER () as item_seq,
             (elem->>'product_id')::UUID as product_id,
-            (elem->>'quantity')::DECIMAL as qty,
-            (elem->>'rate')::DECIMAL as rate
+            ROUND((elem->>'quantity')::DECIMAL, 2) as qty,
+            ROUND((elem->>'rate')::DECIMAL, 2) as rate
         FROM jsonb_array_elements(p_items) as elem
     ),
     -- Step 4.2: Calculate line gross amounts and total count
@@ -502,8 +502,8 @@ BEGIN
         SELECT
             ROW_NUMBER() OVER () as item_seq,
             (elem->>'product_id')::UUID as product_id,
-            (elem->>'quantity')::DECIMAL as qty,
-            (elem->>'rate')::DECIMAL as rate
+            ROUND((elem->>'quantity')::DECIMAL, 2) as qty,
+            ROUND((elem->>'rate')::DECIMAL, 2) as rate
         FROM jsonb_array_elements(p_items) as elem
     ),
     initial_calc AS (

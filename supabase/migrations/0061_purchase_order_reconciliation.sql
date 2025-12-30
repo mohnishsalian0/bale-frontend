@@ -270,7 +270,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_validate_purchase_order_status_for_inward
-    BEFORE INSERT OR UPDATE ON goods_inwards
+    BEFORE INSERT ON goods_inwards
     FOR EACH ROW EXECUTE FUNCTION validate_purchase_order_status_for_inward();
 
 COMMENT ON FUNCTION validate_purchase_order_status_for_inward() IS 'Prevents creating goods inward for purchase orders that are not in in_progress status';

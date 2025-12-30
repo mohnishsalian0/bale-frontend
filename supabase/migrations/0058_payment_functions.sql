@@ -43,6 +43,10 @@ DECLARE
 BEGIN
     v_company_id := COALESCE(p_company_id, get_jwt_company_id());
 
+    -- Round amounts to handle JavaScript floating point precision
+    p_total_amount := ROUND(p_total_amount, 2);
+    p_tds_rate := ROUND(p_tds_rate, 2);
+
     -- Validate voucher_type
     IF p_voucher_type NOT IN ('payment', 'receipt') THEN
         RAISE EXCEPTION 'Invalid voucher_type: %. Must be payment or receipt', p_voucher_type;
@@ -86,9 +90,10 @@ BEGIN
     v_net_amount := p_total_amount - v_tds_amount;
 
     -- Validate allocations sum <= total_amount
+    -- Round each allocation to 2 decimal places to handle JavaScript floating point precision
     FOR v_allocation IN SELECT * FROM jsonb_array_elements(p_allocations)
     LOOP
-        v_total_allocated := v_total_allocated + (v_allocation->>'amount_applied')::DECIMAL;
+        v_total_allocated := v_total_allocated + ROUND((v_allocation->>'amount_applied')::DECIMAL, 2);
     END LOOP;
 
     IF v_total_allocated > p_total_amount THEN
@@ -210,7 +215,7 @@ BEGIN
                 ELSE NULL
             END,
             (v_allocation->>'allocation_type')::allocation_type_enum,
-            (v_allocation->>'amount_applied')::DECIMAL
+            ROUND((v_allocation->>'amount_applied')::DECIMAL, 2)
         );
     END LOOP;
 
@@ -292,6 +297,10 @@ BEGIN
         RAISE EXCEPTION 'Cannot edit payment that has been exported to Tally';
     END IF;
 
+    -- Round amounts to handle JavaScript floating point precision
+    p_total_amount := ROUND(p_total_amount, 2);
+    p_tds_rate := ROUND(p_tds_rate, 2);
+
     -- Validate TDS ledger is provided when TDS is applicable
     IF p_tds_applicable AND p_tds_ledger_id IS NULL THEN
         RAISE EXCEPTION 'TDS ledger is required when TDS is applicable';
@@ -306,9 +315,10 @@ BEGIN
     v_net_amount := p_total_amount - v_tds_amount;
 
     -- Validate allocations sum <= total_amount
+    -- Round each allocation to 2 decimal places to handle JavaScript floating point precision
     FOR v_allocation IN SELECT * FROM jsonb_array_elements(p_allocations)
     LOOP
-        v_total_allocated := v_total_allocated + (v_allocation->>'amount_applied')::DECIMAL;
+        v_total_allocated := v_total_allocated + ROUND((v_allocation->>'amount_applied')::DECIMAL, 2);
     END LOOP;
 
     IF v_total_allocated > p_total_amount THEN
@@ -402,7 +412,7 @@ BEGIN
                 ELSE NULL
             END,
             (v_allocation->>'allocation_type')::allocation_type_enum,
-            (v_allocation->>'amount_applied')::DECIMAL
+            ROUND((v_allocation->>'amount_applied')::DECIMAL, 2)
         );
     END LOOP;
 
