@@ -1,6 +1,7 @@
 # Bale - Bills, Payments & Accounting Requirements
 
 ## Overview
+
 Complete accounting solution for fabric inventory management with **TallyPrime XML export** integration. Handles sales/purchase invoicing, credit/debit notes, bill-wise payment allocation, and comprehensive chart of accounts with **financial year-aware numbering** (April 1 - March 31).
 
 ---
@@ -8,9 +9,11 @@ Complete accounting solution for fabric inventory management with **TallyPrime X
 ## 1. Chart of Accounts
 
 ### Parent Groups (28 Tally Standard Groups)
+
 Hierarchical account classification matching TallyPrime standards:
 
 **Assets:**
+
 - Current Assets
   - Bank Accounts
   - Cash-in-Hand
@@ -22,6 +25,7 @@ Hierarchical account classification matching TallyPrime standards:
 - Investments
 
 **Liabilities:**
+
 - Current Liabilities
   - Duties & Taxes
   - Provisions
@@ -32,17 +36,21 @@ Hierarchical account classification matching TallyPrime standards:
 - Suspense A/c
 
 **Income:**
+
 - Direct Income
   - Sales Accounts
 - Indirect Income
 
 **Expense:**
+
 - Direct Expenses
   - Purchase Accounts
 - Indirect Expenses
 
 ### Ledgers
+
 Company-specific account ledgers with:
+
 - **Bill-wise tracking** for party ledgers (Sundry Debtors/Creditors)
 - **GST configuration** (rate, type: CGST/SGST/IGST)
 - **TDS/TCS configuration** (applicable, rate)
@@ -51,6 +59,7 @@ Company-specific account ledgers with:
 - **Default ledgers** auto-created on company setup
 
 #### Default Ledgers Seeded:
+
 1. **Sales** (Sales Accounts) - is_default
 2. **Sales Return** (Sales Accounts) - contra to Sales, used for credit notes
 3. **Purchase** (Purchase Accounts) - is_default
@@ -69,6 +78,7 @@ Company-specific account ledgers with:
 16. **Round Off** (Indirect Expenses)
 
 #### Party Ledgers (Auto-created on Partner Creation):
+
 - **Customer** → Sundry Debtors (bill-wise enabled)
 - **Vendor/Supplier/Agent** → Sundry Creditors (bill-wise enabled)
 
@@ -77,9 +87,11 @@ Company-specific account ledgers with:
 ## 2. Invoicing System
 
 ### Sales Invoice
+
 **Number Format:** `INV/2024-25/0001` (FY-aware, April-March)
 
 **Fields:**
+
 - Party Ledger (Sundry Debtor)
 - Warehouse
 - Invoice Date, Due Date
@@ -89,6 +101,7 @@ Company-specific account ledgers with:
 - Notes, Attachments
 
 **Financial Calculations:**
+
 1. **Subtotal** = Sum of (quantity × rate) for all items
 2. **Discount:**
    - Type: `none`, `percentage`, `fixed`
@@ -107,26 +120,31 @@ Company-specific account ledgers with:
 9. **Outstanding Amount** = Total Amount (initially, reduced by payments)
 
 **Status Tracking:**
+
 - `open` - No payments made (outstanding = total)
 - `partially_paid` - Some payments made (0 < outstanding < total)
 - `settled` - Fully paid (outstanding = 0)
 
 **IMPORTANT: No Overpaid Status**
+
 - Outstanding amount **MUST NEVER** go below zero
 - Prevents overpayment errors and maintains financial data integrity
 - Payment allocations that would cause negative outstanding are **rejected with error**
 - Credit notes that exceed outstanding are **rejected with error**
 
 **Snapshot Fields (Captured at Invoice Creation):**
+
 - **Warehouse:** name, address, state, GST number
 - **Party:** name, company_name, email, phone, address, state, GST number, PAN number
 
 **Linking:**
+
 - **Goods Outward** → Invoice (many-to-many via `invoice_outwards`)
 - **Goods Inward** → Invoice (many-to-many via `invoice_inwards`)
 - Auto-updates `has_invoice` flag on goods movements
 
 **Immutability Rules:**
+
 - ❌ Cannot delete/edit critical fields if `has_payment = true`
 - ❌ Cannot delete/edit if `exported_to_tally_at IS NOT NULL`
 - ❌ Linked goods movements cannot be deleted if `has_invoice = true`
@@ -134,9 +152,11 @@ Company-specific account ledgers with:
 ---
 
 ### Purchase Invoice
+
 **Number Format:** `PINV/2024-25/0001`
 
 **All fields same as Sales Invoice**, plus:
+
 - **Supplier Invoice Number** (vendor's bill number)
 - **Supplier Invoice Date** (vendor's bill date)
 
@@ -145,16 +165,19 @@ Company-specific account ledgers with:
 ## 3. Adjustment Notes (Credit/Debit Notes)
 
 ### Credit Note
+
 **Number Format:** `CN/2024-25/0001`
 
 **Purpose:** Reduce invoice amount (sales returns, discounts, errors)
 
 ### Debit Note
+
 **Number Format:** `DN/2024-25/0001`
 
 **Purpose:** Document type based on invoice type (Indian Convention)
 
 **Fields:**
+
 - **Invoice Reference** (mandatory)
 - **Warehouse**
 - Adjustment Date
@@ -168,6 +191,7 @@ Company-specific account ledgers with:
   - `cancellation_reason` (text, required for cancellation)
 
 **Financial Calculations:**
+
 1. **Inherits GST Type from Invoice** (GST or IGST)
 2. **Subtotal** = Sum of (quantity × rate)
 3. **GST Breakdown:**
@@ -180,9 +204,11 @@ Company-specific account ledgers with:
 7. **Total Amount** = ROUND(Pre-Roundoff Total)
 
 **Snapshot Fields:**
+
 - Same as invoices (warehouse, party)
 
 **Items:**
+
 - **Independent of invoice items** (no FK to invoice_items)
 - Product, Quantity, Rate, GST Rate
 - Tax breakdown (CGST/SGST/IGST)
@@ -190,20 +216,22 @@ Company-specific account ledgers with:
 **Impact on Invoice (Indian Convention):**
 The system follows **Indian Accounting Convention** where adjustment behavior depends on both invoice type AND adjustment type:
 
-| Invoice Type | Adjustment Type | Effect on Outstanding | Sign | Typical Use Case |
-|--------------|----------------|----------------------|------|------------------|
-| **Sales** | Credit Note | **Reduce** (customer owes less) | -1 | Customer returns, discounts |
-| **Sales** | Debit Note | **Increase** (customer owes more) | +1 | Additional charges to customer |
-| **Purchase** | Debit Note | **Reduce** (we owe supplier less) | -1 | We return goods to supplier |
-| **Purchase** | Credit Note | **Increase** (we owe supplier more) | +1 | Supplier additional charges (rare) |
+| Invoice Type | Adjustment Type | Effect on Outstanding               | Sign | Typical Use Case                   |
+| ------------ | --------------- | ----------------------------------- | ---- | ---------------------------------- |
+| **Sales**    | Credit Note     | **Reduce** (customer owes less)     | -1   | Customer returns, discounts        |
+| **Sales**    | Debit Note      | **Increase** (customer owes more)   | +1   | Additional charges to customer     |
+| **Purchase** | Debit Note      | **Reduce** (we owe supplier less)   | -1   | We return goods to supplier        |
+| **Purchase** | Credit Note     | **Increase** (we owe supplier more) | +1   | Supplier additional charges (rare) |
 
 **Business Logic:**
+
 - **Credit Note**: Typically used for sales invoices to reduce receivables
 - **Debit Note**: Typically used for purchase invoices to reduce payables
 - Both can be used on either invoice type with different effects
 - Trigger auto-updates `invoice.outstanding_amount` and `invoice.has_adjustment` flag
 
 **Cancellation Rules:**
+
 - ✅ Can cancel if `cancellation_reason` provided
 - ✅ Cannot edit cancelled adjustment notes
 - ✅ Cannot delete cancelled adjustment notes
@@ -217,12 +245,15 @@ The system follows **Indian Accounting Convention** where adjustment behavior de
 ## 4. Payment System
 
 ### Payment Voucher
+
 **Number Format:** `PMT/2024-25/0001` (Payment Out)
 
 ### Receipt Voucher
+
 **Number Format:** `RCT/2024-25/0001` (Payment In)
 
 **Fields:**
+
 - Voucher Type: `payment` or `receipt`
 - **Party Ledger** (Sundry Debtor/Creditor)
 - **Counter Ledger** (Bank or Cash) - renamed from bank_ledger_id
@@ -233,6 +264,7 @@ The system follows **Indian Accounting Convention** where adjustment behavior de
 - Notes, Attachments
 
 **TDS Handling:**
+
 - **TDS Applicable:** Boolean
 - **TDS Rate:** Percentage
 - **TDS Amount** = Total Amount × (TDS Rate / 100)
@@ -240,6 +272,7 @@ The system follows **Indian Accounting Convention** where adjustment behavior de
 
 **Bill-wise Allocation:**
 Each payment can be allocated to:
+
 1. **Against Reference** (`against_ref`):
    - Links to specific invoice
    - Amount ≤ Invoice Outstanding
@@ -249,22 +282,26 @@ Each payment can be allocated to:
    - Can be used later against future invoices
 
 **Auto-Advance Allocation:**
+
 - **Automatic remainder handling:** Any unallocated amount automatically creates an `advance` allocation
 - **Complete accounting:** Ensures `SUM(allocations) = net_amount` (every rupee is accounted for)
 - **Matches TallyPrime behavior:** Similar to Tally's "On Account" feature for unallocated payments
 - **User convenience:** No need to manually create advance entry for remaining amount
 
 **Validations:**
+
 - Sum of allocations ≤ Net Amount
 - Against_ref must have invoice_id
 - Advance must NOT have invoice_id
 - Allocation amount ≤ invoice outstanding
 
 **Snapshot Fields:**
+
 - **Party:** name, company_name, GST number, PAN number
 - **Counter Ledger:** name
 
 **Triggers:**
+
 - Auto-updates invoice.outstanding_amount on allocation
 - Updates invoice.has_payment flag
 - Updates invoice.status (open/partially_paid/settled/overpaid)
@@ -274,14 +311,17 @@ Each payment can be allocated to:
 ## 5. Financial Year & Sequence Numbering
 
 ### Financial Year
+
 - **Start:** April 1
 - **End:** March 31
 - **Format:** `2024-25` (short form) or `2024-2025` (full)
 
 ### Sequence Number Generation
+
 **Pattern:** `PREFIX/FY/SEQNO`
 
 Examples:
+
 - Invoice: `INV/2024-25/0001`, `INV/2024-25/0002`
 - Purchase Invoice: `PINV/2024-25/0001`
 - Credit Note: `CN/2024-25/0001`
@@ -290,6 +330,7 @@ Examples:
 - Receipt: `RCT/2024-25/0001`
 
 **Sequence Logic:**
+
 - Auto-incremented per table per company
 - Uses **PostgreSQL SEQUENCE objects** (native, atomic, thread-safe)
 - Sequences auto-created on first use per company via `get_next_sequence()` function
@@ -302,17 +343,22 @@ Examples:
 ## 6. GST Compliance (Indian Tax System)
 
 ### GST Type Determination
+
 **User-selected on frontend** (not auto-calculated):
+
 - **GST (CGST + SGST):** When warehouse state = party state (intra-state)
 - **IGST:** When warehouse state ≠ party state (inter-state)
 
 ### GST Rate Handling
+
 - **Product-level default:** `products.gst_rate` (can be NULL)
 - **Invoice-level override:** **User confirms/selects GST rate on frontend**
 - **Item-level storage:** Each invoice_item stores final GST rate used
 
 ### GST Calculation
+
 **For GST Type = GST:**
+
 ```
 CGST Rate = GST Rate / 2 (e.g., 18% → 9%)
 SGST Rate = GST Rate / 2 (e.g., 18% → 9%)
@@ -322,6 +368,7 @@ Total Tax = CGST Amount + SGST Amount
 ```
 
 **For GST Type = IGST:**
+
 ```
 IGST Rate = GST Rate (e.g., 18%)
 IGST Amount = Taxable Amount × (IGST Rate / 100)
@@ -329,11 +376,13 @@ Total Tax = IGST Amount
 ```
 
 ### HSN Code
+
 - Stored at product level
 - Snapshotted in invoice items
 - Required for GST compliance
 
 ### GST Number Validation
+
 - **Format:** 15-character alphanumeric (e.g., `27AABCU9603R1ZM`)
 - **Pattern:** `^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$`
 - **Database CHECK constraint** enforces validation on:
@@ -346,6 +395,7 @@ Total Tax = IGST Amount
 ## 7. Data Integrity & Robustness
 
 ### Financial Data Criticality
+
 **Accounting data is mission-critical and requires absolute accuracy:**
 
 1. **Atomic Transactions:**
@@ -408,14 +458,18 @@ Total Tax = IGST Amount
 ## 8. TallyPrime XML Export Integration
 
 ### Purpose
+
 Export all accounting transactions to **TallyPrime** for:
+
 - Statutory compliance (GST returns, audit reports)
 - Advanced accounting features (depreciation, payroll, etc.)
 - Backup and data portability
 - Professional financial reporting
 
 ### Export Scope
+
 **All accounting entities must be exportable:**
+
 1. **Ledgers** (Chart of Accounts)
 2. **Sales Invoices** (Sales Vouchers)
 3. **Purchase Invoices** (Purchase Vouchers)
@@ -428,10 +482,12 @@ Export all accounting transactions to **TallyPrime** for:
 10. **Party Ledgers** (Sundry Debtors/Creditors)
 
 ### TallyPrime XML Format
+
 **Version:** TallyPrime Release 3.0 or higher
 **Schema:** Tally XML Standard (ENVELOPE → HEADER → BODY → IMPORTDATA)
 
 **Key Requirements:**
+
 - **GUID mapping:** Each record gets unique Tally GUID
 - **Master creation before transactions:** Ledgers, Stock Items must exist before vouchers
 - **Party bill references:** Bill-wise details for party ledgers
@@ -439,13 +495,16 @@ Export all accounting transactions to **TallyPrime** for:
 - **Multi-currency support:** (future, if needed)
 
 ### Export Tracking
+
 **Fields on invoices/payments:**
+
 - `tally_guid` - Unique identifier in Tally (mapped to Bale UUID as REMOTEID)
 - `tally_export_status` - `pending`, `success`, `failed`
 - `tally_export_error` - Error message if failed
 - `exported_to_tally_at` - Timestamp of successful export
 
 **Export Rules:**
+
 1. **One-time export:** Once exported, records are **locked** (cannot edit/delete)
 2. **Incremental sync:** Only export new/modified records
 3. **Idempotency:** Re-exporting same record should be safe (use GUID for updates)
@@ -455,6 +514,7 @@ Export all accounting transactions to **TallyPrime** for:
 ### Data Mapping (Bale → Tally)
 
 #### 1. Ledgers (Masters)
+
 ```xml
 <LEDGER NAME="Acme Textiles" RESERVEDNAME="">
   <PARENT>Sundry Debtors</PARENT>
@@ -470,6 +530,7 @@ Export all accounting transactions to **TallyPrime** for:
 ```
 
 #### 2. Sales Invoice
+
 ```xml
 <VOUCHER VOUCHERTYPENAME="Sales" ACTION="Create">
   <DATE>20240101</DATE>
@@ -540,6 +601,7 @@ Export all accounting transactions to **TallyPrime** for:
 ```
 
 #### 3. Payment Voucher (with Bill Allocation)
+
 ```xml
 <VOUCHER VOUCHERTYPENAME="Payment" ACTION="Create">
   <DATE>20240115</DATE>
@@ -610,9 +672,11 @@ Export all accounting transactions to **TallyPrime** for:
 ## 9. RPC Functions (Database Layer)
 
 ### 1. `seed_company_ledgers(p_company_id UUID)`
+
 **Purpose:** Create default ledgers when new company is created
 
 **Creates:**
+
 - Sales, Purchase ledgers
 - GST ledgers (CGST, SGST, IGST) - default rate 0
 - TDS/TCS ledgers - default rate 0.1%
@@ -624,9 +688,11 @@ Export all accounting transactions to **TallyPrime** for:
 ---
 
 ### 2. `create_party_ledger(p_company_id, p_partner_id, p_partner_name, p_partner_type)`
+
 **Purpose:** Auto-create party ledger when partner is created
 
 **Logic:**
+
 - **Customer** → Sundry Debtors (bill-wise enabled)
 - **Vendor/Supplier/Agent** → Sundry Creditors (bill-wise enabled)
 
@@ -635,9 +701,11 @@ Export all accounting transactions to **TallyPrime** for:
 ---
 
 ### 3. `create_invoice_with_items(...)`
+
 **Purpose:** Atomically create sales or purchase invoice with items and link to goods movements
 
 **Parameters:**
+
 - `p_company_id` - Company UUID
 - `p_invoice_type` - **'sales' or 'purchase'**
 - `p_party_ledger_id` - Party ledger UUID (customer for sales, vendor for purchase)
@@ -656,6 +724,7 @@ Export all accounting transactions to **TallyPrime** for:
 - `p_goods_movement_ids` - Array of goods_outward UUIDs (sales) or goods_inward UUIDs (purchase)
 
 **Process:**
+
 1. Validate invoice_type (must be 'sales' or 'purchase')
 2. Validate gst_type (must be 'GST' or 'IGST')
 3. Fetch warehouse and party snapshots (fail fast if missing)
@@ -683,9 +752,11 @@ Export all accounting transactions to **TallyPrime** for:
 ---
 
 ### 4. `create_adjustment_note_with_items(...)`
+
 **Purpose:** Create credit/debit note with items
 
 **Parameters:**
+
 - `p_company_id` - Company UUID
 - `p_invoice_id` - Invoice UUID (mandatory reference)
 - `p_warehouse_id` - Warehouse UUID
@@ -697,6 +768,7 @@ Export all accounting transactions to **TallyPrime** for:
 - `p_items` - **JSONB array:** `[{product_id, quantity, rate, gst_rate}]` (gst_rate from frontend)
 
 **Process:**
+
 1. Validate adjustment_type ('credit' or 'debit')
 2. Fetch invoice's gst_type (inherit from invoice)
 3. Calculate financial year
@@ -714,9 +786,11 @@ Export all accounting transactions to **TallyPrime** for:
 ---
 
 ### 5. `create_payment_with_allocations(...)`
+
 **Purpose:** Create payment/receipt with bill-wise allocations
 
 **Parameters:**
+
 - `p_company_id` - Company UUID
 - `p_voucher_type` - 'payment' or 'receipt'
 - `p_party_ledger_id` - Party ledger UUID
@@ -733,10 +807,12 @@ Export all accounting transactions to **TallyPrime** for:
 - `p_allocations` - **JSONB array:** `[{allocation_type, invoice_id, amount_applied}]`
 
 **Allocation Types:**
+
 - `'advance'` - No invoice_id, for future use
 - `'against_ref'` - Requires invoice_id, reduces outstanding
 
 **Process:**
+
 1. Validate voucher_type
 2. Calculate financial year
 3. Generate sequence number and payment_number (PMT/ or RCT/)
@@ -764,21 +840,25 @@ Export all accounting transactions to **TallyPrime** for:
 ## 10. Security & RLS Policies
 
 ### Multi-Tenancy
+
 - All tables have `company_id` (tenant isolation)
 - RLS policies enforce: `company_id = get_jwt_company_id()`
 - Users belong to single company (no cross-company access)
 
 ### Permission-Based Access
+
 - Uses `authorize('permission.action')` function
 - Permissions: `invoices.read`, `invoices.create`, `invoices.update`, `invoices.delete`
 - Same for: `payments.*`, `ledgers.*`, `adjustment_notes.*`
 
 ### Warehouse-Level Access
+
 - Some entities check `has_warehouse_access(warehouse_id)`
 - Admins: Access all warehouses
 - Staff: Access assigned warehouses only
 
 ### RLS on All Tables:
+
 - `parent_groups` - System-wide, read-only
 - `ledgers` - Company-scoped, permission-checked
 - `invoices` - Company + permission-checked
@@ -795,6 +875,7 @@ Export all accounting transactions to **TallyPrime** for:
 ## 11. UI/UX Considerations (Future Phase)
 
 ### Invoice Creation Flow
+
 1. **Select Party:** Customer/Vendor from ledgers (bill-wise enabled)
 2. **Select Warehouse:** Determines place of supply
 3. **Select GST Type:** User chooses GST or IGST (not auto-calculated)
@@ -808,6 +889,7 @@ Export all accounting transactions to **TallyPrime** for:
 8. **Save:** Creates invoice atomically
 
 ### Payment Allocation UI
+
 1. **Select Party:** Show outstanding invoices
 2. **Enter Amount:** Total payment amount
 3. **TDS:** Toggle TDS, enter rate (if applicable)
@@ -819,6 +901,7 @@ Export all accounting transactions to **TallyPrime** for:
 6. **Save:** Creates payment with allocations
 
 ### Reports (Future)
+
 - **Outstanding Receivables/Payables** (bill-wise)
 - **GST Summary** (CGST/SGST/IGST totals)
 - **Ledger Statement** (party-wise)
@@ -831,21 +914,25 @@ Export all accounting transactions to **TallyPrime** for:
 ## 12. Edge Cases & Business Rules
 
 ### Null Handling
+
 - **GST Type:** User must select (validation on frontend + backend)
 - **Product GST Rate:** User confirms on invoice creation if NULL
 - **Warehouse/Party State:** If NULL, GST Type cannot be auto-determined (hence user-selected)
 
 ### Zero Amounts
+
 - **Zero-value invoices:** Allowed (e.g., free samples)
 - **Zero GST rate:** Allowed (e.g., exempt items)
 - **Zero discount:** Default
 
 ### Negative Amounts
+
 - **Credit Notes:** Reduce outstanding (**validation: cannot exceed current outstanding**)
 - **Debit Notes:** Increase outstanding
 - **Round-off:** Can be negative or positive
 
 ### Overpayment Prevention
+
 - **Outstanding NEVER goes negative** - enforced at multiple levels:
   1. CHECK constraint: `outstanding_amount >= 0`
   2. Payment allocation trigger: Validates before reducing outstanding
@@ -854,11 +941,13 @@ Export all accounting transactions to **TallyPrime** for:
 - If user tries to overpay, system throws clear error with current outstanding amount
 
 ### Partial Allocations
+
 - Payment can be partially allocated (remaining as advance)
 - Multiple payments can settle one invoice
 - One payment can settle multiple invoices
 
 ### Historical Data
+
 - **Never hard delete financial records**
 - Use `deleted_at` for soft deletes
 - Keep audit trail forever
@@ -882,6 +971,7 @@ Export all accounting transactions to **TallyPrime** for:
 ## 14. Implementation Checklist
 
 ### Phase 1: Database Schema ✅
+
 - [x] Parent groups migration
 - [x] Ledgers migration with RLS
 - [x] Invoices migration with gst_type field
@@ -895,6 +985,7 @@ Export all accounting transactions to **TallyPrime** for:
 - [x] Update products with tax_type and gst_rate
 
 ### Phase 2: RPC Functions ✅
+
 - [x] seed_company_ledgers()
 - [x] create_party_ledger()
 - [x] create_invoice_with_items() - Unified function for sales and purchase invoices
@@ -902,17 +993,20 @@ Export all accounting transactions to **TallyPrime** for:
 - [x] create_payment_with_allocations()
 
 ### Phase 3: TypeScript Types ✅
+
 - [x] Generate database.ts from schema
 - [ ] Create invoices.types.ts (shared types)
 - [ ] Create payments.types.ts
 - [ ] Create ledgers.types.ts
 
 ### Phase 4: Query Layer
+
 - [ ] Create Supabase query functions (queries/invoices.ts, queries/payments.ts)
 - [ ] Create TanStack Query hooks (hooks/useInvoices.ts, hooks/usePayments.ts)
 - [ ] Add query keys to keys.ts
 
 ### Phase 5: UI Components
+
 - [ ] Ledger list/create/edit forms
 - [ ] Invoice creation wizard
 - [ ] Payment allocation UI
@@ -921,6 +1015,7 @@ Export all accounting transactions to **TallyPrime** for:
 - [ ] GST summary reports
 
 ### Phase 6: TallyPrime Integration
+
 - [ ] XML generation logic (invoices → Tally XML)
 - [ ] Master export (ledgers, products)
 - [ ] Voucher export (invoices, payments)
@@ -948,6 +1043,7 @@ Export all accounting transactions to **TallyPrime** for:
 ## 16. Success Criteria
 
 ### Functional
+
 - ✅ All RPC functions execute without errors
 - ✅ Database constraints enforce data integrity
 - ✅ Financial calculations accurate to 2 decimal places
@@ -958,6 +1054,7 @@ Export all accounting transactions to **TallyPrime** for:
 - [ ] Roundtrip test passes (export → import → verify)
 
 ### Non-Functional
+
 - **Performance:** Invoice creation < 500ms for 50 line items
 - **Accuracy:** Zero tolerance for calculation errors
 - **Reliability:** 99.9% uptime for financial data access

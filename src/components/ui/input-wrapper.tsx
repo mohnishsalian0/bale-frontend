@@ -14,7 +14,20 @@ export interface InputWrapperProps extends React.InputHTMLAttributes<HTMLInputEl
 }
 
 const InputWrapper = React.forwardRef<HTMLInputElement, InputWrapperProps>(
-  ({ className, icon, rightText, label, required, isError, errorText, helpText, ...props }, ref) => {
+  (
+    {
+      className,
+      icon,
+      rightText,
+      label,
+      required,
+      isError,
+      errorText,
+      helpText,
+      ...props
+    },
+    ref,
+  ) => {
     return (
       <div className={cn("relative", className)}>
         {label && (
@@ -34,7 +47,7 @@ const InputWrapper = React.forwardRef<HTMLInputElement, InputWrapperProps>(
             ref={ref}
             className={cn(
               `${icon && "pl-9"} ${rightText && "pr-9"}`,
-              isError && "border-red-500"
+              isError && "border-red-500",
             )}
             {...props}
           />
@@ -45,13 +58,9 @@ const InputWrapper = React.forwardRef<HTMLInputElement, InputWrapperProps>(
           )}
         </div>
         {isError && errorText ? (
-          <p className="text-xs text-red-500 mt-1 pl-1">
-            {errorText}
-          </p>
+          <p className="text-xs text-red-500 mt-1 pl-1">{errorText}</p>
         ) : helpText ? (
-          <p className="text-xs text-gray-500 mt-1 pl-1">
-            {helpText}
-          </p>
+          <p className="text-xs text-gray-500 mt-1 pl-1">{helpText}</p>
         ) : null}
       </div>
     );

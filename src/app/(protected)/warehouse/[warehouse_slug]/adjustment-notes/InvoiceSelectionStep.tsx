@@ -11,14 +11,14 @@ import type { AdjustmentType } from "@/types/database/enums";
 
 interface InvoiceSelectionStepProps {
   adjustmentType: AdjustmentType;
-  selectedPartnerId: string | null;
+  selectedPartyLedgerId: string | null;
   warehouseId: string;
   onSelectInvoice: (invoiceNumber: string) => void;
 }
 
 export function InvoiceSelectionStep({
   adjustmentType,
-  selectedPartnerId,
+  selectedPartyLedgerId,
   warehouseId,
   onSelectInvoice,
 }: InvoiceSelectionStepProps) {
@@ -28,11 +28,13 @@ export function InvoiceSelectionStep({
   const invoiceType = isCreditNote ? "sales" : "purchase";
 
   // Fetch invoices filtered by invoice type, partner, and warehouse
+  // Exclude cancelled invoices
   const { data: invoicesResponse, isLoading } = useInvoices({
     filters: {
       invoice_type: invoiceType,
       warehouse_id: warehouseId,
-      partner_id: selectedPartnerId || undefined,
+      party_ledger_id: selectedPartyLedgerId || undefined,
+      status: ["open", "partially_paid", "settled"], // Exclude cancelled invoices
     },
     page: 1,
     pageSize: 50,

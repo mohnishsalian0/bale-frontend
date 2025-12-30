@@ -28,12 +28,12 @@ export function getProductIcon(
 
 /**
  * Get formatted product info string
- * Format: PROD-{sequence_number} · Material(s) · Color(s)
+ * Format: {product_code} · Material(s) · Color(s)
  */
 export function getProductInfo(
   product:
     | {
-        sequence_number?: number | null;
+        product_code?: string | null;
         materials?: ProductAttribute[] | null;
         colors?: ProductAttribute[] | null;
       }
@@ -44,8 +44,8 @@ export function getProductInfo(
 
   const parts: string[] = [];
 
-  if (product.sequence_number) {
-    parts.push(`PROD-${product.sequence_number}`);
+  if (product.product_code) {
+    parts.push(product.product_code);
   }
 
   // Get material names (join multiple with comma)
@@ -122,15 +122,6 @@ export function getStockTypeDisplay(
     default:
       return stockType.charAt(0).toUpperCase() + stockType.slice(1);
   }
-}
-
-/**
- * Format stock unit number with appropriate prefix based on stock type
- * @param sequenceNumber - The stock unit sequence number
- * @returns Formatted string like "PROD-123"
- */
-export function formatProductNumber(sequenceNumber: number): string {
-  return `PROD-${sequenceNumber}`;
 }
 
 /**

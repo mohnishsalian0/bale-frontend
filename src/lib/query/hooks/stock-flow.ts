@@ -16,12 +16,22 @@ import {
   getOutwardItemsByProduct,
   createGoodsInwardWithUnits,
   createGoodsOutwardWithItems,
+  updateGoodsInward,
+  cancelGoodsInward,
+  deleteGoodsInward,
+  updateGoodsOutward,
+  cancelGoodsOutward,
+  deleteGoodsOutward,
   type InwardFilters,
   type OutwardFilters,
   getGoodsOutwardsBySalesOrder,
   getGoodsInwardsByPurchaseOrder,
 } from "@/lib/queries/stock-flow";
 import type { TablesInsert } from "@/types/database/supabase";
+import type {
+  UpdateInwardData,
+  UpdateOutwardData,
+} from "@/types/stock-flow.types";
 
 /**
  * Fetch goods inwards for a warehouse
@@ -205,5 +215,133 @@ export function useStockFlowMutations(warehouseId: string) {
   return {
     createInwardWithUnits,
     createOutwardWithItems,
+  };
+}
+
+/**
+ * Goods inward mutations (update, cancel, delete)
+ */
+export function useGoodsInwardMutations(sequenceNumber: string) {
+  const queryClient = useQueryClient();
+
+  const updateInward = useMutation({
+    mutationFn: ({
+      inwardId,
+      updateData,
+    }: {
+      inwardId: string;
+      updateData: UpdateInwardData;
+    }) => updateGoodsInward(inwardId, updateData),
+    onSuccess: () => {
+      // Invalidate the specific inward detail query
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.stockFlow.inwardDetail(sequenceNumber),
+      });
+      // Invalidate all inward list queries (partial match)
+      queryClient.invalidateQueries({
+        queryKey: ["stock-flow", "inwards"],
+      });
+    },
+  });
+
+  const cancelInward = useMutation({
+    mutationFn: ({
+      inwardId,
+      cancellationReason,
+    }: {
+      inwardId: string;
+      cancellationReason: string;
+    }) => cancelGoodsInward(inwardId, cancellationReason),
+    onSuccess: () => {
+      // Invalidate the specific inward detail query
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.stockFlow.inwardDetail(sequenceNumber),
+      });
+      // Invalidate all inward list queries
+      queryClient.invalidateQueries({
+        queryKey: ["stock-flow", "inwards"],
+      });
+    },
+  });
+
+  const deleteInward = useMutation({
+    mutationFn: (inwardId: string) => deleteGoodsInward(inwardId),
+    onSuccess: () => {
+      // Invalidate all inward list queries
+      queryClient.invalidateQueries({
+        queryKey: ["stock-flow", "inwards"],
+      });
+      // Note: No need to invalidate detail query as user will be redirected
+    },
+  });
+
+  return {
+    updateInward,
+    cancelInward,
+    deleteInward,
+  };
+}
+
+/**
+ * Goods outward mutations (update, cancel, delete)
+ */
+export function useGoodsOutwardMutations(sequenceNumber: string) {
+  const queryClient = useQueryClient();
+
+  const updateOutward = useMutation({
+    mutationFn: ({
+      outwardId,
+      updateData,
+    }: {
+      outwardId: string;
+      updateData: UpdateOutwardData;
+    }) => updateGoodsOutward(outwardId, updateData),
+    onSuccess: () => {
+      // Invalidate the specific outward detail query
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.stockFlow.outwardDetail(sequenceNumber),
+      });
+      // Invalidate all outward list queries (partial match)
+      queryClient.invalidateQueries({
+        queryKey: ["stock-flow", "outwards"],
+      });
+    },
+  });
+
+  const cancelOutward = useMutation({
+    mutationFn: ({
+      outwardId,
+      cancellationReason,
+    }: {
+      outwardId: string;
+      cancellationReason: string;
+    }) => cancelGoodsOutward(outwardId, cancellationReason),
+    onSuccess: () => {
+      // Invalidate the specific outward detail query
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.stockFlow.outwardDetail(sequenceNumber),
+      });
+      // Invalidate all outward list queries
+      queryClient.invalidateQueries({
+        queryKey: ["stock-flow", "outwards"],
+      });
+    },
+  });
+
+  const deleteOutward = useMutation({
+    mutationFn: (outwardId: string) => deleteGoodsOutward(outwardId),
+    onSuccess: () => {
+      // Invalidate all outward list queries
+      queryClient.invalidateQueries({
+        queryKey: ["stock-flow", "outwards"],
+      });
+      // Note: No need to invalidate detail query as user will be redirected
+    },
+  });
+
+  return {
+    updateOutward,
+    cancelOutward,
+    deleteOutward,
   };
 }

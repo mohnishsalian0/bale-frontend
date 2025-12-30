@@ -67,6 +67,7 @@ interface OrderListItem {
     | "overdue"
     | "completed"
     | "cancelled";
+  statusText: string;
   completionPercentage: number;
   totalAmount: number;
 }
@@ -183,7 +184,7 @@ export default function OrdersPage() {
         );
 
         // Determine status (including overdue) using utility
-        const status = getOrderDisplayStatus(
+        const displayStatusData = getOrderDisplayStatus(
           order.status as SalesOrderStatus,
           order.delivery_due_date,
         );
@@ -196,7 +197,8 @@ export default function OrdersPage() {
           items,
           dueDate: order.delivery_due_date,
           orderDate: order.order_date,
-          status,
+          status: displayStatusData.status,
+          statusText: displayStatusData.text,
           completionPercentage,
           totalAmount: order.total_amount || 0,
         };
@@ -444,7 +446,10 @@ export default function OrdersPage() {
                         <p className="text-base font-medium text-gray-700">
                           {order.customerName}
                         </p>
-                        <SalesStatusBadge status={order.status} />
+                        <SalesStatusBadge
+                          status={order.status}
+                          text={order.statusText}
+                        />
                       </div>
 
                       {/* Subtexts spanning full width */}

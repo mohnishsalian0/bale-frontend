@@ -96,9 +96,11 @@ export interface PurchaseOrderItemDetailView extends PurchaseOrderItem {
  * Includes supplier address, agent (minimal fields), warehouse, and full product details
  */
 export interface PurchaseOrderDetailView extends PurchaseOrder {
-  supplier: (Partner & {
-    ledger: Pick<Tables<"ledgers">, "id" | "name">[];
-  }) | null;
+  supplier:
+    | (Partner & {
+        ledger: Pick<Tables<"ledgers">, "id" | "name">[];
+      })
+    | null;
   agent: Pick<
     Partner,
     "id" | "first_name" | "last_name" | "company_name" | "display_name"

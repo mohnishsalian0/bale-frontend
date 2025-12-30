@@ -329,9 +329,16 @@ async function generateProducts(
     const minStockAlert = Math.random() < 0.8; // 80% have alerts
     const minStockThreshold = minStockAlert ? randomInt(10, 100) : undefined;
 
+    // 30% of products get custom product codes, 70% auto-generate
+    const hasCustomCode = Math.random() < 0.3;
+    const productCode = hasCustomCode
+      ? `${template.category.toUpperCase().substring(0, 4)}-${String(i + 1).padStart(3, "0")}`
+      : undefined; // Will auto-generate as PROD-{sequence}
+
     products.push({
       company_id: companyId,
       name: template.name,
+      product_code: productCode,
       gsm,
       thread_count_cm: threadCount,
       stock_type: template.stockType,
@@ -751,7 +758,7 @@ async function generateSalesOrders(
         2,
       );
 
-      // Create order
+      // Create order with approval_pending status first
       const { data: order, error: orderError } = await supabase
         .from("sales_orders")
         .insert({
@@ -760,7 +767,7 @@ async function generateSalesOrders(
           customer_id: customerId,
           order_date: orderDate,
           delivery_due_date: finalDeliveryDate,
-          status: status,
+          status: "approval_pending", // Always start with pending
           total_amount: totalAmount,
           advance_amount: advanceAmount,
           discount_type: discountType,
@@ -817,9 +824,23 @@ async function generateSalesOrders(
         });
       }
 
+      // Update to final status if not approval_pending
+      if (status !== "approval_pending") {
+        const { error: updateError } = await supabase
+          .from("sales_orders")
+          .update({ status: status })
+          .eq("id", order.id);
+
+        if (updateError) {
+          console.error(
+            `   ❌ Failed to update order to ${status}: ${updateError.message}`,
+          );
+        }
+      }
+
       createdOrders.push({
         id: order.id,
-        status: order.status,
+        status: status, // Use final status for tracking
         items: orderItems,
       });
 
@@ -959,7 +980,7 @@ async function generatePurchaseOrders(
           ? `INV-${year}-${String(1000 + totalCreated).padStart(4, "0")}`
           : null;
 
-      // Create order
+      // Create order with approval_pending status first
       const { data: order, error: orderError } = await supabase
         .from("purchase_orders")
         .insert({
@@ -969,7 +990,7 @@ async function generatePurchaseOrders(
           agent_id: agentId,
           order_date: orderDate,
           delivery_due_date: finalDeliveryDate,
-          status: status,
+          status: "approval_pending", // Always start with pending
           total_amount: totalAmount,
           advance_amount: advanceAmount,
           discount_type: discountType,
@@ -1030,9 +1051,23 @@ async function generatePurchaseOrders(
         });
       }
 
+      // Update to final status if not approval_pending
+      if (status !== "approval_pending") {
+        const { error: updateError } = await supabase
+          .from("purchase_orders")
+          .update({ status: status })
+          .eq("id", order.id);
+
+        if (updateError) {
+          console.error(
+            `   ❌ Failed to update order to ${status}: ${updateError.message}`,
+          );
+        }
+      }
+
       createdOrders.push({
         id: order.id,
-        status: order.status,
+        status: status, // Use final status for tracking
         items: orderItems,
       });
 

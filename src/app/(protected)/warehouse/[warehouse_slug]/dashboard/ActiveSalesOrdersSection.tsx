@@ -17,7 +17,6 @@ import {
   calculateCompletionPercentage,
   getOrderDisplayStatus,
   getProductSummary,
-  type DisplayStatus,
 } from "@/lib/utils/sales-order";
 import { getPartnerName } from "@/lib/utils/partner";
 import { formatAbsoluteDate } from "@/lib/utils/date";
@@ -104,7 +103,7 @@ export function ActiveSalesOrdersSection({
       ) : (
         <div className="flex flex-col border-b border-border">
           {orders.map((order) => {
-            const displayStatus: DisplayStatus = getOrderDisplayStatus(
+            const displayStatusData = getOrderDisplayStatus(
               order.status as SalesOrderStatus,
               order.delivery_due_date,
             );
@@ -112,9 +111,10 @@ export function ActiveSalesOrdersSection({
               order.sales_order_items,
             );
             const showProgressBar =
-              displayStatus === "in_progress" || displayStatus === "overdue";
+              displayStatusData.status === "in_progress" ||
+              displayStatusData.status === "overdue";
             const progressColor =
-              displayStatus === "overdue" ? "yellow" : "blue";
+              displayStatusData.status === "overdue" ? "yellow" : "blue";
             const customerName = order.customer
               ? getPartnerName(order.customer)
               : "Unknown Customer";
@@ -139,7 +139,10 @@ export function ActiveSalesOrdersSection({
                         <p className="text-base font-medium text-gray-700">
                           {customerName}
                         </p>
-                        <SalesStatusBadge status={displayStatus} />
+                        <SalesStatusBadge
+                          status={displayStatusData.status}
+                          text={displayStatusData.text}
+                        />
                       </div>
 
                       {/* Subtexts spanning full width */}
@@ -216,7 +219,7 @@ export function ActiveSalesOrdersSection({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         {(order.status === "in_progress" ||
-                          displayStatus === "overdue") && (
+                          displayStatusData.status === "overdue") && (
                           <>
                             <DropdownMenuItem
                               onClick={(e) => {

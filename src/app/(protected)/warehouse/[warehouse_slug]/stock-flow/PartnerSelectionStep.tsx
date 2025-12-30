@@ -243,7 +243,7 @@ export function PartnerSelectionStep({
                           {warehouse.name}
                         </div>
                         <div
-                          className="text-xs text-gray-500 truncate mt-1"
+                          className="text-sm text-gray-500 truncate"
                           title={formattedAddress}
                         >
                           {formattedAddress}

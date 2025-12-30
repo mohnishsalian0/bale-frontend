@@ -89,7 +89,7 @@ export function PurchaseOrderInfiniteList({
                 const supplierName = order.supplier
                   ? getPartnerName(order.supplier)
                   : "Unknown";
-                const displayStatus = getOrderDisplayStatus(
+                const displayStatusData = getOrderDisplayStatus(
                   order.status as PurchaseOrderStatus,
                   order.delivery_due_date,
                 );
@@ -105,7 +105,10 @@ export function PurchaseOrderInfiniteList({
                         <p className="text-base font-medium text-gray-700">
                           PO-{order.sequence_number}
                         </p>
-                        <PurchaseStatusBadge status={displayStatus} />
+                        <PurchaseStatusBadge
+                          status={displayStatusData.status}
+                          text={displayStatusData.text}
+                        />
                       </div>
                       <p className="text-sm text-gray-500">
                         {getFullProductInfo(order.purchase_order_items)}

@@ -53,11 +53,14 @@ export default function CreateAdjustmentNotePage() {
     : "Debit note created successfully";
 
   const [currentStep, setCurrentStep] = useState<FormStep>(
-    invoiceNumberFromQuery ? "products" : "partner"
+    invoiceNumberFromQuery ? "products" : "partner",
   );
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(
     null,
   );
+  const [selectedPartyLedgerId, setSelectedPartyLedgerId] = useState<
+    string | null
+  >(null);
   const [selectedInvoice, setSelectedInvoice] =
     useState<InvoiceForAdjustment | null>(null);
   const [productSelections, setProductSelections] = useState<
@@ -82,8 +85,9 @@ export default function CreateAdjustmentNotePage() {
   // Adjustment note mutations
   const { create: createAdjustmentNote } = useAdjustmentNoteMutations();
 
-  const handleSelectPartner = (partnerId: string, _ledgerId: string) => {
+  const handleSelectPartner = (partnerId: string, ledgerId: string) => {
     setSelectedPartnerId(partnerId);
+    setSelectedPartyLedgerId(ledgerId);
     // Auto-advance to next step
     setTimeout(() => {
       setCurrentStep("invoice");
@@ -314,7 +318,7 @@ export default function CreateAdjustmentNotePage() {
           ) : currentStep === "invoice" ? (
             <InvoiceSelectionStep
               adjustmentType={adjustment_type}
-              selectedPartnerId={selectedPartnerId}
+              selectedPartyLedgerId={selectedPartyLedgerId}
               warehouseId={warehouse.id}
               onSelectInvoice={handleSelectInvoice}
             />

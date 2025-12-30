@@ -11,6 +11,7 @@ CREATE TABLE products (
     
     -- Identity
     sequence_number INTEGER NOT NULL,
+    product_code VARCHAR(50),
     name VARCHAR(200) NOT NULL,
     show_on_catalog BOOLEAN DEFAULT TRUE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -53,7 +54,8 @@ CREATE TABLE products (
         (stock_type = 'piece' AND measuring_unit IS NULL)
     ),
 
-    UNIQUE(company_id, sequence_number)
+    UNIQUE(company_id, sequence_number),
+    UNIQUE(company_id, product_code)
 );
 
 -- =====================================================
@@ -65,6 +67,9 @@ CREATE INDEX idx_products_company_id ON products(company_id);
 
 -- Sequence number lookup within company
 CREATE INDEX idx_products_sequence_number ON products(company_id, sequence_number);
+
+-- Product code lookup within company
+CREATE INDEX idx_products_product_code ON products(company_id, product_code);
 
 -- Product name search
 CREATE INDEX idx_products_name ON products(company_id, name);
@@ -101,13 +106,19 @@ CREATE TRIGGER set_products_modified_by
     BEFORE UPDATE ON products
     FOR EACH ROW EXECUTE FUNCTION set_modified_by();
 
--- Auto-generate sequence numbers
+-- Auto-generate sequence numbers and product codes
 CREATE OR REPLACE FUNCTION auto_generate_product_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.sequence_number IS NULL THEN
         NEW.sequence_number := get_next_sequence('products', NEW.company_id);
     END IF;
+
+    -- Auto-generate product_code if not provided
+    IF NEW.product_code IS NULL THEN
+        NEW.product_code := 'PROD-' || NEW.sequence_number;
+    END IF;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

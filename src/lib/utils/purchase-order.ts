@@ -2,6 +2,7 @@ import type { PurchaseOrderStatus } from "@/types/database/enums";
 import { PurchaseOrderItemListView } from "@/types/purchase-orders.types";
 import { getPartnerName, PartnerNameFields } from "./partner";
 import { getMeasuringUnit } from "./measuring-units";
+import { formatDueDate } from "./date";
 
 export type DisplayStatus = PurchaseOrderStatus | "overdue";
 
@@ -30,16 +31,22 @@ export function calculateCompletionPercentage(items: OrderItem[]): number {
 }
 
 /**
- * Determine display status for a purchase order
- * Adds 'overdue' status when order is in_progress past expected delivery date
+ * Determine display status and text for a purchase order
+ * Returns status type and formatted text (e.g., "Due in 3 days", "In Progress")
  */
 export function getOrderDisplayStatus(
   status: PurchaseOrderStatus,
   expectedDeliveryDate?: string | null,
-): DisplayStatus {
-  if (status === "completed") return "completed";
-  if (status === "cancelled") return "cancelled";
-  if (status === "approval_pending") return "approval_pending";
+): { status: DisplayStatus; text: string } {
+  if (status === "completed") {
+    return { status: "completed", text: "Completed" };
+  }
+  if (status === "cancelled") {
+    return { status: "cancelled", text: "Cancelled" };
+  }
+  if (status === "approval_pending") {
+    return { status: "approval_pending", text: "Approval Pending" };
+  }
 
   if (status === "in_progress" && expectedDeliveryDate) {
     const today = new Date();
@@ -47,10 +54,20 @@ export function getOrderDisplayStatus(
     const dueDate = new Date(expectedDeliveryDate);
     dueDate.setHours(0, 0, 0, 0);
 
-    return dueDate < today ? "overdue" : "in_progress";
+    const isOverdue = dueDate < today;
+    const formattedDueDate = formatDueDate(expectedDeliveryDate);
+
+    // If we have a formatted due date (within 14 days or overdue), use it
+    if (formattedDueDate) {
+      return {
+        status: isOverdue ? "overdue" : "in_progress",
+        text: formattedDueDate,
+      };
+    }
   }
 
-  return "in_progress";
+  // Default: in_progress without due date or more than 14 days away
+  return { status: "in_progress", text: "In Progress" };
 }
 
 /**

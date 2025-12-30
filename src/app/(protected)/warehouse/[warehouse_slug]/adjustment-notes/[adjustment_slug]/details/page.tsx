@@ -451,11 +451,35 @@ export default function AdjustmentNoteDetailsPage({ params }: PageParams) {
           )}
 
           {/* Notes Section */}
-          {adjustmentNote.notes && (
-            <Section title="Notes" subtitle="" icon={() => <IconNote />}>
-              <p className="text-sm text-gray-700">{adjustmentNote.notes}</p>
-            </Section>
-          )}
+          <Section
+            title="Notes"
+            subtitle={
+              !adjustmentNote.notes && !adjustmentNote.cancellation_reason
+                ? "No note added"
+                : ""
+            }
+            icon={() => <IconNote />}
+          >
+            {adjustmentNote.notes && (
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">
+                  Adjustment notes
+                </p>
+                <p className="text-sm text-gray-700">{adjustmentNote.notes}</p>
+              </div>
+            )}
+            {adjustmentNote.cancellation_reason &&
+              adjustmentNote.is_cancelled && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-1">
+                    Cancellation reason
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    {adjustmentNote.cancellation_reason}
+                  </p>
+                </div>
+              )}
+          </Section>
 
           {/* Export Status */}
           {adjustmentNote.exported_to_tally_at && (

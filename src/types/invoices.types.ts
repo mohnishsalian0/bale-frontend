@@ -14,8 +14,8 @@ type Product = Tables<"products">;
 
 export interface InvoiceFilters extends Record<string, unknown> {
   invoice_type?: "sales" | "purchase";
-  status?: InvoiceStatus;
-  party_id?: string; // Filter by party ledger
+  status?: InvoiceStatus | InvoiceStatus[]; // Support single or array for IN queries
+  party_ledger_id?: string; // Filter by party ledger ID
   warehouse_id?: string;
   date?: string; // Specific date filter (YYYY-MM-DD)
   date_from?: string; // Date range start (YYYY-MM-DD)
@@ -61,12 +61,14 @@ export interface InvoiceListView extends Pick<
   | "status"
   | "total_amount"
   | "outstanding_amount"
+  | "party_ledger_id"
   | "party_name"
   | "party_display_name"
   | "warehouse_id"
   | "has_payment"
   | "exported_to_tally_at"
 > {
+  party_ledger: Pick<Ledger, "id" | "name" | "partner_id"> | null;
   invoice_items: InvoiceItemListView[];
 }
 

@@ -193,7 +193,10 @@ export function WarehouseFormSheet({
                     <InputWrapper placeholder="State" {...register("state")} />
                   </div>
                   <div className="flex gap-4">
-                    <InputWrapper placeholder="Country" {...register("country")} />
+                    <InputWrapper
+                      placeholder="Country"
+                      {...register("country")}
+                    />
                     <InputWrapper
                       placeholder="Pin code"
                       {...register("pinCode")}

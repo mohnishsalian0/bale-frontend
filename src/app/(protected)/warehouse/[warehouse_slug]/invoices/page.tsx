@@ -268,6 +268,7 @@ export default function InvoicesPage() {
             <SelectItem value="open">Open</SelectItem>
             <SelectItem value="partially_paid">Partially Paid</SelectItem>
             <SelectItem value="settled">Settled</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
 
@@ -314,16 +315,16 @@ export default function InvoicesPage() {
 
               {/* Invoice Items */}
               {group.invoices.map((invoice) => {
-                const displayStatus = getInvoiceDisplayStatus(invoice);
+                const invoiceStatusData = getInvoiceDisplayStatus(invoice);
                 const outstandingInfo =
                   invoice.outstanding_amount && invoice.outstanding_amount > 0
                     ? `${formatCurrency(invoice.outstanding_amount)} due`
                     : "";
                 const showProgressBar =
-                  displayStatus === "partially_paid" ||
-                  displayStatus === "overdue";
+                  invoiceStatusData.status === "partially_paid" ||
+                  invoiceStatusData.status === "overdue";
                 const progressBarColor =
-                  displayStatus === "overdue" ? "yellow" : "blue"; // Default to blue for other statuses
+                  invoiceStatusData.status === "overdue" ? "yellow" : "blue"; // Default to blue for other statuses
 
                 const progressValue =
                   (((invoice.total_amount || 0) -
@@ -348,7 +349,10 @@ export default function InvoicesPage() {
                           <p className="text-base font-medium text-gray-700">
                             {invoice.party_name || invoice.party_display_name}
                           </p>
-                          <InvoiceStatusBadge status={displayStatus} />
+                          <InvoiceStatusBadge
+                            status={invoiceStatusData.status}
+                            text={invoiceStatusData.text}
+                          />
                         </div>
 
                         {/* Amount */}

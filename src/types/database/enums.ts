@@ -127,6 +127,15 @@ export type OutwardLinkToType =
   | "purchase_return"
   | "other";
 
+export type TransportType = "road" | "rail" | "air" | "sea" | "courier";
+export const TRANSPORT_TYPES = [
+  "road",
+  "rail",
+  "air",
+  "sea",
+  "courier",
+] as const;
+
 export type JobWorkItemType = "raw_material" | "finished_goods";
 
 /**

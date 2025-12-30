@@ -4,13 +4,13 @@ import type { InvoiceDisplayStatus } from "@/lib/utils/invoice";
 
 interface InvoiceStatusBadgeProps {
   status: InvoiceDisplayStatus;
+  text?: string;
   className?: string;
 }
 
 interface InvoiceStatusConfig {
   color: "blue" | "green" | "orange" | "red" | "gray" | "yellow";
   variant: "default" | "secondary" | "outline";
-  label: string;
 }
 
 export function getInvoiceStatusConfig(
@@ -18,17 +18,34 @@ export function getInvoiceStatusConfig(
 ): InvoiceStatusConfig {
   switch (status) {
     case "open":
-      return { color: "blue", variant: "default", label: "Open" };
+      return { color: "blue", variant: "default" };
     case "partially_paid":
-      return { color: "orange", variant: "secondary", label: "Partially Paid" };
+      return { color: "orange", variant: "secondary" };
     case "settled":
-      return { color: "green", variant: "secondary", label: "Settled" };
+      return { color: "green", variant: "secondary" };
     case "overdue":
-      return { color: "yellow", variant: "secondary", label: "Overdue" };
+      return { color: "yellow", variant: "secondary" };
     case "cancelled":
-      return { color: "gray", variant: "secondary", label: "Cancelled" };
+      return { color: "gray", variant: "secondary" };
     default:
-      return { color: "gray", variant: "secondary", label: status };
+      return { color: "gray", variant: "secondary" };
+  }
+}
+
+function getDefaultLabel(status: InvoiceDisplayStatus): string {
+  switch (status) {
+    case "open":
+      return "Open";
+    case "partially_paid":
+      return "Partially Paid";
+    case "settled":
+      return "Settled";
+    case "overdue":
+      return "Overdue";
+    case "cancelled":
+      return "Cancelled";
+    default:
+      return status;
   }
 }
 
@@ -38,9 +55,11 @@ export function getInvoiceStatusConfig(
  */
 export function InvoiceStatusBadge({
   status,
+  text,
   className,
 }: InvoiceStatusBadgeProps) {
   const config = getInvoiceStatusConfig(status);
+  const label = text || getDefaultLabel(status);
 
   return (
     <Badge
@@ -48,7 +67,7 @@ export function InvoiceStatusBadge({
       variant={config.variant}
       className={cn("text-nowrap", className)}
     >
-      {config.label}
+      {label}
     </Badge>
   );
 }

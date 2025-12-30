@@ -60,6 +60,7 @@ export interface ProductListView extends Pick<
   Product,
   | "id"
   | "sequence_number"
+  | "product_code"
   | "name"
   | "show_on_catalog"
   | "is_active"

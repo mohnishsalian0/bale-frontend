@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
 import { InvoiceAllocationStep } from "../../InvoiceAllocationStep";
@@ -43,8 +43,16 @@ export default function CreatePaymentPage() {
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
   const params = useParams();
+  const searchParams = useSearchParams();
   const payment_type = params.payment_type as VoucherType;
   const allocation_type = params.allocation_type as AllocationType;
+
+  // Check if coming from invoice details page
+  const fromInvoice = searchParams.get("from_invoice") === "true";
+  const urlPartyLedgerId = searchParams.get("party_ledger_id");
+  const urlInvoiceId = searchParams.get("invoice_id");
+  const urlInvoiceSlug = searchParams.get("invoice_slug");
+  const urlAllocationAmount = searchParams.get("allocation_amount");
 
   // Configuration based on payment_type and allocation_type
   const isReceipt = payment_type === "receipt";
@@ -56,7 +64,10 @@ export default function CreatePaymentPage() {
     ? "Receipt created successfully"
     : "Payment created successfully";
 
-  const [currentStep, setCurrentStep] = useState<FormStep>("partner");
+  // Start at details step if coming from invoice, otherwise start at partner step
+  const [currentStep, setCurrentStep] = useState<FormStep>(
+    fromInvoice ? "details" : "partner",
+  );
 
   // Payment mutations
   const { create: createPayment } = usePaymentMutations();
@@ -94,6 +105,28 @@ export default function CreatePaymentPage() {
     hideChrome();
     return () => showChromeUI();
   }, [hideChrome, showChromeUI]);
+
+  // Prefill form data when coming from invoice
+  useEffect(() => {
+    if (
+      fromInvoice &&
+      urlPartyLedgerId &&
+      urlInvoiceId &&
+      urlAllocationAmount
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        partyLedgerId: urlPartyLedgerId,
+        invoiceAllocations: [
+          {
+            invoiceId: urlInvoiceId,
+            amount: parseFloat(urlAllocationAmount),
+          },
+        ],
+      }));
+      setSelectedPartnerId(urlPartyLedgerId); // Mark partner as selected
+    }
+  }, [fromInvoice, urlPartyLedgerId, urlInvoiceId, urlAllocationAmount]);
 
   // Validation logic
   const canProceedFromPartner = useMemo(
@@ -183,7 +216,14 @@ export default function CreatePaymentPage() {
   };
 
   const handleCancel = () => {
-    router.push(`/warehouse/${warehouse.slug}/payments`);
+    // If coming from invoice, go back to invoice details
+    if (fromInvoice && urlInvoiceSlug) {
+      router.push(
+        `/warehouse/${warehouse.slug}/invoices/${urlInvoiceSlug}/details`,
+      );
+    } else {
+      router.push(`/warehouse/${warehouse.slug}/payments`);
+    }
   };
 
   const handleSubmit = () => {
@@ -240,7 +280,14 @@ export default function CreatePaymentPage() {
     createPayment.mutate(paymentData, {
       onSuccess: () => {
         toast.success(successMessage);
-        router.push(`/warehouse/${warehouse.slug}/payments`);
+        // If coming from invoice, go back to invoice details
+        if (fromInvoice && urlInvoiceSlug) {
+          router.push(
+            `/warehouse/${warehouse.slug}/invoices/${urlInvoiceSlug}/details`,
+          );
+        } else {
+          router.push(`/warehouse/${warehouse.slug}/payments`);
+        }
       },
       onError: (error) => {
         console.error(`Error creating ${payment_type}:`, error);

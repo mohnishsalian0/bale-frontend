@@ -91,10 +91,10 @@ export function InvoiceSelectionList({
                       </Button>
                       <Button
                         variant="destructive"
-                        size="icon"
+                        size="icon-sm"
                         onClick={() => onRemoveAllocation(invoice.id)}
                       >
-                        <IconTrash className="size-4" />
+                        <IconTrash />
                       </Button>
                     </div>
                   ) : (
@@ -103,7 +103,7 @@ export function InvoiceSelectionList({
                       size="sm"
                       onClick={() => onSelectInvoice(invoice)}
                     >
-                      <IconPlus className="size-4" />
+                      <IconPlus />
                       Allocate
                     </Button>
                   )}

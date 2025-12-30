@@ -25,7 +25,9 @@ import FormFooter from "@/components/ui/form-footer";
 
 interface DetailsFormData {
   inwardDate: string;
-  invoiceNumber: string;
+  expectedDeliveryDate: string;
+  transportType: "road" | "rail" | "air" | "sea" | "courier" | null;
+  transportReferenceNumber: string;
   notes: string;
   documentFile: File | null;
 }
@@ -86,7 +88,9 @@ export default function CreateGoodsInwardPage() {
   // Details form state
   const [detailsFormData, setDetailsFormData] = useState<DetailsFormData>({
     inwardDate: dateToISOString(new Date()),
-    invoiceNumber: "",
+    expectedDeliveryDate: "",
+    transportType: null,
+    transportReferenceNumber: "",
     notes: "",
     documentFile: null,
   });
@@ -290,7 +294,10 @@ export default function CreateGoodsInwardPage() {
         | "sales_return"
         | "other",
       inward_date: detailsFormData.inwardDate || undefined,
-      transport_reference_number: detailsFormData.invoiceNumber || undefined,
+      expected_delivery_date: detailsFormData.expectedDeliveryDate || undefined,
+      transport_type: detailsFormData.transportType || undefined,
+      transport_reference_number:
+        detailsFormData.transportReferenceNumber || undefined,
       partner_id:
         receivedFromType === "partner"
           ? selectedPartnerId || undefined

@@ -216,6 +216,7 @@ export function getProductContextMenuItems(
 // Sales Order Detail Footer Items
 export interface SalesOrderDetailFooterCallbacks {
   onApprove: () => void;
+  onEdit: () => void;
   onCreateOutward: () => void;
   onCreateInvoice: () => void;
   onComplete: () => void;
@@ -263,6 +264,13 @@ export function getSalesOrderDetailFooterItems(
   });
 
   // Dropdown menu items
+  items.push({
+    label: "Edit order",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    hidden: displayStatus !== "approval_pending",
+  });
+
   items.push({
     label: "Mark as complete",
     icon: IconCheck,
@@ -318,6 +326,7 @@ export function getSalesOrderDetailFooterItems(
 // Purchase Order Detail Footer Items
 export interface PurchaseOrderDetailFooterCallbacks {
   onApprove: () => void;
+  onEdit: () => void;
   onCreateInward: () => void;
   onCreateInvoice: () => void;
   onComplete: () => void;
@@ -365,6 +374,13 @@ export function getPurchaseOrderDetailFooterItems(
   });
 
   // Dropdown menu items
+  items.push({
+    label: "Edit order",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    hidden: displayStatus !== "approval_pending",
+  });
+
   items.push({
     label: "Mark as complete",
     icon: IconCheck,
@@ -696,6 +712,108 @@ export function getAdjustmentNoteDetailFooterItems(
     onClick: callbacks.onCancel,
     variant: "destructive",
     hidden: adjustmentNote.is_cancelled,
+  });
+
+  return items;
+}
+
+// ============================================================================
+// GOODS INWARD DETAIL FOOTER ITEMS
+// ============================================================================
+
+export interface GoodsInwardDetailFooterCallbacks {
+  onEdit: () => void;
+  onDelete: () => void;
+  onCancel: () => void;
+}
+
+/**
+ * Get footer action items for goods inward detail page
+ * Shows edit button if not invoiced or cancelled
+ */
+export function getGoodsInwardDetailFooterItems(
+  hasInvoice: boolean,
+  isCancelled: boolean,
+  callbacks: GoodsInwardDetailFooterCallbacks,
+): ContextMenuItem[] {
+  const items: ContextMenuItem[] = [];
+
+  // Primary CTA: Edit button - hidden if invoiced or cancelled
+  items.push({
+    label: "Edit inward",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    variant: "default",
+    hidden: hasInvoice || isCancelled,
+  });
+
+  // Dropdown menu items: Delete - hidden if invoiced or cancelled
+  items.push({
+    label: "Delete inward",
+    icon: IconTrash,
+    onClick: callbacks.onDelete,
+    variant: "destructive",
+    hidden: hasInvoice || isCancelled,
+  });
+
+  // Dropdown menu items: Cancel - hidden if already cancelled or invoiced
+  items.push({
+    label: "Cancel inward",
+    icon: IconX,
+    onClick: callbacks.onCancel,
+    variant: "destructive",
+    hidden: isCancelled || hasInvoice,
+  });
+
+  return items;
+}
+
+// ============================================================================
+// GOODS OUTWARD DETAIL FOOTER ITEMS
+// ============================================================================
+
+export interface GoodsOutwardDetailFooterCallbacks {
+  onEdit: () => void;
+  onDelete: () => void;
+  onCancel: () => void;
+}
+
+/**
+ * Get footer action items for goods outward detail page
+ * Shows edit button if not invoiced or cancelled
+ */
+export function getGoodsOutwardDetailFooterItems(
+  hasInvoice: boolean,
+  isCancelled: boolean,
+  callbacks: GoodsOutwardDetailFooterCallbacks,
+): ContextMenuItem[] {
+  const items: ContextMenuItem[] = [];
+
+  // Primary CTA: Edit button - hidden if invoiced or cancelled
+  items.push({
+    label: "Edit outward",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    variant: "default",
+    hidden: hasInvoice || isCancelled,
+  });
+
+  // Dropdown menu items: Delete - hidden if invoiced or cancelled
+  items.push({
+    label: "Delete outward",
+    icon: IconTrash,
+    onClick: callbacks.onDelete,
+    variant: "destructive",
+    hidden: hasInvoice || isCancelled,
+  });
+
+  // Dropdown menu items: Cancel - hidden if already cancelled or invoiced
+  items.push({
+    label: "Cancel outward",
+    icon: IconX,
+    onClick: callbacks.onCancel,
+    variant: "destructive",
+    hidden: isCancelled || hasInvoice,
   });
 
   return items;

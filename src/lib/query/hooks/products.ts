@@ -13,6 +13,7 @@ import {
   getProductAttributeLists,
   getProductById,
   getProductByNumber,
+  getProductByCode,
   getProducts,
   getProductsWithInventory,
   getProductWithInventoryById,
@@ -109,6 +110,18 @@ export function useProductByNumber(sequenceNumber: string | null) {
     queryFn: () => getProductByNumber(Number(sequenceNumber)),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
     enabled: !!sequenceNumber,
+  });
+}
+
+/**
+ * Fetch single product by product code with attributes
+ */
+export function useProductByCode(productCode: string | null) {
+  return useQuery({
+    queryKey: queryKeys.products.byCode(productCode || ""),
+    queryFn: () => getProductByCode(productCode!),
+    ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+    enabled: !!productCode,
   });
 }
 

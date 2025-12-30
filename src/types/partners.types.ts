@@ -24,24 +24,23 @@ export interface PartnerFilters extends Record<string, unknown> {
  * Partner with minimal details for list views
  * Used in: partners list page, partner selection in invoices/payments
  */
-export interface PartnerListView
-  extends Pick<
-    Partner,
-    | "id"
-    | "first_name"
-    | "last_name"
-    | "company_name"
-    | "display_name"
-    | "partner_type"
-    | "is_active"
-    | "phone_number"
-    | "email"
-    | "city"
-    | "state"
-    | "image_url"
-    | "credit_limit_enabled"
-    | "credit_limit"
-  > {
+export interface PartnerListView extends Pick<
+  Partner,
+  | "id"
+  | "first_name"
+  | "last_name"
+  | "company_name"
+  | "display_name"
+  | "partner_type"
+  | "is_active"
+  | "phone_number"
+  | "email"
+  | "city"
+  | "state"
+  | "image_url"
+  | "credit_limit_enabled"
+  | "credit_limit"
+> {
   ledger: Pick<Ledger, "id" | "name">;
 }
 

@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { STOCK_TYPES, MEASURING_UNITS, TAX_TYPES, GST_RATES } from "@/types/database/enums";
+import {
+  STOCK_TYPES,
+  MEASURING_UNITS,
+  TAX_TYPES,
+} from "@/types/database/enums";
 import { optionalString, productNameSchema } from "./common";
 
 /**
@@ -11,6 +15,18 @@ export const productSchema = z
   .object({
     // Required fields
     name: productNameSchema,
+
+    // Optional product code (auto-generated if not provided)
+    productCode: z
+      .string()
+      .trim()
+      .max(50, "Product code must not exceed 50 characters")
+      .regex(
+        /^[a-zA-Z0-9-]+$/,
+        "Product code can only contain letters, numbers, and hyphens (-)",
+      )
+      .optional()
+      .or(z.literal("")),
 
     stockType: z.enum(STOCK_TYPES, {
       message: "Stock type is required",

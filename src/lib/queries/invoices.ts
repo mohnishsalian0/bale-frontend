@@ -52,6 +52,7 @@ export async function getInvoices(
         status,
         total_amount,
         outstanding_amount,
+				party_ledger_id,
         party_name,
         party_display_name,
         warehouse_id,
@@ -73,14 +74,18 @@ export async function getInvoices(
     query = query.eq("invoice_type", filters.invoice_type);
   }
 
-  // Apply status filter
+  // Apply status filter (supports single value or array)
   if (filters?.status) {
-    query = query.eq("status", filters.status);
+    if (Array.isArray(filters.status)) {
+      query = query.in("status", filters.status);
+    } else {
+      query = query.eq("status", filters.status);
+    }
   }
 
   // Apply party filter
-  if (filters?.party_id) {
-    query = query.eq("party_ledger_id", filters.party_id);
+  if (filters?.party_ledger_id) {
+    query = query.eq("party_ledger_id", filters.party_ledger_id);
   }
 
   // Apply warehouse filter
@@ -172,7 +177,7 @@ export async function getInvoicesByParty(
   page: number = 1,
   pageSize: number = 25,
 ): Promise<{ data: InvoiceListView[]; totalCount: number }> {
-  return getInvoices({ party_id: partyLedgerId }, page, pageSize);
+  return getInvoices({ party_ledger_id: partyLedgerId }, page, pageSize);
 }
 
 // ============================================================================

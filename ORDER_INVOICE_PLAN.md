@@ -16,8 +16,8 @@ Enable users to create invoices from orders by selecting goods movements (outwar
 
 **Files**:
 
-* `supabase/migrations/0022_sales_orders.sql`
-* `supabase/migrations/0025_purchase_orders.sql`
+- `supabase/migrations/0022_sales_orders.sql`
+- `supabase/migrations/0025_purchase_orders.sql`
 
 ```sql
 -- Add tax_type to sales_orders
@@ -56,8 +56,8 @@ ALTER TABLE purchase_orders DROP COLUMN invoice_number;
 ✔ Keep existing `invoice_outwards` & `invoice_inwards`
 ✔ Triggers already handle:
 
-* Setting `has_invoice = true` on insert
-* Resetting it on delete if no remaining references
+- Setting `has_invoice = true` on insert
+- Resetting it on delete if no remaining references
 
 ## **5. Update `create_invoice_with_items` RPC**
 
@@ -92,7 +92,7 @@ Core logic steps:
 interface InvoiceSelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  orderType: 'sales' | 'purchase';
+  orderType: "sales" | "purchase";
   orderNumber: string;
   movements: GoodsOutward[] | GoodsInward[];
   onConfirm: (selectedIds: string[], invoiceFullOrder: boolean) => void;
@@ -101,10 +101,10 @@ interface InvoiceSelectionDialogProps {
 
 **Features**
 
-* Multi-select movement rows
-* "Invoiced" badge if already invoiced
-* “Invoice entire order” option
-* Continue disabled until selection
+- Multi-select movement rows
+- "Invoiced" badge if already invoiced
+- “Invoice entire order” option
+- Continue disabled until selection
 
 ---
 
@@ -123,7 +123,9 @@ Handle confirm:
 ```ts
 const params = new URLSearchParams({
   order: order.sequence_number,
-  ...(fullOrder ? { full_order: 'true' } : { movements: selectedIds.join(',') })
+  ...(fullOrder
+    ? { full_order: "true" }
+    : { movements: selectedIds.join(",") }),
 });
 router.push(`${baseUrl}?${params}`);
 ```
@@ -147,7 +149,7 @@ setFormData({
   warehouseId: order.warehouse_id,
   partyLedgerId: getPartnerLedgerId(order.customer_id || order.supplier_id),
   invoiceDate: formatDate(new Date()),
-  taxType: order.tax_type || 'gst',
+  taxType: order.tax_type || "gst",
   notes: `Invoice for ${order.sequence_number}`,
 });
 ```
@@ -171,17 +173,19 @@ aggregated[productId].quantity += item.quantity_dispatched;
 ### Fetch Sales Order by Number
 
 ```ts
-from('sales_orders')
-  .select(`*, customer:partners!customer_id(*), warehouse:warehouses(*), sales_order_items(*)`)
-  .eq('sequence_number', orderNumber)
+from("sales_orders")
+  .select(
+    `*, customer:partners!customer_id(*), warehouse:warehouses(*), sales_order_items(*)`,
+  )
+  .eq("sequence_number", orderNumber);
 ```
 
 ### Updated Invoice RPC Call
 
 ```ts
-await supabase.rpc('create_invoice_with_items', {
-  p_source_sales_order_id: invoiceType === 'sales' ? sourceOrderId : null,
-  p_source_purchase_order_id: invoiceType === 'purchase' ? sourceOrderId : null,
+await supabase.rpc("create_invoice_with_items", {
+  p_source_sales_order_id: invoiceType === "sales" ? sourceOrderId : null,
+  p_source_purchase_order_id: invoiceType === "purchase" ? sourceOrderId : null,
   p_goods_movement_ids: movementIds || null,
 });
 ```
@@ -203,32 +207,30 @@ await supabase.rpc('create_invoice_with_items', {
 
 # **Edge Cases Handled**
 
-* No movements → still invoice full order
-* Movements already invoiced → re-invoice allowed
-* Order-level tax_type overrides state-based tax
-* Aggregated product quantities across movements
-* Rates always from order items (not movements)
+- No movements → still invoice full order
+- Movements already invoiced → re-invoice allowed
+- Order-level tax_type overrides state-based tax
+- Aggregated product quantities across movements
+- Rates always from order items (not movements)
 
 ---
 
 # **Testing Checklist**
 
-* [ ] Invoice full order with no movements
-* [ ] Single movement → invoice
-* [ ] Multiple movements with same product → aggregated
-* [ ] has_invoice flag updates via triggers
-* [ ] Reference visible in invoice detail page
-* [ ] Purchase flow: supplier invoice details
-* [ ] Rates sourced from order items correctly
+- [ ] Invoice full order with no movements
+- [ ] Single movement → invoice
+- [ ] Multiple movements with same product → aggregated
+- [ ] has_invoice flag updates via triggers
+- [ ] Reference visible in invoice detail page
+- [ ] Purchase flow: supplier invoice details
+- [ ] Rates sourced from order items correctly
 
 ---
 
 # **Key Notes**
 
-* 🚫 No quantity-based tracking of invoice coverage
-* 🔁 Re-invoicing allowed intentionally
-* ⚙️ Triggers manage invoice flags automatically
-* 🧾 `order.tax_type` takes highest priority
-* 💰 Rate always from order items
-
-
+- 🚫 No quantity-based tracking of invoice coverage
+- 🔁 Re-invoicing allowed intentionally
+- ⚙️ Triggers manage invoice flags automatically
+- 🧾 `order.tax_type` takes highest priority
+- 💰 Rate always from order items

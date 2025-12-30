@@ -77,14 +77,16 @@ export default function PurchaseOrderDetailLayout({
   }, [order]);
 
   // Compute display status (includes 'overdue' logic) using utility
-  const displayStatus: DisplayStatus = useMemo(() => {
-    if (!order) return "in_progress";
-    return getOrderDisplayStatus(
-      order.status as PurchaseOrderStatus,
-      order.delivery_due_date,
-    );
-  }, [order]);
-  const progressBarColor = getStatusConfig(displayStatus).color;
+  const displayStatusData: { status: DisplayStatus; text: string } =
+    useMemo(() => {
+      if (!order)
+        return { status: "in_progress" as DisplayStatus, text: "In Progress" };
+      return getOrderDisplayStatus(
+        order.status as PurchaseOrderStatus,
+        order.delivery_due_date,
+      );
+    }, [order]);
+  const progressBarColor = getStatusConfig(displayStatusData.status).color;
 
   // Tab logic
   const basePath = `/warehouse/${warehouse_slug}/purchase-orders/${purchase_number}`;
@@ -99,6 +101,10 @@ export default function PurchaseOrderDetailLayout({
   // Handler functions
   const handleApprove = () => {
     setShowApproveDialog(true);
+  };
+
+  const handleEdit = () => {
+    router.push(`${basePath}/edit`);
   };
 
   const handleConfirmApprove = () => {
@@ -242,7 +248,10 @@ export default function PurchaseOrderDetailLayout({
               >
                 PO-{order.sequence_number}
               </h1>
-              <PurchaseStatusBadge status={displayStatus} />
+              <PurchaseStatusBadge
+                status={displayStatusData.status}
+                text={displayStatusData.text}
+              />
             </div>
             <p className="text-sm text-gray-500 mt-1">
               Purchase order on {formatAbsoluteDate(order.order_date)}
@@ -255,7 +264,7 @@ export default function PurchaseOrderDetailLayout({
           </div>
 
           {/* Progress Bar */}
-          {displayStatus !== "approval_pending" && (
+          {displayStatusData.status !== "approval_pending" && (
             <div className="mt-4 max-w-sm">
               <p className="text-sm text-gray-700 mb-1">
                 {completionPercentage}% received
@@ -281,10 +290,11 @@ export default function PurchaseOrderDetailLayout({
         {/* Bottom Action Bar */}
         <ActionsFooter
           items={getPurchaseOrderDetailFooterItems(
-            displayStatus,
+            displayStatusData.status,
             order.has_inward || false,
             {
               onApprove: handleApprove,
+              onEdit: handleEdit,
               onCreateInward: () =>
                 router.push(
                   `/warehouse/${warehouse.slug}/goods-inward/create?order=${order.sequence_number}`,

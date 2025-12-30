@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { IconCurrencyRupee } from "@tabler/icons-react";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { InputWrapper } from "@/components/ui/input-wrapper";
 import { formatCurrency } from "@/lib/utils/currency";
 import type { OutstandingInvoiceView } from "@/types/payments.types";
 
@@ -82,28 +82,18 @@ export function InvoiceAllocationModal({
     >
       <div className="flex flex-col gap-4">
         {/* Amount Input */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="amount">Allocation Amount</Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-              ₹
-            </span>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              min="0"
-              max={outstandingAmount || undefined}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
-              className="pl-8"
-            />
-          </div>
-          <p className="text-xs text-gray-500">
-            Outstanding: {formatCurrency(outstandingAmount || 0)}
-          </p>
-        </div>
+        <InputWrapper
+          label="Allocation Amount"
+          type="number"
+          step="0.01"
+          min="0"
+          max={outstandingAmount || undefined}
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="0.00"
+          icon={<IconCurrencyRupee />}
+          helpText={`Outstanding: ${formatCurrency(outstandingAmount || 0)}`}
+        />
 
         {/* Smart Presets */}
         <div className="grid grid-cols-4 gap-2">

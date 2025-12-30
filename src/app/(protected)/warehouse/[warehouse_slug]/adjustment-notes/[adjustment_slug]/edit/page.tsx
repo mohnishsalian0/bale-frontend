@@ -76,6 +76,9 @@ export default function EditAdjustmentNotePage() {
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(
     null,
   );
+  const [selectedPartyLedgerId, setSelectedPartyLedgerId] = useState<
+    string | null
+  >(null);
   const [selectedInvoice, setSelectedInvoice] =
     useState<InvoiceForAdjustment | null>(null);
   const [productSelections, setProductSelections] = useState<
@@ -171,8 +174,9 @@ export default function EditAdjustmentNotePage() {
     void fetchInvoice();
   }, [existingAdjustmentNote, adjustment_slug, router, warehouse_slug]);
 
-  const handleSelectPartner = (partnerId: string, _ledgerId: string) => {
+  const handleSelectPartner = (partnerId: string, ledgerId: string) => {
     setSelectedPartnerId(partnerId);
+    setSelectedPartyLedgerId(ledgerId);
     // Auto-advance to next step
     setTimeout(() => {
       setCurrentStep("invoice");
@@ -419,7 +423,7 @@ export default function EditAdjustmentNotePage() {
           ) : currentStep === "invoice" ? (
             <InvoiceSelectionStep
               adjustmentType={adjustment_type!}
-              selectedPartnerId={selectedPartnerId}
+              selectedPartyLedgerId={selectedPartyLedgerId}
               warehouseId={warehouse.id}
               onSelectInvoice={handleSelectInvoice}
             />

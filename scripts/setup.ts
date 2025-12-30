@@ -495,6 +495,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Premium Silk Saree",
+        product_code: "SILK-PREM-001", // Custom product code
         gsm: 120,
         thread_count_cm: 80,
         stock_type: "roll",
@@ -517,6 +518,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Cotton Kurta Fabric",
+        product_code: "COT-KURTA-001", // Custom product code
         gsm: 150,
         thread_count_cm: 60,
         stock_type: "roll",
@@ -539,6 +541,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Woolen Shawl Material",
+        // No product_code - will auto-generate as PROD-{sequence}
         gsm: 200,
         thread_count_cm: 50,
         stock_type: "roll",
@@ -560,6 +563,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Polyester Blend Dress Material",
+        product_code: "POLY-DRESS-001", // Custom product code
         gsm: 180,
         thread_count_cm: 70,
         stock_type: "roll",
@@ -581,6 +585,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Linen Summer Fabric",
+        // No product_code - will auto-generate
         gsm: 140,
         thread_count_cm: 55,
         stock_type: "roll",
@@ -603,6 +608,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Designer Silk Fabric",
+        product_code: "SILK-DSG-001", // Custom product code
         gsm: 110,
         thread_count_cm: 75,
         stock_type: "batch",
@@ -623,6 +629,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Cotton Denim",
+        product_code: "DEN-HVY-001", // Custom product code
         gsm: 300,
         thread_count_cm: 40,
         stock_type: "batch",
@@ -645,6 +652,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Yellow Cotton Print",
+        // No product_code - will auto-generate
         gsm: 130,
         thread_count_cm: 65,
         stock_type: "piece",
@@ -683,7 +691,7 @@ async function createTestPartners() {
 
     const productId = data.id;
     console.log(
-      `✅ Created product: ${item.product.name} (SEQ-${data.sequence_number})`,
+      `✅ Created product: ${item.product.name} (${item.product.product_code})`,
     );
 
     // Link attributes (materials, colors, tags)
@@ -1238,10 +1246,15 @@ async function createTestPartners() {
       ];
 
       for (const order of testSalesOrders) {
+        // Store intended final status
+        const finalStatus = order.status;
+
+        // Insert order with approval_pending status first
         const { data, error } = await supabase
           .from("sales_orders")
           .insert({
             ...order,
+            status: "approval_pending", // Always start with pending
             created_by: userId,
           })
           .select()
@@ -1254,7 +1267,7 @@ async function createTestPartners() {
 
         const orderId = data.id;
         console.log(
-          `✅ Created sales order: SEQ-${data.sequence_number} (${order.status})`,
+          `✅ Created sales order: SEQ-${data.sequence_number} (pending → ${finalStatus})`,
         );
 
         // Create order items (2-4 products per order)
@@ -1262,9 +1275,9 @@ async function createTestPartners() {
         for (let i = 0; i < itemCount && i < productsList.length; i++) {
           const requiredQty = Math.floor(Math.random() * 20) + 5; // 5-25 units
           const dispatchedQty =
-            order.status === "completed"
+            finalStatus === "completed"
               ? requiredQty
-              : order.status === "cancelled"
+              : finalStatus === "cancelled"
                 ? 0
                 : Math.floor(requiredQty * (Math.random() * 0.5 + 0.3)); // 30-80% dispatched
 
@@ -1288,6 +1301,22 @@ async function createTestPartners() {
             console.log(
               `   ✅ Added item: ${productsList[i].name} (${dispatchedQty}/${requiredQty} dispatched)`,
             );
+          }
+        }
+
+        // Update to final status
+        if (finalStatus !== "approval_pending") {
+          const { error: updateError } = await supabase
+            .from("sales_orders")
+            .update({ status: finalStatus })
+            .eq("id", orderId);
+
+          if (updateError) {
+            console.error(
+              `   ❌ Failed to update order to ${finalStatus}: ${updateError.message}`,
+            );
+          } else {
+            console.log(`   ✅ Updated order status to ${finalStatus}`);
           }
         }
       }
@@ -1553,10 +1582,15 @@ async function createTestPartners() {
       ];
 
       for (const order of testPurchaseOrders) {
+        // Store intended final status
+        const finalStatus = order.status;
+
+        // Insert order with approval_pending status first
         const { data, error } = await supabase
           .from("purchase_orders")
           .insert({
             ...order,
+            status: "approval_pending", // Always start with pending
             created_by: userId,
           })
           .select()
@@ -1569,7 +1603,7 @@ async function createTestPartners() {
 
         const orderId = data.id;
         console.log(
-          `✅ Created purchase order: PO-${data.sequence_number} (${order.status})`,
+          `✅ Created purchase order: PO-${data.sequence_number} (pending → ${finalStatus})`,
         );
 
         // Create order items (2-4 products per order)
@@ -1577,9 +1611,9 @@ async function createTestPartners() {
         for (let i = 0; i < itemCount && i < productsList.length; i++) {
           const requiredQty = Math.floor(Math.random() * 20) + 5; // 5-25 units
           const receivedQty =
-            order.status === "completed"
+            finalStatus === "completed"
               ? requiredQty
-              : order.status === "cancelled"
+              : finalStatus === "cancelled"
                 ? 0
                 : Math.floor(requiredQty * (Math.random() * 0.5 + 0.3)); // 30-80% received
 
@@ -1603,6 +1637,22 @@ async function createTestPartners() {
             console.log(
               `   ✅ Added item: ${productsList[i].name} (${receivedQty}/${requiredQty} received)`,
             );
+          }
+        }
+
+        // Update to final status
+        if (finalStatus !== "approval_pending") {
+          const { error: updateError } = await supabase
+            .from("purchase_orders")
+            .update({ status: finalStatus })
+            .eq("id", orderId);
+
+          if (updateError) {
+            console.error(
+              `   ❌ Failed to update order to ${finalStatus}: ${updateError.message}`,
+            );
+          } else {
+            console.log(`   ✅ Updated order status to ${finalStatus}`);
           }
         }
       }

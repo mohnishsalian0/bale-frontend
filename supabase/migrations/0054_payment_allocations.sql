@@ -58,14 +58,31 @@ CREATE OR REPLACE FUNCTION validate_allocation_amount()
 RETURNS TRIGGER AS $$
 DECLARE
     v_invoice_outstanding DECIMAL(10,2);
+    v_is_cancelled BOOLEAN;
+    v_deleted_at TIMESTAMPTZ;
 BEGIN
     -- Only validate for against_ref allocations
     IF NEW.allocation_type = 'against_ref' AND NEW.invoice_id IS NOT NULL THEN
-        -- Get invoice outstanding amount
-        SELECT outstanding_amount
-        INTO v_invoice_outstanding
+        -- Get invoice details
+        SELECT outstanding_amount, is_cancelled, deleted_at
+        INTO v_invoice_outstanding, v_is_cancelled, v_deleted_at
         FROM invoices
         WHERE id = NEW.invoice_id;
+
+        -- Check if invoice exists
+        IF v_invoice_outstanding IS NULL THEN
+            RAISE EXCEPTION 'Invoice not found';
+        END IF;
+
+        -- Check if invoice is cancelled
+        IF v_is_cancelled THEN
+            RAISE EXCEPTION 'Cannot allocate payment to cancelled invoice';
+        END IF;
+
+        -- Check if invoice is deleted
+        IF v_deleted_at IS NOT NULL THEN
+            RAISE EXCEPTION 'Cannot allocate payment to deleted invoice';
+        END IF;
 
         -- Check if allocation amount exceeds outstanding
         IF NEW.amount_applied > v_invoice_outstanding THEN

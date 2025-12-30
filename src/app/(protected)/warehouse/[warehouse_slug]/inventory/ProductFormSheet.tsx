@@ -9,6 +9,7 @@ import {
   IconX,
   IconPhoto,
   IconCurrencyRupee,
+  IconScan,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -42,12 +43,14 @@ import {
   useCreateProductAttribute,
   useProductImageMutations,
   useProductAttributes,
+  useProductByCode,
 } from "@/lib/query/hooks/products";
 import { InputWrapper } from "@/components/ui/input-wrapper";
 import { productSchema, ProductFormData } from "@/lib/validations/product";
 import IconGSM from "@/components/icons/IconGSM";
 import IconThreadCount from "@/components/icons/IconThreadCount";
 import { getProductIcon } from "@/lib/utils/product";
+import { ProductCodeScanner } from "@/components/layouts/product-code-scanner";
 
 interface ProductFormSheetProps {
   open: boolean;
@@ -78,6 +81,7 @@ export function ProductFormSheet({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: productToEdit?.name || "",
+      productCode: productToEdit?.product_code || "",
       showOnCatalog: productToEdit?.show_on_catalog ?? true,
       materials:
         productToEdit?.materials.map((m) => ({
@@ -121,6 +125,17 @@ export function ProductFormSheet({
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [originalImages, setOriginalImages] = useState<string[]>([]); // Track original images to detect removals
+
+  // Scanner state
+  const [showScanner, setShowScanner] = useState(false);
+  const [scannedCode, setScannedCode] = useState<string | null>(null);
+
+  // Query for scanned product
+  const {
+    data: scannedProduct,
+    isError: isProductError,
+    isLoading: isProductLoading,
+  } = useProductByCode(scannedCode);
 
   // Compute saving state from mutations
   const saving =
@@ -209,6 +224,31 @@ export function ProductFormSheet({
     };
   }, [imagePreviews]);
 
+  // Handle scanned product code result
+  useEffect(() => {
+    if (!scannedCode || isProductLoading) return;
+
+    if (isProductError) {
+      // Product not found - populate field with scanned code
+      setValue("productCode", scannedCode);
+      toast.info(`Product code "${scannedCode}" entered`);
+      setScannedCode(null); // Clear after handling
+      return;
+    }
+
+    if (scannedProduct) {
+      // Product found - show error
+      toast.error(
+        `Product "${scannedProduct.name}" already exists with this code`,
+      );
+      setScannedCode(null); // Clear after showing error
+    }
+  }, [scannedProduct, isProductError, isProductLoading, scannedCode, setValue]);
+
+  const handleCodeScanned = (code: string) => {
+    setScannedCode(code);
+  };
+
   const onSubmit = async (data: ProductFormData) => {
     try {
       // Step 1: Resolve attribute IDs (create new ones if needed)
@@ -257,6 +297,7 @@ export function ProductFormSheet({
       // Step 2: Prepare product data
       const productData: ProductUpsertData = {
         name: data.name,
+        product_code: data.productCode || null,
         show_on_catalog: data.showOnCatalog,
         gsm: data.gsm || null,
         thread_count_cm: data.threadCount || null,
@@ -385,6 +426,28 @@ export function ProductFormSheet({
                 isError={!!errors.name}
                 errorText={errors.name?.message}
               />
+
+              {/* Product Code */}
+              <div className="flex items-end gap-2">
+                <InputWrapper
+                  label="Product code"
+                  placeholder="PROD-XXX (auto-generated if empty)"
+                  {...register("productCode")}
+                  isError={!!errors.productCode}
+                  errorText={errors.productCode?.message}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-lg"
+                  onClick={() => setShowScanner(true)}
+                  title="Scan barcode/QR code"
+                  className="size-11 border border-gray-300"
+                >
+                  <IconScan />
+                </Button>
+              </div>
 
               {/* Stock Type */}
               <div className="flex flex-col gap-2">
@@ -896,6 +959,13 @@ export function ProductFormSheet({
           </SheetFooter>
         </form>
       </SheetContent>
+
+      {/* Product Code Scanner */}
+      <ProductCodeScanner
+        open={showScanner}
+        onOpenChange={setShowScanner}
+        onCodeScanned={handleCodeScanned}
+      />
     </Sheet>
   );
 }

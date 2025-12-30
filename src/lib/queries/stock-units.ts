@@ -27,6 +27,7 @@ type StockUnitWithProductListViewRaw = StockUnitListView & {
         Tables<"products">,
         | "id"
         | "sequence_number"
+        | "product_code"
         | "name"
         | "show_on_catalog"
         | "is_active"

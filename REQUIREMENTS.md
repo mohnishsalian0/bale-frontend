@@ -546,6 +546,7 @@ Permissions are organized hierarchically with the following top-level categories
 - **Identity Fields:**
   - Product Name (required, design name)
   - Product Number (auto-generated: PROD-{SEQUENCE})
+  - Product Code (optional, alphanumeric + hyphen only, auto-generated as PROD-{SEQUENCE} if not provided, unique within company)
   - Show on Catalog (toggle, default: true)
 - **Fabric Specifications:**
   - Material (optional, dropdown: Cotton, Polyester, Silk, Blend, Custom)
@@ -586,6 +587,8 @@ Permissions are organized hierarchically with the following top-level categories
 **Business Rules**
 
 - Product Number unique across company (all warehouses)
+- Product Code unique across company (if provided, must be alphanumeric with hyphens only)
+- Product Code auto-generated as PROD-{SEQUENCE} if not provided by user
 - Color validation: Standard names + hex codes for custom colors
 - Cannot delete product if stock units exist in any warehouse
 - Product modifications don't affect existing stock units
@@ -673,7 +676,7 @@ Permissions are organized hierarchically with the following top-level categories
   - Product (searchable dropdown from product master)
   - Required Quantity (in product measuring unit)
   - Unit Rate (optional, from product master)
-  - Line Total (auto-calculated, quantity * rate before tax)
+  - Line Total (auto-calculated, quantity \* rate before tax)
 - **Financial Information:**
   - Tax Type (required: 'no_tax', 'gst', 'igst' - determines how GST is applied)
   - Discount Type (required: 'none', 'percentage', 'flat_amount')
@@ -875,7 +878,7 @@ Permissions are organized hierarchically with the following top-level categories
   - Product (searchable dropdown from product master)
   - Required Quantity (in product measuring unit)
   - Unit Rate (optional, typically from product cost price)
-  - Line Total (auto-calculated, quantity * rate before tax)
+  - Line Total (auto-calculated, quantity \* rate before tax)
 - **Financial Information:**
   - Tax Type (required: 'no_tax', 'gst', 'igst' - determines how GST is applied)
   - Discount Type (required: 'none', 'percentage', 'flat_amount')

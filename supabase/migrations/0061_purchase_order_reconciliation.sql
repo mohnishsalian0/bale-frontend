@@ -243,13 +243,20 @@ CREATE OR REPLACE FUNCTION validate_purchase_order_status_for_inward()
 RETURNS TRIGGER AS $$
 DECLARE
     v_order_status VARCHAR(20);
+    v_deleted_at TIMESTAMPTZ;
 BEGIN
     -- Only validate if linked to a purchase order
     IF NEW.purchase_order_id IS NOT NULL THEN
-        -- Get purchase order status
-        SELECT status INTO v_order_status
+        -- Get purchase order status and deleted_at
+        SELECT status, deleted_at
+        INTO v_order_status, v_deleted_at
         FROM purchase_orders
         WHERE id = NEW.purchase_order_id;
+
+        -- Check if order is deleted
+        IF v_deleted_at IS NOT NULL THEN
+            RAISE EXCEPTION 'Cannot create goods inward for deleted purchase order';
+        END IF;
 
         -- Only allow inward for approved (in_progress) orders
         IF v_order_status != 'in_progress' THEN
@@ -269,33 +276,80 @@ CREATE TRIGGER trigger_validate_purchase_order_status_for_inward
 COMMENT ON FUNCTION validate_purchase_order_status_for_inward() IS 'Prevents creating goods inward for purchase orders that are not in in_progress status';
 
 -- =====================================================
--- VALIDATION: PREVENT CANCELLATION IF HAS INWARD
+-- VALIDATION: PREVENT EDIT/DELETE OF PURCHASE ORDERS
 -- =====================================================
 
--- Prevent purchase order cancellation if it has goods inward
-CREATE OR REPLACE FUNCTION prevent_purchase_cancel_if_has_inward()
+-- Unified function to prevent editing purchase orders in invalid states
+CREATE OR REPLACE FUNCTION prevent_purchase_order_edit()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Check if status is being changed to 'cancelled'
+    -- Rule 1: Cannot edit cancelled orders
+    IF OLD.status = 'cancelled' THEN
+        RAISE EXCEPTION 'Cannot edit purchase order - order is cancelled';
+    END IF;
+
+    -- Rule 2: Cannot edit completed orders
+    IF OLD.status = 'completed' THEN
+        RAISE EXCEPTION 'Cannot edit purchase order - order is completed';
+    END IF;
+
+    -- Rule 3: Cannot cancel if has goods inward
     IF NEW.status = 'cancelled' AND OLD.status != 'cancelled' THEN
-        -- Check if order has any inward
-        IF NEW.has_inward = TRUE THEN
-            RAISE EXCEPTION 'Cannot cancel purchase order - goods inward exists. Delete all goods inward records first.'
+        IF OLD.has_inward = TRUE THEN
+            RAISE EXCEPTION 'Cannot cancel purchase order - goods inward exists. Delete all goods inward records first'
                 USING HINT = 'Delete all linked goods inward records before cancelling the purchase order';
         END IF;
+    END IF;
+
+    -- Rule 4: Cannot edit critical fields if has goods inward
+    IF OLD.has_inward = TRUE AND (
+        NEW.supplier_id IS DISTINCT FROM OLD.supplier_id OR
+        NEW.warehouse_id IS DISTINCT FROM OLD.warehouse_id OR
+        NEW.order_date IS DISTINCT FROM OLD.order_date
+    ) THEN
+        RAISE EXCEPTION 'Cannot edit purchase order - goods inward exists. Delete inward records first';
     END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_prevent_purchase_cancel_if_has_inward
+CREATE TRIGGER trigger_prevent_purchase_order_edit
     BEFORE UPDATE ON purchase_orders
     FOR EACH ROW
-    WHEN (NEW.status = 'cancelled' AND OLD.status != 'cancelled')
-    EXECUTE FUNCTION prevent_purchase_cancel_if_has_inward();
+    EXECUTE FUNCTION prevent_purchase_order_edit();
 
-COMMENT ON FUNCTION prevent_purchase_cancel_if_has_inward() IS 'Prevents cancelling purchase orders that have linked goods inward records';
+COMMENT ON FUNCTION prevent_purchase_order_edit() IS 'Prevents editing purchase orders that are cancelled, completed, or have linked goods inward records. Consolidates all edit validation rules including cancellation prevention.';
+
+-- Prevent purchase order deletion in invalid states
+CREATE OR REPLACE FUNCTION prevent_purchase_order_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Rule 1: Cannot delete cancelled orders (use soft delete)
+    IF OLD.status = 'cancelled' THEN
+        RAISE EXCEPTION 'Cannot delete cancelled purchase order. Use soft delete (deleted_at) instead';
+    END IF;
+
+    -- Rule 2: Cannot delete completed orders
+    IF OLD.status = 'completed' THEN
+        RAISE EXCEPTION 'Cannot delete completed purchase order. Use soft delete (deleted_at) instead';
+    END IF;
+
+    -- Rule 3: Cannot delete if has goods inward
+    IF OLD.has_inward = TRUE THEN
+        RAISE EXCEPTION 'Cannot delete purchase order - goods inward exists. Delete inward records first';
+    END IF;
+
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_prevent_purchase_order_delete
+    BEFORE DELETE ON purchase_orders
+    FOR EACH ROW
+    EXECUTE FUNCTION prevent_purchase_order_delete();
+
+COMMENT ON FUNCTION prevent_purchase_order_delete() IS 'Prevents deleting purchase orders that are cancelled, completed, or have linked goods inward records';
 
 COMMENT ON TRIGGER trigger_reconcile_purchase_order ON purchase_orders IS 'Calculates purchase order totals, GST, and has_inward flag. Triggered by dummy updates from purchase_order_items changes.';
 COMMENT ON TRIGGER trigger_reconcile_purchase_order_items ON purchase_order_items IS 'Updates received_quantity from stock_units. Triggered by dummy updates from stock_units changes.';

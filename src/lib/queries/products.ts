@@ -22,6 +22,7 @@ import { uploadProductImage, deleteProductImagesByUrls } from "@/lib/storage";
 export const PRODUCT_LIST_VIEW_SELECT = `
 	id,
 	sequence_number,
+	product_code,
 	name,
 	show_on_catalog,
 	is_active,
@@ -65,6 +66,7 @@ export type ProductListViewRaw = Pick<
   Tables<"products">,
   | "id"
   | "sequence_number"
+  | "product_code"
   | "name"
   | "show_on_catalog"
   | "is_active"
@@ -294,6 +296,27 @@ export async function getProductByNumber(
     .from("products")
     .select(PRODUCT_DETAIL_VIEW_SELECT)
     .eq("sequence_number", sequenceNumber)
+    .is("deleted_at", null)
+    .single<ProductDetailViewRaw>();
+
+  if (error) throw error;
+  if (!data) throw new Error("Product not found");
+
+  return transformProductDetailView(data);
+}
+
+/**
+ * Get a single product by product code (detail view with all fields)
+ */
+export async function getProductByCode(
+  productCode: string,
+): Promise<ProductDetailView> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_DETAIL_VIEW_SELECT)
+    .eq("product_code", productCode)
     .is("deleted_at", null)
     .single<ProductDetailViewRaw>();
 
@@ -752,6 +775,7 @@ export async function updateProductActiveStatus(
 type LowStockProductRaw = {
   id: string;
   sequence_number: number;
+  product_code: string | null;
   name: string;
   show_on_catalog: boolean;
   is_active: boolean;
@@ -793,6 +817,7 @@ function transformLowStockProduct(
   return {
     id: raw.id,
     sequence_number: raw.sequence_number,
+    product_code: raw.product_code,
     name: raw.name,
     show_on_catalog: raw.show_on_catalog,
     is_active: raw.is_active,

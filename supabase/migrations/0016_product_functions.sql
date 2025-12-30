@@ -6,7 +6,7 @@
 -- =====================================================
 
 -- Function to update product search vector for full-text search
--- Weight A: name, sequence_number
+-- Weight A: name, product_code, sequence_number
 -- Weight B: hsn_code, stock_type, measuring_unit
 -- Weight C: product attributes (materials, colors, tags)
 CREATE OR REPLACE FUNCTION update_product_search_vector()
@@ -33,6 +33,7 @@ BEGIN
     NEW.search_vector :=
         -- Weight A: Primary identifiers
         setweight(to_tsvector('english', COALESCE(NEW.name, '')), 'A') ||
+        setweight(to_tsvector('simple', COALESCE(NEW.product_code, '')), 'A') ||
         setweight(to_tsvector('simple', COALESCE(NEW.sequence_number::text, '')), 'A') ||
 
         -- Weight B: Codes and types

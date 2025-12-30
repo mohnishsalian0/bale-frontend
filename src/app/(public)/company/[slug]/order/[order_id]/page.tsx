@@ -105,15 +105,17 @@ export default function OrderConfirmationPage() {
   }
 
   // Compute display status (includes 'overdue' logic) using utility
-  const displayStatus = getOrderDisplayStatus(
+  const displayStatusData = getOrderDisplayStatus(
     order.status as SalesOrderStatus,
     order.delivery_due_date,
   );
 
   const showProgressBar =
-    displayStatus === "in_progress" || displayStatus === "overdue";
+    displayStatusData.status === "in_progress" ||
+    displayStatusData.status === "overdue";
 
-  const progressColor = order.status === "overdue" ? "yellow" : "blue";
+  const progressColor =
+    displayStatusData.status === "overdue" ? "yellow" : "blue";
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-6">
@@ -130,7 +132,10 @@ export default function OrderConfirmationPage() {
           <h2 className="text-lg font-semibold text-gray-900">
             Order #{order.sequence_number}
           </h2>
-          <CatalogOrderStatusBadge status={displayStatus} />
+          <CatalogOrderStatusBadge
+            status={displayStatusData.status}
+            text={displayStatusData.text}
+          />
         </div>
 
         {/* Progress Bar */}

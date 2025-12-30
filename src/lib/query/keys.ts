@@ -26,6 +26,7 @@ export const queryKeys = {
     byId: (productId: string) => ["products", "detail", productId] as const,
     byNumber: (sequenceNumber: string) =>
       ["products", "sequence", sequenceNumber] as const,
+    byCode: (productCode: string) => ["products", "code", productCode] as const,
     withInventory: (
       warehouseId: string,
       filters?: ProductFilters,

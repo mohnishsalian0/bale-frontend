@@ -20,6 +20,7 @@ export type ProductListViewRaw = Pick<
   Product,
   | "id"
   | "sequence_number"
+  | "product_code"
   | "name"
   | "stock_type"
   | "measuring_unit"
@@ -92,6 +93,7 @@ export async function getPublicProducts(
       `
 			id,
 			sequence_number,
+			product_code,
 			name,
 			stock_type,
 			measuring_unit,

@@ -317,7 +317,6 @@ export default function PaymentsPage() {
                   payment.tds_amount && payment.tds_amount > 0
                     ? `TDS: ${formatCurrency(payment.tds_amount)}`
                     : "";
-                console.log(tdsInfo);
 
                 return (
                   <button

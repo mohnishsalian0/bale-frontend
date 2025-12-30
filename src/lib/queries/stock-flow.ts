@@ -8,6 +8,8 @@ import type {
   InwardWithStockUnitListView,
   OutwardWithOutwardItemListView,
   InwardDetailView,
+  UpdateInwardData,
+  UpdateOutwardData,
 } from "@/types/stock-flow.types";
 import {
   PRODUCT_LIST_VIEW_SELECT,
@@ -583,4 +585,148 @@ export async function createGoodsOutwardWithItems(
   }
 
   return data as string;
+}
+
+/**
+ * Update goods inward metadata (dates, transport, notes)
+ * Stock units and inward source remain locked
+ */
+export async function updateGoodsInward(
+  inwardId: string,
+  updateData: UpdateInwardData,
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("goods_inwards")
+    .update(updateData)
+    .eq("id", inwardId);
+
+  if (error) {
+    console.error("Error updating goods inward:", error);
+    throw error;
+  }
+}
+
+/**
+ * Cancel a goods inward
+ * Sets is_cancelled = true with cancellation reason
+ * Can only cancel if:
+ * - Not already cancelled
+ * - Not invoiced (has_invoice = false)
+ */
+export async function cancelGoodsInward(
+  inwardId: string,
+  cancellationReason: string,
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("goods_inwards")
+    .update({
+      is_cancelled: true,
+      cancellation_reason: cancellationReason,
+    })
+    .eq("id", inwardId);
+
+  if (error) {
+    console.error("Error cancelling goods inward:", error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a goods inward (soft delete)
+ * Can only delete if not invoiced (has_invoice = false)
+ * Sets deleted_at timestamp
+ */
+export async function deleteGoodsInward(inwardId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("goods_inwards")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", inwardId)
+    .eq("has_invoice", false);
+
+  if (error) {
+    console.error("Error deleting goods inward:", error);
+    throw error;
+  }
+}
+
+// ============================================================================
+// GOODS OUTWARD MUTATIONS
+// ============================================================================
+
+/**
+ * Update goods outward metadata (dates, transport, notes)
+ * Critical fields (partner, warehouse, type) remain locked
+ * Can only update if:
+ * - Not cancelled (is_cancelled = false)
+ * - Not deleted (deleted_at = null)
+ * - Not invoiced (has_invoice = false) for critical fields
+ */
+export async function updateGoodsOutward(
+  outwardId: string,
+  updateData: UpdateOutwardData,
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("goods_outwards")
+    .update(updateData)
+    .eq("id", outwardId);
+
+  if (error) {
+    console.error("Error updating goods outward:", error);
+    throw error;
+  }
+}
+
+/**
+ * Cancel a goods outward
+ * Sets is_cancelled = true with cancellation reason
+ * Can only cancel if:
+ * - Not already cancelled
+ * - Not invoiced (has_invoice = false)
+ */
+export async function cancelGoodsOutward(
+  outwardId: string,
+  cancellationReason: string,
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("goods_outwards")
+    .update({
+      is_cancelled: true,
+      cancellation_reason: cancellationReason,
+    })
+    .eq("id", outwardId);
+
+  if (error) {
+    console.error("Error cancelling goods outward:", error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a goods outward (soft delete)
+ * Can only delete if not invoiced (has_invoice = false)
+ * Sets deleted_at timestamp
+ */
+export async function deleteGoodsOutward(outwardId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("goods_outwards")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", outwardId)
+    .eq("has_invoice", false);
+
+  if (error) {
+    console.error("Error deleting goods outward:", error);
+    throw error;
+  }
 }

@@ -368,7 +368,7 @@ export function StockUnitScannerStep({
                     <Button
                       type="button"
                       variant="destructive"
-                      size="icon"
+                      size="icon-sm"
                       onClick={() => handleRemoveUnit(index)}
                     >
                       <IconTrash />

@@ -42,6 +42,8 @@ import { DeleteDialog } from "@/components/layouts/delete-dialog";
 import { CancelDialog } from "@/components/layouts/cancel-dialog";
 import { toast } from "sonner";
 import { InvoiceStatusBadge } from "@/components/ui/invoice-status-badge";
+import { InvoiceAllocationModal } from "@/app/(protected)/warehouse/[warehouse_slug]/payments/create/InvoiceAllocationModal";
+import type { OutstandingInvoiceView } from "@/types/payments.types";
 
 interface PageParams {
   params: Promise<{
@@ -72,6 +74,9 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentInvoice, setPaymentInvoice] =
+    useState<OutstandingInvoiceView | null>(null);
 
   // Calculate financial breakdown
   const financials = useMemo(() => {
@@ -135,19 +140,60 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
     });
   };
 
+  const handleMakePayment = () => {
+    if (!invoice) return;
+
+    // Create OutstandingInvoiceView object for modal
+    const invoiceForPayment: OutstandingInvoiceView = {
+      id: invoice.id,
+      invoice_number: invoice.invoice_number,
+      slug: invoice.slug,
+      invoice_date: invoice.invoice_date,
+      due_date: invoice.due_date,
+      invoice_type: invoice.invoice_type,
+      outstanding_amount: invoice.outstanding_amount || 0,
+      total_amount: invoice.total_amount,
+      status: invoice.status,
+    };
+
+    setPaymentInvoice(invoiceForPayment);
+    setShowPaymentModal(true);
+  };
+
+  const handleAllocatePayment = (amount: number) => {
+    if (!invoice) return;
+
+    // Determine payment type based on invoice type
+    const paymentType =
+      invoice.invoice_type === "sales" ? "receipt" : "payment";
+
+    // Build URL params
+    const params = new URLSearchParams({
+      from_invoice: "true",
+      party_ledger_id: invoice.party_ledger_id || "",
+      invoice_id: invoice.id,
+      invoice_slug: invoice.slug,
+      allocation_amount: amount.toString(),
+    });
+
+    // Navigate to payment create page
+    router.push(
+      `/warehouse/${warehouse_slug}/payments/create/${paymentType}/against_ref?${params.toString()}`,
+    );
+  };
+
   // Footer action items
   const footerItems = invoice
     ? getInvoiceDetailFooterItems(invoice, {
-        onMakePayment: () => {
-          // TODO: Implement make payment
-        },
+        onMakePayment: handleMakePayment,
         onDownload: () => {
           // TODO: Implement download
         },
         onCreateAdjustment: () => {
-          const adjustmentType = invoice.invoice_type === "sales" ? "credit" : "debit";
+          const adjustmentType =
+            invoice.invoice_type === "sales" ? "credit" : "debit";
           router.push(
-            `/warehouse/${warehouse_slug}/adjustment-notes/create/${adjustmentType}?invoice_number=${invoice.invoice_number}`
+            `/warehouse/${warehouse_slug}/adjustment-notes/create/${adjustmentType}?invoice_number=${invoice.invoice_number}`,
           );
         },
         onEdit: () => {
@@ -648,13 +694,34 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
           </Section>
 
           {/* Notes Section */}
-          {invoice.notes && (
-            <Section
-              title="Notes"
-              subtitle={invoice.notes}
-              icon={() => <IconNote />}
-            />
-          )}
+          <Section
+            title="Notes"
+            subtitle={
+              !invoice.notes && !invoice.cancellation_reason
+                ? "No note added"
+                : ""
+            }
+            icon={() => <IconNote />}
+          >
+            {invoice.notes && (
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">
+                  Invoice notes
+                </p>
+                <p className="text-sm text-gray-700">{invoice.notes}</p>
+              </div>
+            )}
+            {invoice.cancellation_reason && invoice.is_cancelled && (
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">
+                  Cancellation reason
+                </p>
+                <p className="text-sm text-gray-700">
+                  {invoice.cancellation_reason}
+                </p>
+              </div>
+            )}
+          </Section>
 
           {/* Export Status */}
           {invoice.exported_to_tally_at && (
@@ -700,6 +767,14 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
           loading={deleteInvoice.isPending}
         />
       )}
+
+      {/* Payment Allocation Modal */}
+      <InvoiceAllocationModal
+        open={showPaymentModal}
+        onOpenChange={setShowPaymentModal}
+        invoice={paymentInvoice}
+        onAllocate={handleAllocatePayment}
+      />
     </div>
   );
 }

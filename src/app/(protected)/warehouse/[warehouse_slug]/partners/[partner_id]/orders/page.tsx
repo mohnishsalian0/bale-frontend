@@ -13,7 +13,6 @@ import {
   calculateCompletionPercentage,
   getOrderDisplayStatus,
   getProductSummary,
-  type DisplayStatus,
 } from "@/lib/utils/sales-order";
 import type { SalesOrderStatus } from "@/types/database/enums";
 import type { SalesOrderListView } from "@/lib/queries/sales-orders";
@@ -145,14 +144,15 @@ export default function PartnerOrdersPage({ params }: PageParams) {
               const completionPercentage = calculateCompletionPercentage(
                 order.sales_order_items,
               );
-              const displayStatus: DisplayStatus = getOrderDisplayStatus(
+              const displayStatusData = getOrderDisplayStatus(
                 order.status as SalesOrderStatus,
                 order.delivery_due_date,
               );
               const showProgressBar =
-                displayStatus === "in_progress" || displayStatus === "overdue";
+                displayStatusData.status === "in_progress" ||
+                displayStatusData.status === "overdue";
               const progressColor =
-                displayStatus === "overdue" ? "yellow" : "blue";
+                displayStatusData.status === "overdue" ? "yellow" : "blue";
 
               return (
                 <button
@@ -172,7 +172,10 @@ export default function PartnerOrdersPage({ params }: PageParams) {
                       {order.delivery_due_date &&
                         ` • Due on ${formatAbsoluteDate(order.delivery_due_date)}`}
                     </p>
-                    <SalesStatusBadge status={displayStatus} />
+                    <SalesStatusBadge
+                      status={displayStatusData.status}
+                      text={displayStatusData.text}
+                    />
                   </div>
 
                   {/* Subtexts spanning full width */}

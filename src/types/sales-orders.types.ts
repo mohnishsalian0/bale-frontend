@@ -45,6 +45,7 @@ export interface SalesOrderItemListView extends SalesOrderItem {
     | "measuring_unit"
     | "product_images"
     | "sequence_number"
+    | "product_code"
   > | null;
 }
 
@@ -82,6 +83,7 @@ export interface SalesOrderItemDetailView extends SalesOrderItem {
         | "measuring_unit"
         | "product_images"
         | "sequence_number"
+        | "product_code"
         | "stock_type"
       > & {
         materials: ProductAttribute[];
@@ -96,9 +98,11 @@ export interface SalesOrderItemDetailView extends SalesOrderItem {
  * Includes customer address, agent (minimal fields), warehouse, and full product details
  */
 export interface SalesOrderDetailView extends SalesOrder {
-  customer: (Partner & {
-    ledger: Pick<Tables<"ledgers">, "id" | "name">[];
-  }) | null;
+  customer:
+    | (Partner & {
+        ledger: Pick<Tables<"ledgers">, "id" | "name">[];
+      })
+    | null;
   agent: Pick<
     Partner,
     "id" | "first_name" | "last_name" | "company_name" | "display_name"

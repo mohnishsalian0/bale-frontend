@@ -86,14 +86,15 @@ export default function SalesOrderDetailLayout({
   }, [order]);
 
   // Compute display status (includes 'overdue' logic) using utility
-  const displayStatus: DisplayStatus = useMemo(() => {
-    if (!order) return "in_progress";
+  const displayStatusData = useMemo(() => {
+    if (!order)
+      return { status: "in_progress" as DisplayStatus, text: "In Progress" };
     return getOrderDisplayStatus(
       order.status as SalesOrderStatus,
       order.delivery_due_date,
     );
   }, [order]);
-  const progressBarColor = getStatusConfig(displayStatus).color;
+  const progressBarColor = getStatusConfig(displayStatusData.status).color;
 
   // Tab logic
   const basePath = `/warehouse/${warehouse_slug}/sales-orders/${sale_number}`;
@@ -221,6 +222,10 @@ export default function SalesOrderDetailLayout({
     });
   };
 
+  const handleEdit = () => {
+    router.push(`${basePath}/edit`);
+  };
+
   const handleCreateInvoice = () => {
     setShowInvoiceDialog(true);
   };
@@ -280,7 +285,10 @@ export default function SalesOrderDetailLayout({
               >
                 SO-{order.sequence_number}
               </h1>
-              <SalesStatusBadge status={displayStatus} />
+              <SalesStatusBadge
+                status={displayStatusData.status}
+                text={displayStatusData.text}
+              />
             </div>
             <p className="text-sm text-gray-500 mt-1">
               Sales order on {formatAbsoluteDate(order.order_date)}
@@ -288,7 +296,7 @@ export default function SalesOrderDetailLayout({
           </div>
 
           {/* Progress Bar */}
-          {displayStatus !== "approval_pending" && (
+          {displayStatusData.status !== "approval_pending" && (
             <div className="mt-4 max-w-sm">
               <p className="text-sm text-gray-700 mb-1">
                 {completionPercentage}% completed
@@ -314,10 +322,11 @@ export default function SalesOrderDetailLayout({
         {/* Bottom Action Bar */}
         <ActionsFooter
           items={getSalesOrderDetailFooterItems(
-            displayStatus,
+            displayStatusData.status,
             order.has_outward || false,
             {
               onApprove: handleApprove,
+              onEdit: handleEdit,
               onCreateOutward: () =>
                 router.push(
                   `/warehouse/${warehouse.slug}/goods-outward/create?order=${order.sequence_number}`,

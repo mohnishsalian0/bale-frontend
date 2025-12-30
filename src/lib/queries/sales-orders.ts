@@ -45,6 +45,7 @@ type SalesOrderItemDetailViewRaw = Tables<"sales_order_items"> & {
         | "measuring_unit"
         | "product_images"
         | "sequence_number"
+        | "product_code"
       > &
         ProductAttributeAssignmentsRaw)
     | null;
@@ -55,9 +56,11 @@ type SalesOrderItemDetailViewRaw = Tables<"sales_order_items"> & {
  * Includes nested customer, agent, warehouse, and items with raw attributes
  */
 type SalesOrderDetailViewRaw = Tables<"sales_orders"> & {
-  customer: (Tables<"partners"> & {
-    ledger: Pick<Tables<"ledgers">, "id" | "name">[];
-  }) | null;
+  customer:
+    | (Tables<"partners"> & {
+        ledger: Pick<Tables<"ledgers">, "id" | "name">[];
+      })
+    | null;
   agent: Pick<
     Tables<"partners">,
     "id" | "first_name" | "last_name" | "company_name" | "display_name"
@@ -213,6 +216,7 @@ export async function getSalesOrderByNumber(
 					measuring_unit,
 					product_images,
 					sequence_number,
+					product_code,
 					attributes:product_attributes!inner(id, name, group_name, color_hex)
 				)
 			)
@@ -413,6 +417,7 @@ export async function updateSalesOrder(
 /**
  * Update line items for a sales order (only when in approval_pending status)
  * Deletes all existing items and inserts new ones in a transaction
+ * @deprecated Use updateSalesOrderWithItems instead for atomic updates
  */
 export async function updateSalesOrderLineItems(
   orderId: string,
@@ -446,6 +451,31 @@ export async function updateSalesOrderLineItems(
     .insert(lineItemsToInsert);
 
   if (insertError) throw insertError;
+}
+
+/**
+ * Update sales order with items atomically via RPC function
+ * Validates business rules (approval_pending status, no outward records)
+ * Deletes old items and inserts new ones in a single transaction
+ */
+export async function updateSalesOrderWithItems(
+  orderId: string,
+  orderData: UpdateSalesOrderData,
+  lineItems: CreateSalesOrderLineItem[],
+): Promise<void> {
+  const supabase = createClient();
+
+  if (lineItems.length === 0) {
+    throw new Error("At least one line item is required");
+  }
+
+  const { error } = await supabase.rpc("update_sales_order_with_items", {
+    p_order_id: orderId,
+    p_order_data: orderData,
+    p_line_items: lineItems,
+  });
+
+  if (error) throw error;
 }
 
 /**

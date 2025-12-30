@@ -264,13 +264,20 @@ CREATE OR REPLACE FUNCTION validate_sales_order_status_for_outward()
 RETURNS TRIGGER AS $$
 DECLARE
     v_order_status VARCHAR(20);
+    v_deleted_at TIMESTAMPTZ;
 BEGIN
     -- Only validate if linked to a sales order
     IF NEW.sales_order_id IS NOT NULL THEN
-        -- Get sales order status
-        SELECT status INTO v_order_status
+        -- Get sales order status and deleted_at
+        SELECT status, deleted_at
+        INTO v_order_status, v_deleted_at
         FROM sales_orders
         WHERE id = NEW.sales_order_id;
+
+        -- Check if order is deleted
+        IF v_deleted_at IS NOT NULL THEN
+            RAISE EXCEPTION 'Cannot create goods outward for deleted sales order';
+        END IF;
 
         -- Only allow outward for approved (in_progress) orders
         IF v_order_status != 'in_progress' THEN
@@ -290,32 +297,79 @@ CREATE TRIGGER trigger_validate_sales_order_status_for_outward
 COMMENT ON FUNCTION validate_sales_order_status_for_outward() IS 'Prevents creating goods outward for sales orders that are not in in_progress status';
 
 -- =====================================================
--- VALIDATION: PREVENT CANCELLATION IF HAS OUTWARD
+-- VALIDATION: PREVENT EDIT/DELETE OF SALES ORDERS
 -- =====================================================
 
--- Prevent sales order cancellation if it has goods outward
-CREATE OR REPLACE FUNCTION prevent_cancel_if_has_outward()
+-- Unified function to prevent editing sales orders in invalid states
+CREATE OR REPLACE FUNCTION prevent_sales_order_edit()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Check if status is being changed to 'cancelled'
+    -- Rule 1: Cannot edit cancelled orders
+    IF OLD.status = 'cancelled' THEN
+        RAISE EXCEPTION 'Cannot edit sales order - order is cancelled';
+    END IF;
+
+    -- Rule 2: Cannot edit completed orders
+    IF OLD.status = 'completed' THEN
+        RAISE EXCEPTION 'Cannot edit sales order - order is completed';
+    END IF;
+
+    -- Rule 3: Cannot cancel if has goods outward
     IF NEW.status = 'cancelled' AND OLD.status != 'cancelled' THEN
-        -- Check if order has any outward
-        IF NEW.has_outward = TRUE THEN
-            RAISE EXCEPTION 'Cannot cancel sales order - goods outward exists. Delete all goods outward records first.'
+        IF OLD.has_outward = TRUE THEN
+            RAISE EXCEPTION 'Cannot cancel sales order - goods outward exists. Delete all goods outward records first'
                 USING HINT = 'Delete or cancel all linked goods outward records before cancelling the sales order';
         END IF;
+    END IF;
+
+    -- Rule 4: Cannot edit critical fields if has goods outward
+    IF OLD.has_outward = TRUE AND (
+        NEW.customer_id IS DISTINCT FROM OLD.customer_id OR
+        NEW.warehouse_id IS DISTINCT FROM OLD.warehouse_id OR
+        NEW.order_date IS DISTINCT FROM OLD.order_date
+    ) THEN
+        RAISE EXCEPTION 'Cannot edit sales order - goods outward exists. Delete outward records first';
     END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_prevent_cancel_if_has_outward
+CREATE TRIGGER trigger_prevent_sales_order_edit
     BEFORE UPDATE ON sales_orders
     FOR EACH ROW
-    WHEN (NEW.status = 'cancelled' AND OLD.status != 'cancelled')
-    EXECUTE FUNCTION prevent_cancel_if_has_outward();
+    EXECUTE FUNCTION prevent_sales_order_edit();
 
-COMMENT ON FUNCTION prevent_cancel_if_has_outward() IS 'Prevents cancelling sales orders that have linked goods outward records';
+COMMENT ON FUNCTION prevent_sales_order_edit() IS 'Prevents editing sales orders that are cancelled, completed, or have linked goods outward records. Consolidates all edit validation rules including cancellation prevention.';
+
+-- Prevent sales order deletion in invalid states
+CREATE OR REPLACE FUNCTION prevent_sales_order_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Rule 1: Cannot delete cancelled orders (use soft delete)
+    IF OLD.status = 'cancelled' THEN
+        RAISE EXCEPTION 'Cannot delete cancelled sales order. Use soft delete (deleted_at) instead';
+    END IF;
+
+    -- Rule 2: Cannot delete completed orders
+    IF OLD.status = 'completed' THEN
+        RAISE EXCEPTION 'Cannot delete completed sales order. Use soft delete (deleted_at) instead';
+    END IF;
+
+    -- Rule 3: Cannot delete if has goods outward
+    IF OLD.has_outward = TRUE THEN
+        RAISE EXCEPTION 'Cannot delete sales order - goods outward exists. Delete outward records first';
+    END IF;
+
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_prevent_sales_order_delete
+    BEFORE DELETE ON sales_orders
+    FOR EACH ROW
+    EXECUTE FUNCTION prevent_sales_order_delete();
+
+COMMENT ON FUNCTION prevent_sales_order_delete() IS 'Prevents deleting sales orders that are cancelled, completed, or have linked goods outward records';
 
 COMMENT ON TRIGGER trigger_reconcile_sales_order ON sales_orders IS 'Consolidates all sales order calculations: dispatched quantities, has_outward flag, totals, GST. Triggered by dummy updates from sales_order_items and goods_outward_items changes.';

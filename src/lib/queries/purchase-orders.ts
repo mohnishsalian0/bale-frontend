@@ -55,9 +55,11 @@ type PurchaseOrderItemDetailViewRaw = Tables<"purchase_order_items"> & {
  * Includes nested supplier, agent, warehouse, and items with raw attributes
  */
 type PurchaseOrderDetailViewRaw = Tables<"purchase_orders"> & {
-  supplier: (Tables<"partners"> & {
-    ledger: Pick<Tables<"ledgers">, "id" | "name">[];
-  }) | null;
+  supplier:
+    | (Tables<"partners"> & {
+        ledger: Pick<Tables<"ledgers">, "id" | "name">[];
+      })
+    | null;
   agent: Pick<
     Tables<"partners">,
     "id" | "first_name" | "last_name" | "company_name" | "display_name"
@@ -380,6 +382,7 @@ export async function updatePurchaseOrder(
 /**
  * Update line items for a purchase order (only when in approval_pending status)
  * Deletes all existing items and inserts new ones in a transaction
+ * @deprecated Use updatePurchaseOrderWithItems instead for atomic updates
  */
 export async function updatePurchaseOrderLineItems(
   orderId: string,
@@ -413,6 +416,31 @@ export async function updatePurchaseOrderLineItems(
     .insert(lineItemsToInsert);
 
   if (insertError) throw insertError;
+}
+
+/**
+ * Update purchase order with items atomically via RPC function
+ * Validates business rules (approval_pending status, no inward records)
+ * Deletes old items and inserts new ones in a single transaction
+ */
+export async function updatePurchaseOrderWithItems(
+  orderId: string,
+  orderData: UpdatePurchaseOrderData,
+  lineItems: CreatePurchaseOrderLineItem[],
+): Promise<void> {
+  const supabase = createClient();
+
+  if (lineItems.length === 0) {
+    throw new Error("At least one line item is required");
+  }
+
+  const { error } = await supabase.rpc("update_purchase_order_with_items", {
+    p_order_id: orderId,
+    p_order_data: orderData,
+    p_line_items: lineItems,
+  });
+
+  if (error) throw error;
 }
 
 /**

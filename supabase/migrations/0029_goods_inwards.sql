@@ -32,10 +32,15 @@ CREATE TABLE goods_inwards (
     expected_delivery_date DATE,
     transport_reference_number VARCHAR(50),
     transport_type VARCHAR(20) CHECK (transport_type IN ('road', 'rail', 'air', 'sea', 'courier')),
-    transport_details TEXT,
 
     -- Invoice tracking
     has_invoice BOOLEAN DEFAULT false,
+
+    -- Cancellation/Reversal tracking
+    is_cancelled BOOLEAN DEFAULT FALSE,
+    cancelled_at TIMESTAMPTZ,
+    cancelled_by UUID,
+    cancellation_reason TEXT,
 
     notes TEXT,
     attachments TEXT[], -- Array of file URLs

@@ -20,6 +20,7 @@ import {
   updateSalesOrder,
   deleteSalesOrder,
   updateSalesOrderLineItems,
+  updateSalesOrderWithItems,
   type SalesOrderFilters,
   type CreateSalesOrderData,
   type CreateSalesOrderLineItem,
@@ -234,6 +235,24 @@ export function useSalesOrderMutations(warehouseId: string | null) {
     },
   });
 
+  const updateWithItems = useMutation({
+    mutationFn: ({
+      orderId,
+      orderData,
+      lineItems,
+    }: {
+      orderId: string;
+      orderData: UpdateSalesOrderData;
+      lineItems: CreateSalesOrderLineItem[];
+    }) => updateSalesOrderWithItems(orderId, orderData, lineItems),
+    onSuccess: () => {
+      // Invalidate all sales order queries
+      queryClient.invalidateQueries({
+        queryKey: ["sales-orders"],
+      });
+    },
+  });
+
   const delete_ = useMutation({
     mutationFn: (orderId: string) => deleteSalesOrder(orderId),
     onSuccess: () => {
@@ -252,6 +271,7 @@ export function useSalesOrderMutations(warehouseId: string | null) {
     complete,
     update,
     updateLineItems,
+    updateWithItems,
     delete: delete_,
   };
 }

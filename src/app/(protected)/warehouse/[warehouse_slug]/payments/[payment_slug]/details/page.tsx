@@ -309,13 +309,34 @@ export default function PaymentDetailsPage({ params }: PageParams) {
           </Section>
 
           {/* Notes Section */}
-          {payment.notes && (
-            <Section
-              title="Notes"
-              subtitle={payment.notes}
-              icon={() => <IconNote />}
-            />
-          )}
+          <Section
+            title="Notes"
+            subtitle={
+              !payment.notes && !payment.cancellation_reason
+                ? "No note added"
+                : ""
+            }
+            icon={() => <IconNote />}
+          >
+            {payment.notes && (
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">
+                  Payment notes
+                </p>
+                <p className="text-sm text-gray-700">{payment.notes}</p>
+              </div>
+            )}
+            {payment.cancellation_reason && payment.is_cancelled && (
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">
+                  Cancellation reason
+                </p>
+                <p className="text-sm text-gray-700">
+                  {payment.cancellation_reason}
+                </p>
+              </div>
+            )}
+          </Section>
 
           {/* Export Status */}
           {payment.exported_to_tally_at && (

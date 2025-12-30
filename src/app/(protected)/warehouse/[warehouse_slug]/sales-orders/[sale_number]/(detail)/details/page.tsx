@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useMemo } from "react";
+import { use, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   IconPackage,
@@ -25,27 +25,14 @@ import {
 import type {
   MeasuringUnit,
   StockType,
-  DiscountType,
   SalesOrderStatus,
 } from "@/types/database/enums";
-import type { SalesOrderUpdate } from "@/types/sales-orders.types";
 import { Section } from "@/components/layouts/section";
 import { getProductIcon } from "@/lib/utils/product";
-import {
-  useSalesOrderByNumber,
-  useSalesOrderMutations,
-} from "@/lib/query/hooks/sales-orders";
+import { useSalesOrderByNumber } from "@/lib/query/hooks/sales-orders";
 import { getStatusConfig } from "@/components/ui/sales-status-badge";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
-import { toast } from "sonner";
-
-// Import Edit Sheets
-import { PartnerEditSheet } from "@/components/layouts/partner-edit-sheet";
-import { PaymentTermsEditSheet } from "@/components/layouts/payment-terms-edit-sheet";
-import { WarehouseEditSheet } from "@/components/layouts/warehouse-edit-sheet";
-import { TransportEditSheet } from "@/components/layouts/transport-edit-sheet";
-import { NotesEditSheet } from "@/components/layouts/notes-edit-sheet";
 
 interface PageParams {
   params: Promise<{
@@ -57,48 +44,12 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
   const router = useRouter();
   const { sale_number } = use(params);
 
-  // Edit sheet states
-  const [showCustomerEdit, setShowCustomerEdit] = useState(false);
-  const [showAgentEdit, setShowAgentEdit] = useState(false);
-  const [showPaymentTermsEdit, setShowPaymentTermsEdit] = useState(false);
-  const [showWarehouseEdit, setShowWarehouseEdit] = useState(false);
-  const [showTransportEdit, setShowTransportEdit] = useState(false);
-  const [showNotesEdit, setShowNotesEdit] = useState(false);
-
   // Fetch sales order using TanStack Query
   const {
     data: order,
     isLoading,
     isError,
   } = useSalesOrderByNumber(sale_number);
-
-  // Get update mutation
-  const { update: updateMutation } = useSalesOrderMutations(null);
-
-  // Handler for updating sales order
-  const handleUpdate = (
-    data: Partial<SalesOrderUpdate>,
-    onSuccessCallback?: () => void,
-  ) => {
-    if (!order) return;
-
-    updateMutation.mutate(
-      {
-        orderId: order.id,
-        data,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Sales order updated successfully");
-          onSuccessCallback?.();
-        },
-        onError: (error) => {
-          console.error("Error updating sales order:", error);
-          toast.error("Failed to update sales order");
-        },
-      },
-    );
-  };
 
   // Get financials from database-calculated values
   const financials = useMemo(() => {
@@ -117,15 +68,16 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
   }, [order]);
 
   // Compute display status (includes 'overdue' logic) using utility
-  const displayStatus: DisplayStatus = useMemo(() => {
-    if (!order) return "in_progress";
+  const displayStatusData = useMemo(() => {
+    if (!order)
+      return { status: "in_progress" as DisplayStatus, text: "In Progress" };
     return getOrderDisplayStatus(
       order.status as SalesOrderStatus,
       order.delivery_due_date,
     );
   }, [order]);
 
-  const progressBarColor = getStatusConfig(displayStatus).color;
+  const progressBarColor = getStatusConfig(displayStatusData.status).color;
 
   if (isLoading) {
     return <LoadingState message="Loading order details..." />;
@@ -141,305 +93,222 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
     );
   }
 
-  // Check if order is editable (only in approval_pending status)
-  const isEditable = order.status === "approval_pending";
-
   return (
-    <>
-      <div className="flex flex-col gap-3 p-4">
-        {/* Line Items Section */}
-        <Section
-          title={`${order.sales_order_items.length} items at ₹${formatCurrency(financials?.finalTotal || 0)}`}
-          subtitle="Line items"
-          onEdit={
-            isEditable
-              ? () =>
-                  router.push(
-                    `/warehouse/${order.warehouse?.slug || ""}/sales-orders/${sale_number}/edit-items`,
-                  )
-              : undefined
-          }
-          icon={() => <IconPackage />}
-        >
-          <div>
-            <ul className="space-y-6">
-              {order.sales_order_items.map((item) => (
-                <li key={item.id} className="flex gap-3">
-                  <div className="mt-0.5">
-                    <ImageWrapper
-                      size="sm"
-                      shape="square"
-                      imageUrl={item.product?.product_images?.[0]}
-                      alt={item.product?.name || ""}
-                      placeholderIcon={getProductIcon(
-                        item.product?.stock_type as StockType,
-                      )}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className="text-sm font-medium text-gray-700 truncate"
-                      title={item.product?.name}
-                    >
-                      {item.product?.name || "Unknown Product"}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {item.dispatched_quantity || 0}
-                      {" / "}
-                      {item.required_quantity}{" "}
-                      {getMeasuringUnitAbbreviation(
-                        item.product?.measuring_unit as MeasuringUnit,
-                      )}{" "}
-                      shipped
-                    </p>
-                    {/* Progress bar */}
-                    {displayStatus !== "approval_pending" && (
-                      <Progress
-                        size="sm"
-                        color={progressBarColor}
-                        value={
-                          item.required_quantity > 0
-                            ? ((item.dispatched_quantity || 0) /
-                                item.required_quantity) *
-                              100
-                            : 0
-                        }
-                        className="max-w-sm mt-1"
-                      />
+    <div className="flex flex-col gap-3 p-4">
+      {/* Line Items Section */}
+      <Section
+        title={`${order.sales_order_items.length} items at ₹${formatCurrency(financials?.finalTotal || 0)}`}
+        subtitle="Line items"
+        icon={() => <IconPackage />}
+      >
+        <div>
+          <ul className="space-y-6">
+            {order.sales_order_items.map((item) => (
+              <li key={item.id} className="flex gap-3">
+                <div className="mt-0.5">
+                  <ImageWrapper
+                    size="sm"
+                    shape="square"
+                    imageUrl={item.product?.product_images?.[0]}
+                    alt={item.product?.name || ""}
+                    placeholderIcon={getProductIcon(
+                      item.product?.stock_type as StockType,
                     )}
-                  </div>
-                  <p className="text-sm font-semibold text-gray-700 shrink-0">
-                    ₹{formatCurrency(item.line_total || 0)}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="text-sm font-medium text-gray-700 truncate"
+                    title={item.product?.name}
+                  >
+                    {item.product?.name || "Unknown Product"}
                   </p>
-                </li>
-              ))}
-            </ul>
-
-            {/* Financial Breakdown */}
-            {financials && (
-              <div className="space-y-4 pt-3 mt-6 border-t border-border">
-                {order.discount_type !== "none" && (
-                  <div className="flex justify-between text-sm text-gray-700">
-                    <span>
-                      Discount
-                      {order.discount_type === "percentage" &&
-                        ` (${order.discount_value}%)`}
-                    </span>
-                    <span className="font-semibold">
-                      -₹{formatCurrency(financials.discountAmount)}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm text-gray-700">
-                  <span>Item total</span>
-                  <span className="font-semibold">
-                    ₹{formatCurrency(financials.subtotal)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-700">
-                  <span>GST</span>
-                  <span className="font-semibold">
-                    ₹{formatCurrency(financials.gstAmount)}
-                  </span>
-                </div>
-                <div className="flex justify-between font-semibold text-gray-700 pt-2 border-t">
-                  <span>Total</span>
-                  <span className="font-semibold">
-                    ₹{formatCurrency(financials.finalTotal)}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </Section>
-
-        {/* Customer Section */}
-        <Section
-          title={getPartnerName(order.customer)}
-          subtitle="Customer"
-          onEdit={isEditable ? () => setShowCustomerEdit(true) : undefined}
-          icon={() => <>{getInitials(getPartnerName(order.customer))}</>}
-        >
-          {getFormattedAddress(order.customer).length > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-700 flex items-center gap-2">
-                <IconMapPin className="size-4" />
-                Address
-              </span>
-              <div className="font-semibold text-gray-700 text-right max-w-[200px]">
-                {getFormattedAddress(order.customer).map((line, index) => (
-                  <p key={index}>{line}</p>
-                ))}
-              </div>
-            </div>
-          )}
-        </Section>
-
-        {/* Agent Section (Conditional) */}
-        <Section
-          title={getAgentName(order.agent)}
-          subtitle="Agent"
-          onEdit={isEditable ? () => setShowAgentEdit(true) : undefined}
-          icon={() => <>{getInitials(getPartnerName(order.agent))}</>}
-        />
-
-        {/* Payment Terms Section */}
-        <Section
-          title={order.payment_terms || "NET 30"}
-          subtitle="Payment terms"
-          onEdit={isEditable ? () => setShowPaymentTermsEdit(true) : undefined}
-          icon={() => <IconCash />}
-        >
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <div className="flex items-center gap-1.5 text-gray-700">
-                <IconCurrencyRupee className="size-4 text-gray-500" />
-                <span>Advanced amount</span>
-              </div>
-              <span className="font-semibold text-gray-700">
-                ₹{formatCurrency(order.advance_amount || 0)}
-              </span>
-            </div>
-            {order.discount_type !== "none" && (
-              <div className="flex justify-between text-sm">
-                <div className="flex items-center gap-1.5 text-gray-700">
-                  {order.discount_type === "percentage" ? (
-                    <IconPercentage className="size-4 text-gray-500" />
-                  ) : (
-                    <IconCurrencyRupee className="size-4 text-gray-500" />
+                  <p className="text-xs text-gray-500">
+                    {item.dispatched_quantity || 0}
+                    {" / "}
+                    {item.required_quantity}{" "}
+                    {getMeasuringUnitAbbreviation(
+                      item.product?.measuring_unit as MeasuringUnit,
+                    )}{" "}
+                    shipped
+                  </p>
+                  {/* Progress bar */}
+                  {displayStatusData.status !== "approval_pending" && (
+                    <Progress
+                      size="sm"
+                      color={progressBarColor}
+                      value={
+                        item.required_quantity > 0
+                          ? ((item.dispatched_quantity || 0) /
+                              item.required_quantity) *
+                            100
+                          : 0
+                      }
+                      className="max-w-sm mt-1"
+                    />
                   )}
-                  <span>Discount</span>
                 </div>
-                <span className="font-semibold text-gray-700">
-                  {order.discount_type === "percentage"
-                    ? `${order.discount_value}%`
-                    : `₹${formatCurrency(order.discount_value || 0)}`}
-                </span>
-              </div>
-            )}
-          </div>
-        </Section>
+                <p className="text-sm font-semibold text-gray-700 shrink-0">
+                  ₹{formatCurrency(item.line_total || 0)}
+                </p>
+              </li>
+            ))}
+          </ul>
 
-        {/* Warehouse Section */}
-        <Section
-          title={order.warehouse?.name || "Unknown Warehouse"}
-          subtitle="Warehouse"
-          onEdit={isEditable ? () => setShowWarehouseEdit(true) : undefined}
-          icon={() => <IconBuildingWarehouse />}
-        >
-          {order.warehouse &&
-            getFormattedAddress(order.warehouse).length > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-700 flex items-center gap-2">
-                  <IconMapPin className="size-4" />
-                  Address
-                </span>
-                <div className="font-semibold text-gray-700 text-right max-w-[200px]">
-                  {getFormattedAddress(order.warehouse).map((line, index) => (
-                    <p key={index}>{line}</p>
-                  ))}
-                </div>
-              </div>
-            )}
-        </Section>
-
-        {/* Notes Section */}
-        <Section
-          title="Notes"
-          subtitle={!order.notes && !order.status_notes ? "No notes added" : ""}
-          onEdit={isEditable ? () => setShowNotesEdit(true) : undefined}
-          icon={() => <IconNote />}
-        >
-          {(order.notes || order.status_notes) && (
-            <div className="space-y-4">
-              {order.notes && (
-                <div>
-                  <p className="text-xs font-medium text-gray-500 mb-1">
-                    Order notes
-                  </p>
-                  <p className="text-sm text-gray-700">{order.notes}</p>
+          {/* Financial Breakdown */}
+          {financials && (
+            <div className="space-y-4 pt-3 mt-6 border-t border-border">
+              {order.discount_type !== "none" && (
+                <div className="flex justify-between text-sm text-gray-700">
+                  <span>
+                    Discount
+                    {order.discount_type === "percentage" &&
+                      ` (${order.discount_value}%)`}
+                  </span>
+                  <span className="font-semibold">
+                    -₹{formatCurrency(financials.discountAmount)}
+                  </span>
                 </div>
               )}
-              {order.status_notes &&
-                (order.status === "completed" ||
-                  order.status === "cancelled") && (
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 mb-1">
-                      {order.status === "completed"
-                        ? "Completion notes"
-                        : "Cancellation reason"}
-                    </p>
-                    <p className="text-sm text-gray-700">
-                      {order.status_notes}
-                    </p>
-                  </div>
-                )}
+              <div className="flex justify-between text-sm text-gray-700">
+                <span>Item total</span>
+                <span className="font-semibold">
+                  ₹{formatCurrency(financials.subtotal)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-700">
+                <span>GST</span>
+                <span className="font-semibold">
+                  ₹{formatCurrency(financials.gstAmount)}
+                </span>
+              </div>
+              <div className="flex justify-between font-semibold text-gray-700 pt-2 border-t">
+                <span>Total</span>
+                <span className="font-semibold">
+                  ₹{formatCurrency(financials.finalTotal)}
+                </span>
+              </div>
             </div>
           )}
-        </Section>
-      </div>
+        </div>
+      </Section>
 
-      {/* Edit Sheets */}
-      <PartnerEditSheet
-        key={`customer-${order.id}-${showCustomerEdit}`}
-        open={showCustomerEdit}
-        onOpenChange={setShowCustomerEdit}
-        onSave={handleUpdate}
-        isPending={updateMutation.isPending}
-        partnerType="customer"
-        currentPartnerId={order.customer_id}
+      {/* Customer Section */}
+      <Section
+        title={getPartnerName(order.customer)}
+        subtitle="Customer"
+        icon={() => <>{getInitials(getPartnerName(order.customer))}</>}
+      >
+        {getFormattedAddress(order.customer).length > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-700 flex items-center gap-2">
+              <IconMapPin className="size-4" />
+              Address
+            </span>
+            <div className="font-semibold text-gray-700 text-right max-w-[200px]">
+              {getFormattedAddress(order.customer).map((line, index) => (
+                <p key={index}>{line}</p>
+              ))}
+            </div>
+          </div>
+        )}
+      </Section>
+
+      {/* Agent Section (Conditional) */}
+      <Section
+        title={getAgentName(order.agent)}
+        subtitle="Agent"
+        icon={() => <>{getInitials(getPartnerName(order.agent))}</>}
       />
 
-      <PartnerEditSheet
-        key={`agent-${order.id}-${showAgentEdit}`}
-        open={showAgentEdit}
-        onOpenChange={setShowAgentEdit}
-        onSave={handleUpdate}
-        isPending={updateMutation.isPending}
-        partnerType="agent"
-        currentPartnerId={order.agent_id}
-      />
+      {/* Payment Terms Section */}
+      <Section
+        title={order.payment_terms || "NET 30"}
+        subtitle="Payment terms"
+        icon={() => <IconCash />}
+      >
+        <div className="space-y-3">
+          <div className="flex justify-between text-sm">
+            <div className="flex items-center gap-1.5 text-gray-700">
+              <IconCurrencyRupee className="size-4 text-gray-500" />
+              <span>Advanced amount</span>
+            </div>
+            <span className="font-semibold text-gray-700">
+              ₹{formatCurrency(order.advance_amount || 0)}
+            </span>
+          </div>
+          {order.discount_type !== "none" && (
+            <div className="flex justify-between text-sm">
+              <div className="flex items-center gap-1.5 text-gray-700">
+                {order.discount_type === "percentage" ? (
+                  <IconPercentage className="size-4 text-gray-500" />
+                ) : (
+                  <IconCurrencyRupee className="size-4 text-gray-500" />
+                )}
+                <span>Discount</span>
+              </div>
+              <span className="font-semibold text-gray-700">
+                {order.discount_type === "percentage"
+                  ? `${order.discount_value}%`
+                  : `₹${formatCurrency(order.discount_value || 0)}`}
+              </span>
+            </div>
+          )}
+        </div>
+      </Section>
 
-      <PaymentTermsEditSheet
-        key={`payment-${order.id}-${showPaymentTermsEdit}`}
-        open={showPaymentTermsEdit}
-        onOpenChange={setShowPaymentTermsEdit}
-        onSave={handleUpdate}
-        isPending={updateMutation.isPending}
-        currentPaymentTerms={order.payment_terms}
-        currentAdvanceAmount={order.advance_amount || 0}
-        currentDiscountType={order.discount_type as DiscountType}
-        currentDiscountValue={order.discount_value || 0}
-      />
+      {/* Warehouse Section */}
+      <Section
+        title={order.warehouse?.name || "Unknown Warehouse"}
+        subtitle="Warehouse"
+        icon={() => <IconBuildingWarehouse />}
+      >
+        {order.warehouse && getFormattedAddress(order.warehouse).length > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-700 flex items-center gap-2">
+              <IconMapPin className="size-4" />
+              Address
+            </span>
+            <div className="font-semibold text-gray-700 text-right max-w-[200px]">
+              {getFormattedAddress(order.warehouse).map((line, index) => (
+                <p key={index}>{line}</p>
+              ))}
+            </div>
+          </div>
+        )}
+      </Section>
 
-      <WarehouseEditSheet
-        key={`warehouse-${order.id}-${showWarehouseEdit}`}
-        open={showWarehouseEdit}
-        onOpenChange={setShowWarehouseEdit}
-        onSave={handleUpdate}
-        isPending={updateMutation.isPending}
-        currentWarehouseId={order.warehouse_id || ""}
-        hasStockFlow={order.has_outward || false}
-        stockFlowLabel="outward"
-      />
-
-      <TransportEditSheet
-        key={`transport-${order.id}-${showTransportEdit}`}
-        open={showTransportEdit}
-        onOpenChange={setShowTransportEdit}
-        onSave={handleUpdate}
-        isPending={updateMutation.isPending}
-        currentExpectedDeliveryDate={order.delivery_due_date}
-      />
-
-      <NotesEditSheet
-        key={`notes-${order.id}-${showNotesEdit}`}
-        open={showNotesEdit}
-        onOpenChange={setShowNotesEdit}
-        onSave={handleUpdate}
-        isPending={updateMutation.isPending}
-        initialNotes={order.notes}
-      />
-    </>
+      {/* Notes Section */}
+      <Section
+        title="Notes"
+        subtitle={!order.notes && !order.status_notes ? "No notes added" : ""}
+        icon={() => <IconNote />}
+      >
+        {(order.notes || order.status_notes) && (
+          <div className="space-y-4">
+            {order.notes && (
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">
+                  Order notes
+                </p>
+                <p className="text-sm text-gray-700">{order.notes}</p>
+              </div>
+            )}
+            {order.status_notes &&
+              (order.status === "completed" ||
+                order.status === "cancelled") && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-1">
+                    {order.status === "completed"
+                      ? "Completion notes"
+                      : "Cancellation reason"}
+                  </p>
+                  <p className="text-sm text-gray-700">{order.status_notes}</p>
+                </div>
+              )}
+          </div>
+        )}
+      </Section>
+    </div>
   );
 }

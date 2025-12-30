@@ -2,7 +2,9 @@ import type { AdjustmentNoteItemListView } from "@/types/adjustment-notes.types"
 import type { MeasuringUnit } from "@/types/database/enums";
 import { getMeasuringUnitAbbreviation } from "./measuring-units";
 
-export function getAdjustmentItemSummary(items: AdjustmentNoteItemListView[]): string {
+export function getAdjustmentItemSummary(
+  items: AdjustmentNoteItemListView[],
+): string {
   if (!items || items.length === 0) {
     return "No items";
   }

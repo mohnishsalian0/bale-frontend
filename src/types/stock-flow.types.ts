@@ -1,4 +1,4 @@
-import type { Tables } from "./database/supabase";
+import type { Tables, TablesUpdate } from "./database/supabase";
 import { StockUnitWithProductDetailView } from "./stock-units.types";
 import type { ProductListView } from "./products.types";
 
@@ -29,6 +29,36 @@ export interface OutwardFilters extends Record<string, unknown> {
 }
 
 // =====================================================
+// UPDATE TYPES
+// =====================================================
+
+/**
+ * Data for updating goods inward metadata (dates, transport, notes)
+ * Stock units and inward source remain locked
+ */
+export type UpdateInwardData = Pick<
+  TablesUpdate<"goods_inwards">,
+  | "inward_date"
+  | "expected_delivery_date"
+  | "transport_type"
+  | "transport_reference_number"
+  | "notes"
+>;
+
+/**
+ * Data for updating goods outward metadata (dates, transport, notes)
+ * Outward items and outward destination remain locked
+ */
+export type UpdateOutwardData = Pick<
+  TablesUpdate<"goods_outwards">,
+  | "outward_date"
+  | "expected_delivery_date"
+  | "transport_type"
+  | "transport_reference_number"
+  | "notes"
+>;
+
+// =====================================================
 // LIST VIEW TYPES (for list pages)
 // =====================================================
 
@@ -52,7 +82,10 @@ export interface InwardWithPartnerListView extends Pick<
  * Used in: inward list page
  */
 export interface InwardWithStockUnitListView extends GoodsInward {
-  partner: Pick<Partner, "first_name" | "last_name" | "company_name" | "display_name"> | null;
+  partner: Pick<
+    Partner,
+    "first_name" | "last_name" | "company_name" | "display_name"
+  > | null;
   from_warehouse: Pick<Warehouse, "id" | "name"> | null;
   stock_units: Array<{
     initial_quantity: number;
@@ -65,7 +98,10 @@ export interface InwardWithStockUnitListView extends GoodsInward {
  * Used in: outward list page
  */
 export interface OutwardWithOutwardItemListView extends GoodsOutward {
-  partner: Pick<Partner, "first_name" | "last_name" | "company_name" | "display_name"> | null;
+  partner: Pick<
+    Partner,
+    "first_name" | "last_name" | "company_name" | "display_name"
+  > | null;
   to_warehouse: Pick<Warehouse, "id" | "name"> | null;
   goods_outward_items: Array<{
     quantity_dispatched: number;
@@ -95,7 +131,10 @@ export interface InwardDetailView extends GoodsInward {
     | "pin_code"
     | "country"
   > | null;
-  agent: Pick<Partner, "first_name" | "last_name" | "company_name" | "display_name"> | null;
+  agent: Pick<
+    Partner,
+    "first_name" | "last_name" | "company_name" | "display_name"
+  > | null;
   warehouse: Pick<
     Warehouse,
     | "name"
@@ -148,7 +187,10 @@ export interface OutwardDetailView extends GoodsOutward {
     | "pin_code"
     | "country"
   > | null;
-  agent: Pick<Partner, "first_name" | "last_name" | "company_name" | "display_name"> | null;
+  agent: Pick<
+    Partner,
+    "first_name" | "last_name" | "company_name" | "display_name"
+  > | null;
   warehouse: Pick<
     Warehouse,
     | "name"

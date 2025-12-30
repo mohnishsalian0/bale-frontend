@@ -111,6 +111,7 @@ export type OutstandingInvoiceView = Pick<
   Invoice,
   | "id"
   | "invoice_number"
+  | "slug"
   | "invoice_date"
   | "due_date"
   | "invoice_type"

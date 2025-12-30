@@ -33,7 +33,6 @@ CREATE TABLE goods_outwards (
     expected_delivery_date DATE,
     transport_reference_number VARCHAR(50),
     transport_type VARCHAR(20) CHECK (transport_type IN ('road', 'rail', 'air', 'sea', 'courier')),
-    transport_details TEXT,
 
     -- Cancellation/Reversal tracking
     is_cancelled BOOLEAN DEFAULT FALSE,
@@ -142,26 +141,46 @@ CREATE TRIGGER trigger_prevent_invoiced_outward_delete
     BEFORE DELETE ON goods_outwards
     FOR EACH ROW EXECUTE FUNCTION prevent_invoiced_outward_delete();
 
--- Prevent critical field edits if invoiced
-CREATE OR REPLACE FUNCTION prevent_invoiced_outward_edit()
+-- Note: Edit guards moved to 0063_goods_movement_guards.sql
+-- The prevent_invoiced_outward_edit() function has been replaced by
+-- the unified prevent_goods_outward_edit() function that consolidates
+-- all edit validation rules (cancelled, deleted, invoice blocking, etc.)
+
+-- Auto-cancel all outward items when outward is cancelled
+CREATE OR REPLACE FUNCTION auto_cancel_outward_items_on_outward_cancel()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF OLD.has_invoice = true THEN
-        RAISE EXCEPTION 'Cannot edit goods outward - linked to invoice. Critical fields are locked.';
+    -- When outward is cancelled, cancel all its items
+    IF NEW.is_cancelled = TRUE AND OLD.is_cancelled = FALSE THEN
+        UPDATE goods_outward_items
+        SET
+            is_cancelled = TRUE,
+            cancelled_at = NOW()
+        WHERE outward_id = NEW.id;
     END IF;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_prevent_invoiced_outward_edit
+CREATE TRIGGER trigger_auto_cancel_outward_items
+    AFTER UPDATE ON goods_outwards
+    FOR EACH ROW
+    WHEN (OLD.is_cancelled IS FALSE AND NEW.is_cancelled IS TRUE)
+    EXECUTE FUNCTION auto_cancel_outward_items_on_outward_cancel();
+
+-- Triggers to populate cancelled_at and cancelled_by fields
+CREATE TRIGGER set_goods_outwards_cancelled_at
     BEFORE UPDATE ON goods_outwards
     FOR EACH ROW
-    WHEN (
-        OLD.outward_date IS DISTINCT FROM NEW.outward_date OR
-        OLD.partner_id IS DISTINCT FROM NEW.partner_id OR
-        OLD.to_warehouse_id IS DISTINCT FROM NEW.to_warehouse_id
-    )
-    EXECUTE FUNCTION prevent_invoiced_outward_edit();
+    WHEN (OLD.is_cancelled IS FALSE AND NEW.is_cancelled IS TRUE)
+    EXECUTE FUNCTION set_cancelled_at();
+
+CREATE TRIGGER set_goods_outwards_cancelled_by
+    BEFORE UPDATE ON goods_outwards
+    FOR EACH ROW
+    WHEN (OLD.is_cancelled IS FALSE AND NEW.is_cancelled IS TRUE)
+    EXECUTE FUNCTION set_cancelled_by();
 
 -- =====================================================
 -- GOODS OUTWARD TABLE RLS POLICIES

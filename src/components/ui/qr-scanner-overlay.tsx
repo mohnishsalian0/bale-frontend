@@ -41,6 +41,16 @@ interface QRScannerOverlayProps {
    * Title text to display when no error
    */
   title?: string;
+  /**
+   * Barcode/QR code formats to scan
+   * @default ["qr_code"]
+   */
+  formats?: ("qr_code" | "code_128" | "code_39" | "ean_13" | "ean_8")[];
+  /**
+   * Whether to show the torch/flashlight button
+   * @default true
+   */
+  showTorch?: boolean;
 }
 
 export function QRScannerOverlay({
@@ -53,6 +63,8 @@ export function QRScannerOverlay({
   onResume,
   error = null,
   title = "Scan QR to add item",
+  formats = ["qr_code"],
+  showTorch = true,
 }: QRScannerOverlayProps) {
   return (
     <div className="relative w-full aspect-square shrink-0 bg-gray-900 overflow-hidden">
@@ -65,7 +77,7 @@ export function QRScannerOverlay({
       <Scanner
         onScan={onScan}
         onError={onError}
-        formats={["qr_code"]}
+        formats={formats}
         paused={paused}
         components={{
           torch: torch,
@@ -110,15 +122,17 @@ export function QRScannerOverlay({
       {/* Action Buttons */}
       <div className="flex gap-3 absolute bottom-8 left-1/2 -translate-x-1/2 text-center z-10">
         {/* Flashlight Button */}
-        <Button
-          type="button"
-          variant={`${torch ? "default" : "outline"}`}
-          size="icon"
-          onClick={onTorchToggle}
-          className={`${!torch ? "border-gray-500 shadow-dark-gray-md hover:bg-gray-200 hover:text-gray-700" : ""}`}
-        >
-          <IconBolt className="rotate-[270deg]" />
-        </Button>
+        {showTorch && (
+          <Button
+            type="button"
+            variant={`${torch ? "default" : "outline"}`}
+            size="icon"
+            onClick={onTorchToggle}
+            className={`${!torch ? "border-gray-500 shadow-dark-gray-md hover:bg-gray-200 hover:text-gray-700" : ""}`}
+          >
+            <IconBolt className="rotate-[270deg]" />
+          </Button>
+        )}
 
         {/* Resume Scanning Button (conditionally rendered) */}
         {showResumeButton && onResume && (
