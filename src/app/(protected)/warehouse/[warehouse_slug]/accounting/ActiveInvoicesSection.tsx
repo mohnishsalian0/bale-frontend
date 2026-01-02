@@ -39,7 +39,8 @@ export function ActiveInvoicesSection({
   // Dialog states
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceListView | null>(null);
+  const [selectedInvoice, setSelectedInvoice] =
+    useState<InvoiceListView | null>(null);
 
   // Fetch invoices with status filter
   const {
@@ -57,7 +58,8 @@ export function ActiveInvoicesSection({
   });
 
   // Mutations
-  const { delete: deleteInvoice, cancel: cancelInvoice } = useInvoiceMutations();
+  const { delete: deleteInvoice, cancel: cancelInvoice } =
+    useInvoiceMutations();
 
   const invoices = invoicesResponse?.data || [];
 
@@ -73,7 +75,8 @@ export function ActiveInvoicesSection({
   };
 
   const handleCreateAdjustment = (invoice: InvoiceListView) => {
-    const adjustmentType = invoice.invoice_type === "sales" ? "credit" : "debit";
+    const adjustmentType =
+      invoice.invoice_type === "sales" ? "credit" : "debit";
     router.push(
       `/warehouse/${warehouseSlug}/adjustment-notes/create/${adjustmentType}?invoice_number=${invoice.invoice_number}`,
     );

@@ -28,7 +28,11 @@ export function PartnerOutstandingSection({
   const router = useRouter();
 
   // Fetch partners with stats, sorted by outstanding amount
-  const { data: partners = [], isLoading, isError } = usePartnersWithStats({
+  const {
+    data: partners = [],
+    isLoading,
+    isError,
+  } = usePartnersWithStats({
     partner_type: partnerType,
     limit: 5,
     order_by: "credit_aggregates.total_outstanding_amount",
@@ -117,7 +121,9 @@ export function PartnerOutstandingSection({
 
       {partners.length === 0 ? (
         <div className="px-4 py-8 text-center">
-          <p className="text-sm text-gray-500">No outstanding {subtitle.toLowerCase()}</p>
+          <p className="text-sm text-gray-500">
+            No outstanding {subtitle.toLowerCase()}
+          </p>
         </div>
       ) : (
         <div className="flex flex-col border-b border-border">

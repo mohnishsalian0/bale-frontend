@@ -23,7 +23,11 @@ export function PendingQRCodesSection({
   const router = useRouter();
 
   // Fetch pending QR products using the hook
-  const { data: products = [], isLoading, isError } = usePendingQRProducts(warehouse.id);
+  const {
+    data: products = [],
+    isLoading,
+    isError,
+  } = usePendingQRProducts(warehouse.id);
 
   // Loading state
   if (isLoading) {
@@ -35,7 +39,9 @@ export function PendingQRCodesSection({
     return (
       <div className="flex flex-col mt-6">
         <div className="px-4 py-8 text-center">
-          <p className="text-sm text-red-500">Failed to load pending QR codes</p>
+          <p className="text-sm text-red-500">
+            Failed to load pending QR codes
+          </p>
         </div>
       </div>
     );
@@ -48,7 +54,9 @@ export function PendingQRCodesSection({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onNavigate(`/warehouse/${warehouseSlug}/products?pending_qr=true`)}
+          onClick={() =>
+            onNavigate(`/warehouse/${warehouseSlug}/products?pending_qr=true`)
+          }
         >
           View all →
         </Button>

@@ -25,11 +25,17 @@ export function LowStockProductsSection({
   const router = useRouter();
 
   // Fetch low stock products using the hook
-  const { data: products = [], isLoading, isError } = useLowStockProducts(warehouse.id);
+  const {
+    data: products = [],
+    isLoading,
+    isError,
+  } = useLowStockProducts(warehouse.id);
 
   // Loading state
   if (isLoading) {
-    return <DashboardSectionSkeleton title="Low stock products" itemCount={5} />;
+    return (
+      <DashboardSectionSkeleton title="Low stock products" itemCount={5} />
+    );
   }
 
   // Error state
@@ -37,7 +43,9 @@ export function LowStockProductsSection({
     return (
       <div className="flex flex-col mt-6">
         <div className="px-4 py-8 text-center">
-          <p className="text-sm text-red-500">Failed to load low stock products</p>
+          <p className="text-sm text-red-500">
+            Failed to load low stock products
+          </p>
         </div>
       </div>
     );
@@ -50,7 +58,9 @@ export function LowStockProductsSection({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onNavigate(`/warehouse/${warehouseSlug}/products?low_stock=true`)}
+          onClick={() =>
+            onNavigate(`/warehouse/${warehouseSlug}/products?low_stock=true`)
+          }
         >
           View all →
         </Button>

@@ -99,11 +99,12 @@ export default function OrdersPage() {
   const PAGE_SIZE = 25;
 
   // Parse status filter - can be comma-separated like "approval_pending,in_progress"
-  const statusFilter = selectedStatus !== "all"
-    ? selectedStatus.includes(",")
-      ? selectedStatus.split(",") as DisplayStatus[]
-      : (selectedStatus as DisplayStatus)
-    : undefined;
+  const statusFilter =
+    selectedStatus !== "all"
+      ? selectedStatus.includes(",")
+        ? (selectedStatus.split(",") as DisplayStatus[])
+        : (selectedStatus as DisplayStatus)
+      : undefined;
 
   // Fetch orders, customers, and products using TanStack Query with pagination
   const {

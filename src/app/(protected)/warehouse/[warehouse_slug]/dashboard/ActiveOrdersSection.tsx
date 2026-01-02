@@ -125,9 +125,7 @@ export function ActiveOrdersSection({
   // Handler Functions
   // =====================================================
 
-  const handleApprove = (
-    order: SalesOrderListView | PurchaseOrderListView,
-  ) => {
+  const handleApprove = (order: SalesOrderListView | PurchaseOrderListView) => {
     setSelectedOrder(order);
     setShowApprovalDialog(true);
   };
@@ -399,9 +397,7 @@ export function ActiveOrdersSection({
                     ? getPartnerName((order as SalesOrderListView).customer!)
                     : "Unknown Customer"
                   : (order as PurchaseOrderListView).supplier
-                    ? getPartnerName(
-                        (order as PurchaseOrderListView).supplier!,
-                      )
+                    ? getPartnerName((order as PurchaseOrderListView).supplier!)
                     : "Unknown Supplier";
 
               // Get due date based on order type

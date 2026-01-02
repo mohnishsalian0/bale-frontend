@@ -12,7 +12,10 @@ type Ledger = Tables<"ledgers">;
 export interface PartnerFilters extends Record<string, unknown> {
   partner_type?: string | string[]; // Support single or array for IN queries
   limit?: number;
-  order_by?: "first_name" | "last_interaction_at" | "credit_aggregates.total_outstanding_amount";
+  order_by?:
+    | "first_name"
+    | "last_interaction_at"
+    | "credit_aggregates.total_outstanding_amount";
   order_direction?: "asc" | "desc";
 }
 

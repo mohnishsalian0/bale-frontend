@@ -65,11 +65,12 @@ export default function InvoicesPage() {
   const PAGE_SIZE = 25;
 
   // Parse status filter - can be comma-separated like "open,partially_paid"
-  const statusFilter = selectedStatus !== "all"
-    ? selectedStatus.includes(",")
-      ? selectedStatus.split(",") as InvoiceStatus[]
-      : (selectedStatus as InvoiceStatus)
-    : undefined;
+  const statusFilter =
+    selectedStatus !== "all"
+      ? selectedStatus.includes(",")
+        ? (selectedStatus.split(",") as InvoiceStatus[])
+        : (selectedStatus as InvoiceStatus)
+      : undefined;
 
   // Fetch invoices using TanStack Query with pagination
   const {

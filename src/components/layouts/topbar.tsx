@@ -16,7 +16,7 @@ import ImageWrapper from "../ui/image-wrapper";
 import Logo from "../icons/Logo";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Link from "next/link";
-import { SidebarTrigger } from "../ui/sidebar";
+// import { SidebarTrigger } from "../ui/sidebar";
 
 interface TopBarProps {
   onWarehouseClick?: () => void;
