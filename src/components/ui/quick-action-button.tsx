@@ -22,7 +22,7 @@ export function QuickActionButton({ action, onClick }: QuickActionButtonProps) {
       <div className="h-12 min-w-12 px-3 rounded-xl bg-primary-500 flex items-center justify-center">
         <Icon className="h-6 text-white" />
       </div>
-      <span className="text-xs text-center">{action.label}</span>
+      <span className="text-sm leading-[1.5] text-center">{action.label}</span>
     </button>
   );
 }
