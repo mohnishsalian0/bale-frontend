@@ -1,6 +1,6 @@
 import type { Tables, TablesInsert, TablesUpdate } from "./database/supabase";
 
-type Partner = Tables<"partners">;
+export type Partner = Tables<"partners">;
 type PartnerOrderAggregate = Tables<"partner_order_aggregates">;
 type PartnerCreditAggregate = Tables<"partner_credit_aggregates">;
 type Ledger = Tables<"ledgers">;
@@ -12,7 +12,7 @@ type Ledger = Tables<"ledgers">;
 export interface PartnerFilters extends Record<string, unknown> {
   partner_type?: string | string[]; // Support single or array for IN queries
   limit?: number;
-  order_by?: "first_name" | "last_interaction_at";
+  order_by?: "first_name" | "last_interaction_at" | "credit_aggregates.total_outstanding_amount";
   order_direction?: "asc" | "desc";
 }
 
@@ -51,10 +51,10 @@ export interface PartnerListView extends Pick<
 export type PartnerDetailView = Partner;
 
 /**
- * Partner with order statistics for list views
- * Used in: partners list page with order stats
+ * Partner with statistics for list views
+ * Used in: partners list page with stats, accounting dashboard
  */
-export interface PartnerWithOrderStatsListView extends PartnerListView {
+export interface PartnerWithStatsListView extends PartnerListView {
   order_stats: Pick<
     PartnerOrderAggregate,
     | "approval_pending_count"

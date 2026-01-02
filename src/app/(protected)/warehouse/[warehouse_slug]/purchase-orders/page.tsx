@@ -82,7 +82,11 @@ export default function PurchaseOrdersPage() {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
-  const [selectedStatus, setSelectedStatus] = useState("all");
+
+  // Initialize filters from query params
+  const [selectedStatus, setSelectedStatus] = useState(
+    searchParams.get("status") || "all",
+  );
   const [selectedProduct, setSelectedProduct] = useState("all");
   const [selectedSupplier, setSelectedSupplier] = useState("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -90,6 +94,13 @@ export default function PurchaseOrdersPage() {
   // Get current page from URL (default to 1)
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const PAGE_SIZE = 25;
+
+  // Parse status filter - can be comma-separated like "approval_pending,in_progress"
+  const statusFilter = selectedStatus !== "all"
+    ? selectedStatus.includes(",")
+      ? selectedStatus.split(",") as DisplayStatus[]
+      : (selectedStatus as DisplayStatus)
+    : undefined;
 
   // Fetch orders, suppliers, and products using TanStack Query with pagination
   const {
@@ -100,10 +111,7 @@ export default function PurchaseOrdersPage() {
     filters: {
       warehouseId: warehouse.id,
       search_term: debouncedSearchQuery || undefined,
-      status:
-        selectedStatus !== "all"
-          ? (selectedStatus as DisplayStatus)
-          : undefined,
+      status: statusFilter,
       productId: selectedProduct !== "all" ? selectedProduct : undefined,
       supplierId: selectedSupplier !== "all" ? selectedSupplier : undefined,
       date_from: dateRange?.from

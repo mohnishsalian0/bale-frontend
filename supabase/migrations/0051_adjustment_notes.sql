@@ -318,8 +318,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('adjustment_notes.read') AND
-    deleted_at IS NULL
+    authorize('adjustment_notes.read')
 );
 
 -- Authorized users can create adjustment notes

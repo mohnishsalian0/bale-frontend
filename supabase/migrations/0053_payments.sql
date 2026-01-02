@@ -271,8 +271,7 @@ FOR SELECT
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    authorize('payments.read') AND
-    deleted_at IS NULL
+    authorize('payments.read')
 );
 
 -- Authorized users can create payments

@@ -15,7 +15,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import type { ContextMenuItem as MenuItem } from "@/lib/utils/context-menu-items";
+import type { ContextMenuItem as MenuItem } from "@/lib/utils/action-menu";
 
 interface ResponsiveContextMenuProps {
   children: React.ReactNode;

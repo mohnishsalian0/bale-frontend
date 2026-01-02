@@ -26,7 +26,7 @@ import { CancelDialog } from "@/components/layouts/cancel-dialog";
 import { CompleteOrderDialog } from "./CompleteOrderDialog";
 import { toast } from "sonner";
 import { ActionsFooter } from "@/components/layouts/actions-footer";
-import { getPurchaseOrderDetailFooterItems } from "@/lib/utils/context-menu-items";
+import { getPurchaseOrderActions } from "@/lib/utils/action-menu";
 import { ApprovalDialog } from "@/components/layouts/approval-dialog";
 import { DeleteDialog } from "@/components/layouts/delete-dialog";
 import { GoodsInwardSelectionDialog } from "../GoodsInwardSelectionDialog";
@@ -289,7 +289,7 @@ export default function PurchaseOrderDetailLayout({
 
         {/* Bottom Action Bar */}
         <ActionsFooter
-          items={getPurchaseOrderDetailFooterItems(
+          items={getPurchaseOrderActions(
             displayStatusData.status,
             order.has_inward || false,
             {

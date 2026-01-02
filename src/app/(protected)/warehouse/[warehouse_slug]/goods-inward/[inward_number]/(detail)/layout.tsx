@@ -12,7 +12,7 @@ import {
   useGoodsInwardMutations,
 } from "@/lib/query/hooks/stock-flow";
 import { ActionsFooter } from "@/components/layouts/actions-footer";
-import { getGoodsInwardDetailFooterItems } from "@/lib/utils/context-menu-items";
+import { getGoodsInwardActions } from "@/lib/utils/action-menu";
 import { CancelDialog } from "@/components/layouts/cancel-dialog";
 import { DeleteDialog } from "@/components/layouts/delete-dialog";
 import { toast } from "sonner";
@@ -145,7 +145,7 @@ export default function GoodsInwardDetailLayout({
 
         {/* Bottom Action Bar */}
         <ActionsFooter
-          items={getGoodsInwardDetailFooterItems(
+          items={getGoodsInwardActions(
             inward.has_invoice || false,
             inward.is_cancelled || false,
             {

@@ -3,7 +3,8 @@
 interface QuickAction {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  href: string;
+  href?: string;
+  onClick?: () => void;
 }
 
 interface QuickActionButtonProps {

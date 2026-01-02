@@ -136,6 +136,8 @@ export const queryKeys = {
     pendingQR: (warehouseId: string) =>
       ["dashboard", "pending-qr", warehouseId] as const,
     recentPartners: () => ["dashboard", "recent-partners"] as const,
+    accounting: () => ["dashboard", "accounting"] as const,
+    orders: () => ["dashboard", "orders"] as const,
   },
 
   // Catalog (Public)

@@ -49,16 +49,27 @@ export default function InvoicesPage() {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+  // Initialize filters from query params
   const [selectedType, setSelectedType] = useState<"sales" | "purchase">(
-    "sales",
+    (searchParams.get("invoice_type") as "sales" | "purchase") || "sales",
   );
-  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState(
+    searchParams.get("status") || "all",
+  );
   const [selectedPartner, setSelectedPartner] = useState("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   // Get current page from URL (default to 1)
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const PAGE_SIZE = 25;
+
+  // Parse status filter - can be comma-separated like "open,partially_paid"
+  const statusFilter = selectedStatus !== "all"
+    ? selectedStatus.includes(",")
+      ? selectedStatus.split(",") as InvoiceStatus[]
+      : (selectedStatus as InvoiceStatus)
+    : undefined;
 
   // Fetch invoices using TanStack Query with pagination
   const {
@@ -69,10 +80,7 @@ export default function InvoicesPage() {
     filters: {
       search: debouncedSearchQuery || undefined,
       invoice_type: selectedType,
-      status:
-        selectedStatus !== "all"
-          ? (selectedStatus as InvoiceStatus)
-          : undefined,
+      status: statusFilter,
       partner_id: selectedPartner !== "all" ? selectedPartner : undefined,
       date_from: dateRange?.from
         ? format(dateRange.from, "yyyy-MM-dd")

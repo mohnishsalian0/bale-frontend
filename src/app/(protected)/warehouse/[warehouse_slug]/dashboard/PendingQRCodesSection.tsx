@@ -1,23 +1,46 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ImageWrapper from "@/components/ui/image-wrapper";
+import { DashboardSectionSkeleton } from "@/components/layouts/dashboard-section-skeleton";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
-import type { PendingQRProduct } from "@/lib/queries/dashboard";
+import { usePendingQRProducts } from "@/lib/query/hooks/dashboard";
+import { useSession } from "@/contexts/session-context";
 import type { StockType } from "@/types/database/enums";
 
 interface PendingQRCodesSectionProps {
-  products: PendingQRProduct[];
   warehouseSlug: string;
   onNavigate: (path: string) => void;
 }
 
 export function PendingQRCodesSection({
-  products,
   warehouseSlug,
   onNavigate,
 }: PendingQRCodesSectionProps) {
+  const { warehouse } = useSession();
+  const router = useRouter();
+
+  // Fetch pending QR products using the hook
+  const { data: products = [], isLoading, isError } = usePendingQRProducts(warehouse.id);
+
+  // Loading state
+  if (isLoading) {
+    return <DashboardSectionSkeleton title="Pending QR codes" itemCount={5} />;
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <div className="flex flex-col mt-6">
+        <div className="px-4 py-8 text-center">
+          <p className="text-sm text-red-500">Failed to load pending QR codes</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col mt-6 pb-4">
       <div className="flex items-center justify-between px-4 py-2">
@@ -25,7 +48,7 @@ export function PendingQRCodesSection({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onNavigate(`/warehouse/${warehouseSlug}/inventory`)}
+          onClick={() => onNavigate(`/warehouse/${warehouseSlug}/products?pending_qr=true`)}
         >
           View all →
         </Button>
@@ -42,8 +65,8 @@ export function PendingQRCodesSection({
               key={`pending-qr-${product.id}`}
               className="rounded-none border-x-0 border-b-0 shadow-none bg-transparent cursor-pointer hover:bg-gray-100 transition-colors"
               onClick={() =>
-                onNavigate(
-                  `/warehouse/${warehouseSlug}/inventory/${product.sequence_number}`,
+                router.push(
+                  `/warehouse/${warehouseSlug}/products/${product.sequence_number}`,
                 )
               }
             >
@@ -62,7 +85,7 @@ export function PendingQRCodesSection({
                   <p className="text-base font-medium text-gray-700">
                     {product.name || "Unknown product"}
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-gray-500">
                     {getProductInfo(product) || "No details"}
                   </p>
                 </div>

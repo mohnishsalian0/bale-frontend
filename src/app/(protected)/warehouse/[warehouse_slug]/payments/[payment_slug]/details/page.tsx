@@ -23,7 +23,7 @@ import { PaymentModeBadge } from "@/components/ui/payment-mode-badge";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { ActionsFooter } from "@/components/layouts/actions-footer";
-import { getPaymentDetailFooterItems } from "@/lib/utils/context-menu-items";
+import { getPaymentActions } from "@/lib/utils/action-menu";
 import { DeleteDialog } from "@/components/layouts/delete-dialog";
 import { CancelDialog } from "@/components/layouts/cancel-dialog";
 import { toast } from "sonner";
@@ -93,7 +93,7 @@ export default function PaymentDetailsPage({ params }: PageParams) {
 
   // Footer action items
   const footerItems = payment
-    ? getPaymentDetailFooterItems(payment, {
+    ? getPaymentActions(payment, {
         onEdit: () => {
           router.push(
             `/warehouse/${warehouse_slug}/payments/${payment_slug}/edit`,

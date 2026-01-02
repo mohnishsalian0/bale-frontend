@@ -29,7 +29,7 @@ import { useCompany } from "@/lib/query/hooks/company";
 import { OrderConfirmationPDF } from "@/components/pdf/OrderConfirmationPDF";
 import { pdf } from "@react-pdf/renderer";
 import { ActionsFooter } from "@/components/layouts/actions-footer";
-import { getSalesOrderDetailFooterItems } from "@/lib/utils/context-menu-items";
+import { getSalesOrderActions } from "@/lib/utils/action-menu";
 import { ApprovalDialog } from "@/components/layouts/approval-dialog";
 import { DeleteDialog } from "@/components/layouts/delete-dialog";
 import { GoodsOutwardSelectionDialog } from "../GoodsOutwardSelectionDialog";
@@ -321,7 +321,7 @@ export default function SalesOrderDetailLayout({
 
         {/* Bottom Action Bar */}
         <ActionsFooter
-          items={getSalesOrderDetailFooterItems(
+          items={getSalesOrderActions(
             displayStatusData.status,
             order.has_outward || false,
             {

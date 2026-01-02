@@ -26,7 +26,7 @@ import {
   useProductAttributes,
 } from "@/lib/query/hooks/products";
 import { ProductQuantitySheet } from "@/components/layouts/product-quantity-sheet";
-import { ProductFormSheet } from "@/app/(protected)/warehouse/[warehouse_slug]/inventory/ProductFormSheet";
+import { ProductFormSheet } from "@/app/(protected)/warehouse/[warehouse_slug]/products/ProductFormSheet";
 import { getProductsWithInventoryByIds } from "@/lib/queries/products";
 
 interface ProductWithSelection extends ProductWithInventoryListView {

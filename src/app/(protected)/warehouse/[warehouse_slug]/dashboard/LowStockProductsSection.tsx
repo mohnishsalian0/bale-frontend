@@ -1,25 +1,48 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ImageWrapper from "@/components/ui/image-wrapper";
+import { DashboardSectionSkeleton } from "@/components/layouts/dashboard-section-skeleton";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { IconAlertTriangle } from "@tabler/icons-react";
-import type { ProductWithInventoryListView } from "@/types/products.types";
+import { useLowStockProducts } from "@/lib/query/hooks/products";
+import { useSession } from "@/contexts/session-context";
 import type { StockType, MeasuringUnit } from "@/types/database/enums";
 
 interface LowStockProductsSectionProps {
-  products: ProductWithInventoryListView[];
   warehouseSlug: string;
   onNavigate: (path: string) => void;
 }
 
 export function LowStockProductsSection({
-  products,
   warehouseSlug,
   onNavigate,
 }: LowStockProductsSectionProps) {
+  const { warehouse } = useSession();
+  const router = useRouter();
+
+  // Fetch low stock products using the hook
+  const { data: products = [], isLoading, isError } = useLowStockProducts(warehouse.id);
+
+  // Loading state
+  if (isLoading) {
+    return <DashboardSectionSkeleton title="Low stock products" itemCount={5} />;
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <div className="flex flex-col mt-6">
+        <div className="px-4 py-8 text-center">
+          <p className="text-sm text-red-500">Failed to load low stock products</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col mt-6">
       <div className="flex items-center justify-between px-4 py-2">
@@ -27,7 +50,7 @@ export function LowStockProductsSection({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onNavigate(`/warehouse/${warehouseSlug}/inventory`)}
+          onClick={() => onNavigate(`/warehouse/${warehouseSlug}/products?low_stock=true`)}
         >
           View all →
         </Button>
@@ -44,8 +67,8 @@ export function LowStockProductsSection({
               key={`low-stock-${product.id}`}
               className="rounded-none border-x-0 border-b-0 shadow-none bg-transparent cursor-pointer hover:bg-gray-100 transition-colors"
               onClick={() =>
-                onNavigate(
-                  `/warehouse/${warehouseSlug}/inventory/${product.sequence_number}`,
+                router.push(
+                  `/warehouse/${warehouseSlug}/products/${product.sequence_number}`,
                 )
               }
             >
@@ -64,7 +87,7 @@ export function LowStockProductsSection({
                   <p className="text-base font-medium text-gray-700">
                     {product.name}
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-gray-500">
                     {getProductInfo(product) || "No details"}
                   </p>
                 </div>

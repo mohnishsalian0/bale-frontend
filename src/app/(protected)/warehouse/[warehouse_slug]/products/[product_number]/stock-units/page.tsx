@@ -100,7 +100,7 @@ export default function StockUnitsPage({ params }: PageParams) {
 
   const handlePageChange = (page: number) => {
     router.push(
-      `/warehouse/${warehouse_slug}/inventory/${product_number}/stock-units?page=${page}`,
+      `/warehouse/${warehouse_slug}/products/${product_number}/stock-units?page=${page}`,
     );
   };
 

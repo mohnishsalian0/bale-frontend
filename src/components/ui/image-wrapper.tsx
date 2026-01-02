@@ -108,7 +108,7 @@ export default function ImageWrapper({
     <div
       className={cn(
         imageWrapperVariants({ size, shape }),
-        "bg-gray-100 border border-border flex items-center justify-center",
+        "bg-gray-100 border-2 border-border flex items-center justify-center",
       )}
     >
       {renderPlaceholder()}

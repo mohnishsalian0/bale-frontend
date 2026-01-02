@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { IconDotsVertical } from "@tabler/icons-react";
-import type { ContextMenuItem } from "@/lib/utils/context-menu-items";
+import type { ContextMenuItem } from "@/lib/utils/action-menu";
 
 interface ActionsFooterProps {
   items: ContextMenuItem[];
