@@ -66,6 +66,8 @@ export interface InvoiceListView extends Pick<
   | "party_display_name"
   | "warehouse_id"
   | "has_payment"
+  | "has_adjustment"
+  | "is_cancelled"
   | "exported_to_tally_at"
 > {
   party_ledger: Pick<Ledger, "id" | "name" | "partner_id"> | null;

@@ -7,46 +7,42 @@ import {
   QuickActionButton,
   type QuickAction,
 } from "@/components/ui/quick-action-button";
-import { IconShirt, IconQrcode } from "@tabler/icons-react";
-import IconGoodsInward from "@/components/icons/IconGoodsInward";
-import IconGoodsOutward from "@/components/icons/IconGoodsOutward";
+import {
+  IconBolt,
+  IconShoppingCart,
+  IconTruckLoading,
+} from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { LowStockProductsSection } from "../dashboard/LowStockProductsSection";
-import { PendingQRCodesSection } from "../dashboard/PendingQRCodesSection";
+import { ActiveOrdersSection } from "../dashboard/ActiveOrdersSection";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-export default function InventoryPage() {
+export default function OrdersPage() {
   const router = useRouter();
   const { warehouse } = useSession();
   const isMobile = useIsMobile();
 
-  // TODO: Replace with real aggregates from database when available
-  const staticLowStockCount = "[X]";
-  const staticInStockQuantity = "[Y]";
-
   // Quick actions array
   const quickActions: QuickAction[] = [
     {
-      icon: IconShirt,
-      label: "Create product",
-      href: `/warehouse/${warehouse.slug}/products`,
+      icon: IconBolt,
+      label: "Quick sale",
+      href: `/warehouse/${warehouse.slug}/sales-orders/quick-create`,
     },
     {
-      icon: IconGoodsInward,
-      label: "Goods inward",
-      href: `/warehouse/${warehouse.slug}/goods-inward/create`,
+      icon: IconShoppingCart,
+      label: "Sales order",
+      href: `/warehouse/${warehouse.slug}/sales-orders/create`,
     },
     {
-      icon: IconGoodsOutward,
-      label: "Goods outward",
-      href: `/warehouse/${warehouse.slug}/goods-outward/create`,
-    },
-    {
-      icon: IconQrcode,
-      label: "QR code batch",
-      href: `/warehouse/${warehouse.slug}/qr-codes/create`,
+      icon: IconTruckLoading,
+      label: "Purchase order",
+      href: `/warehouse/${warehouse.slug}/purchase-orders/create`,
     },
   ];
+
+  // TODO: Replace with real aggregates from database when available
+  const staticPendingOrdersCount = "[X]";
+  const staticPendingFulfillment = "[Y]";
 
   return (
     <div className="relative flex flex-col grow">
@@ -56,17 +52,17 @@ export default function InventoryPage() {
       >
         <div className={`${isMobile ? "w-full" : "flex-1"}`}>
           <div className="mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">Inventory</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
             <p className="text-sm text-gray-500 mt-2">
-              <span className="text-yellow-700 font-medium">
-                {staticLowStockCount}
+              <span className="text-teal-700 font-medium">
+                {staticPendingOrdersCount}
               </span>
-              <span> low stock</span>
+              <span> pending orders</span>
               <span> • </span>
               <span className="text-teal-700 font-medium">
-                {staticInStockQuantity}
+                {staticPendingFulfillment}
               </span>
-              <span className="text-gray-500"> in stock</span>
+              <span className="text-gray-500"> units pending fulfillment</span>
             </p>
           </div>
         </div>
@@ -74,8 +70,8 @@ export default function InventoryPage() {
         {/* Mascot */}
         <div className="relative size-25 shrink-0">
           <Image
-            src="/illustrations/inventory-shelf.png"
-            alt="Inventory"
+            src="/illustrations/sales-order-cart.png"
+            alt="Orders"
             fill
             sizes="100px"
             className="object-contain"
@@ -86,7 +82,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-3 md:grid-cols-6 px-2 mt-6">
+      <div className="grid grid-cols-4 md:grid-cols-6 px-2 mt-6">
         {quickActions.map((action) => (
           <QuickActionButton
             key={action.label}
@@ -107,36 +103,35 @@ export default function InventoryPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => router.push(`/warehouse/${warehouse.slug}/products`)}
+          onClick={() =>
+            router.push(`/warehouse/${warehouse.slug}/sales-orders`)
+          }
         >
-          View all products
+          View all sales
         </Button>
         <Button
           variant="outline"
           size="sm"
-          onClick={() => router.push(`/warehouse/${warehouse.slug}/stock-flow`)}
+          onClick={() =>
+            router.push(`/warehouse/${warehouse.slug}/purchase-orders`)
+          }
         >
-          View all goods movement
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => router.push(`/warehouse/${warehouse.slug}/qr-codes`)}
-        >
-          View all QR batches
+          View all purchases
         </Button>
       </div>
 
-      {/* Low Stock Products Section */}
-      <LowStockProductsSection
+      {/* Active Sales Orders Section */}
+      <ActiveOrdersSection
+        title="Active sales orders"
+        orderType="sales"
         warehouseSlug={warehouse.slug}
-        onNavigate={(path) => router.push(path)}
       />
 
-      {/* Pending QR Codes Section */}
-      <PendingQRCodesSection
+      {/* Active Purchase Orders Section */}
+      <ActiveOrdersSection
+        title="Active purchase orders"
+        orderType="purchase"
         warehouseSlug={warehouse.slug}
-        onNavigate={(path) => router.push(path)}
       />
     </div>
   );

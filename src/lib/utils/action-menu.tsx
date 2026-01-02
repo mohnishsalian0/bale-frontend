@@ -18,6 +18,7 @@ import type { SalesOrderStatus, PartnerType } from "@/types/database/enums";
 import type { Invoice } from "@/types/invoices.types";
 import type { Payment } from "@/types/payments.types";
 import type { AdjustmentNote } from "@/types/adjustment-notes.types";
+import type { Partner } from "@/types/partners.types";
 
 export type ContextMenuItem = {
   label: string;
@@ -213,8 +214,8 @@ export function getProductContextMenuItems(
   return items;
 }
 
-// Sales Order Detail Footer Items
-export interface SalesOrderDetailFooterCallbacks {
+// Sales Order Actions
+export interface SalesOrderActionsCallbacks {
   onApprove: () => void;
   onEdit: () => void;
   onCreateOutward: () => void;
@@ -226,10 +227,10 @@ export interface SalesOrderDetailFooterCallbacks {
   onDelete: () => void;
 }
 
-export function getSalesOrderDetailFooterItems(
+export function getSalesOrderActions(
   displayStatus: SalesOrderStatus | "overdue",
   has_outward: boolean,
-  callbacks: SalesOrderDetailFooterCallbacks,
+  callbacks: SalesOrderActionsCallbacks,
   options?: {
     downloading?: boolean;
   },
@@ -323,8 +324,8 @@ export function getSalesOrderDetailFooterItems(
   return items;
 }
 
-// Purchase Order Detail Footer Items
-export interface PurchaseOrderDetailFooterCallbacks {
+// Purchase Order Actions
+export interface PurchaseOrderActionsCallbacks {
   onApprove: () => void;
   onEdit: () => void;
   onCreateInward: () => void;
@@ -336,10 +337,10 @@ export interface PurchaseOrderDetailFooterCallbacks {
   onDelete: () => void;
 }
 
-export function getPurchaseOrderDetailFooterItems(
+export function getPurchaseOrderActions(
   displayStatus: SalesOrderStatus | "overdue",
   has_inward: boolean,
-  callbacks: PurchaseOrderDetailFooterCallbacks,
+  callbacks: PurchaseOrderActionsCallbacks,
   options?: {
     downloading?: boolean;
   },
@@ -431,19 +432,19 @@ export function getPurchaseOrderDetailFooterItems(
   return items;
 }
 
-// Product Detail Footer Items
-export interface ProductDetailFooterCallbacks {
+// Product Actions
+export interface ProductActionsCallbacks {
   onToggleCatalog: () => void;
   onDelete: () => void;
   onEdit: () => void;
   onShare: () => void;
 }
 
-export function getProductDetailFooterItems(
+export function getProductActions(
   product: {
     show_on_catalog: boolean | null;
   },
-  callbacks: ProductDetailFooterCallbacks,
+  callbacks: ProductActionsCallbacks,
 ): ContextMenuItem[] {
   const items: ContextMenuItem[] = [
     // Primary button (flex-2)
@@ -478,22 +479,25 @@ export function getProductDetailFooterItems(
   return items;
 }
 
-// Partner Detail Footer Items
-export interface PartnerDetailFooterCallbacks {
+// Partner Actions
+export interface PartnerActionsCallbacks {
   onDelete: () => void;
   onEdit: () => void;
   onCreateSalesOrder?: () => void;
   onCreatePurchaseOrder?: () => void;
+  onCreateSalesInvoice?: () => void;
+  onCreatePurchaseInvoice?: () => void;
+  onRecordReceipt?: () => void;
+  onRecordPayment?: () => void;
 }
 
-export function getPartnerDetailFooterItems(
-  partner: {
-    partner_type: PartnerType;
-  },
-  callbacks: PartnerDetailFooterCallbacks,
+export function getPartnerActions(
+  partner: Pick<Partner, "partner_type">,
+  callbacks: PartnerActionsCallbacks,
 ): ContextMenuItem[] {
   const isCustomer = partner.partner_type === "customer";
-  const isSupplier = partner.partner_type === "supplier";
+  const isSupplier =
+    partner.partner_type === "supplier" || partner.partner_type === "vendor";
 
   const items: ContextMenuItem[] = [];
 
@@ -522,7 +526,37 @@ export function getPartnerDetailFooterItems(
     variant: "outline",
   });
 
-  // Dropdown items
+  // Dropdown items - Invoice actions
+  if (isCustomer && callbacks.onCreateSalesInvoice) {
+    items.push({
+      label: "Create sales invoice",
+      icon: IconReceiptRupee,
+      onClick: callbacks.onCreateSalesInvoice,
+    });
+  } else if (isSupplier && callbacks.onCreatePurchaseInvoice) {
+    items.push({
+      label: "Create purchase invoice",
+      icon: IconReceiptRupee,
+      onClick: callbacks.onCreatePurchaseInvoice,
+    });
+  }
+
+  // Dropdown items - Payment actions
+  if (isCustomer && callbacks.onRecordReceipt) {
+    items.push({
+      label: "Record receipt",
+      icon: IconCurrencyRupee,
+      onClick: callbacks.onRecordReceipt,
+    });
+  } else if (isSupplier && callbacks.onRecordPayment) {
+    items.push({
+      label: "Record payment",
+      icon: IconCurrencyRupee,
+      onClick: callbacks.onRecordPayment,
+    });
+  }
+
+  // Delete
   items.push({
     label: "Delete",
     icon: IconTrash,
@@ -534,8 +568,8 @@ export function getPartnerDetailFooterItems(
   return items;
 }
 
-// Invoice Detail Footer Items
-export interface InvoiceDetailFooterCallbacks {
+// Invoice Actions
+export interface InvoiceActionsCallbacks {
   onMakePayment: () => void;
   onDownload: () => void;
   onCreateAdjustment: () => void;
@@ -544,7 +578,7 @@ export interface InvoiceDetailFooterCallbacks {
   onCancel: () => void;
 }
 
-export function getInvoiceDetailFooterItems(
+export function getInvoiceActions(
   invoice: Pick<
     Invoice,
     | "status"
@@ -554,7 +588,7 @@ export function getInvoiceDetailFooterItems(
     | "has_adjustment"
     | "exported_to_tally_at"
   >,
-  callbacks: InvoiceDetailFooterCallbacks,
+  callbacks: InvoiceActionsCallbacks,
 ): ContextMenuItem[] {
   const items: ContextMenuItem[] = [];
 
@@ -625,16 +659,16 @@ export function getInvoiceDetailFooterItems(
   return items;
 }
 
-// Payment Detail Footer Items
-export interface PaymentDetailFooterCallbacks {
+// Payment Actions
+export interface PaymentActionsCallbacks {
   onEdit: () => void;
   onDelete: () => void;
   onCancel: () => void;
 }
 
-export function getPaymentDetailFooterItems(
+export function getPaymentActions(
   payment: Pick<Payment, "is_cancelled" | "exported_to_tally_at">,
-  callbacks: PaymentDetailFooterCallbacks,
+  callbacks: PaymentActionsCallbacks,
 ): ContextMenuItem[] {
   const items: ContextMenuItem[] = [];
 
@@ -669,16 +703,16 @@ export function getPaymentDetailFooterItems(
   return items;
 }
 
-// Adjustment Note Detail Footer Items
-export interface AdjustmentNoteDetailFooterCallbacks {
+// Adjustment Note Actions
+export interface AdjustmentNoteActionsCallbacks {
   onEdit: () => void;
   onDelete: () => void;
   onCancel: () => void;
 }
 
-export function getAdjustmentNoteDetailFooterItems(
+export function getAdjustmentNoteActions(
   adjustmentNote: Pick<AdjustmentNote, "is_cancelled" | "exported_to_tally_at">,
-  callbacks: AdjustmentNoteDetailFooterCallbacks,
+  callbacks: AdjustmentNoteActionsCallbacks,
 ): ContextMenuItem[] {
   const items: ContextMenuItem[] = [];
 
@@ -718,23 +752,23 @@ export function getAdjustmentNoteDetailFooterItems(
 }
 
 // ============================================================================
-// GOODS INWARD DETAIL FOOTER ITEMS
+// GOODS INWARD ACTIONS
 // ============================================================================
 
-export interface GoodsInwardDetailFooterCallbacks {
+export interface GoodsInwardActionsCallbacks {
   onEdit: () => void;
   onDelete: () => void;
   onCancel: () => void;
 }
 
 /**
- * Get footer action items for goods inward detail page
+ * Get action items for goods inward
  * Shows edit button if not invoiced or cancelled
  */
-export function getGoodsInwardDetailFooterItems(
+export function getGoodsInwardActions(
   hasInvoice: boolean,
   isCancelled: boolean,
-  callbacks: GoodsInwardDetailFooterCallbacks,
+  callbacks: GoodsInwardActionsCallbacks,
 ): ContextMenuItem[] {
   const items: ContextMenuItem[] = [];
 
@@ -769,23 +803,23 @@ export function getGoodsInwardDetailFooterItems(
 }
 
 // ============================================================================
-// GOODS OUTWARD DETAIL FOOTER ITEMS
+// GOODS OUTWARD ACTIONS
 // ============================================================================
 
-export interface GoodsOutwardDetailFooterCallbacks {
+export interface GoodsOutwardActionsCallbacks {
   onEdit: () => void;
   onDelete: () => void;
   onCancel: () => void;
 }
 
 /**
- * Get footer action items for goods outward detail page
+ * Get action items for goods outward
  * Shows edit button if not invoiced or cancelled
  */
-export function getGoodsOutwardDetailFooterItems(
+export function getGoodsOutwardActions(
   hasInvoice: boolean,
   isCancelled: boolean,
-  callbacks: GoodsOutwardDetailFooterCallbacks,
+  callbacks: GoodsOutwardActionsCallbacks,
 ): ContextMenuItem[] {
   const items: ContextMenuItem[] = [];
 

@@ -10,7 +10,7 @@ import { PieceQuantitySheet } from "../PieceQuantitySheet";
 import { PartnerSelectionStep } from "@/app/(protected)/warehouse/[warehouse_slug]/stock-flow/PartnerSelectionStep";
 import { InwardLinkToStep, InwardLinkToData } from "../InwardLinkToStep";
 import { InwardDetailsStep } from "../InwardDetailsStep";
-import { ProductFormSheet } from "../../inventory/ProductFormSheet";
+import { ProductFormSheet } from "../../products/ProductFormSheet";
 import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useStockFlowMutations } from "@/lib/query/hooks/stock-flow";
 import type { TablesInsert } from "@/types/database/supabase";

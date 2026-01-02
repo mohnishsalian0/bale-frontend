@@ -24,7 +24,7 @@ import {
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { toast } from "sonner";
 import { ActionsFooter } from "@/components/layouts/actions-footer";
-import { getProductDetailFooterItems } from "@/lib/utils/context-menu-items";
+import { getProductActions } from "@/lib/utils/action-menu";
 
 interface LayoutParams {
   params: Promise<{
@@ -174,7 +174,7 @@ export default function ProductDetailLayout({
     product.measuring_unit as MeasuringUnit,
   );
 
-  const basePath = `/warehouse/${warehouse_slug}/inventory/${product_number}`;
+  const basePath = `/warehouse/${warehouse_slug}/products/${product_number}`;
 
   return (
     <div className="flex flex-col grow">
@@ -273,7 +273,7 @@ export default function ProductDetailLayout({
 
         {/* Bottom Action Bar */}
         <ActionsFooter
-          items={getProductDetailFooterItems(
+          items={getProductActions(
             { show_on_catalog: product.show_on_catalog },
             {
               onToggleCatalog: handleToggleCatalogVisibility,

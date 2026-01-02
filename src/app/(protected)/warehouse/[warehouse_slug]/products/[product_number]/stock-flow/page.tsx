@@ -178,13 +178,13 @@ export default function StockFlowPage({ params }: PageParams) {
 
   const handleFilterChange = (filter: string) => {
     router.push(
-      `/warehouse/${warehouse_slug}/inventory/${product_number}/stock-flow?filter=${filter}&page=1`,
+      `/warehouse/${warehouse_slug}/products/${product_number}/stock-flow?filter=${filter}&page=1`,
     );
   };
 
   const handlePageChange = (page: number) => {
     router.push(
-      `/warehouse/${warehouse_slug}/inventory/${product_number}/stock-flow?filter=${selectedFilter}&page=${page}`,
+      `/warehouse/${warehouse_slug}/products/${product_number}/stock-flow?filter=${selectedFilter}&page=${page}`,
     );
   };
 

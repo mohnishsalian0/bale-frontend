@@ -25,7 +25,7 @@ import { PartnersSection } from "./PartnersSection";
 import { ActiveSalesOrdersSection } from "./ActiveSalesOrdersSection";
 import { LowStockProductsSection } from "./LowStockProductsSection";
 import { PendingQRCodesSection } from "./PendingQRCodesSection";
-import { ProductFormSheet } from "../inventory/ProductFormSheet";
+import { ProductFormSheet } from "../products/ProductFormSheet";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -40,8 +40,6 @@ export default function DashboardPage() {
   } = useDashboardData(warehouse.id);
 
   const salesOrders = data.salesOrders;
-  const lowStockProducts = data.lowStockProducts;
-  const pendingQRProducts = data.pendingQRProducts;
   const recentCustomers = data.recentCustomers;
   const recentSuppliers = data.recentSuppliers;
 
@@ -54,7 +52,7 @@ export default function DashboardPage() {
     {
       icon: IconShirt,
       label: "Create product",
-      href: `/warehouse/${warehouse.slug}/inventory?action=add`,
+      onClick: () => setShowCreateProduct(true),
     },
     {
       icon: IconGoodsInward,
@@ -127,7 +125,7 @@ export default function DashboardPage() {
             onClick={() => {
               if (action.label === "Create product") {
                 setShowCreateProduct(true);
-              } else {
+              } else if (action.href) {
                 router.push(action.href);
               }
             }}
@@ -164,14 +162,12 @@ export default function DashboardPage() {
 
       {/* Low Stock Products Section */}
       <LowStockProductsSection
-        products={lowStockProducts}
         warehouseSlug={warehouse.slug}
         onNavigate={(path) => router.push(path)}
       />
 
       {/* Pending QR Codes Section */}
       <PendingQRCodesSection
-        products={pendingQRProducts}
         warehouseSlug={warehouse.slug}
         onNavigate={(path) => router.push(path)}
       />

@@ -29,7 +29,7 @@ import { useSalesOrders } from "@/lib/query/hooks/sales-orders";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { toast } from "sonner";
 import { ActionsFooter } from "@/components/layouts/actions-footer";
-import { getPartnerDetailFooterItems } from "@/lib/utils/context-menu-items";
+import { getPartnerActions } from "@/lib/utils/action-menu";
 
 interface LayoutParams {
   params: Promise<{
@@ -277,7 +277,7 @@ export default function PartnerDetailLayout({
 
         {/* Bottom Action Bar */}
         <ActionsFooter
-          items={getPartnerDetailFooterItems(
+          items={getPartnerActions(
             { partner_type: partner.partner_type as PartnerType },
             {
               onDelete: () => setShowDeleteDialog(true),

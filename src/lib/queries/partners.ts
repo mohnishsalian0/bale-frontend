@@ -4,7 +4,7 @@ import type {
   PartnerFilters,
   PartnerListView,
   PartnerDetailView,
-  PartnerWithOrderStatsListView,
+  PartnerWithStatsListView,
   PartnerWithOrderStatsDetailView,
   PartnerInsert,
   PartnerUpdate,
@@ -43,7 +43,7 @@ export const PARTNER_WITH_ORDER_STATS_DETAIL_VIEW_SELECT = `
   credit_aggregates:partner_credit_aggregates(*)
 `;
 
-// Select query for PartnerWithOrderStatsListView
+// Select query for PartnerWithStatsListView
 export const PARTNER_WITH_ORDER_STATS_LIST_VIEW_SELECT = `
   id,
   first_name,
@@ -143,7 +143,7 @@ export async function getPartners(
  */
 export async function getPartnersWithStats(
   filters?: PartnerFilters,
-): Promise<PartnerWithOrderStatsListView[]> {
+): Promise<PartnerWithStatsListView[]> {
   const supabase = createClient();
 
   let query = supabase
@@ -163,7 +163,14 @@ export async function getPartnersWithStats(
   // Apply ordering (defaults to first_name ascending)
   const orderBy = filters?.order_by || "first_name";
   const ascending = filters?.order_direction !== "desc";
-  query = query.order(orderBy, { ascending });
+
+  // Handle nested field ordering from joined tables (e.g., "credit_aggregates.total_outstanding_amount")
+  if (orderBy.includes(".")) {
+    const [foreignTable, field] = orderBy.split(".");
+    query = query.order(field, { ascending, foreignTable });
+  } else {
+    query = query.order(orderBy, { ascending });
+  }
 
   // Apply limit
   if (filters?.limit) {
@@ -174,7 +181,7 @@ export async function getPartnersWithStats(
 
   if (error) throw error;
 
-  // Transform the data to match PartnerWithOrderStatsListView type
+  // Transform the data to match PartnerWithStatsListView type
   // Supabase returns ledger as array, but we want single object
   const transformedData = (data || []).map((partner) => ({
     ...partner,
@@ -185,7 +192,7 @@ export async function getPartnersWithStats(
     credit_aggregates: Array.isArray(partner.credit_aggregates)
       ? partner.credit_aggregates[0]
       : partner.credit_aggregates,
-  })) as PartnerWithOrderStatsListView[];
+  })) as PartnerWithStatsListView[];
 
   return transformedData;
 }

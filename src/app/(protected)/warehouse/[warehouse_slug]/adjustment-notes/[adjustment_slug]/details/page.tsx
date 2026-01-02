@@ -27,7 +27,7 @@ import { formatAbsoluteDate } from "@/lib/utils/date";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { ActionsFooter } from "@/components/layouts/actions-footer";
-import { getAdjustmentNoteDetailFooterItems } from "@/lib/utils/context-menu-items";
+import { getAdjustmentNoteActions } from "@/lib/utils/action-menu";
 import { DeleteDialog } from "@/components/layouts/delete-dialog";
 import { CancelDialog } from "@/components/layouts/cancel-dialog";
 import { toast } from "sonner";
@@ -118,7 +118,7 @@ export default function AdjustmentNoteDetailsPage({ params }: PageParams) {
 
   // Footer action items
   const footerItems = adjustmentNote
-    ? getAdjustmentNoteDetailFooterItems(adjustmentNote, {
+    ? getAdjustmentNoteActions(adjustmentNote, {
         onEdit: () => {
           router.push(
             `/warehouse/${warehouse_slug}/adjustment-notes/${adjustment_slug}/edit`,

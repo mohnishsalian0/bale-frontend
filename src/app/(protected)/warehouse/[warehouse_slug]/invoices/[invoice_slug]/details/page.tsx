@@ -37,7 +37,7 @@ import { getPaymentAllocationSummary } from "@/lib/utils/payment";
 import { getAdjustmentItemSummary } from "@/lib/utils/adjustment-notes";
 import type { PaymentAllocationListView } from "@/types/payments.types";
 import { ActionsFooter } from "@/components/layouts/actions-footer";
-import { getInvoiceDetailFooterItems } from "@/lib/utils/context-menu-items";
+import { getInvoiceActions } from "@/lib/utils/action-menu";
 import { DeleteDialog } from "@/components/layouts/delete-dialog";
 import { CancelDialog } from "@/components/layouts/cancel-dialog";
 import { toast } from "sonner";
@@ -184,7 +184,7 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
 
   // Footer action items
   const footerItems = invoice
-    ? getInvoiceDetailFooterItems(invoice, {
+    ? getInvoiceActions(invoice, {
         onMakePayment: handleMakePayment,
         onDownload: () => {
           // TODO: Implement download

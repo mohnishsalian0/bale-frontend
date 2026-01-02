@@ -12,21 +12,31 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { path: "dashboard", label: "Home", icon: "/illustrations/dashboard.png" },
+  // { path: "dashboard", label: "Home", icon: "/illustrations/dashboard.png" },
   {
     path: "inventory",
     label: "Inventory",
     icon: "/illustrations/inventory.png",
   },
+  // {
+  //   path: "stock-flow",
+  //   label: "Stock flow",
+  //   icon: "/illustrations/stock-flow.png",
+  // },
+  // {
+  //   path: "sales-orders",
+  //   label: "Sales orders",
+  //   icon: "/illustrations/sales-order.png",
+  // },
   {
-    path: "stock-flow",
-    label: "Stock flow",
-    icon: "/illustrations/stock-flow.png",
+    path: "orders",
+    label: "Orders",
+    icon: "/illustrations/sales-order-cart.png",
   },
   {
-    path: "sales-orders",
-    label: "Sales orders",
-    icon: "/illustrations/sales-order.png",
+    path: "accounting",
+    label: "Bills & Payments",
+    icon: "/illustrations/cash-register.png",
   },
 ];
 
