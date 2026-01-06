@@ -1,7 +1,10 @@
-import type { PurchaseOrderStatus } from "@/types/database/enums";
+import type {
+  MeasuringUnit,
+  PurchaseOrderStatus,
+} from "@/types/database/enums";
 import { PurchaseOrderItemListView } from "@/types/purchase-orders.types";
 import { getPartnerName, PartnerNameFields } from "./partner";
-import { getMeasuringUnit } from "./measuring-units";
+import { getMeasuringUnitAbbreviation } from "./measuring-units";
 import { formatDueDate } from "./date";
 
 export type DisplayStatus = PurchaseOrderStatus | "overdue";
@@ -81,9 +84,10 @@ export function getProductSummary(
   let productsSummary: string[] = [];
   orderItems.map((oi) => {
     const productInfo = oi.product;
-    const measuringUnit = getMeasuringUnit(productInfo);
+    const unit = oi.product?.measuring_unit as MeasuringUnit;
+    const unitAbbreviation = getMeasuringUnitAbbreviation(unit);
     productsSummary.push(
-      `${productInfo?.name || "Unknown product"} (${oi.required_quantity} ${measuringUnit})`,
+      `${productInfo?.name || "Unknown product"} (${oi.required_quantity} ${unitAbbreviation})`,
     );
   });
 

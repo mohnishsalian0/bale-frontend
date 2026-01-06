@@ -1,4 +1,4 @@
-import { ProductAttribute } from "@/types/products.types";
+import { ProductListView } from "@/types/products.types";
 import type { Tables, TablesUpdate } from "./database/supabase";
 import { DisplayStatus } from "@/lib/utils/sales-order";
 
@@ -71,26 +71,10 @@ export interface SalesOrderListView extends SalesOrder {
 
 /**
  * Sales order item with full product details (for order detail page)
- * Includes materials, colors, and tags
+ * Uses ProductListView for consistency across the app
  */
 export interface SalesOrderItemDetailView extends SalesOrderItem {
-  product:
-    | (Pick<
-        Product,
-        | "id"
-        | "name"
-        | "stock_type"
-        | "measuring_unit"
-        | "product_images"
-        | "sequence_number"
-        | "product_code"
-        | "stock_type"
-      > & {
-        materials: ProductAttribute[];
-        colors: ProductAttribute[];
-        tags: ProductAttribute[];
-      })
-    | null;
+  product: ProductListView | null;
 }
 
 /**

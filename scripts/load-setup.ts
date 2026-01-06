@@ -1,3 +1,4 @@
+import { MeasuringUnit } from "@/types/database/enums";
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
 import * as path from "path";
@@ -222,7 +223,7 @@ interface ProductTemplate {
   gsmRange: [number, number];
   threadCountRange: [number, number];
   stockType: "roll" | "batch" | "piece";
-  measuringUnit: "metre" | "yard" | "kilogram" | "unit" | null;
+  measuringUnit: MeasuringUnit;
   priceRange: [number, number];
   materials: string[];
   colors: string[];
@@ -313,12 +314,16 @@ const PRODUCT_TEMPLATES: ProductTemplate[] = [
         | "roll"
         | "batch"
         | "piece",
-      measuringUnit: (isPiece ? null : isBatch ? "unit" : rollUnits[i % 3]) as
+      measuringUnit: (isPiece
+        ? "piece"
+        : isBatch
+          ? "unit"
+          : rollUnits[i % 3]) as
         | "metre"
         | "yard"
         | "kilogram"
         | "unit"
-        | null,
+        | "piece",
       priceRange: [250, 700] as [number, number],
       materials: ["Polyester"],
       colors: ["Blue", "Black", "Red", "Green", "Yellow"],

@@ -138,6 +138,16 @@ export const queryKeys = {
     recentPartners: () => ["dashboard", "recent-partners"] as const,
     accounting: () => ["dashboard", "accounting"] as const,
     orders: () => ["dashboard", "orders"] as const,
+
+    // Stats
+    invoices: (filters?: Record<string, unknown>) =>
+      ["dashboard", "invoices", filters] as const,
+    salesOrderStats: (warehouseId: string) =>
+      ["dashboard", "sales-orders-stats", warehouseId] as const,
+    purchaseOrderStats: (warehouseId: string) =>
+      ["dashboard", "purchase-orders-stats", warehouseId] as const,
+    inventoryStats: (warehouseId: string) =>
+      ["dashboard", "inventory-stats", warehouseId] as const,
   },
 
   // Catalog (Public)

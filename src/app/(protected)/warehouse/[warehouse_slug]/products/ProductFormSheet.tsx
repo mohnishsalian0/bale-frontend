@@ -302,7 +302,7 @@ export function ProductFormSheet({
         gsm: data.gsm || null,
         thread_count_cm: data.threadCount || null,
         stock_type: data.stockType as StockType,
-        measuring_unit: data.measuringUnit || null,
+        measuring_unit: data.measuringUnit as MeasuringUnit,
         cost_price_per_unit: data.costPrice || null,
         selling_price_per_unit: data.sellingPrice || null,
         min_stock_alert: data.minStockAlert,
@@ -465,6 +465,8 @@ export function ProductFormSheet({
                         // Auto-set measuring unit based on stock type
                         if (stockType === "batch") {
                           measuringUnit = "unit";
+                        } else if (stockType === "piece") {
+                          measuringUnit = "piece";
                         }
 
                         field.onChange(stockType);

@@ -80,9 +80,6 @@ export function QRProductSelectionStep({
     }
   };
 
-  // Products are now filtered server-side, no need for client-side filtering
-  const filteredProducts = products;
-
   return (
     <>
       {/* Filters Section */}
@@ -155,14 +152,14 @@ export function QRProductSelectionStep({
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-gray-500">Loading products...</p>
           </div>
-        ) : filteredProducts.length === 0 ? (
+        ) : products.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-gray-500">No products available</p>
           </div>
         ) : (
           <>
             <div className="flex flex-col">
-              {filteredProducts.map((product) => {
+              {products.map((product) => {
                 const imageUrl = product.product_images?.[0];
 
                 const productInfoText = getProductInfo(product);
@@ -195,7 +192,7 @@ export function QRProductSelectionStep({
                       </p>
                       <p
                         title={productInfoText}
-                        className="text-xs text-gray-500 truncate mt-1"
+                        className="text-sm text-gray-500 truncate"
                       >
                         {productInfoText}
                       </p>

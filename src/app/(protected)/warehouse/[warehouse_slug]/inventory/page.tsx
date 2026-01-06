@@ -14,15 +14,25 @@ import { Button } from "@/components/ui/button";
 import { LowStockProductsSection } from "../dashboard/LowStockProductsSection";
 import { PendingQRCodesSection } from "../dashboard/PendingQRCodesSection";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useInventoryAggregates } from "@/lib/query/hooks/aggregates";
+import { formatMeasuringUnitQuantities } from "@/lib/utils/measuring-units";
+import { MeasuringUnit } from "@/types/database/enums";
 
 export default function InventoryPage() {
   const router = useRouter();
   const { warehouse } = useSession();
   const isMobile = useIsMobile();
 
-  // TODO: Replace with real aggregates from database when available
-  const staticLowStockCount = "[X]";
-  const staticInStockQuantity = "[Y]";
+  // Fetch inventory aggregates
+  const { data: inventoryStats } = useInventoryAggregates({
+    warehouseId: warehouse.id,
+  });
+
+  const totalProducts = inventoryStats?.product_count || 0;
+  const inStockQuantity = formatMeasuringUnitQuantities(
+    inventoryStats?.total_quantities_by_unit ||
+      new Map<MeasuringUnit, number>(),
+  );
 
   // Quick actions array
   const quickActions: QuickAction[] = [
@@ -58,13 +68,11 @@ export default function InventoryPage() {
           <div className="mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Inventory</h1>
             <p className="text-sm text-gray-500 mt-2">
-              <span className="text-yellow-700 font-medium">
-                {staticLowStockCount}
-              </span>
-              <span> low stock</span>
+              <span className="text-teal-700 font-medium">{totalProducts}</span>
+              <span> products</span>
               <span> • </span>
               <span className="text-teal-700 font-medium">
-                {staticInStockQuantity}
+                {inStockQuantity}
               </span>
               <span className="text-gray-500"> in stock</span>
             </p>

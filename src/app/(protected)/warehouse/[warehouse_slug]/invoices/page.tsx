@@ -29,14 +29,15 @@ import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
 import { useInvoices } from "@/lib/query/hooks/invoices";
 import { usePartners } from "@/lib/query/hooks/partners";
+import { useInvoiceAggregates } from "@/lib/query/hooks/aggregates";
 import { formatAbsoluteDate, formatMonthHeader } from "@/lib/utils/date";
 import { formatCurrency } from "@/lib/utils/currency";
-import { getPartnerName } from "@/lib/utils/partner";
+import { getPartnerName, getPartnerTypeLabel } from "@/lib/utils/partner";
 import {
   getInvoiceDisplayStatus,
   getInvoiceItemSummary,
 } from "@/lib/utils/invoice";
-import type { InvoiceStatus } from "@/types/database/enums";
+import type { InvoiceStatus, PartnerType } from "@/types/database/enums";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
@@ -72,6 +73,14 @@ export default function InvoicesPage() {
         : (selectedStatus as InvoiceStatus)
       : undefined;
 
+  // Fetch aggregate stats for selected invoice type (unfiltered by status/partner/date)
+  const { data: invoiceStats } = useInvoiceAggregates({
+    filters: {
+      warehouse_id: warehouse.id,
+      invoice_type: selectedType,
+    },
+  });
+
   // Fetch invoices using TanStack Query with pagination
   const {
     data: invoicesResponse,
@@ -82,7 +91,7 @@ export default function InvoicesPage() {
       search: debouncedSearchQuery || undefined,
       invoice_type: selectedType,
       status: statusFilter,
-      partner_id: selectedPartner !== "all" ? selectedPartner : undefined,
+      party_ledger_id: selectedPartner !== "all" ? selectedPartner : undefined,
       date_from: dateRange?.from
         ? format(dateRange.from, "yyyy-MM-dd")
         : undefined,
@@ -123,13 +132,9 @@ export default function InvoicesPage() {
   };
 
   // Process invoices data with month grouping
-  const { monthGroups, openInvoicesCount, totalOutstanding } = useMemo(() => {
+  const monthGroups = useMemo(() => {
     if (!invoices.length) {
-      return {
-        monthGroups: [],
-        openInvoicesCount: 0,
-        totalOutstanding: 0,
-      };
+      return [];
     }
 
     // Group by month (based on invoice date)
@@ -157,7 +162,7 @@ export default function InvoicesPage() {
       groups[monthKey].invoices.push(invoice);
     });
 
-    const monthGroups = Object.values(groups)
+    return Object.values(groups)
       .map((group) => ({
         ...group,
         invoices: group.invoices.sort((a, b) => {
@@ -175,24 +180,11 @@ export default function InvoicesPage() {
         const dateB = new Date(`${monthB} 1, ${yearB}`);
         return dateB.getTime() - dateA.getTime();
       });
-
-    // Calculate open invoices stats
-    const openInvoices = invoices.filter(
-      (invoice) =>
-        invoice.status === "open" || invoice.status === "partially_paid",
-    );
-    const openInvoicesCount = openInvoices.length;
-    const totalOutstanding = openInvoices.reduce(
-      (sum, invoice) => sum + (invoice.outstanding_amount || 0),
-      0,
-    );
-
-    return {
-      monthGroups,
-      openInvoicesCount,
-      totalOutstanding,
-    };
   }, [invoices]);
+
+  // Get aggregate stats from hook (for selected invoice type only)
+  const openInvoicesCount = invoiceStats?.count || 0;
+  const totalOutstanding = invoiceStats?.total_outstanding || 0;
 
   if (isLoading) {
     return <LoadingState message="Loading invoices..." />;
@@ -288,8 +280,11 @@ export default function InvoicesPage() {
           <SelectContent>
             <SelectItem value="all">All partners</SelectItem>
             {partners.map((partner) => (
-              <SelectItem key={partner.id} value={partner.id}>
-                {getPartnerName(partner)}
+              <SelectItem key={partner.id} value={partner.ledger.id}>
+                <p>{getPartnerName(partner)}</p>
+                <p className="text-xs text-gray-500">
+                  {getPartnerTypeLabel(partner.partner_type as PartnerType)}
+                </p>
               </SelectItem>
             ))}
           </SelectContent>

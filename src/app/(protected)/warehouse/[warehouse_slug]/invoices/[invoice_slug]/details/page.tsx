@@ -10,6 +10,8 @@ import {
   IconCalendar,
   IconFileInvoice,
   IconUser,
+  IconReceiptRefund,
+  IconCurrencyRupee,
 } from "@tabler/icons-react";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { formatCurrency } from "@/lib/utils/financial";
@@ -70,13 +72,14 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
   // Fetch adjustment notes for this invoice
   const { data: adjustmentNotesResult, isLoading: adjustmentsLoading } =
     useAdjustmentNotesByInvoice(invoice?.id || null, 1, 100);
-  const adjustmentNotes = adjustmentNotesResult?.data || [];
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentInvoice, setPaymentInvoice] =
     useState<OutstandingInvoiceView | null>(null);
+
+  const adjustmentNotes = adjustmentNotesResult?.data || [];
 
   // Calculate financial breakdown
   const financials = useMemo(() => {
@@ -260,160 +263,141 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {/* Payments Section */}
-        <div className="flex flex-col mt-6">
-          <div className="flex items-center justify-between px-4 py-2">
-            <h2 className="text-lg font-bold text-gray-700">
-              Payments {payments.length > 0 && `(${payments.length})`}
-            </h2>
-          </div>
-
-          {payments.length === 0 ? (
-            <div className="px-4 py-8 text-center">
-              <p className="text-sm text-gray-500">
-                No payments for this invoice
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col border-b border-border">
-              {payments.map((payment) => {
-                const isAdvance =
-                  payment.payment_allocations.length === 0 ||
-                  payment.payment_allocations.every(
-                    (alloc: PaymentAllocationListView) =>
-                      alloc.allocation_type === "advance",
+        <div className="flex flex-col gap-3 p-4">
+          {/* Payments Section */}
+          <Section
+            title="Payments"
+            subtitle={`${payments.length} payments`}
+            icon={() => <IconCurrencyRupee />}
+          >
+            {payments.length > 0 && (
+              <div className="flex flex-col">
+                {payments.map((payment) => {
+                  const isAdvance =
+                    payment.payment_allocations.length === 0 ||
+                    payment.payment_allocations.every(
+                      (alloc: PaymentAllocationListView) =>
+                        alloc.allocation_type === "advance",
+                    );
+                  const allocationSummary = getPaymentAllocationSummary(
+                    payment.payment_allocations,
                   );
-                const allocationSummary = getPaymentAllocationSummary(
-                  payment.payment_allocations,
-                );
-                const showAllocationSummary = !isAdvance && allocationSummary;
-                const tdsInfo =
-                  payment.tds_amount && payment.tds_amount > 0
-                    ? `TDS: ${formatCurrencyUtil(payment.tds_amount)}`
-                    : "";
+                  const showAllocationSummary = !isAdvance && allocationSummary;
+                  const tdsInfo =
+                    payment.tds_amount && payment.tds_amount > 0
+                      ? `TDS: ${formatCurrencyUtil(payment.tds_amount)}`
+                      : "";
 
-                return (
+                  return (
+                    <button
+                      key={payment.id}
+                      onClick={() =>
+                        router.push(
+                          `/warehouse/${warehouse_slug}/payments/${payment.slug}`,
+                        )
+                      }
+                      className="flex flex-col gap-2 p-4 border-t border-dashed border-gray-300 hover:bg-gray-100 transition-colors"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-gray-700">
+                              {payment.party_ledger?.name || "N/A"}
+                            </p>
+                            <PaymentModeBadge
+                              mode={payment.payment_mode as PaymentMode}
+                            />
+                          </div>
+
+                          <p className="text-sm font-semibold text-gray-700">
+                            {formatCurrencyUtil(payment.total_amount || 0)}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-sm text-gray-500 text-left">
+                            {isAdvance ? "Advance" : "Against"}
+                            {showAllocationSummary && (
+                              <span className="ml-1 text-gray-500">
+                                {allocationSummary}
+                              </span>
+                            )}
+                          </p>
+
+                          {tdsInfo && (
+                            <p className="text-xs text-gray-500">{tdsInfo}</p>
+                          )}
+                        </div>
+
+                        <p className="text-xs text-gray-500 mt-1 text-left">
+                          {payment.payment_number}
+                          {` • ${formatAbsoluteDate(payment.payment_date)}`}
+                        </p>
+
+                        {payment.reference_number && (
+                          <p className="text-xs text-gray-500 mt-1 text-left">
+                            Ref: {payment.reference_number}
+                            {payment.reference_date &&
+                              ` • Ref date: ${formatAbsoluteDate(payment.reference_date)}`}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </Section>
+
+          <Section
+            title="Adjustments"
+            subtitle={`${adjustmentNotes.length} adjustments`}
+            icon={() => <IconReceiptRefund />}
+          >
+            {adjustmentNotes.length > 0 && (
+              <div className="flex flex-col">
+                {adjustmentNotes.map((note) => (
                   <button
-                    key={payment.id}
+                    key={note.id}
                     onClick={() =>
                       router.push(
-                        `/warehouse/${warehouse_slug}/payments/${payment.slug}`,
+                        `/warehouse/${warehouse_slug}/adjustment-notes/${note.slug}/details`,
                       )
                     }
                     className="flex flex-col gap-2 p-4 border-t border-dashed border-gray-300 hover:bg-gray-100 transition-colors"
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <p className="text-base font-medium text-gray-700">
-                            {payment.party_ledger?.name || "N/A"}
-                          </p>
-                          <PaymentModeBadge
-                            mode={payment.payment_mode as PaymentMode}
-                          />
-                        </div>
+                        <p className="text-sm font-medium text-gray-700">
+                          {note.adjustment_number}
+                        </p>
 
                         <p className="text-sm font-semibold text-gray-700">
-                          {formatCurrencyUtil(payment.total_amount || 0)}
+                          {formatCurrencyUtil(note.total_amount)}
                         </p>
                       </div>
 
-                      <div className="flex items-center justify-between mt-1">
-                        <p className="text-sm text-gray-500 text-left mt-1">
-                          {isAdvance ? "Advance" : "Against"}
-                          {showAllocationSummary && (
-                            <span className="ml-1 text-gray-500">
-                              {allocationSummary}
-                            </span>
-                          )}
-                        </p>
-
-                        {tdsInfo && (
-                          <p className="text-xs text-gray-500">{tdsInfo}</p>
-                        )}
-                      </div>
-
-                      <p className="text-xs text-gray-500 mt-1 text-left">
-                        {payment.payment_number}
-                        {` • ${formatAbsoluteDate(payment.payment_date)}`}
+                      <p className="text-sm text-gray-500 text-left">
+                        {getAdjustmentItemSummary(note.adjustment_note_items)}
                       </p>
 
-                      {payment.reference_number && (
-                        <p className="text-xs text-gray-500 mt-1 text-left">
-                          Ref: {payment.reference_number}
-                          {payment.reference_date &&
-                            ` • Ref date: ${formatAbsoluteDate(payment.reference_date)}`}
-                        </p>
-                      )}
+                      <p className="text-xs text-gray-500 text-left">
+                        {formatAbsoluteDate(note.adjustment_date)}
+                      </p>
+
+                      <p
+                        className="text-xs text-gray-500 truncate text-left"
+                        title={note.reason}
+                      >
+                        {note.reason}
+                      </p>
                     </div>
                   </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </Section>
 
-        {/* Adjustments Section */}
-        <div className="flex flex-col mt-6">
-          <div className="flex items-center justify-between px-4 py-2">
-            <h2 className="text-lg font-bold text-gray-700">
-              Adjustments{" "}
-              {adjustmentNotes.length > 0 && `(${adjustmentNotes.length})`}
-            </h2>
-          </div>
-
-          {adjustmentNotes.length === 0 ? (
-            <div className="px-4 py-8 text-center">
-              <p className="text-sm text-gray-500">
-                No adjustment notes for this invoice
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col border-b border-border">
-              {adjustmentNotes.map((note) => (
-                <button
-                  key={note.id}
-                  onClick={() =>
-                    router.push(
-                      `/warehouse/${warehouse_slug}/adjustment-notes/${note.slug}/details`,
-                    )
-                  }
-                  className="flex flex-col gap-2 p-4 border-t border-dashed border-gray-300 hover:bg-gray-100 transition-colors"
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-base font-medium text-gray-700">
-                        {note.adjustment_number}
-                      </p>
-
-                      <p className="text-sm font-semibold text-gray-700">
-                        {formatCurrencyUtil(note.total_amount)}
-                      </p>
-                    </div>
-
-                    <p className="text-sm text-gray-500 text-left">
-                      {getAdjustmentItemSummary(note.adjustment_note_items)}
-                    </p>
-
-                    <p className="text-xs text-gray-500 text-left">
-                      {formatAbsoluteDate(note.adjustment_date)}
-                    </p>
-
-                    <p
-                      className="text-xs text-gray-500 truncate text-left"
-                      title={note.reason}
-                    >
-                      {note.reason}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Rest of sections in padded container */}
-        <div className="flex flex-col gap-3 p-4 mt-6">
           {/* Line Items Section */}
           <Section
             title={`${invoice.invoice_items.length} items at ₹${formatCurrency(financials?.totalAmount || 0)}`}
@@ -449,11 +433,11 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
                         )}{" "}
                         × ₹{item.rate.toFixed(2)}
                       </p>
-                      {item.gst_rate && item.gst_rate > 0 && (
+                      {item.gst_rate && item.gst_rate > 0 ? (
                         <p className="text-xs text-gray-500 mt-0.5">
                           GST: {item.gst_rate}%
                         </p>
-                      )}
+                      ) : null}
                     </div>
                     <p className="text-sm font-semibold text-gray-700 shrink-0">
                       ₹{formatCurrency(item.amount || 0)}
@@ -545,8 +529,8 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
             <div className="space-y-3">
               {(invoice.party_address_line1 || invoice.party_address_line2) && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-700 flex items-center gap-2">
-                    <IconMapPin className="size-4" />
+                  <span className="text-gray-700 flex items-center gap-1.5">
+                    <IconMapPin className="size-4 text-gray-700" />
                     Address
                   </span>
                   <div className="font-semibold text-gray-700 text-right max-w-[200px]">
@@ -585,7 +569,7 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <div className="flex items-center gap-1.5 text-gray-700">
-                  <IconCalendar className="size-4 text-gray-500" />
+                  <IconCalendar className="size-4 text-gray-700" />
                   <span>Invoice Date</span>
                 </div>
                 <span className="font-semibold text-gray-700">
@@ -596,7 +580,7 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
               {invoice.due_date && (
                 <div className="flex justify-between text-sm">
                   <div className="flex items-center gap-1.5 text-gray-700">
-                    <IconCalendar className="size-4 text-gray-500" />
+                    <IconCalendar className="size-4 text-gray-700" />
                     <span>Due Date</span>
                   </div>
                   <span className="font-semibold text-gray-700">
@@ -661,8 +645,8 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
             {(invoice.warehouse_address_line1 ||
               invoice.warehouse_address_line2) && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-700 flex items-center gap-2">
-                  <IconMapPin className="size-4" />
+                <span className="text-gray-700 flex items-center gap-1.5">
+                  <IconMapPin className="size-4 text-gray-700" />
                   Address
                 </span>
                 <div className="font-semibold text-gray-700 text-right max-w-[200px]">
@@ -745,28 +729,24 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
       <ActionsFooter items={footerItems} />
 
       {/* Cancel Dialog */}
-      {invoice && (
-        <CancelDialog
-          open={showCancelDialog}
-          onOpenChange={setShowCancelDialog}
-          onConfirm={handleCancel}
-          title={`Cancel ${invoiceTypeLabel.toLowerCase()}`}
-          message={`Are you sure you want to cancel ${invoice.invoice_number}? This action cannot be undone.`}
-          loading={cancelInvoice.isPending}
-        />
-      )}
+      <CancelDialog
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        onConfirm={handleCancel}
+        title={`Cancel ${invoiceTypeLabel.toLowerCase()}`}
+        message={`Are you sure you want to cancel ${invoice.invoice_number}? This action cannot be undone.`}
+        loading={cancelInvoice.isPending}
+      />
 
       {/* Delete Dialog */}
-      {invoice && (
-        <DeleteDialog
-          open={showDeleteDialog}
-          onOpenChange={setShowDeleteDialog}
-          onConfirm={handleDelete}
-          title={`Delete ${invoiceTypeLabel.toLowerCase()}`}
-          message={`Are you sure you want to delete ${invoice.invoice_number}? This action cannot be undone.`}
-          loading={deleteInvoice.isPending}
-        />
-      )}
+      <DeleteDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDelete}
+        title={`Delete ${invoiceTypeLabel.toLowerCase()}`}
+        message={`Are you sure you want to delete ${invoice.invoice_number}? This action cannot be undone.`}
+        loading={deleteInvoice.isPending}
+      />
 
       {/* Payment Allocation Modal */}
       <InvoiceAllocationModal

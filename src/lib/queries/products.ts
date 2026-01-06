@@ -412,6 +412,31 @@ export async function getProductWithInventoryById(
 }
 
 /**
+ * Get multiple products (list view) by IDs
+ */
+export async function getProductsByIds(
+  productIds: string[],
+): Promise<ProductListView[]> {
+  if (productIds.length === 0) return [];
+
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_LIST_VIEW_SELECT)
+    .in("id", productIds)
+    .is("deleted_at", null);
+
+  if (error) throw error;
+
+  const transformedData = (
+    (data as unknown as ProductListViewRaw[]) || []
+  ).map(transformProductListView);
+
+  return transformedData;
+}
+
+/**
  * Get multiple products with inventory (list view) by IDs
  */
 export async function getProductsWithInventoryByIds(
@@ -780,7 +805,7 @@ type LowStockProductRaw = {
   show_on_catalog: boolean;
   is_active: boolean;
   stock_type: string;
-  measuring_unit: string | null;
+  measuring_unit: string;
   cost_price_per_unit: number | null;
   selling_price_per_unit: number | null;
   product_images: string[] | null;

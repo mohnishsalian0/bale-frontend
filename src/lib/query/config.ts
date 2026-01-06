@@ -25,6 +25,9 @@ export const STALE_TIME = {
   // Real-time Data - Needs frequent updates
   DASHBOARD: 30 * 1000, // 30 seconds
 
+  // Aggregate Data - Calculated summaries that change less frequently
+  AGGREGATES: 5 * 60 * 1000, // 5 minutes
+
   // Public Data
   CATALOG: 5 * 60 * 1000, // 5 minutes
   QR_BATCHES: 5 * 60 * 1000, // 5 minutes (historical data)
@@ -40,6 +43,7 @@ export const GC_TIME = {
   DEFAULT: 10 * 60 * 1000, // 10 minutes
   MASTER_DATA: 30 * 60 * 1000, // 30 minutes (products, partners, warehouses)
   TRANSACTIONAL: 5 * 60 * 1000, // 5 minutes (stock, orders)
+  AGGREGATES: 10 * 60 * 1000, // 10 minutes (aggregate summaries)
   REALTIME: 2 * 60 * 1000, // 2 minutes (dashboard)
 } as const;
 

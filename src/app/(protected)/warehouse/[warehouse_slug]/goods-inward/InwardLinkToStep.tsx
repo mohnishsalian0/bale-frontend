@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,15 +21,30 @@ interface InwardLinkToStepProps {
   partnerId: string | null;
   linkToData: InwardLinkToData;
   onLinkToChange: (data: InwardLinkToData) => void;
+  isWarehouseTransfer: boolean;
 }
 
 export function InwardLinkToStep({
   partnerId,
   linkToData,
   onLinkToChange,
+  isWarehouseTransfer,
 }: InwardLinkToStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+  // Auto-set to "other" when warehouse transfer
+  useEffect(() => {
+    if (isWarehouseTransfer && linkToData.linkToType !== "other") {
+      onLinkToChange({
+        linkToType: "other",
+        sales_order_id: null,
+        purchase_order_id: null,
+        other_reason: null,
+        job_work_id: null,
+      });
+    }
+  }, [isWarehouseTransfer, linkToData.linkToType, onLinkToChange]);
 
   const handleTypeChange = (type: InwardLinkToType) => {
     // Reset all link fields when type changes
@@ -54,24 +69,30 @@ export function InwardLinkToStep({
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Header with Radio Pills */}
-      <div className="p-4 border-b border-border shrink-0">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Link to (required)
-        </h3>
+      {/* Header with Radio Pills - Hidden for warehouse transfers */}
+      {!isWarehouseTransfer && (
+        <div className="p-4 border-b border-border shrink-0">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Link to (required)
+          </h3>
 
-        {/* Radio Pills */}
-        <RadioGroup
-          value={linkToData.linkToType}
-          onValueChange={(value) => handleTypeChange(value as InwardLinkToType)}
-          name="link-to-type"
-          className="flex-wrap"
-        >
-          <RadioGroupItem value="purchase_order">Purchase order</RadioGroupItem>
-          <RadioGroupItem value="sales_return">Sales return</RadioGroupItem>
-          <RadioGroupItem value="other">Other</RadioGroupItem>
-        </RadioGroup>
-      </div>
+          {/* Radio Pills */}
+          <RadioGroup
+            value={linkToData.linkToType}
+            onValueChange={(value) =>
+              handleTypeChange(value as InwardLinkToType)
+            }
+            name="link-to-type"
+            className="flex-wrap"
+          >
+            <RadioGroupItem value="purchase_order">
+              Purchase order
+            </RadioGroupItem>
+            <RadioGroupItem value="sales_return">Sales return</RadioGroupItem>
+            <RadioGroupItem value="other">Other</RadioGroupItem>
+          </RadioGroup>
+        </div>
+      )}
 
       {/* Content based on selection */}
       <div className="flex-1 overflow-y-auto">
@@ -104,11 +125,17 @@ export function InwardLinkToStep({
         {linkToData.linkToType === "other" && (
           <div className="p-4">
             <Label htmlFor="other_reason" className="mb-2 block">
-              Reason for inward
+              {isWarehouseTransfer
+                ? "Warehouse transfer notes"
+                : "Reason for inward"}
             </Label>
             <Textarea
               id="other_reason"
-              placeholder="Enter reason for receiving goods"
+              placeholder={
+                isWarehouseTransfer
+                  ? "Enter notes for this warehouse transfer"
+                  : "Enter reason for receiving goods"
+              }
               value={linkToData.other_reason || ""}
               onChange={(e) =>
                 handleValueChange("other_reason", e.target.value || null)

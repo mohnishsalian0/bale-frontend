@@ -144,7 +144,7 @@ export function StockUnitFormSheet({
       <form
         id="stock-unit-form"
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-8 md:px-0 overflow-x-hidden"
+        className="flex flex-col gap-6"
       >
         <div className="flex flex-col gap-4">
           <div className="flex gap-4">

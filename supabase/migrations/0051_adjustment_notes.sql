@@ -107,6 +107,9 @@ CREATE TABLE adjustment_notes (
     cancelled_by UUID,
     cancellation_reason TEXT,
 
+    -- Full-text search
+    search_vector tsvector,
+
     UNIQUE(company_id, adjustment_type, sequence_number),
     UNIQUE(company_id, adjustment_number),
     UNIQUE(company_id, slug) -- Unique within company for URL routing
@@ -303,6 +306,24 @@ CREATE TRIGGER set_adjustment_notes_cancelled_by
     FOR EACH ROW
     WHEN (OLD.is_cancelled IS FALSE AND NEW.is_cancelled IS TRUE)
     EXECUTE FUNCTION set_cancelled_by();
+
+-- Update search vector for full-text search
+CREATE OR REPLACE FUNCTION update_adjustment_notes_search_vector()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.search_vector :=
+        setweight(to_tsvector('simple', COALESCE(NEW.sequence_number::text, '')), 'A') ||
+        setweight(to_tsvector('simple', COALESCE(NEW.adjustment_number, '')), 'A') ||
+        setweight(to_tsvector('english', COALESCE(NEW.party_ledger_name, '')), 'B') ||
+        setweight(to_tsvector('english', COALESCE(NEW.counter_ledger_name, '')), 'B') ||
+        setweight(to_tsvector('english', COALESCE(NEW.reason, '')), 'C');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_adjustment_notes_search_vector
+    BEFORE INSERT OR UPDATE ON adjustment_notes
+    FOR EACH ROW EXECUTE FUNCTION update_adjustment_notes_search_vector();
 
 -- =====================================================
 -- RLS POLICIES

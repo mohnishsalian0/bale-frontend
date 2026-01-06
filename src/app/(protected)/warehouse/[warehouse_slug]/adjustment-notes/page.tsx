@@ -9,7 +9,7 @@ import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useAdjustmentNotes } from "@/lib/query/hooks/adjustment-notes";
 import { usePartners } from "@/lib/query/hooks/partners";
-import { getPartnerName } from "@/lib/utils/partner";
+import { getPartnerName, getPartnerTypeLabel } from "@/lib/utils/partner";
 import { getAdjustmentItemSummary } from "@/lib/utils/adjustment-notes";
 import { formatAbsoluteDate, formatMonthHeader } from "@/lib/utils/date";
 import { formatCurrency } from "@/lib/utils/currency";
@@ -34,6 +34,7 @@ import {
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
+import { PartnerType } from "@/types/database/enums";
 
 interface PageParams {
   params: Promise<{
@@ -65,7 +66,7 @@ export default function AdjustmentNotesListPage({ params }: PageParams) {
     filters: {
       search_term: debouncedSearchQuery || undefined,
       adjustment_type: selectedType,
-      partner_id: selectedPartner !== "all" ? selectedPartner : undefined,
+      party_ledger_id: selectedPartner !== "all" ? selectedPartner : undefined,
       date_from: dateRange?.from
         ? format(dateRange.from, "yyyy-MM-dd")
         : undefined,
@@ -238,8 +239,11 @@ export default function AdjustmentNotesListPage({ params }: PageParams) {
           <SelectContent>
             <SelectItem value="all">All partners</SelectItem>
             {partners.map((partner) => (
-              <SelectItem key={partner.id} value={partner.id}>
-                {getPartnerName(partner)}
+              <SelectItem key={partner.id} value={partner.ledger.id}>
+                <p>{getPartnerName(partner)}</p>
+                <p className="text-xs text-gray-500">
+                  {getPartnerTypeLabel(partner.partner_type as PartnerType)}
+                </p>
               </SelectItem>
             ))}
           </SelectContent>
@@ -286,7 +290,7 @@ export default function AdjustmentNotesListPage({ params }: PageParams) {
                     {/* Invoice Number */}
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-base font-medium text-gray-700">
-                        Against {note.invoice?.invoice_number || "N/A"}
+                        {note.party_display_name}
                       </p>
 
                       {/* Amount */}
@@ -304,6 +308,7 @@ export default function AdjustmentNotesListPage({ params }: PageParams) {
                     <p className="text-xs text-gray-500 text-left">
                       {note.adjustment_number}
                       {` • ${formatAbsoluteDate(note.adjustment_date)}`}
+                      {` • Against ${note.invoice?.invoice_number || "N/A"}`}
                     </p>
 
                     {/* Reason */}

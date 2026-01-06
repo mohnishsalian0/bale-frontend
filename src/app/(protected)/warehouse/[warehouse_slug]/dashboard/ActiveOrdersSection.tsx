@@ -416,7 +416,7 @@ export function ActiveOrdersSection({
                         onApprove: () => handleApprove(order),
                         onCreateOutward: () => {
                           router.push(
-                            `/warehouse/${warehouseSlug}/goods-outward/create?order=${order.sequence_number}`,
+                            `/warehouse/${warehouseSlug}/goods-outward/create?sales_order=${order.id}`,
                           );
                         },
                         onCreateInvoice: () => handleCreateInvoice(order),
@@ -444,7 +444,7 @@ export function ActiveOrdersSection({
                         onApprove: () => handleApprove(order),
                         onCreateInward: () => {
                           router.push(
-                            `/warehouse/${warehouseSlug}/goods-inward/create?order=${order.sequence_number}`,
+                            `/warehouse/${warehouseSlug}/goods-inward/create?purchase_order=${order.id}`,
                           );
                         },
                         onCreateInvoice: () => handleCreateInvoice(order),

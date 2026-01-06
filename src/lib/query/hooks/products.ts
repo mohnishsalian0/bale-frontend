@@ -6,6 +6,7 @@ import {
   useQueryClient,
   keepPreviousData,
   useInfiniteQuery,
+  useQueries,
 } from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
@@ -29,7 +30,12 @@ import {
   updateProductActiveStatus,
   updateProductCatalogVisibility,
 } from "@/lib/queries/products";
-import { ProductFilters, ProductUpsertData } from "@/types/products.types";
+import {
+  ProductFilters,
+  ProductUpsertData,
+  ProductListView,
+  ProductWithInventoryListView,
+} from "@/types/products.types";
 import type { AttributeGroup } from "@/types/database/enums";
 
 /**
@@ -49,6 +55,7 @@ export function useProducts(filters?: ProductFilters) {
 export function useInfiniteProducts(
   filters?: ProductFilters,
   pageSize: number = 30,
+  enabled: boolean = true,
 ) {
   return useInfiniteQuery({
     queryKey: [...queryKeys.products.all(filters), "infinite"],
@@ -59,6 +66,7 @@ export function useInfiniteProducts(
       return currentPage < totalPages ? currentPage + 1 : undefined;
     },
     initialPageParam: 1,
+    enabled: enabled,
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
   });
 }
@@ -70,6 +78,7 @@ export function useInfiniteProductsWithInventory(
   warehouseId: string | null,
   filters?: ProductFilters,
   pageSize: number = 30,
+  enabled: boolean = true,
 ) {
   return useInfiniteQuery({
     queryKey: [
@@ -84,7 +93,7 @@ export function useInfiniteProductsWithInventory(
       return currentPage < totalPages ? currentPage + 1 : undefined;
     },
     initialPageParam: 1,
-    enabled: !!warehouseId,
+    enabled: !!warehouseId && enabled,
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
   });
 }
@@ -98,6 +107,28 @@ export function useProductById(productId: string | null) {
     queryFn: () => getProductById(productId!),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
     enabled: !!productId,
+  });
+}
+
+/**
+ * Fetch multiple products by IDs with attributes
+ * Uses TanStack Query's useQueries for automatic deduplication and caching
+ */
+export function useProductsByIds(productIds: string[]) {
+  return useQueries({
+    queries: productIds.map((id) => ({
+      queryKey: queryKeys.products.byId(id),
+      queryFn: () => getProductById(id),
+      ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+    })),
+    combine: (results) => ({
+      data: results
+        .map((r) => r.data)
+        .filter((data) => data !== undefined) as ProductListView[],
+      isLoading: results.some((r) => r.isLoading),
+      isError: results.some((r) => r.isError),
+      errors: results.filter((r) => r.error).map((r) => r.error),
+    }),
   });
 }
 
@@ -164,6 +195,32 @@ export function useProductWithInventoryById(
     queryFn: () => getProductWithInventoryById(productId!, warehouseId!),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
     enabled: !!productId && !!warehouseId,
+  });
+}
+
+/**
+ * Fetch multiple products with inventory by IDs
+ * Uses TanStack Query's useQueries for automatic deduplication and caching
+ */
+export function useProductsWithInventoryByIds(
+  productIds: string[],
+  warehouseId: string | null,
+) {
+  return useQueries({
+    queries: productIds.map((id) => ({
+      queryKey: queryKeys.products.withInventoryById(id, warehouseId || ""),
+      queryFn: () => getProductWithInventoryById(id, warehouseId!),
+      ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+      enabled: !!warehouseId,
+    })),
+    combine: (results) => ({
+      data: results
+        .map((r) => r.data)
+        .filter((data) => data !== undefined) as ProductWithInventoryListView[],
+      isLoading: results.some((r) => r.isLoading),
+      isError: results.some((r) => r.isError),
+      errors: results.filter((r) => r.error).map((r) => r.error),
+    }),
   });
 }
 

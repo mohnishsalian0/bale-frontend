@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { IconSearch, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "@/components/ui/button";
@@ -24,10 +24,10 @@ import { MeasuringUnit, StockType } from "@/types/database/enums";
 import {
   useInfiniteProductsWithInventory,
   useProductAttributes,
+  useProductsWithInventoryByIds,
 } from "@/lib/query/hooks/products";
 import { ProductQuantitySheet } from "@/components/layouts/product-quantity-sheet";
 import { ProductFormSheet } from "@/app/(protected)/warehouse/[warehouse_slug]/products/ProductFormSheet";
-import { getProductsWithInventoryByIds } from "@/lib/queries/products";
 
 interface ProductWithSelection extends ProductWithInventoryListView {
   selected: boolean;
@@ -64,10 +64,18 @@ export function ProductSelectionStep({
   const [showQuantitySheet, setShowQuantitySheet] = useState(false);
   const [showCreateProduct, setShowCreateProduct] = useState(false);
 
-  // State for all selected products (fetched separately)
-  const [selectedProducts, setSelectedProducts] = useState<
-    ProductWithInventoryListView[]
-  >([]);
+  // Get selected product IDs
+  const selectedProductIds = useMemo(
+    () =>
+      Object.entries(productSelections)
+        .filter(([, selection]) => selection.selected && selection.quantity > 0)
+        .map(([productId]) => productId),
+    [productSelections],
+  );
+
+  // Fetch selected products with inventory by IDs using TanStack Query
+  const { data: fetchedProductsById, isLoading: fetchingByIds } =
+    useProductsWithInventoryByIds(selectedProductIds, warehouseId);
 
   // Handlers for internal sheets
   const handleOpenQuantitySheet = (product: ProductWithInventoryListView) => {
@@ -115,55 +123,37 @@ export function ProductSelectionStep({
   const materials = attributesData?.materials || [];
   const colors = attributesData?.colors || [];
   const tags = attributesData?.tags || [];
-  const loading = productsLoading || attributesLoading;
+  const loading = productsLoading || attributesLoading || fetchingByIds;
 
-  // Fetch all selected products separately
-  useEffect(() => {
-    // Find selected product IDs
-    const selectedProductIds = Object.entries(productSelections)
-      .filter(([, selection]) => selection.selected && selection.quantity > 0)
-      .map(([productId]) => productId);
+  // Combine fetched and infinite scroll products with selection data in single pass
+  const products: ProductWithSelection[] = useMemo(() => {
+    const result: ProductWithSelection[] = [];
+    const seenIds = new Set<string>();
 
-    if (selectedProductIds.length === 0) {
-      setSelectedProducts([]);
-      return;
-    }
-
-    // Fetch all selected products
-    getProductsWithInventoryByIds(selectedProductIds, warehouseId)
-      .then((products) => {
-        setSelectedProducts(products);
-      })
-      .catch((error) => {
-        console.error("Error fetching selected products:", error);
-        setSelectedProducts([]);
-      });
-  }, [productSelections, warehouseId]);
-
-  // Combine selected products with infinite scroll results (excluding selected ones)
-  const allProducts = useMemo(() => {
-    // Create a set of selected product IDs
-    const selectedIds = new Set(selectedProducts.map((p) => p.id));
-
-    // Filter out selected products from infinite scroll results
-    const unselectedProducts = flatProducts.filter(
-      (p) => !selectedIds.has(p.id),
-    );
-
-    // Put selected products first, then unselected
-    return [...selectedProducts, ...unselectedProducts];
-  }, [selectedProducts, flatProducts]);
-
-  // Combine products data with selection state
-  const products: ProductWithSelection[] = useMemo(
-    () =>
-      allProducts.map((product) => ({
+    // First: Add all fetched products with selection data
+    fetchedProductsById.forEach((product) => {
+      seenIds.add(product.id);
+      result.push({
         ...product,
         selected: productSelections[product.id]?.selected || false,
         quantity: productSelections[product.id]?.quantity || 0,
-      })),
-    [allProducts, productSelections],
-  );
+      });
+    });
+
+    // Second: Add infinite scroll products (skip duplicates)
+    flatProducts.forEach((product) => {
+      if (!seenIds.has(product.id)) {
+        seenIds.add(product.id);
+        result.push({
+          ...product,
+          selected: productSelections[product.id]?.selected || false,
+          quantity: productSelections[product.id]?.quantity || 0,
+        });
+      }
+    });
+
+    return result;
+  }, [fetchedProductsById, flatProducts, productSelections]);
 
   // Handle scroll to trigger infinite loading
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -176,17 +166,13 @@ export function ProductSelectionStep({
     }
   };
 
-  // Sort products using useMemo (filters are now handled server-side)
-  const filteredProducts = useMemo(() => {
-    // Sort: selected products first
-    const sorted = [...products];
-    sorted.sort((a, b) => {
+  // Sort products: selected products first
+  const sortedProducts = useMemo(() => {
+    return [...products].sort((a, b) => {
       if (a.selected && !b.selected) return -1;
       if (!a.selected && b.selected) return 1;
       return 0;
     });
-
-    return sorted;
   }, [products]);
 
   const rateForSheet = useMemo(() => {
@@ -288,14 +274,14 @@ export function ProductSelectionStep({
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-gray-500">Loading products...</p>
           </div>
-        ) : filteredProducts.length === 0 ? (
+        ) : sortedProducts.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-gray-500">No products found</p>
           </div>
         ) : (
           <>
             <div className="flex flex-col">
-              {filteredProducts.map((product) => {
+              {sortedProducts.map((product) => {
                 const imageUrl = product.product_images?.[0];
 
                 const productInfoText = getProductInfo(product);
@@ -330,7 +316,7 @@ export function ProductSelectionStep({
                       </p>
                       <p
                         title={productInfoText}
-                        className="text-sm text-gray-500 truncate mt-1"
+                        className="text-sm text-gray-500 truncate"
                       >
                         {productInfoText}
                       </p>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   StockUnitScannerStep,
@@ -12,6 +12,8 @@ import { OutwardLinkToStep, OutwardLinkToData } from "../OutwardLinkToStep";
 import { OutwardDetailsStep } from "../OutwardDetailsStep";
 import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useStockFlowMutations } from "@/lib/query/hooks/stock-flow";
+import { useSalesOrderById } from "@/lib/query/hooks/sales-orders";
+import { usePurchaseOrderById } from "@/lib/query/hooks/purchase-orders";
 import type { TablesInsert } from "@/types/database/supabase";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
@@ -29,25 +31,24 @@ interface DetailsFormData {
   documentFile: File | null;
 }
 
-type FormStep = "scanner" | "partner" | "linkTo" | "details";
+type FormStep = "partner" | "linkTo" | "scanner" | "details";
 
 export default function CreateGoodsOutwardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
-  const [currentStep, setCurrentStep] = useState<FormStep>("scanner");
+
+  // Read URL params for sales order prefill
+  const salesOrderId = searchParams.get("sales_order");
+
+  // Skip partner and linkTo steps if coming from sales order
+  const [currentStep, setCurrentStep] = useState<FormStep>(
+    salesOrderId ? "scanner" : "partner"
+  );
   const [scannedUnits, setScannedUnits] = useState<ScannedStockUnit[]>([]);
   const [saving, setSaving] = useState(false);
   const [showCreatePartner, setShowCreatePartner] = useState(false);
-
-  // Mutations
-  const { createOutwardWithItems } = useStockFlowMutations(warehouse.id);
-
-  // Hide chrome for immersive flow experience
-  useEffect(() => {
-    hideChrome();
-    return () => showChromeUI(); // Restore chrome on unmount
-  }, [hideChrome, showChromeUI]);
 
   // Partner/Warehouse selection state
   const [dispatchToType, setDispatchToType] = useState<"partner" | "warehouse">(
@@ -69,6 +70,49 @@ export default function CreateGoodsOutwardPage() {
     job_work_id: null,
   });
 
+  // Mutations
+  const { createOutwardWithItems } = useStockFlowMutations(warehouse.id);
+
+  // Fetch order details if an order is selected
+  const { data: salesOrder } = useSalesOrderById(
+    linkToData.linkToType === "sales_order" ? linkToData.sales_order_id : null,
+  );
+
+  const { data: purchaseOrder } = usePurchaseOrderById(
+    linkToData.linkToType === "purchase_return"
+      ? linkToData.purchase_order_id
+      : null,
+  );
+
+  // Extract product IDs and quantities from order line items
+  const orderProducts = useMemo(() => {
+    const result: Record<string, number> = {};
+
+    if (linkToData.linkToType === "sales_order" && salesOrder) {
+      salesOrder.sales_order_items.forEach((item) => {
+        if (item.product_id && item.pending_quantity !== null) {
+          result[item.product_id] = item.pending_quantity;
+        }
+      });
+    }
+
+    if (linkToData.linkToType === "purchase_return" && purchaseOrder) {
+      purchaseOrder.purchase_order_items.forEach((item) => {
+        if (item.product_id && item.pending_quantity !== null) {
+          result[item.product_id] = item.pending_quantity;
+        }
+      });
+    }
+
+    return result;
+  }, [linkToData.linkToType, salesOrder, purchaseOrder]);
+
+  // Hide chrome for immersive flow experience
+  useEffect(() => {
+    hideChrome();
+    return () => showChromeUI(); // Restore chrome on unmount
+  }, [hideChrome, showChromeUI]);
+
   // Details form state
   const [detailsFormData, setDetailsFormData] = useState<DetailsFormData>({
     outwardDate: dateToISOString(new Date()),
@@ -79,9 +123,32 @@ export default function CreateGoodsOutwardPage() {
     documentFile: null,
   });
 
+  // Prefill linkToData and partner when coming from sales order URL
+  useEffect(() => {
+    if (!salesOrderId || linkToData.sales_order_id) return;
+
+    // Set linkTo data for sales order
+    setLinkToData({
+      linkToType: "sales_order",
+      sales_order_id: salesOrderId,
+      purchase_order_id: null,
+      other_reason: null,
+      job_work_id: null,
+    });
+  }, [salesOrderId, linkToData.sales_order_id]);
+
+  // Set partner from sales order when data loads
+  useEffect(() => {
+    if (!salesOrderId || !salesOrder || selectedPartnerId) return;
+
+    setSelectedPartnerId(salesOrder.customer_id);
+    setDispatchToType("partner");
+  }, [salesOrderId, salesOrder, selectedPartnerId]);
+
   // Partner selection handlers with auto-advance
   const handleSelectPartner = (partnerId: string) => {
     setSelectedPartnerId(partnerId);
+    setSelectedWarehouseId(null);
     // Auto-advance to next step after selection
     setTimeout(() => {
       setCurrentStep("linkTo");
@@ -90,6 +157,7 @@ export default function CreateGoodsOutwardPage() {
 
   const handleSelectWarehouse = (warehouseId: string) => {
     setSelectedWarehouseId(warehouseId);
+    setSelectedPartnerId(null);
     // Auto-advance to next step after selection
     setTimeout(() => {
       setCurrentStep("linkTo");
@@ -135,22 +203,22 @@ export default function CreateGoodsOutwardPage() {
   );
 
   const handleNext = () => {
-    if (currentStep === "scanner" && canProceedFromScanner) {
-      setCurrentStep("partner");
-    } else if (currentStep === "partner" && canProceedFromPartner) {
+    if (currentStep === "partner" && canProceedFromPartner) {
       setCurrentStep("linkTo");
     } else if (currentStep === "linkTo" && canProceedFromLinkTo) {
+      setCurrentStep("scanner");
+    } else if (currentStep === "scanner" && canProceedFromScanner) {
       setCurrentStep("details");
     }
   };
 
   const handleBack = () => {
     if (currentStep === "details") {
+      setCurrentStep("scanner");
+    } else if (currentStep === "scanner") {
       setCurrentStep("linkTo");
     } else if (currentStep === "linkTo") {
       setCurrentStep("partner");
-    } else if (currentStep === "partner") {
-      setCurrentStep("scanner");
     }
   };
 
@@ -217,11 +285,11 @@ export default function CreateGoodsOutwardPage() {
 
   // Calculate step number
   const stepNumber =
-    currentStep === "scanner"
+    currentStep === "partner"
       ? 1
-      : currentStep === "partner"
+      : currentStep === "linkTo"
         ? 2
-        : currentStep === "linkTo"
+        : currentStep === "scanner"
           ? 3
           : 4;
 
@@ -239,14 +307,6 @@ export default function CreateGoodsOutwardPage() {
 
         {/* Step Content - Scrollable */}
         <div className="flex-1 flex-col overflow-y-auto flex">
-          {currentStep === "scanner" && (
-            <StockUnitScannerStep
-              scannedUnits={scannedUnits}
-              onScannedUnitsChange={setScannedUnits}
-              warehouseId={warehouse.id}
-            />
-          )}
-
           {currentStep === "partner" && (
             <PartnerSelectionStep
               partnerTypes={["supplier", "vendor", "customer"]} // Supplier and vendor for purchase return
@@ -269,6 +329,16 @@ export default function CreateGoodsOutwardPage() {
               selectedPartnerId={selectedPartnerId}
               linkToData={linkToData}
               onLinkToChange={setLinkToData}
+              isWarehouseTransfer={dispatchToType === "warehouse"}
+            />
+          )}
+
+          {currentStep === "scanner" && (
+            <StockUnitScannerStep
+              scannedUnits={scannedUnits}
+              onScannedUnitsChange={setScannedUnits}
+              warehouseId={warehouse.id}
+              orderProducts={orderProducts}
             />
           )}
 
@@ -284,7 +354,7 @@ export default function CreateGoodsOutwardPage() {
 
         {/* Bottom Action Bar - Fixed at bottom */}
         <FormFooter>
-          {currentStep !== "scanner" && (
+          {currentStep !== "partner" && (
             <Button
               variant="outline"
               onClick={handleBack}
@@ -292,15 +362,6 @@ export default function CreateGoodsOutwardPage() {
               className="flex-1"
             >
               Back
-            </Button>
-          )}
-          {currentStep === "scanner" && (
-            <Button
-              onClick={handleNext}
-              disabled={!canProceedFromScanner || saving}
-              className="flex-1"
-            >
-              Continue
             </Button>
           )}
           {currentStep === "partner" && (
@@ -316,6 +377,15 @@ export default function CreateGoodsOutwardPage() {
             <Button
               onClick={handleNext}
               disabled={!canProceedFromLinkTo || saving}
+              className="flex-1"
+            >
+              Continue
+            </Button>
+          )}
+          {currentStep === "scanner" && (
+            <Button
+              onClick={handleNext}
+              disabled={!canProceedFromScanner || saving}
               className="flex-1"
             >
               Continue

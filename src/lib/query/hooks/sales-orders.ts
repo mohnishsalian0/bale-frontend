@@ -12,6 +12,7 @@ import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getSalesOrders,
   getSalesOrderByNumber,
+  getSalesOrderById,
   createSalesOrder,
   createQuickSalesOrder,
   approveSalesOrder,
@@ -91,6 +92,18 @@ export function useSalesOrderByNumber(sequenceNumber: string | null) {
     queryFn: () => getSalesOrderByNumber(sequenceNumber!),
     ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
     enabled: !!sequenceNumber,
+  });
+}
+
+/**
+ * Fetch single sales order by ID (UUID)
+ */
+export function useSalesOrderById(orderId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.salesOrders.detail(orderId || ""),
+    queryFn: () => getSalesOrderById(orderId!),
+    ...getQueryOptions(STALE_TIME.SALES_ORDERS, GC_TIME.TRANSACTIONAL),
+    enabled: !!orderId,
   });
 }
 

@@ -30,9 +30,13 @@ import { usePayments } from "@/lib/query/hooks/payments";
 import { usePartners } from "@/lib/query/hooks/partners";
 import { formatAbsoluteDate, formatMonthHeader } from "@/lib/utils/date";
 import { formatCurrency } from "@/lib/utils/currency";
-import { getPartnerName } from "@/lib/utils/partner";
+import { getPartnerName, getPartnerTypeLabel } from "@/lib/utils/partner";
 import { getPaymentAllocationSummary } from "@/lib/utils/payment";
-import type { PaymentMode, VoucherType } from "@/types/database/enums";
+import type {
+  PartnerType,
+  PaymentMode,
+  VoucherType,
+} from "@/types/database/enums";
 import type { PaymentAllocationListView } from "@/types/payments.types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PaymentTypeDialog } from "./PaymentTypeDialog";
@@ -74,7 +78,7 @@ export default function PaymentsPage() {
         selectedPaymentMode !== "all"
           ? (selectedPaymentMode as PaymentMode)
           : undefined,
-      partner_id: selectedPartner !== "all" ? selectedPartner : undefined,
+      party_ledger_id: selectedPartner !== "all" ? selectedPartner : undefined,
       date_from: dateRange?.from
         ? format(dateRange.from, "yyyy-MM-dd")
         : undefined,
@@ -268,8 +272,11 @@ export default function PaymentsPage() {
           <SelectContent>
             <SelectItem value="all">All partners</SelectItem>
             {partners.map((partner) => (
-              <SelectItem key={partner.id} value={partner.id}>
-                {getPartnerName(partner)}
+              <SelectItem key={partner.id} value={partner.ledger.id}>
+                <p>{getPartnerName(partner)}</p>
+                <p className="text-xs text-gray-500">
+                  {getPartnerTypeLabel(partner.partner_type as PartnerType)}
+                </p>
               </SelectItem>
             ))}
           </SelectContent>

@@ -197,7 +197,7 @@ export default function AdjustmentNoteDetailsPage({ params }: PageParams) {
             >
               <Link
                 href={`/warehouse/${warehouse_slug}/invoices/${adjustmentNote.invoice.slug || ""}`}
-                className="text-sm text-blue-600 hover:underline"
+                className="text-sm text-primary-700 hover:underline"
               >
                 View invoice details →
               </Link>
