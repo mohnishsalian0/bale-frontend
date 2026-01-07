@@ -5,13 +5,11 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  IconCheck,
   IconChevronDown,
   IconChevronUp,
   IconQrcode,
   IconTruckDelivery,
   IconChartBar,
-  IconUsers,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 
@@ -137,10 +135,12 @@ export default function LandingPage() {
           <div className="flex-1 text-center md:text-left">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 leading-tight">
               Every Roll Matters.{" "}
-              <span className="text-primary-700">Let's make sure it's counted.</span>
+              <span className="text-primary-700">
+                Let&apos;s make sure it&apos;s counted.
+              </span>
             </h1>
             <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl">
-              That's why we built a tool that keeps your fabric organised and
+              That&apos;s why we built a tool that keeps your fabric organised and
               lets you focus on important tasks.
             </p>
             <Button onClick={handleTryDemo} size="lg" className="text-lg px-8">
@@ -178,7 +178,7 @@ export default function LandingPage() {
 
           {/* Benefits Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-            {benefits.map((benefit, index) => (
+            {benefits.map((benefit) => (
               <div
                 key={benefit.letter}
                 className="flex flex-col gap-4 p-6 rounded-lg border border-gray-200 bg-background-100 hover:border-primary-500 transition-colors"
@@ -278,7 +278,7 @@ export default function LandingPage() {
                 Join Early Access
               </h2>
               <p className="text-lg text-gray-600 mb-8">
-                Bale is currently invite-only — we're personally onboarding each
+                Bale is currently invite-only — we&apos;re personally onboarding each
                 fabric trader with full support and a free setup.
               </p>
 
