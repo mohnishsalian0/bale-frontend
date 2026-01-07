@@ -44,7 +44,7 @@ export default function CreateGoodsOutwardPage() {
 
   // Skip partner and linkTo steps if coming from sales order
   const [currentStep, setCurrentStep] = useState<FormStep>(
-    salesOrderId ? "scanner" : "partner"
+    salesOrderId ? "scanner" : "partner",
   );
   const [scannedUnits, setScannedUnits] = useState<ScannedStockUnit[]>([]);
   const [saving, setSaving] = useState(false);

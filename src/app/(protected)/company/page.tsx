@@ -3,9 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  IconPhone,
-  IconMail,
-  IconWorld,
   IconMapPin,
   IconPencil,
   IconBuilding,
@@ -23,7 +20,6 @@ import { CompanyEditSheet } from "@/app/(protected)/company/CompanyEditSheet";
 import { useCompany } from "@/lib/query/hooks/company";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
 import {
-  formatWebsiteUrl,
   getFormattedCompanyAddress,
   getCompanyContactInfo,
 } from "@/lib/utils/company";

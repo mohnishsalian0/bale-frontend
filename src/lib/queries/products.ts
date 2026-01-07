@@ -429,9 +429,9 @@ export async function getProductsByIds(
 
   if (error) throw error;
 
-  const transformedData = (
-    (data as unknown as ProductListViewRaw[]) || []
-  ).map(transformProductListView);
+  const transformedData = ((data as unknown as ProductListViewRaw[]) || []).map(
+    transformProductListView,
+  );
 
   return transformedData;
 }
