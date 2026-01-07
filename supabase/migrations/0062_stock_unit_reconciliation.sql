@@ -5,12 +5,13 @@
 -- STOCK UNIT RECONCILIATION FUNCTION
 -- =====================================================
 
--- Reconcile stock_units: update remaining_quantity from goods_outward_items
--- Triggered via BEFORE UPDATE on stock_units (dummy update pattern from goods_outward_items)
+-- Reconcile stock_units: update remaining_quantity from goods_outward_items and adjustments
+-- Triggered via BEFORE UPDATE on stock_units (dummy update pattern from goods_outward_items and adjustments)
 CREATE OR REPLACE FUNCTION reconcile_stock_unit()
 RETURNS TRIGGER AS $$
 DECLARE
     v_total_dispatched DECIMAL(10,3);
+    v_total_adjustments DECIMAL(10,3);
     v_has_outward BOOLEAN;
 BEGIN
     -- Calculate total dispatched from all non-cancelled, non-deleted outwards
@@ -24,6 +25,14 @@ BEGIN
       AND go.is_cancelled = FALSE
       AND go.deleted_at IS NULL
       AND NEW.deleted_at IS NULL;  -- Exclude cancelled (soft-deleted) stock units
+
+    -- Calculate total adjustments (wastage = negative, found = positive)
+    -- Exclude soft-deleted adjustments
+    SELECT COALESCE(SUM(quantity_adjusted), 0)
+    INTO v_total_adjustments
+    FROM stock_unit_adjustments
+    WHERE stock_unit_id = NEW.id
+      AND deleted_at IS NULL;
 
     -- Check if this stock unit has ever been dispatched (for edit/delete guards)
     -- Only check if stock unit itself is not cancelled (deleted)
@@ -44,23 +53,24 @@ BEGIN
     -- additions from multiple inwards. The initial_quantity represents cumulative receipts.
     -- For non-piece types, initial_quantity is set once at creation.
 
-    -- Calculate remaining quantity: initial - dispatched
-    NEW.remaining_quantity := NEW.initial_quantity - v_total_dispatched;
+    -- Calculate remaining quantity: initial - dispatched + adjustments
+    -- Note: adjustments can be positive (found stock) or negative (wastage)
+    NEW.remaining_quantity := NEW.initial_quantity - v_total_dispatched + v_total_adjustments;
 
     -- Set has_outward flag
     NEW.has_outward := v_has_outward;
 
     -- Validate: prevent negative remaining quantity (data integrity)
     IF NEW.remaining_quantity < 0 THEN
-        RAISE EXCEPTION 'Remaining quantity cannot be negative for stock unit. Initial: %, Dispatched: %',
-            NEW.initial_quantity, v_total_dispatched;
+        RAISE EXCEPTION 'Remaining quantity cannot be negative for stock unit. Initial: %, Dispatched: %, Adjustments: %',
+            NEW.initial_quantity, v_total_dispatched, v_total_adjustments;
     END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION reconcile_stock_unit() IS 'Calculates remaining_quantity for stock units based on non-cancelled goods_outward_items. Automatically restores stock when outwards are cancelled/deleted. Excludes cancelled (soft-deleted) stock units from reconciliation. Validates against negative quantities.';
+COMMENT ON FUNCTION reconcile_stock_unit() IS 'Calculates remaining_quantity for stock units based on non-cancelled goods_outward_items and stock_unit_adjustments. Automatically restores stock when outwards/adjustments are cancelled/deleted. Excludes cancelled (soft-deleted) stock units from reconciliation. Validates against negative quantities.';
 
 -- Trigger reconciliation on stock_units BEFORE INSERT OR UPDATE
 CREATE TRIGGER trigger_reconcile_stock_unit

@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useState, useEffect } from "react";
-import { useParams, useRouter, usePathname } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { SessionProvider } from "@/contexts/session-context";
 import { AppChromeProvider, useAppChrome } from "@/contexts/app-chrome-context";
 import { createClient } from "@/lib/supabase/browser";
@@ -12,7 +12,10 @@ import WarehouseSelector from "@/components/layouts/warehouse-selector";
 import { AppSidebar } from "@/components/layouts/app-sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { toast } from "sonner";
-import { useWarehouseBySlug } from "@/lib/query/hooks/warehouses";
+import {
+  useWarehouseBySlug,
+  useWarehouseById,
+} from "@/lib/query/hooks/warehouses";
 import {
   useCurrentUser,
   useUserMutations,
@@ -100,86 +103,121 @@ function ChromeWrapper({
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const params = useParams();
   const router = useRouter();
-  const pathname = usePathname();
   const warehouseSlug = params.warehouse_slug as string | undefined;
 
-  const [authLoading, setAuthLoading] = useState(true);
-
-  // Fetch warehouse using TanStack Query if slug exists
-  const { data: warehouse, isLoading: warehouseLoading } = useWarehouseBySlug(
-    warehouseSlug || "",
-  );
+  // Fetch user and permissions
   const { data: user, isLoading: userLoading } = useCurrentUser();
   const { data: permissions, isLoading: permissionsLoading } =
     useUserPermissions(user?.role || null);
+
+  // Fetch warehouse by slug if in URL, otherwise by user's warehouse_id
+  const {
+    data: warehouseBySlug,
+    isLoading: warehouseBySlugLoading,
+    error: warehouseBySlugError,
+  } = useWarehouseBySlug(warehouseSlug || null);
+
+  const {
+    data: warehouseById,
+    isLoading: warehouseByIdLoading,
+    error: warehouseByIdError,
+  } = useWarehouseById(
+    !warehouseSlug && user?.warehouse_id ? user.warehouse_id : null,
+  );
+
+  // Determine which warehouse to use
+  const warehouse = warehouseSlug ? warehouseBySlug : warehouseById;
+  const warehouseLoading = warehouseSlug
+    ? warehouseBySlugLoading
+    : warehouseByIdLoading;
+  const warehouseError = warehouseSlug
+    ? warehouseBySlugError
+    : warehouseByIdError;
+
   const { updateWarehouse: updateUserWarehouse } = useUserMutations();
 
+  // Handle warehouse updates and redirects
   useEffect(() => {
-    const validateAccess = async () => {
-      try {
-        setAuthLoading(true);
+    // Wait for user and permissions to load
+    if (userLoading || permissionsLoading) {
+      return;
+    }
 
-        // If this is a warehouse route, validate warehouse access
-        if (warehouseSlug && !warehouseLoading) {
-          if (!warehouse) {
-            console.error("Warehouse not found");
-            router.push("/warehouse");
-            return;
-          }
+    // If no user, let auth handle redirect
+    if (!user) {
+      return;
+    }
 
-          // Sync user's selected warehouse with URL
-          if (user && user.warehouse_id !== warehouse.id) {
-            updateUserWarehouse.mutate(
-              {
-                userId: user.id,
-                warehouseId: warehouse.id,
-              },
-              {
-                onError: (error: Error) => {
-                  console.error("Error validating access:", error);
-                  router.push("/auth/login");
-                },
-              },
-            );
-          }
-        }
-      } finally {
-        setAuthLoading(false);
-      }
-    };
-    validateAccess();
-  }, [warehouseSlug, pathname, warehouse, warehouseLoading, user, router]);
+    // If no warehouse_id and no slug in URL, redirect to warehouse selection
+    if (!user.warehouse_id && !warehouseSlug) {
+      router.push("/warehouse");
+      return;
+    }
 
+    // Wait for warehouse query to complete
+    if (warehouseLoading) {
+      return;
+    }
+
+    // If warehouse fetch failed (RLS blocked or doesn't exist), redirect to warehouse selection
+    if (warehouseError || !warehouse) {
+      console.error("Warehouse not found or access denied");
+      router.push("/warehouse");
+      return;
+    }
+
+    // If warehouse successfully fetched from URL slug, update user.warehouse_id
+    if (warehouseSlug && warehouse && user.warehouse_id !== warehouse.id) {
+      updateUserWarehouse.mutate(
+        {
+          userId: user.id,
+          warehouseId: warehouse.id,
+        },
+        {
+          onError: (error: Error) => {
+            console.error("Error updating user warehouse:", error);
+          },
+        },
+      );
+    }
+  }, [
+    user,
+    warehouse,
+    warehouseSlug,
+    warehouseError,
+    userLoading,
+    permissionsLoading,
+    warehouseLoading,
+    router,
+    updateUserWarehouse,
+  ]);
+
+  // Show loading state
   const loading =
-    authLoading ||
     userLoading ||
     permissionsLoading ||
-    (warehouseSlug ? warehouseLoading : false);
+    warehouseLoading ||
+    updateUserWarehouse.isPending;
 
   if (loading) {
     return <LoadingState />;
   }
 
-  if (!user) {
-    return null; // Redirecting to login
+  // If no user or no warehouse, return null (redirecting)
+  if (!user || !warehouse) {
+    return null;
   }
 
-  // For warehouse routes, wrap with SessionProvider + AppChromeProvider + ChromeWrapper
-  if (warehouse) {
-    return (
-      <SessionProvider
-        warehouse={warehouse}
-        user={user}
-        permissions={permissions || []}
-      >
-        <AppChromeProvider>
-          <ChromeWrapper warehouse={warehouse}>{children}</ChromeWrapper>
-        </AppChromeProvider>
-      </SessionProvider>
-    );
-  }
-
-  // For non-warehouse protected routes (e.g., /warehouse selection, /company)
-  // Just render children without SessionProvider or chrome
-  return <AppChromeProvider>{children}</AppChromeProvider>;
+  // Wrap all routes with SessionProvider
+  return (
+    <SessionProvider
+      warehouse={warehouse}
+      user={user}
+      permissions={permissions || []}
+    >
+      <AppChromeProvider>
+        <ChromeWrapper warehouse={warehouse}>{children}</ChromeWrapper>
+      </AppChromeProvider>
+    </SessionProvider>
+  );
 }

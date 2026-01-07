@@ -191,6 +191,7 @@ export type Database = {
           party_state: string | null
           reason: string
           round_off_amount: number | null
+          search_vector: unknown
           sequence_number: number
           slug: string
           subtotal_amount: number | null
@@ -257,6 +258,7 @@ export type Database = {
           party_state?: string | null
           reason: string
           round_off_amount?: number | null
+          search_vector?: unknown
           sequence_number: number
           slug: string
           subtotal_amount?: number | null
@@ -323,6 +325,7 @@ export type Database = {
           party_state?: string | null
           reason?: string
           round_off_amount?: number | null
+          search_vector?: unknown
           sequence_number?: number
           slug?: string
           subtotal_amount?: number | null
@@ -2258,6 +2261,7 @@ export type Database = {
           payment_number: string
           reference_date: string | null
           reference_number: string | null
+          search_vector: unknown
           sequence_number: number
           slug: string
           tally_guid: string | null
@@ -2296,6 +2300,7 @@ export type Database = {
           payment_number: string
           reference_date?: string | null
           reference_number?: string | null
+          search_vector?: unknown
           sequence_number: number
           slug: string
           tally_guid?: string | null
@@ -2334,6 +2339,7 @@ export type Database = {
           payment_number?: string
           reference_date?: string | null
           reference_number?: string | null
+          search_vector?: unknown
           sequence_number?: number
           slug?: string
           tally_guid?: string | null
@@ -3323,6 +3329,73 @@ export type Database = {
           },
           {
             foreignKeyName: "sales_orders_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_unit_adjustments: {
+        Row: {
+          adjustment_date: string
+          company_id: string
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          id: string
+          modified_by: string | null
+          quantity_adjusted: number
+          reason: string
+          stock_unit_id: string
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          adjustment_date: string
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          id?: string
+          modified_by?: string | null
+          quantity_adjusted: number
+          reason: string
+          stock_unit_id: string
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          adjustment_date?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          id?: string
+          modified_by?: string | null
+          quantity_adjusted?: number
+          reason?: string
+          stock_unit_id?: string
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_unit_adjustments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_unit_adjustments_stock_unit_id_fkey"
+            columns: ["stock_unit_id"]
+            isOneToOne: false
+            referencedRelation: "stock_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_unit_adjustments_warehouse_id_fkey"
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"

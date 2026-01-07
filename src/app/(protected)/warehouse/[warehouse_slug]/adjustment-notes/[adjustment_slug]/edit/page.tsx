@@ -230,7 +230,7 @@ export default function EditAdjustmentNotePage() {
 
   const handleCancel = () => {
     router.push(
-      `/warehouse/${warehouse_slug}/adjustment-notes/${adjustment_slug}`,
+      `/warehouse/${warehouse_slug}/adjustment-notes/${adjustment_slug}/details`,
     );
   };
 

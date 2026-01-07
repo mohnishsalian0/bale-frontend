@@ -223,3 +223,11 @@ export const queryKeys = {
       ["adjustment-notes", "invoice", invoiceId, page] as const,
   },
 } as const;
+
+// Stock Unit Adjustments (separate from main queryKeys for circular dependency avoidance)
+export const stockUnitAdjustmentKeys = {
+  all: ["stock-unit-adjustments"] as const,
+  byStockUnit: (stockUnitId: string) =>
+    ["stock-unit-adjustments", "stock-unit", stockUnitId] as const,
+  byId: (id: string) => ["stock-unit-adjustments", "detail", id] as const,
+} as const;

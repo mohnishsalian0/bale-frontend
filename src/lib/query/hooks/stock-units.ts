@@ -14,6 +14,7 @@ import {
   getStockUnitWithProductDetail,
   updateStockUnit,
   updateStockUnits,
+  deleteStockUnit,
 } from "@/lib/queries/stock-units";
 import type { StockUnitFilters } from "@/types/stock-units.types";
 import type { TablesUpdate } from "@/types/database/supabase";
@@ -98,8 +99,18 @@ export function useStockUnitMutations(_warehouseId: string) {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: deleteStockUnit,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["stock-units"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] }); // Inventory counts may change
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] }); // Dashboard stats may change
+    },
+  });
+
   return {
     update,
     batchUpdate,
+    delete: deleteMutation,
   };
 }
