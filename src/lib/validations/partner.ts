@@ -7,8 +7,8 @@ import {
   optionalPinCodeSchema,
   optionalGstSchema,
   optionalPanSchema,
-  personalNameSchema,
-  optionalCompanyNameSchema,
+  optionalPersonalNameSchema,
+  companyNameSchema,
 } from "./common";
 
 /**
@@ -16,35 +16,52 @@ import {
  * Used for creating and editing partners (customers, suppliers, vendors, agents)
  */
 
-export const partnerSchema = z.object({
-  // Required fields
-  partnerType: z.enum(PARTNER_TYPES, {
-    message: "Partner type is required",
-  }),
-  firstName: personalNameSchema,
-  lastName: personalNameSchema,
-  phoneNumber: phoneNumberSchema,
-  email: optionalEmailSchema,
+export const partnerSchema = z
+  .object({
+    // Required fields
+    partnerType: z.enum(PARTNER_TYPES, {
+      message: "Partner type is required",
+    }),
+    firstName: optionalPersonalNameSchema,
+    lastName: optionalPersonalNameSchema,
+    phoneNumber: phoneNumberSchema,
+    email: optionalEmailSchema,
 
-  // Optional business details
-  businessType: optionalCompanyNameSchema,
-  companyName: optionalCompanyNameSchema,
+    // Required business details
+    companyName: companyNameSchema,
 
-  // Optional address fields
-  addressLine1: optionalString,
-  addressLine2: optionalString,
-  city: optionalString,
-  state: optionalString,
-  country: optionalString,
-  pinCode: optionalPinCodeSchema,
+    // Credit limit
+    creditLimitEnabled: z.boolean().default(false),
+    creditLimit: z.coerce.number().min(0).default(0),
 
-  // Optional tax details (with format validation)
-  gstNumber: optionalGstSchema,
-  panNumber: optionalPanSchema,
+    // Optional address fields
+    addressLine1: optionalString,
+    addressLine2: optionalString,
+    city: optionalString,
+    state: optionalString,
+    country: optionalString,
+    pinCode: optionalPinCodeSchema,
 
-  // Optional additional details
-  notes: optionalString,
-});
+    // Optional tax details (with format validation)
+    gstNumber: optionalGstSchema,
+    panNumber: optionalPanSchema,
+
+    // Optional additional details
+    notes: optionalString,
+  })
+  .refine(
+    (data) => {
+      // If credit limit is enabled, credit limit must be greater than 0
+      if (data.creditLimitEnabled && data.creditLimit <= 0) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Credit limit must be greater than 0 when enabled",
+      path: ["creditLimit"],
+    },
+  );
 
 /**
  * Type inference for partner form data

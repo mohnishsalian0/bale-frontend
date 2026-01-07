@@ -16,6 +16,7 @@ import ImageWrapper from "../ui/image-wrapper";
 import Logo from "../icons/Logo";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Link from "next/link";
+// import { SidebarTrigger } from "../ui/sidebar";
 
 interface TopBarProps {
   onWarehouseClick?: () => void;
@@ -50,9 +51,8 @@ export default function TopBar({
     >
       <div className="flex items-center justify-between px-4 py-3">
         {/* Left side - Menu + Warehouse selector */}
-        {/* Menu Button. Note: Put this inside isMobile enclosure */}
-        {/* <SidebarTrigger className='size-10 text-gray-700' /> */}
         <div className="flex items-center gap-2">
+          {/* {isMobile && <SidebarTrigger className="size-10 text-gray-700" />} */}
           {isMobile && (
             <Link
               href={`/warehouse/${warehouse.slug}/dashboard`}

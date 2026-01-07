@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { STOCK_TYPES, MEASURING_UNITS } from "@/types/database/enums";
+import {
+  STOCK_TYPES,
+  MEASURING_UNITS,
+  TAX_TYPES,
+} from "@/types/database/enums";
 import { optionalString, productNameSchema } from "./common";
 
 /**
@@ -12,6 +16,18 @@ export const productSchema = z
     // Required fields
     name: productNameSchema,
 
+    // Optional product code (auto-generated if not provided)
+    productCode: z
+      .string()
+      .trim()
+      .max(50, "Product code must not exceed 50 characters")
+      .regex(
+        /^[a-zA-Z0-9-]+$/,
+        "Product code can only contain letters, numbers, and hyphens (-)",
+      )
+      .optional()
+      .or(z.literal("")),
+
     stockType: z.enum(STOCK_TYPES, {
       message: "Stock type is required",
     }),
@@ -21,10 +37,20 @@ export const productSchema = z
     // Optional catalog display
     showOnCatalog: z.boolean().default(true),
 
-    // Optional feature fields
-    materials: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
-    colors: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
-    tags: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
+    // Required feature fields
+    materials: z
+      .array(z.object({ value: z.string(), label: z.string() }))
+      .min(1, "Please select atleast 1 material")
+      .default([]),
+    colors: z
+      .array(z.object({ value: z.string(), label: z.string() }))
+      .min(1, "Please select atleast 1 color")
+      .default([]),
+
+    // Optional tags
+    tags: z
+      .array(z.object({ value: z.string(), label: z.string() }))
+      .default([]),
 
     // Optional numeric fields with validation
     gsm: z
@@ -37,7 +63,7 @@ export const productSchema = z
           .int()
           .min(50, "GSM must be at least 50")
           .max(500, "GSM must not exceed 500")
-          .nullable()
+          .nullable(),
       )
       .or(z.null()),
 
@@ -45,7 +71,9 @@ export const productSchema = z
       .string()
       .trim()
       .transform((val) => (val === "" ? null : parseInt(val)))
-      .pipe(z.number().int().positive("Thread count must be positive").nullable())
+      .pipe(
+        z.number().int().positive("Thread count must be positive").nullable(),
+      )
       .or(z.null()),
 
     // Optional pricing fields
@@ -54,10 +82,7 @@ export const productSchema = z
       .trim()
       .transform((val) => (val === "" ? null : parseFloat(val)))
       .pipe(
-        z
-          .number()
-          .nonnegative("Cost price must be 0 or greater")
-          .nullable()
+        z.number().nonnegative("Cost price must be 0 or greater").nullable(),
       )
       .or(z.null()),
 
@@ -66,10 +91,7 @@ export const productSchema = z
       .trim()
       .transform((val) => (val === "" ? null : parseFloat(val)))
       .pipe(
-        z
-          .number()
-          .nonnegative("Selling price must be 0 or greater")
-          .nullable()
+        z.number().nonnegative("Selling price must be 0 or greater").nullable(),
       )
       .or(z.null()),
 
@@ -84,9 +106,13 @@ export const productSchema = z
           .number()
           .int()
           .nonnegative("Minimum stock threshold must be 0 or greater")
-          .nullable()
+          .nullable(),
       )
       .or(z.null()),
+
+    // Tax fields
+    taxType: z.enum(TAX_TYPES).default("gst"),
+    gstRate: z.number().nullable().default(5),
 
     // Optional additional details
     hsnCode: optionalString,
@@ -103,7 +129,7 @@ export const productSchema = z
     {
       message: "Measuring unit is required for roll type products",
       path: ["measuringUnit"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -116,7 +142,20 @@ export const productSchema = z
     {
       message: "Minimum stock threshold is required when alert is enabled",
       path: ["minStockThreshold"],
-    }
+    },
+  )
+  .refine(
+    (data) => {
+      // If tax type is gst, gst_rate must be set
+      if (data.taxType === "gst") {
+        return data.gstRate !== null;
+      }
+      return true;
+    },
+    {
+      message: "GST rate is required when tax type is GST",
+      path: ["gstRate"],
+    },
   );
 
 /**

@@ -47,3 +47,21 @@ export const createStockUnitSchema = (stockType: StockType) => {
 export type StockUnitFormData = z.infer<
   ReturnType<typeof createStockUnitSchema>
 >;
+
+/**
+ * Update stock unit schema - for editing existing stock units
+ * Note: initial_quantity is excluded as it cannot be changed if has_outward is true
+ * Other fields (grade, supplier_number, location, manufactured_on, notes) can always be edited
+ */
+export const updateStockUnitSchema = z.object({
+  supplier_number: optionalCodeSchema,
+  grade: optionalGradeSchema,
+  manufactured_on: z.date().nullish(),
+  location: optionalLocationSchema,
+  notes: z.string().trim().optional(),
+});
+
+/**
+ * Type inference for stock unit update form data
+ */
+export type StockUnitUpdateFormData = z.infer<typeof updateStockUnitSchema>;

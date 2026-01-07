@@ -4,6 +4,8 @@ import { IconCylinder, IconPackage, IconShirt } from "@tabler/icons-react";
 import type { ProductWithInventoryListView } from "@/types/products.types";
 import { getMeasuringUnitAbbreviation } from "./measuring-units";
 import { pluralizeStockType } from "./pluralize";
+import { formatAbsoluteDate } from "./date";
+import { StockUnit } from "@/types/stock-units.types";
 
 // Type for attribute objects (materials, colors, tags)
 interface ProductAttribute {
@@ -26,12 +28,12 @@ export function getProductIcon(
 
 /**
  * Get formatted product info string
- * Format: PROD-{sequence_number} · Material(s) · Color(s)
+ * Format: {product_code} · Material(s) · Color(s)
  */
 export function getProductInfo(
   product:
     | {
-        sequence_number?: number | null;
+        product_code?: string | null;
         materials?: ProductAttribute[] | null;
         colors?: ProductAttribute[] | null;
       }
@@ -42,8 +44,8 @@ export function getProductInfo(
 
   const parts: string[] = [];
 
-  if (product.sequence_number) {
-    parts.push(`PROD-${product.sequence_number}`);
+  if (product.product_code) {
+    parts.push(product.product_code);
   }
 
   // Get material names (join multiple with comma)
@@ -123,15 +125,6 @@ export function getStockTypeDisplay(
 }
 
 /**
- * Format stock unit number with appropriate prefix based on stock type
- * @param sequenceNumber - The stock unit sequence number
- * @returns Formatted string like "PROD-123"
- */
-export function formatProductNumber(sequenceNumber: number): string {
-  return `PROD-${sequenceNumber}`;
-}
-
-/**
  * Helper function to format available stock text
  * @returns Formatted string like "100.5 mtr", "100.5 kg", "100.5 yd", "100 units", "100 pc"
  */
@@ -185,6 +178,45 @@ export function formatStockUnitNumber(
           : "SU"; // fallback to generic SU if type unknown
 
   return `${prefix}-${sequenceNumber}`;
+}
+
+/**
+ * Get formatted stock unit info string
+ * Format: Grade: {quality_grade} • Supplier #: {supplier_number} • Location: {warehouse_location}
+ */
+export function getStockUnitInfo(
+  stockUnit:
+    | Pick<
+        StockUnit,
+        | "quality_grade"
+        | "supplier_number"
+        | "warehouse_location"
+        | "manufacturing_date"
+      >
+    | null
+    | undefined,
+): string {
+  if (!stockUnit) return "";
+
+  const parts: string[] = [];
+
+  if (stockUnit.quality_grade) {
+    parts.push(`Grade: ${stockUnit.quality_grade}`);
+  }
+
+  if (stockUnit.supplier_number) {
+    parts.push(`Supplier #: ${stockUnit.supplier_number}`);
+  }
+
+  if (stockUnit.warehouse_location) {
+    parts.push(`Location: ${stockUnit.warehouse_location}`);
+  }
+
+  if (stockUnit.manufacturing_date) {
+    parts.push(`Mfg on: ${formatAbsoluteDate(stockUnit.manufacturing_date)}`);
+  }
+
+  return parts.join(" • ");
 }
 
 // ============================================================================

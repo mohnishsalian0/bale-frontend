@@ -1,6 +1,6 @@
 "use client";
 
-import { IconEdit, IconTrash, IconPlus } from "@tabler/icons-react";
+import { IconTrash } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
@@ -10,6 +10,11 @@ import type { Tables } from "@/types/database/supabase";
 import type { ProductListView } from "@/types/products.types";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import { StockUnitWithProductDetailView } from "@/types/stock-units.types";
+import {
+  useStockUnitAdjustments,
+  useStockUnitAdjustmentMutations,
+} from "@/lib/query/hooks/stock-unit-adjustments";
+import { toast } from "sonner";
 
 type StockUnit = Tables<"stock_units">;
 
@@ -26,7 +31,7 @@ interface StockUnitDetailsContentProps {
   /**
    * Custom action handlers
    */
-  onWastage?: () => void;
+  onAdjustment?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
 }
@@ -34,7 +39,7 @@ interface StockUnitDetailsContentProps {
 export function StockUnitDetailsContent({
   stockUnit,
   showActions = true,
-  onWastage,
+  onAdjustment,
   onEdit,
   onDelete,
 }: StockUnitDetailsContentProps) {
@@ -44,11 +49,16 @@ export function StockUnitDetailsContent({
     : "units";
   const productInfoText = product ? getProductInfo(product) : "";
 
-  const handleWastage = () => {
-    if (onWastage) {
-      onWastage();
+  // Fetch adjustments for this stock unit
+  const { data: adjustments = [], isLoading: adjustmentsLoading } =
+    useStockUnitAdjustments(stockUnit.id);
+  const { delete: deleteAdjustment } = useStockUnitAdjustmentMutations();
+
+  const handleAdjustment = () => {
+    if (onAdjustment) {
+      onAdjustment();
     } else {
-      console.log("Add wastage");
+      console.log("Add adjustment");
     }
   };
 
@@ -66,6 +76,18 @@ export function StockUnitDetailsContent({
     } else {
       console.log("Delete stock unit");
     }
+  };
+
+  const handleDeleteAdjustment = (adjustmentId: string) => {
+    deleteAdjustment.mutate(adjustmentId, {
+      onSuccess: () => {
+        toast.success("Adjustment deleted successfully");
+      },
+      onError: (error) => {
+        console.error("Error deleting adjustment:", error);
+        toast.error("Failed to delete adjustment");
+      },
+    });
   };
 
   return (
@@ -166,6 +188,63 @@ export function StockUnitDetailsContent({
           <h3 className="text-sm font-medium text-gray-500">Notes</h3>
           <p className="text-sm text-gray-700">{stockUnit.notes || "-"}</p>
         </div>
+
+        {/* Adjustments Section */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-500">Adjustments</h3>
+          {adjustmentsLoading ? (
+            <p className="text-sm text-gray-500">Loading adjustments...</p>
+          ) : adjustments.length === 0 ? (
+            <p className="text-sm text-gray-500">-</p>
+          ) : (
+            <div className="space-y-2">
+              {adjustments.map((adjustment) => {
+                const isAddition = adjustment.quantity_adjusted > 0;
+                const iconColor = isAddition
+                  ? "text-green-600"
+                  : "text-red-600";
+
+                return (
+                  <div
+                    key={adjustment.id}
+                    className={`flex items-center gap-3 px-3 py-2 border border-gray-200 rounded-md`}
+                  >
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2"></div>
+                      <p
+                        className="text-xs text-gray-500"
+                        title={adjustment.reason}
+                      >
+                        <span className={`text-sm font-semibold ${iconColor}`}>
+                          {isAddition ? "+" : ""}
+                          {adjustment.quantity_adjusted} {unitAbbr}
+                        </span>
+                        {" • "}
+                        <span>
+                          {formatAbsoluteDate(adjustment.adjustment_date)}
+                        </span>
+                        {" • "}
+                        {adjustment.reason}
+                      </p>
+                    </div>
+
+                    {/* Delete Button */}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteAdjustment(adjustment.id)}
+                      className="flex-shrink-0 text-gray-500 hover:text-red-600 hover:bg-red-100"
+                    >
+                      <IconTrash className="size-4" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Action Buttons */}
@@ -173,10 +252,9 @@ export function StockUnitDetailsContent({
         <div className="flex gap-3 w-full pb-2 px-4 md:px-0">
           <Button
             type="button"
-            variant="outline"
+            variant="destructive"
             size="icon"
             onClick={handleDelete}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
           >
             <IconTrash />
           </Button>
@@ -186,17 +264,15 @@ export function StockUnitDetailsContent({
             onClick={handleEdit}
             className="flex-1"
           >
-            <IconEdit />
             Edit
           </Button>
           <Button
             type="button"
             variant="outline"
-            onClick={handleWastage}
+            onClick={handleAdjustment}
             className="flex-2"
           >
-            <IconPlus />
-            Wastage
+            Adjust quantity
           </Button>
         </div>
       )}

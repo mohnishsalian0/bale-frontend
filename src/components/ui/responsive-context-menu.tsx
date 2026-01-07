@@ -15,7 +15,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import type { ContextMenuItem as MenuItem } from "@/lib/utils/context-menu-items";
+import type { ContextMenuItem as MenuItem } from "@/lib/utils/action-menu";
 
 interface ResponsiveContextMenuProps {
   children: React.ReactNode;
@@ -108,9 +108,7 @@ export function ResponsiveContextMenu({
 
                 return (
                   <div key={item.label}>
-                    {needsSeparator && (
-                      <div className="h-px bg-border my-2" />
-                    )}
+                    {needsSeparator && <div className="h-px bg-border my-2" />}
                     <button
                       onClick={() => handleItemClick(item.onClick)}
                       disabled={item.disabled}
@@ -124,8 +122,10 @@ export function ResponsiveContextMenu({
                           : "cursor-pointer"
                       }`}
                     >
-                      <Icon className="size-5" />
-                      <span className="text-base font-medium">{item.label}</span>
+                      <Icon />
+                      <span className="text-base font-medium">
+                        {item.label}
+                      </span>
                     </button>
                   </div>
                 );

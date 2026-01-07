@@ -1,4 +1,4 @@
-import type { MeasuringUnit, StockType } from "@/types/database/enums";
+import type { MeasuringUnit } from "@/types/database/enums";
 import { Product } from "@/types/products.types";
 
 /**
@@ -12,20 +12,16 @@ export const MEASURING_UNIT_ABBREVIATIONS: Record<MeasuringUnit, string> = {
   piece: "pc",
 };
 /**
- * Get the abbreviated form of a measuring unit
+ * Get the measuring unit from a product
+ * Now simply returns the measuring_unit field (single source of truth)
  */
 export function getMeasuringUnit(
-  product: Pick<Product, "stock_type" | "measuring_unit"> | null,
+  product: Pick<Product, "measuring_unit"> | null,
 ): MeasuringUnit {
-  const stock_type = (product?.stock_type || "piece") as StockType;
-  const measuring_unit = (product?.measuring_unit || "piece") as MeasuringUnit;
-  if (stock_type === "piece") {
-    return "piece";
-  } else if (stock_type === "batch") {
-    return "unit";
-  } else {
-    return measuring_unit as MeasuringUnit;
+  if (!product?.measuring_unit) {
+    throw new Error("Product or measuring_unit is missing");
   }
+  return product.measuring_unit as MeasuringUnit;
 }
 
 /**

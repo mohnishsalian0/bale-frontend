@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   IconChevronDown,
   IconCurrencyRupee,
   IconPhoto,
   IconPercentage,
 } from "@tabler/icons-react";
-import { InputWithIcon } from "@/components/ui/input-with-icon";
+import { Input } from "@/components/ui/input";
+import { InputWrapper } from "@/components/ui/input-wrapper";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -21,19 +24,25 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { createClient } from "@/lib/supabase/browser";
-import type { Tables } from "@/types/database/supabase";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
 import { DatePicker } from "@/components/ui/date-picker";
 import { dateToISOString } from "@/lib/utils/date";
+import { usePartners } from "@/lib/query/hooks/partners";
+import { useWarehouses } from "@/lib/query/hooks/warehouses";
+import type { DiscountType, TaxType } from "@/types/database/enums";
+import { PAYMENT_TERMS } from "@/types/database/enums";
 
 interface OrderFormData {
   warehouseId: string;
   customerId: string;
   agentId: string;
   orderDate: string;
-  deliveryDate: string;
+  deliveryDueDate: string;
+  taxType: TaxType;
   advanceAmount: string;
+  discountType: DiscountType;
   discount: string;
+  paymentTerms: string;
   notes: string;
   files: File[];
 }
@@ -47,51 +56,10 @@ export function OrderDetailsStep({
   formData,
   setFormData,
 }: OrderDetailsStepProps) {
-  const [warehouses, setWarehouses] = useState<Tables<"warehouses">[]>([]);
-  const [agents, setAgents] = useState<Tables<"partners">[]>([]);
+  const [showFinancialDetails, setShowFinancialDetails] = useState(true);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
-
-  // Load warehouses and agents on mount
-  useEffect(() => {
-    loadWarehouses();
-    loadAgents();
-  }, []);
-
-  const loadWarehouses = async () => {
-    try {
-      const supabase = createClient();
-
-      // Fetch warehouses - RLS automatically filters based on user's warehouse access
-      const { data, error } = await supabase
-        .from("warehouses")
-        .select("*")
-        .order("created_at");
-
-      if (error) throw error;
-
-      setWarehouses(data || []);
-    } catch (error) {
-      console.error("Error loading warehouses:", error);
-    }
-  };
-
-  const loadAgents = async () => {
-    try {
-      const supabase = createClient();
-
-      // Load agents
-      const { data: agentsData, error: agentsError } = await supabase
-        .from("partners")
-        .select("*")
-        .eq("partner_type", "agent")
-        .order("first_name", { ascending: true });
-
-      if (agentsError) throw agentsError;
-      setAgents(agentsData || []);
-    } catch (error) {
-      console.error("Error loading agents:", error);
-    }
-  };
+  const { data: warehouses = [] } = useWarehouses();
+  const { data: agents = [] } = usePartners({ partner_type: "agent" });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -107,7 +75,7 @@ export function OrderDetailsStep({
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Main Fields */}
-      <div className="flex flex-col gap-5 px-4 py-6">
+      <div className="flex flex-col gap-6 px-4 py-6">
         {/* Warehouse Dropdown */}
         <Select
           value={formData.warehouseId}
@@ -123,26 +91,6 @@ export function OrderDetailsStep({
             {warehouses.map((warehouse) => (
               <SelectItem key={warehouse.id} value={warehouse.id}>
                 {warehouse.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Agent Dropdown */}
-        <Select
-          value={formData.agentId || undefined}
-          onValueChange={(value) =>
-            setFormData({ ...formData, agentId: value })
-          }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Agent (Optional)" />
-          </SelectTrigger>
-          <SelectContent>
-            {agents.map((agent) => (
-              <SelectItem key={agent.id} value={agent.id}>
-                {agent.first_name} {agent.last_name}
-                {agent.company_name && ` - ${agent.company_name}`}
               </SelectItem>
             ))}
           </SelectContent>
@@ -167,26 +115,145 @@ export function OrderDetailsStep({
             className="flex-1"
           />
 
-          {/* Delivery Date */}
+          {/* Delivery Due Date */}
           <DatePicker
-            label="Delivery date"
+            label="Delivery due date"
             placeholder="Pick a date"
             value={
-              formData.deliveryDate
-                ? new Date(formData.deliveryDate)
+              formData.deliveryDueDate
+                ? new Date(formData.deliveryDueDate)
                 : undefined
             }
             onChange={(date) =>
               setFormData({
                 ...formData,
-                deliveryDate: date ? dateToISOString(date) : "",
+                deliveryDueDate: date ? dateToISOString(date) : "",
               })
             }
             required
             className="flex-1"
           />
         </div>
+
+        {/* Agent Dropdown */}
+        <Select
+          value={formData.agentId || undefined}
+          onValueChange={(value) =>
+            setFormData({ ...formData, agentId: value })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Agent (Optional)" />
+          </SelectTrigger>
+          <SelectContent>
+            {agents.map((agent) => (
+              <SelectItem key={agent.id} value={agent.id}>
+                {agent.first_name} {agent.last_name}
+                {agent.company_name && ` - ${agent.company_name}`}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+
+      {/* Financial Details Section */}
+      <Collapsible
+        open={showFinancialDetails}
+        onOpenChange={setShowFinancialDetails}
+        className="border-t border-gray-200 px-4 py-5"
+      >
+        <CollapsibleTrigger
+          className={`flex items-center justify-between w-full ${showFinancialDetails ? "mb-5" : "mb-0"}`}
+        >
+          <h3 className="text-lg font-medium text-gray-900">
+            Financial Details
+          </h3>
+          <IconChevronDown
+            className={`size-6 text-gray-500 transition-transform ${showFinancialDetails ? "rotate-180" : "rotate-0"}`}
+          />
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <div className="flex flex-col gap-6">
+            {/* Tax Type */}
+            <div className="space-y-2">
+              <Label>Tax Type</Label>
+              <RadioGroup
+                value={formData.taxType}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    taxType: value as TaxType,
+                  })
+                }
+                name="tax-type"
+              >
+                <RadioGroupItem value="no_tax">No Tax</RadioGroupItem>
+                <RadioGroupItem value="gst">GST (CGST + SGST)</RadioGroupItem>
+                <RadioGroupItem value="igst">IGST</RadioGroupItem>
+              </RadioGroup>
+            </div>
+
+            {/* Advance Amount */}
+            <InputWrapper
+              type="number"
+              placeholder="Advance amount"
+              value={formData.advanceAmount}
+              onChange={(e) =>
+                setFormData({ ...formData, advanceAmount: e.target.value })
+              }
+              icon={<IconCurrencyRupee />}
+              min="0"
+              step="0.01"
+            />
+
+            {/* Discount Type */}
+            <div className="space-y-2">
+              <Label>Discount Type</Label>
+              <RadioGroup
+                value={formData.discountType}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    discountType: value as DiscountType,
+                  })
+                }
+                name="discount-type"
+              >
+                <RadioGroupItem value="none">None</RadioGroupItem>
+                <RadioGroupItem value="percentage">Percentage</RadioGroupItem>
+                <RadioGroupItem value="flat_amount">Flat Amount</RadioGroupItem>
+              </RadioGroup>
+            </div>
+
+            {/* Discount Value */}
+            {formData.discountType !== "none" && (
+              <InputWrapper
+                type="number"
+                placeholder={
+                  formData.discountType === "percentage"
+                    ? "Discount percent"
+                    : "Discount amount"
+                }
+                value={formData.discount}
+                onChange={(e) =>
+                  setFormData({ ...formData, discount: e.target.value })
+                }
+                icon={
+                  formData.discountType === "percentage" ? (
+                    <IconPercentage />
+                  ) : (
+                    <IconCurrencyRupee />
+                  )
+                }
+                min="0"
+                max={formData.discountType === "percentage" ? "100" : undefined}
+                step={formData.discountType === "percentage" ? "1" : "0.01"}
+              />
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Additional Details Section */}
       <Collapsible
@@ -206,32 +273,33 @@ export function OrderDetailsStep({
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <div className="flex flex-col gap-5">
-            {/* Advance Amount */}
-            <InputWithIcon
-              type="number"
-              placeholder="Advance amount"
-              value={formData.advanceAmount}
-              onChange={(e) =>
-                setFormData({ ...formData, advanceAmount: e.target.value })
-              }
-              icon={<IconCurrencyRupee />}
-              min="0"
-              step="0.01"
-            />
-
-            {/* Discount */}
-            <InputWithIcon
-              type="number"
-              placeholder="Discount percent"
-              value={formData.discount}
-              onChange={(e) =>
-                setFormData({ ...formData, discount: e.target.value })
-              }
-              icon={<IconPercentage />}
-              min="0"
-              step="0.01"
-            />
+          <div className="flex flex-col gap-6">
+            {/* Payment Terms */}
+            <div className="space-y-2">
+              <Input
+                type="text"
+                placeholder="Payment terms (Optional)"
+                value={formData.paymentTerms}
+                onChange={(e) =>
+                  setFormData({ ...formData, paymentTerms: e.target.value })
+                }
+              />
+              <div className="flex flex-wrap gap-2">
+                {PAYMENT_TERMS.map((term) => (
+                  <Badge
+                    key={term}
+                    variant="secondary"
+                    color="gray"
+                    onClick={() =>
+                      setFormData({ ...formData, paymentTerms: term })
+                    }
+                    className="cursor-pointer hover:bg-gray-200"
+                  >
+                    {term}
+                  </Badge>
+                ))}
+              </div>
+            </div>
 
             {/* Notes */}
             <Textarea

@@ -59,7 +59,7 @@ function RadioGroupItem({ value, children, className }: RadioGroupItemProps) {
     <label
       htmlFor={id}
       className={cn(
-        "px-4 py-2 text-sm font-medium rounded-2xl border-2 transition-colors",
+        "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-2xl border-2 transition-colors",
         isDisabled ? "cursor-not-allowed opacity-60" : "cursor-pointer",
         isSelected
           ? "bg-primary-200 border-primary-700 text-gray-700"

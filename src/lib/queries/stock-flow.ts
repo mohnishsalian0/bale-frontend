@@ -8,6 +8,8 @@ import type {
   InwardWithStockUnitListView,
   OutwardWithOutwardItemListView,
   InwardDetailView,
+  UpdateInwardData,
+  UpdateOutwardData,
 } from "@/types/stock-flow.types";
 import {
   PRODUCT_LIST_VIEW_SELECT,
@@ -177,7 +179,7 @@ export async function getGoodsInwards(
     .select(
       `
       *,
-      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, company_name),
+      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name),
 			from_warehouse:warehouses!from_warehouse_id(id, name),
       stock_units(
         product:products(${PRODUCT_LIST_VIEW_SELECT}),
@@ -249,7 +251,7 @@ export async function getGoodsOutwards(
     .select(
       `
       *,
-      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name),
+      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name),
 			from_warehouse:warehouses!to_warehouse_id(id, name),
       goods_outward_items(
         quantity_dispatched,
@@ -322,7 +324,7 @@ export async function getGoodsOutwardsBySalesOrder(
     .select(
       `
       *,
-      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name),
+      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name),
 			from_warehouse:warehouses!to_warehouse_id(id, name),
 			sales_order:sales_orders!inner(id, sequence_number),
       goods_outward_items(
@@ -356,6 +358,56 @@ export async function getGoodsOutwardsBySalesOrder(
 }
 
 /**
+ * Fetch goods inwards list by purchase order number
+ */
+export async function getGoodsInwardsByPurchaseOrder(
+  orderNumber: string,
+  page: number = 1,
+  pageSize: number = 25,
+): Promise<{ data: InwardWithStockUnitListView[]; totalCount: number }> {
+  const supabase = createClient();
+
+  // Calculate pagination range
+  const offset = (page - 1) * pageSize;
+  const limit = pageSize;
+
+  const { data, error, count } = await supabase
+    .from("goods_inwards")
+    .select(
+      `
+      *,
+      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name),
+			from_warehouse:warehouses!from_warehouse_id(id, name),
+			purchase_order:purchase_orders!inner(id, sequence_number),
+      stock_units(
+        product:products(${PRODUCT_LIST_VIEW_SELECT}),
+        initial_quantity
+      )
+    `,
+      { count: "exact" },
+    )
+    .eq("purchase_order.sequence_number", orderNumber)
+    .is("deleted_at", null)
+    .order("inward_date", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error("Error fetching goods inwards:", error);
+    throw error;
+  }
+
+  const transformedData =
+    (data as unknown as InwardWithStockUnitListViewRaw[])?.map(
+      transformInwardWithStockUnitListView,
+    ) || [];
+
+  return {
+    data: transformedData,
+    totalCount: count || 0,
+  };
+}
+
+/**
  * Fetch a single goods inward by sequence number
  */
 export async function getGoodsInwardByNumber(
@@ -368,8 +420,8 @@ export async function getGoodsInwardByNumber(
     .select(
       `
       *,
-      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, company_name, address_line1, address_line2, city, state, pin_code, country),
-      agent:partners!goods_inwards_agent_id_fkey(first_name, last_name, company_name),
+      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name, address_line1, address_line2, city, state, pin_code, country),
+      agent:partners!goods_inwards_agent_id_fkey(first_name, last_name, display_name, company_name),
       warehouse:warehouses!goods_inwards_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       from_warehouse:warehouses!goods_inwards_from_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       sales_order:sales_orders(sequence_number),
@@ -402,8 +454,8 @@ export async function getGoodsOutwardByNumber(
     .select(
       `
       *,
-      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, company_name, address_line1, address_line2, city, state, pin_code, country),
-      agent:partners!goods_outwards_agent_id_fkey(first_name, last_name, company_name),
+      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name, address_line1, address_line2, city, state, pin_code, country),
+      agent:partners!goods_outwards_agent_id_fkey(first_name, last_name, display_name, company_name),
       warehouse:warehouses!goods_outwards_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       sales_order:sales_orders(sequence_number),
@@ -450,7 +502,7 @@ export async function getOutwardItemsByProduct(
       outward:goods_outwards(
         id, sequence_number, outward_date, outward_type,
         partner:partners!goods_outwards_partner_id_fkey(
-          id, first_name, last_name, company_name
+          id, first_name, last_name, display_name, company_name
         ),
         to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(
           id, name
@@ -533,4 +585,148 @@ export async function createGoodsOutwardWithItems(
   }
 
   return data as string;
+}
+
+/**
+ * Update goods inward metadata (dates, transport, notes)
+ * Stock units and inward source remain locked
+ */
+export async function updateGoodsInward(
+  inwardId: string,
+  updateData: UpdateInwardData,
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("goods_inwards")
+    .update(updateData)
+    .eq("id", inwardId);
+
+  if (error) {
+    console.error("Error updating goods inward:", error);
+    throw error;
+  }
+}
+
+/**
+ * Cancel a goods inward
+ * Sets is_cancelled = true with cancellation reason
+ * Can only cancel if:
+ * - Not already cancelled
+ * - Not invoiced (has_invoice = false)
+ */
+export async function cancelGoodsInward(
+  inwardId: string,
+  cancellationReason: string,
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("goods_inwards")
+    .update({
+      is_cancelled: true,
+      cancellation_reason: cancellationReason,
+    })
+    .eq("id", inwardId);
+
+  if (error) {
+    console.error("Error cancelling goods inward:", error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a goods inward (soft delete)
+ * Can only delete if not invoiced (has_invoice = false)
+ * Sets deleted_at timestamp
+ */
+export async function deleteGoodsInward(inwardId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("goods_inwards")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", inwardId)
+    .eq("has_invoice", false);
+
+  if (error) {
+    console.error("Error deleting goods inward:", error);
+    throw error;
+  }
+}
+
+// ============================================================================
+// GOODS OUTWARD MUTATIONS
+// ============================================================================
+
+/**
+ * Update goods outward metadata (dates, transport, notes)
+ * Critical fields (partner, warehouse, type) remain locked
+ * Can only update if:
+ * - Not cancelled (is_cancelled = false)
+ * - Not deleted (deleted_at = null)
+ * - Not invoiced (has_invoice = false) for critical fields
+ */
+export async function updateGoodsOutward(
+  outwardId: string,
+  updateData: UpdateOutwardData,
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("goods_outwards")
+    .update(updateData)
+    .eq("id", outwardId);
+
+  if (error) {
+    console.error("Error updating goods outward:", error);
+    throw error;
+  }
+}
+
+/**
+ * Cancel a goods outward
+ * Sets is_cancelled = true with cancellation reason
+ * Can only cancel if:
+ * - Not already cancelled
+ * - Not invoiced (has_invoice = false)
+ */
+export async function cancelGoodsOutward(
+  outwardId: string,
+  cancellationReason: string,
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("goods_outwards")
+    .update({
+      is_cancelled: true,
+      cancellation_reason: cancellationReason,
+    })
+    .eq("id", outwardId);
+
+  if (error) {
+    console.error("Error cancelling goods outward:", error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a goods outward (soft delete)
+ * Can only delete if not invoiced (has_invoice = false)
+ * Sets deleted_at timestamp
+ */
+export async function deleteGoodsOutward(outwardId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("goods_outwards")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", outwardId)
+    .eq("has_invoice", false);
+
+  if (error) {
+    console.error("Error deleting goods outward:", error);
+    throw error;
+  }
 }

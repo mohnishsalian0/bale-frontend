@@ -1,13 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { IconMapPin, IconPencil, IconShare } from "@tabler/icons-react";
-import { Fab } from "../ui/fab";
-import { Button } from "../ui/button";
+import { IconMapPin } from "@tabler/icons-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
-import { WarehouseFormSheet } from "@/app/(protected)/warehouse/WarehouseFormSheet";
 import { useSession } from "@/contexts/session-context";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
 import { useUserMutations } from "@/lib/query/hooks/users";
@@ -15,8 +11,6 @@ import {
   getWarehouseContactDetails,
   getWarehouseFormattedAddress,
 } from "@/lib/utils/warehouse";
-import { Warehouse } from "@/types/warehouses.types";
-import { PermissionGate } from "../auth/PermissionGate";
 import { toast } from "sonner";
 
 interface WarehouseSelectorProps {
@@ -31,10 +25,6 @@ export default function WarehouseSelector({
   onOpenChange,
 }: WarehouseSelectorProps) {
   const { user } = useSession();
-  const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
-  const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(
-    null,
-  );
   const pathname = usePathname();
   const router = useRouter();
 
@@ -87,44 +77,6 @@ export default function WarehouseSelector({
     );
   };
 
-  const handleEdit = (warehouse: Warehouse, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditingWarehouse(warehouse);
-    setShowCreateWarehouse(true);
-  };
-
-  const handleShare = (warehouse: Warehouse, e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    // Build address string
-    const addressParts = [
-      warehouse.name,
-      warehouse.address_line1,
-      warehouse.address_line2,
-      warehouse.city && warehouse.state
-        ? `${warehouse.city}, ${warehouse.state}`
-        : warehouse.city || warehouse.state,
-      warehouse.pin_code ? `- ${warehouse.pin_code}` : "",
-      warehouse.country,
-    ].filter(Boolean);
-
-    const message = `📍 Warehouse Location\n\n${addressParts.join("\n")}`;
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/?text=${encodedMessage}`, "_blank");
-  };
-
-  const handleFabClick = () => {
-    setEditingWarehouse(null);
-    setShowCreateWarehouse(true);
-  };
-
-  const handleSheetClose = (open: boolean) => {
-    setShowCreateWarehouse(open);
-    if (!open) {
-      setEditingWarehouse(null);
-    }
-  };
-
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -157,7 +109,7 @@ export default function WarehouseSelector({
                   No warehouses found
                 </p>
               ) : (
-                <div className="flex flex-col mb-24 overflow-y-auto border border-border">
+                <div className="flex flex-col mb-24 overflow-y-auto border-x border-b border-gray-300">
                   {warehouses.map((warehouse) => {
                     const isSelected = warehouse.id === currentWarehouse;
                     const formattedAddress =
@@ -172,7 +124,7 @@ export default function WarehouseSelector({
                         className={`flex gap-3 p-4 cursor-pointer select-none transition-all bg-background border-t border-border ${isSelected && "bg-primary-100 border border-primary-500"}`}
                       >
                         {/* Content */}
-                        <div className="flex-1 min-w-0 flex flex-col gap-1">
+                        <div className="flex-1 min-w-0 flex flex-col">
                           <p
                             className="text-base font-medium text-gray-700 truncate"
                             title={warehouse.name}
@@ -193,31 +145,6 @@ export default function WarehouseSelector({
                               {contactDetails}
                             </p>
                           )}
-
-                          {/* Action buttons - Only show for admins */}
-                          <div className="flex items-center gap-2 mt-2 text-sm">
-                            <PermissionGate
-                              permission="warehouses.update"
-                              mode="disable"
-                            >
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => handleEdit(warehouse, e)}
-                              >
-                                <IconPencil />
-                                Edit
-                              </Button>
-                            </PermissionGate>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => handleShare(warehouse, e)}
-                            >
-                              <IconShare />
-                              Share
-                            </Button>
-                          </div>
                         </div>
                         {isSelected && (
                           <IconMapPin className="size-5 text-primary-700" />
@@ -227,28 +154,10 @@ export default function WarehouseSelector({
                   })}
                 </div>
               )}
-
-              {/* Floating Action Button - Only show for admins */}
-              <PermissionGate permission="warehouses.create" mode="disable">
-                <Fab
-                  onClick={handleFabClick}
-                  className="fixed bottom-4 right-4"
-                />
-              </PermissionGate>
             </div>
           </div>
         </SheetContent>
       </Sheet>
-
-      {/* Add/Edit Warehouse Sheet */}
-      {showCreateWarehouse && (
-        <WarehouseFormSheet
-          key={editingWarehouse ? editingWarehouse.id : "new"}
-          open={showCreateWarehouse}
-          onOpenChange={handleSheetClose}
-          warehouse={editingWarehouse}
-        />
-      )}
     </>
   );
 }

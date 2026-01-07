@@ -26,6 +26,7 @@ export const queryKeys = {
     byId: (productId: string) => ["products", "detail", productId] as const,
     byNumber: (sequenceNumber: string) =>
       ["products", "sequence", sequenceNumber] as const,
+    byCode: (productCode: string) => ["products", "code", productCode] as const,
     withInventory: (
       warehouseId: string,
       filters?: ProductFilters,
@@ -62,6 +63,18 @@ export const queryKeys = {
       ["sales-orders", "customer", customerId] as const,
   },
 
+  // Purchase Orders
+  purchaseOrders: {
+    all: (filters?: Record<string, unknown>, page?: number) =>
+      ["purchase-orders", filters, page] as const,
+    detail: (sequenceNumber: string) =>
+      ["purchase-orders", "detail", sequenceNumber] as const,
+    dashboard: (warehouseId: string) =>
+      ["purchase-orders", "dashboard", warehouseId] as const,
+    supplier: (supplierId: string) =>
+      ["purchase-orders", "supplier", supplierId] as const,
+  },
+
   // Warehouses (companyId removed - RLS handles scoping, user in single company)
   warehouses: {
     all: () => ["warehouses"] as const,
@@ -93,6 +106,8 @@ export const queryKeys = {
       filters?: Record<string, unknown>,
       page?: number,
     ) => ["stock-flow", "outwards", warehouseId, filters, page] as const,
+    inwardsByPurchaseOrder: (orderNumber: string, page?: number) =>
+      ["stock-flow", "inwards", orderNumber, page] as const,
     outwardsBySalesOrder: (orderNumber: string, page?: number) =>
       ["stock-flow", "outwards", orderNumber, page] as const,
     inwardDetail: (sequenceNumber: string) =>
@@ -121,6 +136,18 @@ export const queryKeys = {
     pendingQR: (warehouseId: string) =>
       ["dashboard", "pending-qr", warehouseId] as const,
     recentPartners: () => ["dashboard", "recent-partners"] as const,
+    accounting: () => ["dashboard", "accounting"] as const,
+    orders: () => ["dashboard", "orders"] as const,
+
+    // Stats
+    invoices: (filters?: Record<string, unknown>) =>
+      ["dashboard", "invoices", filters] as const,
+    salesOrderStats: (warehouseId: string) =>
+      ["dashboard", "sales-orders-stats", warehouseId] as const,
+    purchaseOrderStats: (warehouseId: string) =>
+      ["dashboard", "purchase-orders-stats", warehouseId] as const,
+    inventoryStats: (warehouseId: string) =>
+      ["dashboard", "inventory-stats", warehouseId] as const,
   },
 
   // Catalog (Public)
@@ -153,4 +180,54 @@ export const queryKeys = {
     active: () => ["invites", "active"] as const,
     byCode: (code: string) => ["invites", "code", code] as const,
   },
+
+  // Invoices
+  invoices: {
+    all: (filters?: Record<string, unknown>, page?: number) =>
+      ["invoices", filters, page] as const,
+    detail: (invoiceNumber: string) =>
+      ["invoices", "detail", invoiceNumber] as const,
+    byParty: (partyLedgerId: string, page?: number) =>
+      ["invoices", "party", partyLedgerId, page] as const,
+  },
+
+  // Payments
+  payments: {
+    all: (filters?: Record<string, unknown>, page?: number) =>
+      ["payments", filters, page] as const,
+    detail: (paymentNumber: string) =>
+      ["payments", "detail", paymentNumber] as const,
+    byParty: (partyLedgerId: string, page?: number) =>
+      ["payments", "party", partyLedgerId, page] as const,
+    byInvoice: (invoiceId: string) =>
+      ["payments", "invoice", invoiceId] as const,
+    outstandingInvoices: (
+      partyLedgerId: string,
+      invoiceType: "sales" | "purchase",
+    ) => ["payments", "outstanding", partyLedgerId, invoiceType] as const,
+    counterLedgers: () => ["payments", "counter-ledgers"] as const,
+  },
+
+  // Ledgers
+  ledgers: {
+    all: (filters?: Record<string, unknown>) => ["ledgers", filters] as const,
+  },
+
+  // Adjustment Notes
+  adjustmentNotes: {
+    all: (filters?: Record<string, unknown>, page?: number) =>
+      ["adjustment-notes", filters, page] as const,
+    detail: (adjustmentNumber: string) =>
+      ["adjustment-notes", "detail", adjustmentNumber] as const,
+    byInvoice: (invoiceId: string, page?: number) =>
+      ["adjustment-notes", "invoice", invoiceId, page] as const,
+  },
+} as const;
+
+// Stock Unit Adjustments (separate from main queryKeys for circular dependency avoidance)
+export const stockUnitAdjustmentKeys = {
+  all: ["stock-unit-adjustments"] as const,
+  byStockUnit: (stockUnitId: string) =>
+    ["stock-unit-adjustments", "stock-unit", stockUnitId] as const,
+  byId: (id: string) => ["stock-unit-adjustments", "detail", id] as const,
 } as const;

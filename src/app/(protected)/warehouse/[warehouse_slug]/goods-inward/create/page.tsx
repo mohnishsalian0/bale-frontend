@@ -1,19 +1,16 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  ProductSelectionStep,
-  StockUnitSpec,
-} from "../ProductSelectionStep";
+import { ProductSelectionStep, StockUnitSpec } from "../ProductSelectionStep";
 import { StockUnitFormSheet } from "../StockUnitFormSheet";
 import { AllSpecificationsSheet } from "../AllSpecificationsSheet";
 import { PieceQuantitySheet } from "../PieceQuantitySheet";
 import { PartnerSelectionStep } from "@/app/(protected)/warehouse/[warehouse_slug]/stock-flow/PartnerSelectionStep";
 import { InwardLinkToStep, InwardLinkToData } from "../InwardLinkToStep";
 import { InwardDetailsStep } from "../InwardDetailsStep";
-import { ProductFormSheet } from "../../inventory/ProductFormSheet";
+import { ProductFormSheet } from "../../products/ProductFormSheet";
 import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useStockFlowMutations } from "@/lib/query/hooks/stock-flow";
 import type { TablesInsert } from "@/types/database/supabase";
@@ -25,21 +22,33 @@ import { StockUnitStatus } from "@/types/database/enums";
 import { dateToISOString } from "@/lib/utils/date";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
+import { usePurchaseOrderById } from "@/lib/query/hooks/purchase-orders";
+import { useSalesOrderById } from "@/lib/query/hooks/sales-orders";
 
 interface DetailsFormData {
   inwardDate: string;
-  invoiceNumber: string;
+  expectedDeliveryDate: string;
+  transportType: "road" | "rail" | "air" | "sea" | "courier" | null;
+  transportReferenceNumber: string;
   notes: string;
   documentFile: File | null;
 }
 
-type FormStep = "products" | "partner" | "linkTo" | "details";
+type FormStep = "partner" | "linkTo" | "products" | "details";
 
 export default function CreateGoodsInwardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
-  const [currentStep, setCurrentStep] = useState<FormStep>("products");
+
+  // Read URL params for purchase order prefill
+  const purchaseOrderId = searchParams.get("purchase_order");
+
+  // Skip partner and linkTo steps if coming from purchase order
+  const [currentStep, setCurrentStep] = useState<FormStep>(
+    purchaseOrderId ? "products" : "partner",
+  );
 
   // Mutations
   const { createInwardWithUnits } = useStockFlowMutations(warehouse.id);
@@ -81,7 +90,7 @@ export default function CreateGoodsInwardPage() {
   const [linkToData, setLinkToData] = useState<InwardLinkToData>({
     linkToType: "purchase_order",
     sales_order_id: null,
-    purchase_order_number: null,
+    purchase_order_id: null,
     other_reason: null,
     job_work_id: null,
   });
@@ -89,10 +98,66 @@ export default function CreateGoodsInwardPage() {
   // Details form state
   const [detailsFormData, setDetailsFormData] = useState<DetailsFormData>({
     inwardDate: dateToISOString(new Date()),
-    invoiceNumber: "",
+    expectedDeliveryDate: "",
+    transportType: null,
+    transportReferenceNumber: "",
     notes: "",
     documentFile: null,
   });
+
+  // Fetch order details if an order is selected
+  const { data: purchaseOrder } = usePurchaseOrderById(
+    linkToData.linkToType === "purchase_order"
+      ? linkToData.purchase_order_id
+      : null,
+  );
+
+  const { data: salesOrder } = useSalesOrderById(
+    linkToData.linkToType === "sales_return" ? linkToData.sales_order_id : null,
+  );
+
+  // Prefill linkToData and partner when coming from purchase order URL
+  useEffect(() => {
+    if (!purchaseOrderId || linkToData.purchase_order_id) return;
+
+    // Set linkTo data for purchase order
+    setLinkToData({
+      linkToType: "purchase_order",
+      sales_order_id: null,
+      purchase_order_id: purchaseOrderId,
+      other_reason: null,
+      job_work_id: null,
+    });
+  }, [purchaseOrderId, linkToData.purchase_order_id]);
+
+  // Set partner from purchase order when data loads
+  useEffect(() => {
+    if (!purchaseOrderId || !purchaseOrder || selectedPartnerId) return;
+
+    setSelectedPartnerId(purchaseOrder.supplier_id);
+    setReceivedFromType("partner");
+  }, [purchaseOrderId, purchaseOrder, selectedPartnerId]);
+
+  // Compute orderProducts with pending quantities for ProductSelectionStep
+  const orderProducts = useMemo<Record<string, number>>(() => {
+    const result: Record<string, number> = {};
+
+    if (purchaseOrder) {
+      purchaseOrder.purchase_order_items.forEach((item) => {
+        if (item.product_id && item.pending_quantity !== null) {
+          result[item.product_id] = item.pending_quantity;
+        }
+      });
+    } else if (salesOrder) {
+      salesOrder.sales_order_items.forEach((item) => {
+        if (item.product_id && item.pending_quantity !== null) {
+          result[item.product_id] = item.pending_quantity;
+        }
+      });
+    }
+
+    return result;
+  }, [purchaseOrder, salesOrder]);
 
   // Handle opening unit sheet
   const handleOpenUnitSheet = (
@@ -202,6 +267,7 @@ export default function CreateGoodsInwardPage() {
   // Partner selection handlers
   const handleSelectPartner = (partnerId: string) => {
     setSelectedPartnerId(partnerId);
+    setSelectedWarehouseId(null);
     // Auto-advance to next step after selection
     setTimeout(() => {
       setCurrentStep("linkTo");
@@ -210,6 +276,7 @@ export default function CreateGoodsInwardPage() {
 
   const handleSelectWarehouse = (warehouseId: string) => {
     setSelectedWarehouseId(warehouseId);
+    setSelectedPartnerId(null);
     // Auto-advance to next step after selection
     setTimeout(() => {
       setCurrentStep("linkTo");
@@ -238,7 +305,7 @@ export default function CreateGoodsInwardPage() {
   const canProceedFromLinkTo = useMemo(() => {
     switch (linkToData.linkToType) {
       case "purchase_order":
-        return !!linkToData.purchase_order_number?.trim();
+        return !!linkToData.purchase_order_id?.trim();
       case "sales_return":
         return !!linkToData.sales_order_id;
       case "other":
@@ -255,22 +322,22 @@ export default function CreateGoodsInwardPage() {
   );
 
   const handleNext = () => {
-    if (currentStep === "products" && canProceedFromProducts) {
-      setCurrentStep("partner");
-    } else if (currentStep === "partner" && canProceedFromPartner) {
+    if (currentStep === "partner" && canProceedFromPartner) {
       setCurrentStep("linkTo");
     } else if (currentStep === "linkTo" && canProceedFromLinkTo) {
+      setCurrentStep("products");
+    } else if (currentStep === "products" && canProceedFromProducts) {
       setCurrentStep("details");
     }
   };
 
   const handleBack = () => {
     if (currentStep === "details") {
+      setCurrentStep("products");
+    } else if (currentStep === "products") {
       setCurrentStep("linkTo");
     } else if (currentStep === "linkTo") {
       setCurrentStep("partner");
-    } else if (currentStep === "partner") {
-      setCurrentStep("products");
     }
   };
 
@@ -293,7 +360,10 @@ export default function CreateGoodsInwardPage() {
         | "sales_return"
         | "other",
       inward_date: detailsFormData.inwardDate || undefined,
-      transport_reference_number: detailsFormData.invoiceNumber || undefined,
+      expected_delivery_date: detailsFormData.expectedDeliveryDate || undefined,
+      transport_type: detailsFormData.transportType || undefined,
+      transport_reference_number:
+        detailsFormData.transportReferenceNumber || undefined,
       partner_id:
         receivedFromType === "partner"
           ? selectedPartnerId || undefined
@@ -303,7 +373,7 @@ export default function CreateGoodsInwardPage() {
           ? selectedWarehouseId || undefined
           : undefined,
       sales_order_id: linkToData.sales_order_id || undefined,
-      purchase_order_number: linkToData.purchase_order_number || undefined,
+      purchase_order_id: linkToData.purchase_order_id || undefined,
       other_reason: linkToData.other_reason || undefined,
       notes: detailsFormData.notes || undefined,
     };
@@ -368,11 +438,11 @@ export default function CreateGoodsInwardPage() {
         <FormHeader
           title="New Goods Inward"
           currentStep={
-            currentStep === "products"
+            currentStep === "partner"
               ? 1
-              : currentStep === "partner"
+              : currentStep === "linkTo"
                 ? 2
-                : currentStep === "linkTo"
+                : currentStep === "products"
                   ? 3
                   : 4
           }
@@ -383,14 +453,6 @@ export default function CreateGoodsInwardPage() {
 
         {/* Step Content - Scrollable */}
         <div className="flex-1 flex-col overflow-y-auto flex">
-          {currentStep === "products" && (
-            <ProductSelectionStep
-              productUnits={productUnits}
-              onOpenUnitSheet={handleOpenUnitSheet}
-              onAddNewProduct={() => setShowCreateProduct(true)}
-            />
-          )}
-
           {currentStep === "partner" && (
             <PartnerSelectionStep
               partnerTypes={["supplier", "vendor", "customer"]} // Customer for sales return
@@ -409,9 +471,26 @@ export default function CreateGoodsInwardPage() {
 
           {currentStep === "linkTo" && (
             <InwardLinkToStep
-              customerId={selectedPartnerId}
+              partnerId={selectedPartnerId}
               linkToData={linkToData}
               onLinkToChange={setLinkToData}
+              isWarehouseTransfer={receivedFromType === "warehouse"}
+            />
+          )}
+
+          {currentStep === "products" && (
+            <ProductSelectionStep
+              productUnits={productUnits}
+              orderProducts={orderProducts}
+              onOpenUnitSheet={handleOpenUnitSheet}
+              onAddNewProduct={() => setShowCreateProduct(true)}
+              showAllProducts={
+                linkToData.linkToType === "other" ||
+                (linkToData.linkToType === "purchase_order" &&
+                  !linkToData.purchase_order_id) ||
+                (linkToData.linkToType === "sales_return" &&
+                  !linkToData.sales_order_id)
+              }
             />
           )}
 
@@ -427,7 +506,7 @@ export default function CreateGoodsInwardPage() {
 
         {/* Bottom Action Bar - Fixed at bottom */}
         <FormFooter>
-          {currentStep !== "products" && (
+          {currentStep !== "partner" && (
             <Button
               variant="outline"
               onClick={handleBack}
@@ -435,15 +514,6 @@ export default function CreateGoodsInwardPage() {
               className="flex-1"
             >
               Back
-            </Button>
-          )}
-          {currentStep === "products" && (
-            <Button
-              onClick={handleNext}
-              disabled={!canProceedFromProducts || saving}
-              className="flex-1"
-            >
-              Continue
             </Button>
           )}
           {currentStep === "partner" && (
@@ -459,6 +529,15 @@ export default function CreateGoodsInwardPage() {
             <Button
               onClick={handleNext}
               disabled={!canProceedFromLinkTo || saving}
+              className="flex-1"
+            >
+              Continue
+            </Button>
+          )}
+          {currentStep === "products" && (
+            <Button
+              onClick={handleNext}
+              disabled={!canProceedFromProducts || saving}
               className="flex-1"
             >
               Continue

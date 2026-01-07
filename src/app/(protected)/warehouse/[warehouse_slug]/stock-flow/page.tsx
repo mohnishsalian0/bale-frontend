@@ -147,7 +147,7 @@ export default function StockFlowPage() {
   };
 
   // Transform inwards
-  const { monthGroups, totalReceived, totalOutwarded } = useMemo(() => {
+  const monthGroups = useMemo(() => {
     // Transform inwards
     const inwardItems: StockFlowItem[] = inwards.map((r) => {
       const senderName = getSenderName(r);
@@ -245,11 +245,7 @@ export default function StockFlowPage() {
       });
     });
 
-    return {
-      monthGroups: sortedGroups,
-      totalReceived: inwardByUnit,
-      totalOutwarded: outwardByUnit,
-    };
+    return sortedGroups;
   }, [inwards, outwards]);
 
   const formatDate = (dateStr: string) => {
@@ -298,16 +294,16 @@ export default function StockFlowPage() {
         <div className={`${isMobile ? "w-full" : "flex-1"}`}>
           <div className="mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Stock flow</h1>
-            <p className="text-sm font-medium text-gray-500 mt-2">
-              <span className="text-yellow-700">
-                {formatMeasuringUnitQuantities(totalReceived)} received
-              </span>
-              <span> & </span>
-              <span className="text-teal-700">
-                {formatMeasuringUnitQuantities(totalOutwarded)} dispatched
-              </span>
-              <span> in past month</span>
-            </p>
+            {/* <p className="text-sm font-medium text-gray-500 mt-2"> */}
+            {/*   <span className="text-yellow-700"> */}
+            {/*     {formatMeasuringUnitQuantities(totalReceived)} received */}
+            {/*   </span> */}
+            {/*   <span> & </span> */}
+            {/*   <span className="text-teal-700"> */}
+            {/*     {formatMeasuringUnitQuantities(totalOutwarded)} dispatched */}
+            {/*   </span> */}
+            {/*   <span> in past month</span> */}
+            {/* </p> */}
           </div>
 
           {/* Search */}
@@ -408,7 +404,7 @@ export default function StockFlowPage() {
                       );
                     }
                   }}
-                  className="flex items-center gap-4 p-4 border-t border-dashed border-gray-300 hover:bg-gray-100 hover:cursor-pointer transition-colors"
+                  className="flex gap-4 p-4 border-t border-dashed border-gray-300 hover:bg-gray-100 hover:cursor-pointer transition-colors"
                 >
                   <div className="flex-3 text-left">
                     <p className="text-base font-medium text-gray-700">

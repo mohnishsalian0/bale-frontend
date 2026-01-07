@@ -10,9 +10,13 @@ import type {
   UpdateSalesOrderData,
   CancelSalesOrderData,
   CompleteSalesOrderData,
+  SalesOrderUpdate,
 } from "@/types/sales-orders.types";
-import type { ProductAttributeAssignmentsRaw } from "@/types/products.types";
-import { transformAttributes } from "./products";
+import {
+  PRODUCT_LIST_VIEW_SELECT,
+  transformProductListView,
+  ProductListViewRaw,
+} from "./products";
 
 // Re-export types for convenience
 export type {
@@ -32,21 +36,10 @@ export type {
 
 /**
  * Raw type for sales order item in detail view
- * Includes nested product with attribute assignments
+ * Uses ProductListViewRaw for consistency
  */
 type SalesOrderItemDetailViewRaw = Tables<"sales_order_items"> & {
-  product:
-    | (Pick<
-        Tables<"products">,
-        | "id"
-        | "name"
-        | "stock_type"
-        | "measuring_unit"
-        | "product_images"
-        | "sequence_number"
-      > &
-        ProductAttributeAssignmentsRaw)
-    | null;
+  product: ProductListViewRaw | null;
 };
 
 /**
@@ -54,14 +47,42 @@ type SalesOrderItemDetailViewRaw = Tables<"sales_order_items"> & {
  * Includes nested customer, agent, warehouse, and items with raw attributes
  */
 type SalesOrderDetailViewRaw = Tables<"sales_orders"> & {
-  customer: Tables<"partners"> | null;
+  customer:
+    | (Tables<"partners"> & {
+        ledger: Pick<Tables<"ledgers">, "id" | "name">[];
+      })
+    | null;
   agent: Pick<
     Tables<"partners">,
-    "id" | "first_name" | "last_name" | "company_name"
+    "id" | "first_name" | "last_name" | "company_name" | "display_name"
   > | null;
   warehouse: Tables<"warehouses"> | null;
   sales_order_items: SalesOrderItemDetailViewRaw[];
 };
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Transform sales order items to flatten attributes
+ * Shared by getSalesOrderByNumber and getSalesOrderById
+ */
+function transformSalesOrderItems(
+  items: SalesOrderItemDetailViewRaw[],
+): SalesOrderItemDetailView[] {
+  return items.map((item) => {
+    if (!item.product) {
+      return { ...item, product: null };
+    }
+
+    // Use shared transform function from products.ts
+    return {
+      ...item,
+      product: transformProductListView(item.product),
+    };
+  });
+}
 
 // ============================================================================
 // QUERIES
@@ -94,10 +115,10 @@ export async function getSalesOrders(
       `
         *,
         customer:customer_id(
-          id, first_name, last_name, company_name
+          id, first_name, last_name, display_name, company_name
         ),
         agent:agent_id(
-          id, first_name, last_name, company_name
+          id, first_name, last_name, display_name, company_name
         ),
         sales_order_items!inner(
           *,
@@ -122,7 +143,12 @@ export async function getSalesOrders(
     if (Array.isArray(filters.status)) {
       query = query.in("status", filters.status);
     } else {
-      query = query.eq("status", filters.status);
+      if (filters.status === "overdue") {
+        query = query.eq("status", "in_progress");
+        query = query.lt("delivery_due_date", new Date().toISOString());
+      } else {
+        query = query.eq("status", filters.status);
+      }
     }
   }
 
@@ -147,6 +173,14 @@ export async function getSalesOrders(
       type: "websearch",
       config: "english",
     });
+  }
+
+  // Apply date range filter
+  if (filters?.date_from) {
+    query = query.gte("order_date", filters.date_from);
+  }
+  if (filters?.date_to) {
+    query = query.lte("order_date", filters.date_to);
   }
 
   // Apply ordering (defaults to order_date descending)
@@ -180,22 +214,17 @@ export async function getSalesOrderByNumber(
     .select(
       `
 			*,
-			customer:customer_id(*),
+			customer:customer_id(
+				*,
+				ledger:ledgers!partner_id(id, name)
+			),
 			agent:agent_id(
-				id, first_name, last_name, company_name
+				id, first_name, last_name, display_name, company_name
 			),
 			warehouse:warehouse_id(*),
 			sales_order_items(
 				*,
-				product:product_id(
-					id,
-					name,
-					stock_type,
-					measuring_unit,
-					product_images,
-					sequence_number,
-					attributes:product_attributes!inner(id, name, group_name, color_hex)
-				)
+				product:product_id(${PRODUCT_LIST_VIEW_SELECT})
 			)
 		`,
     )
@@ -206,34 +235,51 @@ export async function getSalesOrderByNumber(
   if (error) throw error;
   if (!data) throw new Error("Order not found");
 
-  // Transform sales order items to flatten attributes
-  const transformedItems: SalesOrderItemDetailView[] =
-    data.sales_order_items.map((item) => {
-      if (!item.product) {
-        return { ...item, product: null };
-      }
+  // Return transformed sales order
+  return {
+    ...data,
+    sales_order_items: transformSalesOrderItems(data.sales_order_items),
+  };
+}
 
-      // Transform attributes using shared utility
-      const { materials, colors, tags } = transformAttributes(item.product);
+/**
+ * Fetch a single sales order by ID (UUID)
+ */
+export async function getSalesOrderById(
+  orderId: string,
+): Promise<SalesOrderDetailView> {
+  const supabase = createClient();
 
-      // Remove nested assignments field
-      const { attributes: _attributes, ...productRest } = item.product;
+  const { data, error } = await supabase
+    .from("sales_orders")
+    .select(
+      `
+			*,
+			customer:customer_id(
+				*,
+				ledger:ledgers!partner_id(id, name)
+			),
+			agent:agent_id(
+				id, first_name, last_name, display_name, company_name
+			),
+			warehouse:warehouse_id(*),
+			sales_order_items(
+				*,
+				product:product_id(${PRODUCT_LIST_VIEW_SELECT})
+			)
+		`,
+    )
+    .eq("id", orderId)
+    .is("deleted_at", null)
+    .single<SalesOrderDetailViewRaw>();
 
-      return {
-        ...item,
-        product: {
-          ...productRest,
-          materials,
-          colors,
-          tags,
-        },
-      };
-    });
+  if (error) throw error;
+  if (!data) throw new Error("Order not found");
 
   // Return transformed sales order
   return {
     ...data,
-    sales_order_items: transformedItems,
+    sales_order_items: transformSalesOrderItems(data.sales_order_items),
   };
 }
 
@@ -256,6 +302,39 @@ export async function createSalesOrder(
   );
 
   if (error) throw error;
+  if (!sequenceNumber) throw new Error("No sequence number returned");
+
+  return sequenceNumber as number;
+}
+
+/**
+ * Create a quick sales order (sales order + goods outward) atomically
+ * Used when customer visits store and collects items immediately
+ */
+export async function createQuickSalesOrder(
+  orderData: CreateSalesOrderData,
+  orderItems: CreateSalesOrderLineItem[],
+  stockUnitItems: Array<{
+    stock_unit_id: string;
+    quantity: number;
+  }>,
+): Promise<number> {
+  const supabase = createClient();
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { data: sequenceNumber, error } = await supabase.rpc(
+    "quick_order_with_outward",
+    {
+      p_order_data: orderData,
+      p_order_items: orderItems,
+      p_stock_unit_items: stockUnitItems,
+    },
+  );
+
+  if (error) {
+    console.error("Error creating quick sales order:", error);
+    throw error;
+  }
   if (!sequenceNumber) throw new Error("No sequence number returned");
 
   return sequenceNumber as number;
@@ -339,4 +418,101 @@ export async function completeSalesOrder(
     .eq("id", orderId);
 
   if (error) throw error;
+}
+
+/**
+ * Update sales order fields (generic update for any fields)
+ */
+export async function updateSalesOrder(
+  orderId: string,
+  data: Partial<SalesOrderUpdate>,
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("sales_orders")
+    .update(data)
+    .eq("id", orderId);
+
+  if (error) throw error;
+}
+
+/**
+ * Update line items for a sales order (only when in approval_pending status)
+ * Deletes all existing items and inserts new ones in a transaction
+ * @deprecated Use updateSalesOrderWithItems instead for atomic updates
+ */
+export async function updateSalesOrderLineItems(
+  orderId: string,
+  lineItems: CreateSalesOrderLineItem[],
+): Promise<void> {
+  const supabase = createClient();
+
+  if (lineItems.length === 0) {
+    throw new Error("At least one line item is required");
+  }
+
+  // Delete all existing line items
+  const { error: deleteError } = await supabase
+    .from("sales_order_items")
+    .delete()
+    .eq("sales_order_id", orderId);
+
+  if (deleteError) throw deleteError;
+
+  // Insert new line items
+  const lineItemsToInsert = lineItems.map((item) => ({
+    sales_order_id: orderId,
+    product_id: item.product_id,
+    required_quantity: item.required_quantity,
+    unit_rate: item.unit_rate,
+    dispatched_quantity: 0,
+  }));
+
+  const { error: insertError } = await supabase
+    .from("sales_order_items")
+    .insert(lineItemsToInsert);
+
+  if (insertError) throw insertError;
+}
+
+/**
+ * Update sales order with items atomically via RPC function
+ * Validates business rules (approval_pending status, no outward records)
+ * Deletes old items and inserts new ones in a single transaction
+ */
+export async function updateSalesOrderWithItems(
+  orderId: string,
+  orderData: UpdateSalesOrderData,
+  lineItems: CreateSalesOrderLineItem[],
+): Promise<void> {
+  const supabase = createClient();
+
+  if (lineItems.length === 0) {
+    throw new Error("At least one line item is required");
+  }
+
+  const { error } = await supabase.rpc("update_sales_order_with_items", {
+    p_order_id: orderId,
+    p_order_data: orderData,
+    p_line_items: lineItems,
+  });
+
+  if (error) throw error;
+}
+
+/**
+ * Delete sales order (soft delete)
+ */
+export async function deleteSalesOrder(orderId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("sales_orders")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", orderId);
+
+  if (error) {
+    throw error;
+  }
 }

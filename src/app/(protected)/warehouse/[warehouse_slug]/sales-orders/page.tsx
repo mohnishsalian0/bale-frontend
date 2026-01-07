@@ -4,8 +4,14 @@ import { useState, useMemo, useEffect } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { IconSearch } from "@tabler/icons-react";
+import { IconSearch, IconBolt, IconPlus } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -15,7 +21,10 @@ import {
 } from "@/components/ui/select";
 import { PaginationWrapper } from "@/components/ui/pagination-wrapper";
 import { Fab } from "@/components/ui/fab";
-import { SalesStatusBadge } from "@/components/ui/sales-status-badge";
+import {
+  getStatusConfig,
+  SalesStatusBadge,
+} from "@/components/ui/sales-status-badge";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useSession } from "@/contexts/session-context";
@@ -23,22 +32,24 @@ import { Progress } from "@/components/ui/progress";
 import { useSalesOrders } from "@/lib/query/hooks/sales-orders";
 import { usePartners } from "@/lib/query/hooks/partners";
 import { useInfiniteProducts } from "@/lib/query/hooks/products";
+import { useSalesOrderAggregates } from "@/lib/query/hooks/aggregates";
 import { getPartnerName } from "@/lib/utils/partner";
 import { formatMonthHeader } from "@/lib/utils/date";
 import {
   calculateCompletionPercentage,
+  DisplayStatus,
   getOrderDisplayStatus,
   getProductSummary,
 } from "@/lib/utils/sales-order";
-import type { SalesOrderStatus, MeasuringUnit } from "@/types/database/enums";
+import type { MeasuringUnit, SalesOrderStatus } from "@/types/database/enums";
 import { formatAbsoluteDate } from "@/lib/utils/date";
-import {
-  formatMeasuringUnitQuantities,
-  getMeasuringUnit,
-} from "@/lib/utils/measuring-units";
+import { formatMeasuringUnitQuantities } from "@/lib/utils/measuring-units";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { SalesOrderItemListView } from "@/types/sales-orders.types";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
 
 interface OrderListItem {
   id: string;
@@ -54,6 +65,7 @@ interface OrderListItem {
     | "overdue"
     | "completed"
     | "cancelled";
+  statusText: string;
   completionPercentage: number;
   totalAmount: number;
 }
@@ -71,13 +83,31 @@ export default function OrdersPage() {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
-  const [selectedStatus, setSelectedStatus] = useState("all");
+
+  // Initialize filters from query params
+  const [selectedStatus, setSelectedStatus] = useState(
+    searchParams.get("status") || "all",
+  );
   const [selectedProduct, setSelectedProduct] = useState("all");
   const [selectedCustomer, setSelectedCustomer] = useState("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   // Get current page from URL (default to 1)
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const PAGE_SIZE = 25;
+
+  // Parse status filter - can be comma-separated like "approval_pending,in_progress"
+  const statusFilter =
+    selectedStatus !== "all"
+      ? selectedStatus.includes(",")
+        ? (selectedStatus.split(",") as DisplayStatus[])
+        : (selectedStatus as DisplayStatus)
+      : undefined;
+
+  // Fetch aggregate stats for all pending orders (unfiltered)
+  const { data: salesOrderStats } = useSalesOrderAggregates({
+    warehouseId: warehouse.id,
+  });
 
   // Fetch orders, customers, and products using TanStack Query with pagination
   const {
@@ -88,12 +118,13 @@ export default function OrdersPage() {
     filters: {
       warehouseId: warehouse.id,
       search_term: debouncedSearchQuery || undefined,
-      status:
-        selectedStatus !== "all"
-          ? (selectedStatus as SalesOrderStatus)
-          : undefined,
+      status: statusFilter,
       productId: selectedProduct !== "all" ? selectedProduct : undefined,
       customerId: selectedCustomer !== "all" ? selectedCustomer : undefined,
+      date_from: dateRange?.from
+        ? format(dateRange.from, "yyyy-MM-dd")
+        : undefined,
+      date_to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
     },
     page: currentPage,
     pageSize: PAGE_SIZE,
@@ -129,7 +160,13 @@ export default function OrdersPage() {
     if (currentPage !== 1) {
       router.push(`/warehouse/${warehouse.slug}/sales-orders?page=1`);
     }
-  }, [debouncedSearchQuery, selectedStatus, selectedProduct, selectedCustomer]);
+  }, [
+    debouncedSearchQuery,
+    selectedStatus,
+    selectedProduct,
+    selectedCustomer,
+    dateRange,
+  ]);
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -137,113 +174,87 @@ export default function OrdersPage() {
   };
 
   // Process orders data using useMemo
-  const { monthGroups, pendingOrdersCount, pendingQuantitiesByUnit } =
-    useMemo(() => {
-      if (!orders.length) {
-        return {
-          monthGroups: [],
-          pendingOrdersCount: 0,
-          pendingQuantitiesByUnit: "0",
+  const monthGroups = useMemo(() => {
+    if (!orders.length) {
+      return [];
+    }
+
+    // Transform orders
+    const orderItems: OrderListItem[] = orders.map((order) => {
+      const customerName = getPartnerName(order.customer);
+
+      const items = order.sales_order_items;
+
+      // Calculate completion percentage using utility
+      const completionPercentage = calculateCompletionPercentage(
+        order.sales_order_items || [],
+      );
+
+      // Determine status (including overdue) using utility
+      const displayStatusData = getOrderDisplayStatus(
+        order.status as SalesOrderStatus,
+        order.delivery_due_date,
+      );
+
+      return {
+        id: order.id,
+        orderNumber: order.sequence_number,
+        customerId: order.customer_id,
+        customerName,
+        items,
+        dueDate: order.delivery_due_date,
+        orderDate: order.order_date,
+        status: displayStatusData.status,
+        statusText: displayStatusData.text,
+        completionPercentage,
+        totalAmount: order.total_amount || 0,
+      };
+    });
+
+    // Group by month (based on order creation date)
+    const groups: { [key: string]: MonthGroup } = {};
+
+    orderItems.forEach((order) => {
+      const date = new Date(order.orderDate);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const monthDisplay = formatMonthHeader(date);
+
+      if (!groups[monthKey]) {
+        groups[monthKey] = {
+          month: monthDisplay,
+          monthYear: monthKey,
+          orders: [],
         };
       }
 
-      // Transform orders
-      const orderItems: OrderListItem[] = orders.map((order) => {
-        const customerName = getPartnerName(order.customer);
+      groups[monthKey].orders.push(order);
+    });
 
-        const items = order.sales_order_items;
-
-        // Calculate completion percentage using utility
-        const completionPercentage = calculateCompletionPercentage(
-          order.sales_order_items || [],
-        );
-
-        // Determine status (including overdue) using utility
-        const status = getOrderDisplayStatus(
-          order.status as SalesOrderStatus,
-          order.expected_delivery_date,
-        );
-
-        return {
-          id: order.id,
-          orderNumber: order.sequence_number,
-          customerId: order.customer_id,
-          customerName,
-          items,
-          dueDate: order.expected_delivery_date,
-          orderDate: order.order_date,
-          status,
-          completionPercentage,
-          totalAmount: order.total_amount || 0,
-        };
+    return Object.values(groups)
+      .map((group) => ({
+        ...group,
+        orders: group.orders.sort((a, b) => {
+          // Sort orders within each month from newest to oldest
+          return (
+            new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+          );
+        }),
+      }))
+      .sort((a, b) => {
+        const [monthA, yearA] = a.monthYear.split(" ");
+        const [monthB, yearB] = b.monthYear.split(" ");
+        const dateA = new Date(`${monthA} 1, ${yearA}`);
+        const dateB = new Date(`${monthB} 1, ${yearB}`);
+        return dateB.getTime() - dateA.getTime();
       });
+  }, [orders]);
 
-      // Group by month (based on order creation date)
-      const groups: { [key: string]: MonthGroup } = {};
-
-      orderItems.forEach((order) => {
-        const date = new Date(order.orderDate);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-        const monthDisplay = formatMonthHeader(date);
-
-        if (!groups[monthKey]) {
-          groups[monthKey] = {
-            month: monthDisplay,
-            monthYear: monthKey,
-            orders: [],
-          };
-        }
-
-        groups[monthKey].orders.push(order);
-      });
-
-      const monthGroups = Object.values(groups)
-        .map((group) => ({
-          ...group,
-          orders: group.orders.sort((a, b) => {
-            // Sort orders within each month from newest to oldest
-            return (
-              new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
-            );
-          }),
-        }))
-        .sort((a, b) => {
-          const [monthA, yearA] = a.monthYear.split(" ");
-          const [monthB, yearB] = b.monthYear.split(" ");
-          const dateA = new Date(`${monthA} 1, ${yearA}`);
-          const dateB = new Date(`${monthB} 1, ${yearB}`);
-          return dateB.getTime() - dateA.getTime();
-        });
-
-      // Calculate pending orders stats (approval_pending OR in_progress)
-      const pendingOrders = orders.filter(
-        (order) =>
-          order.status === "approval_pending" || order.status === "in_progress",
-      );
-
-      const pendingOrdersCount = pendingOrders.length;
-
-      // Aggregate remaining quantities by measuring unit
-      const unitMap = new Map<MeasuringUnit, number>();
-
-      pendingOrders.forEach((order) => {
-        (order.sales_order_items || []).forEach((item) => {
-          const unit = getMeasuringUnit(item.product);
-          const remainingQty =
-            item.required_quantity - (item.dispatched_quantity || 0);
-
-          unitMap.set(unit, (unitMap.get(unit) || 0) + remainingQty);
-        });
-      });
-
-      const pendingQuantitiesByUnit = formatMeasuringUnitQuantities(unitMap);
-
-      return {
-        monthGroups,
-        pendingOrdersCount,
-        pendingQuantitiesByUnit,
-      };
-    }, [orders]);
+  // Get aggregate stats from hook
+  const pendingOrdersCount = salesOrderStats?.count || 0;
+  const pendingQuantitiesByUnit = formatMeasuringUnitQuantities(
+    salesOrderStats?.pending_quantities_by_unit ||
+      new Map<MeasuringUnit, number>(),
+  );
 
   // Loading state
   if (loading) {
@@ -287,7 +298,7 @@ export default function OrdersPage() {
           <div className="relative max-w-md">
             <Input
               type="text"
-              placeholder="Search by order number"
+              placeholder="Search by order number, customer, product..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -370,6 +381,7 @@ export default function OrdersPage() {
             ))}
           </SelectContent>
         </Select>
+        <DateRangePicker date={dateRange} onDateChange={setDateRange} />
       </div>
 
       {/* Sales Orders List */}
@@ -378,7 +390,11 @@ export default function OrdersPage() {
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-gray-600 mb-2">No orders found</p>
             <p className="text-sm text-gray-500">
-              {searchQuery
+              {searchQuery ||
+              selectedStatus !== "all" ||
+              selectedProduct !== "all" ||
+              selectedCustomer !== "all" ||
+              dateRange
                 ? "Try adjusting your search or filters"
                 : "Start by adding a sales order"}
             </p>
@@ -397,8 +413,7 @@ export default function OrdersPage() {
               {group.orders.map((order) => {
                 const showProgressBar =
                   order.status === "in_progress" || order.status === "overdue";
-                const progressColor =
-                  order.status === "overdue" ? "yellow" : "blue";
+                const progressBarColor = getStatusConfig(order.status).color;
 
                 return (
                   <button
@@ -416,7 +431,10 @@ export default function OrdersPage() {
                         <p className="text-base font-medium text-gray-700">
                           {order.customerName}
                         </p>
-                        <SalesStatusBadge status={order.status} />
+                        <SalesStatusBadge
+                          status={order.status}
+                          text={order.statusText}
+                        />
                       </div>
 
                       {/* Subtexts spanning full width */}
@@ -441,7 +459,7 @@ export default function OrdersPage() {
                     {/* Progress Bar */}
                     {showProgressBar && (
                       <Progress
-                        color={progressColor}
+                        color={progressBarColor}
                         value={order.completionPercentage}
                       />
                     )}
@@ -460,13 +478,36 @@ export default function OrdersPage() {
         onPageChange={handlePageChange}
       />
 
-      {/* Floating Action Button */}
-      <Fab
-        onClick={() =>
-          router.push(`/warehouse/${warehouse.slug}/sales-orders/create`)
-        }
-        className="fixed bottom-20 right-4"
-      />
+      {/* Floating Action Button with Dropdown */}
+      <div className="fixed bottom-20 right-4 z-40">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div>
+              <Fab />
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem
+              onClick={() =>
+                router.push(
+                  `/warehouse/${warehouse.slug}/sales-orders/quick-create`,
+                )
+              }
+            >
+              <IconBolt className="mr-2 size-4" />
+              Quick Sale
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() =>
+                router.push(`/warehouse/${warehouse.slug}/sales-orders/create`)
+              }
+            >
+              <IconPlus className="mr-2 size-4" />
+              New Order
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 }

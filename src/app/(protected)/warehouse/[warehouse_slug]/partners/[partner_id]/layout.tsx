@@ -2,12 +2,7 @@
 
 import { use, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import {
-  IconPlus,
-  IconShoppingCart,
-  IconClockHour8,
-  IconTrash,
-} from "@tabler/icons-react";
+import { IconShoppingCart, IconClockHour8 } from "@tabler/icons-react";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
@@ -15,12 +10,6 @@ import { TabUnderline } from "@/components/ui/tab-underline";
 import { SalesStatusBadge } from "@/components/ui/sales-status-badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useSession } from "@/contexts/session-context";
 import { formatCurrency } from "@/lib/utils/financial";
 import { getPartnerName, getPartnerTypeLabel } from "@/lib/utils/partner";
@@ -39,6 +28,8 @@ import {
 import { useSalesOrders } from "@/lib/query/hooks/sales-orders";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { toast } from "sonner";
+import { ActionsFooter } from "@/components/layouts/actions-footer";
+import { getPartnerActions } from "@/lib/utils/action-menu";
 
 interface LayoutParams {
   params: Promise<{
@@ -211,17 +202,18 @@ export default function PartnerDetailLayout({
           {pendingOrdersCount > 0 &&
             pendingOrder &&
             (() => {
-              const displayStatus = getOrderDisplayStatus(
+              const displayStatusData = getOrderDisplayStatus(
                 pendingOrder.status as SalesOrderStatus,
-                pendingOrder.expected_delivery_date,
+                pendingOrder.delivery_due_date,
               );
               const completionPercentage = calculateCompletionPercentage(
                 pendingOrder.sales_order_items,
               );
               const showProgressBar =
-                displayStatus === "in_progress" || displayStatus === "overdue";
+                displayStatusData.status === "in_progress" ||
+                displayStatusData.status === "overdue";
               const progressColor =
-                displayStatus === "overdue" ? "yellow" : "blue";
+                displayStatusData.status === "overdue" ? "yellow" : "blue";
 
               return (
                 <button
@@ -240,7 +232,10 @@ export default function PartnerDetailLayout({
                         {pendingOrdersCount === 1 ? "order" : "orders"}
                       </span>
                     </div>
-                    <SalesStatusBadge status={displayStatus} />
+                    <SalesStatusBadge
+                      status={displayStatusData.status}
+                      text={displayStatusData.text}
+                    />
                   </div>
                   <p className="text-sm font-medium text-gray-700">
                     {getProductSummary(pendingOrder.sales_order_items)}
@@ -249,7 +244,7 @@ export default function PartnerDetailLayout({
                     <p className="text-xs text-gray-500">
                       SO-{pendingOrder.sequence_number}
                     </p>
-                    {displayStatus !== "approval_pending" && (
+                    {displayStatusData.status !== "approval_pending" && (
                       <p className="text-xs text-gray-500">
                         {completionPercentage}% completed
                       </p>
@@ -281,59 +276,28 @@ export default function PartnerDetailLayout({
         <div className="relative flex-1">{children}</div>
 
         {/* Bottom Action Bar */}
-        <div className="sticky bottom-0 p-4 bg-background border-t border-border flex gap-3 z-10">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon-sm">
-                •••
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" side="top" sideOffset={8}>
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <IconTrash />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowEditPartner(true)}
-            className="flex-1"
-          >
-            Edit
-          </Button>
-
-          {isCustomer && (
-            <Button
-              size="sm"
-              onClick={() =>
-                router.push(`/warehouse/${warehouse.slug}/sales-orders/create`)
-              }
-              className="flex-2"
-            >
-              <IconPlus className="size-5" />
-              Sales order
-            </Button>
+        <ActionsFooter
+          items={getPartnerActions(
+            { partner_type: partner.partner_type as PartnerType },
+            {
+              onDelete: () => setShowDeleteDialog(true),
+              onEdit: () => setShowEditPartner(true),
+              onCreateSalesOrder: isCustomer
+                ? () =>
+                    router.push(
+                      `/warehouse/${warehouse.slug}/sales-orders/create`,
+                    )
+                : undefined,
+              onCreatePurchaseOrder: isSupplier
+                ? () =>
+                    router.push(
+                      `/warehouse/${warehouse.slug}/goods-inward/create`,
+                    )
+                : undefined,
+            },
           )}
-
-          {isSupplier && (
-            <Button
-              size="sm"
-              onClick={() =>
-                router.push(`/warehouse/${warehouse.slug}/goods-inward/create`)
-              }
-              className="flex-2"
-            >
-              <IconPlus className="size-5" />
-              Purchase order
-            </Button>
-          )}
-        </div>
+          dropdownSide="top"
+        />
 
         {/* Edit Partner Sheet */}
         {showEditPartner && partner && (

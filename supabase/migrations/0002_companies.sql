@@ -18,7 +18,10 @@ CREATE TABLE companies (
     email VARCHAR(255),
     phone_number VARCHAR(20),
     website_url VARCHAR(255),
-    gst_number VARCHAR(15),
+    gst_number VARCHAR(15) CHECK (
+        gst_number IS NULL OR
+        gst_number ~ '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$'
+    ),
     pan_number VARCHAR(10),
     logo_url TEXT,
 

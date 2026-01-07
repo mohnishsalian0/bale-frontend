@@ -52,7 +52,7 @@ export function ResponsiveDialog({
               <DrawerDescription>{description}</DrawerDescription>
             )}
           </DrawerHeader>
-          <div className="overflow-x-hidden">{children}</div>
+          <div className="px-4 overflow-x-hidden">{children}</div>
           {footer && <DrawerFooter>{footer}</DrawerFooter>}
         </DrawerContent>
       </Drawer>

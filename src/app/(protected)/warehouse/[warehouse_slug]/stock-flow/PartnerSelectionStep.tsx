@@ -94,9 +94,9 @@ export function PartnerSelectionStep({
       if (b.id === selectedPartnerId) return 1;
 
       // Sort by company name if exists, otherwise by first name
-      const aName = a.company_name || a.first_name;
-      const bName = b.company_name || b.first_name;
-      return aName.localeCompare(bName);
+      const aName = a.company_name || a.first_name || "";
+      const bName = b.company_name || b.first_name || "";
+      return (aName || "").localeCompare(bName || "");
     });
 
     return filtered;
@@ -157,7 +157,7 @@ export function PartnerSelectionStep({
                 <p className="text-sm text-gray-500">No partners found</p>
               </div>
             ) : (
-              <div className="flex flex-col">
+              <div className="flex flex-col border-b border-border">
                 {filteredPartners.map((partner) => {
                   const isSelected = partner.id === selectedPartnerId;
                   const partnerName = getPartnerName(partner);
@@ -188,7 +188,7 @@ export function PartnerSelectionStep({
                         </p>
                         <p
                           title={partnerInfo}
-                          className="text-xs text-gray-500 truncate mt-1"
+                          className="text-sm text-gray-500 truncate"
                         >
                           {partnerInfo}
                         </p>
@@ -218,7 +218,7 @@ export function PartnerSelectionStep({
                 <p className="text-sm text-gray-500">No warehouses found</p>
               </div>
             ) : (
-              <div className="flex flex-col">
+              <div className="flex flex-col border-b border-border">
                 {otherWarehouses.map((warehouse) => {
                   const isSelected = warehouse.id === selectedWarehouseId;
                   const formattedAddress =
@@ -228,7 +228,7 @@ export function PartnerSelectionStep({
                     <button
                       key={warehouse.id}
                       onClick={() => onSelectWarehouse(warehouse.id)}
-                      className="flex items-center gap-3 p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors text-left"
+                      className="flex items-center gap-3 p-4 border-t border-gray-200 hover:bg-gray-50 transition-colors text-left"
                     >
                       <div className="flex-shrink-0 w-14 h-14 rounded-lg flex items-center justify-center bg-gray-100">
                         <IconBuildingWarehouse className="size-6 text-gray-500" />
@@ -243,7 +243,7 @@ export function PartnerSelectionStep({
                           {warehouse.name}
                         </div>
                         <div
-                          className="text-xs text-gray-500 truncate mt-1"
+                          className="text-sm text-gray-500 truncate"
                           title={formattedAddress}
                         >
                           {formattedAddress}

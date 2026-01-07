@@ -15,6 +15,7 @@ BEGIN
 	SELECT jsonb_build_object(
 		'id', p.id,
 		'sequence_number', p.sequence_number,
+		'product_code', p.product_code,
 		'name', p.name,
 		'show_on_catalog', p.show_on_catalog,
 		'is_active', p.is_active,

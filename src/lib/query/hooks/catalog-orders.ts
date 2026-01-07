@@ -15,7 +15,10 @@ import {
  *
  * Used in: order confirmation page after checkout
  */
-export function usePublicOrder(companyId: string | null, orderId: string | null) {
+export function usePublicOrder(
+  companyId: string | null,
+  orderId: string | null,
+) {
   return useQuery({
     queryKey: queryKeys.catalog.order(orderId || ""),
     queryFn: () => getSalesOrderById(companyId!, orderId!),
@@ -32,7 +35,8 @@ export function usePublicOrder(companyId: string | null, orderId: string | null)
  */
 export function useCreateCatalogOrder() {
   return useMutation({
-    mutationFn: (params: CreateCatalogOrderParams) => createCatalogOrder(params),
+    mutationFn: (params: CreateCatalogOrderParams) =>
+      createCatalogOrder(params),
     // No cache invalidation needed (anonymous users don't see order lists)
   });
 }

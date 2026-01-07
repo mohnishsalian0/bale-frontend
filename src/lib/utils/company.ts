@@ -43,3 +43,32 @@ export function getFormattedCompanyAddress(company: Company): string[] {
 
   return lines;
 }
+
+/**
+ * Get formatted company contact info string
+ * Format: 📞 {phone_number} • ✉️ {email} • 🌐 {website_url}
+ */
+export function getCompanyContactInfo(
+  company:
+    | Pick<Company, "phone_number" | "email" | "website_url">
+    | null
+    | undefined,
+): string {
+  if (!company) return "";
+
+  const parts: string[] = [];
+
+  if (company.phone_number) {
+    parts.push(`📞 ${company.phone_number}`);
+  }
+
+  if (company.email) {
+    parts.push(`📧 ${company.email}`);
+  }
+
+  if (company.website_url) {
+    parts.push(`🔗 ${formatWebsiteUrl(company.website_url)}`);
+  }
+
+  return parts.join(" • ");
+}

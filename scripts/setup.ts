@@ -238,6 +238,8 @@ async function createTestPartners() {
       city: "Mumbai",
       state: "Maharashtra",
       pin_code: "400001",
+      credit_limit_enabled: true,
+      credit_limit: 100000,
     },
     {
       company_id: companyId,
@@ -251,17 +253,22 @@ async function createTestPartners() {
       city: "Bangalore",
       state: "Karnataka",
       pin_code: "560001",
+      credit_limit_enabled: true,
+      credit_limit: 75000,
     },
     {
       company_id: companyId,
       partner_type: "customer",
       first_name: "Amit",
       last_name: "Patel",
+      company_name: "Patel Traders",
       phone_number: "+91 98765 43212",
       address_line1: "789 Ashram Road",
       city: "Ahmedabad",
       state: "Gujarat",
       pin_code: "380009",
+      credit_limit_enabled: false,
+      credit_limit: 0,
     },
     // Suppliers
     {
@@ -276,6 +283,8 @@ async function createTestPartners() {
       city: "Coimbatore",
       state: "Tamil Nadu",
       pin_code: "641001",
+      credit_limit_enabled: true,
+      credit_limit: 200000,
     },
     {
       company_id: companyId,
@@ -288,6 +297,8 @@ async function createTestPartners() {
       city: "Kanchipuram",
       state: "Tamil Nadu",
       pin_code: "631502",
+      credit_limit_enabled: true,
+      credit_limit: 150000,
     },
     // Vendors
     {
@@ -302,6 +313,8 @@ async function createTestPartners() {
       city: "Ludhiana",
       state: "Punjab",
       pin_code: "141001",
+      credit_limit_enabled: false,
+      credit_limit: 0,
     },
     {
       company_id: companyId,
@@ -314,6 +327,8 @@ async function createTestPartners() {
       city: "Surat",
       state: "Gujarat",
       pin_code: "395003",
+      credit_limit_enabled: true,
+      credit_limit: 80000,
     },
     // Agents
     {
@@ -321,23 +336,29 @@ async function createTestPartners() {
       partner_type: "agent",
       first_name: "Vikram",
       last_name: "Mehta",
+      company_name: "Mehta Logistics",
       phone_number: "+91 98765 43217",
       email: "vikram.mehta@example.com",
       address_line1: "258 Transport Nagar",
       city: "Delhi",
       state: "Delhi",
       pin_code: "110001",
+      credit_limit_enabled: false,
+      credit_limit: 0,
     },
     {
       company_id: companyId,
       partner_type: "agent",
       first_name: "Anjali",
       last_name: "Gupta",
+      company_name: "Gupta & Associates",
       phone_number: "+91 98765 43218",
       address_line1: "369 Market Road",
       city: "Pune",
       state: "Maharashtra",
       pin_code: "411001",
+      credit_limit_enabled: false,
+      credit_limit: 0,
     },
   ];
 
@@ -474,6 +495,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Premium Silk Saree",
+        product_code: "SILK-PREM-001", // Custom product code
         gsm: 120,
         thread_count_cm: 80,
         stock_type: "roll",
@@ -484,6 +506,8 @@ async function createTestPartners() {
         min_stock_alert: true,
         min_stock_threshold: 10,
         hsn_code: "5007",
+        tax_type: "gst",
+        gst_rate: 5,
         notes: "Premium quality silk saree with golden border",
       },
       materials: ["Silk"],
@@ -494,6 +518,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Cotton Kurta Fabric",
+        product_code: "COT-KURTA-001", // Custom product code
         gsm: 150,
         thread_count_cm: 60,
         stock_type: "roll",
@@ -504,6 +529,8 @@ async function createTestPartners() {
         min_stock_alert: true,
         min_stock_threshold: 50,
         hsn_code: "5208",
+        tax_type: "no_tax",
+        gst_rate: null,
         notes: "Pure cotton fabric ideal for summer kurtas",
       },
       materials: ["Cotton"],
@@ -514,6 +541,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Woolen Shawl Material",
+        // No product_code - will auto-generate as PROD-{sequence}
         gsm: 200,
         thread_count_cm: 50,
         stock_type: "roll",
@@ -523,6 +551,8 @@ async function createTestPartners() {
         show_on_catalog: true,
         min_stock_alert: false,
         hsn_code: "5111",
+        tax_type: "gst",
+        gst_rate: 12,
         notes: "High-quality woolen fabric for shawls",
       },
       materials: ["Wool"],
@@ -533,6 +563,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Polyester Blend Dress Material",
+        product_code: "POLY-DRESS-001", // Custom product code
         gsm: 180,
         thread_count_cm: 70,
         stock_type: "roll",
@@ -543,6 +574,8 @@ async function createTestPartners() {
         min_stock_alert: true,
         min_stock_threshold: 30,
         hsn_code: "5407",
+        tax_type: "no_tax",
+        gst_rate: null,
       },
       materials: ["Polyester"],
       colors: ["Blue"],
@@ -552,6 +585,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Linen Summer Fabric",
+        // No product_code - will auto-generate
         gsm: 140,
         thread_count_cm: 55,
         stock_type: "roll",
@@ -562,6 +596,8 @@ async function createTestPartners() {
         min_stock_alert: true,
         min_stock_threshold: 20,
         hsn_code: "5309",
+        tax_type: "gst",
+        gst_rate: 5,
         notes: "Eco-friendly linen fabric for summer wear",
       },
       materials: ["Linen"],
@@ -572,6 +608,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Designer Silk Fabric",
+        product_code: "SILK-DSG-001", // Custom product code
         gsm: 110,
         thread_count_cm: 75,
         stock_type: "batch",
@@ -581,6 +618,8 @@ async function createTestPartners() {
         show_on_catalog: false,
         min_stock_alert: false,
         hsn_code: "5007",
+        tax_type: "gst",
+        gst_rate: 5,
       },
       materials: ["Silk"],
       colors: ["Green"],
@@ -590,6 +629,7 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Cotton Denim",
+        product_code: "DEN-HVY-001", // Custom product code
         gsm: 300,
         thread_count_cm: 40,
         stock_type: "batch",
@@ -600,6 +640,8 @@ async function createTestPartners() {
         min_stock_alert: true,
         min_stock_threshold: 40,
         hsn_code: "5209",
+        tax_type: "no_tax",
+        gst_rate: null,
         notes: "Heavy-duty cotton denim fabric",
       },
       materials: ["Denim"],
@@ -610,16 +652,19 @@ async function createTestPartners() {
       product: {
         company_id: companyId,
         name: "Yellow Cotton Print",
+        // No product_code - will auto-generate
         gsm: 130,
         thread_count_cm: 65,
         stock_type: "piece",
-        measuring_unit: null,
+        measuring_unit: "piece",
         cost_price_per_unit: 400.0,
         selling_price_per_unit: 600.0,
         show_on_catalog: true,
         min_stock_alert: true,
         min_stock_threshold: 25,
         hsn_code: "5208",
+        tax_type: "gst",
+        gst_rate: 5,
       },
       materials: ["Cotton"],
       colors: ["Yellow"],
@@ -646,7 +691,7 @@ async function createTestPartners() {
 
     const productId = data.id;
     console.log(
-      `✅ Created product: ${item.product.name} (SEQ-${data.sequence_number})`,
+      `✅ Created product: ${item.product.name} (${item.product.product_code})`,
     );
 
     // Link attributes (materials, colors, tags)
@@ -667,9 +712,7 @@ async function createTestPartners() {
         .insert(assignments);
 
       if (linkError) {
-        console.error(
-          `   ❌ Failed to link attributes: ${linkError.message}`,
-        );
+        console.error(`   ❌ Failed to link attributes: ${linkError.message}`);
       }
     }
   }
@@ -1011,14 +1054,14 @@ async function createTestPartners() {
           warehouse_id: warehouseId,
           customer_id: customerId1,
           order_date: twoMonthsAgo.toISOString().split("T")[0],
-          expected_delivery_date: new Date(
+          delivery_due_date: new Date(
             twoMonthsAgo.getTime() + 15 * 24 * 60 * 60 * 1000,
           )
             .toISOString()
             .split("T")[0],
           status: "completed",
-          total_amount: 25000.0,
           advance_amount: 10000.0,
+          tax_type: "gst",
           discount_type: "percentage",
           discount_value: 5,
           notes: "Bulk order for wedding season",
@@ -1030,14 +1073,14 @@ async function createTestPartners() {
           order_date: new Date(twoMonthsAgo.getTime() + 5 * 24 * 60 * 60 * 1000)
             .toISOString()
             .split("T")[0],
-          expected_delivery_date: new Date(
+          delivery_due_date: new Date(
             twoMonthsAgo.getTime() + 20 * 24 * 60 * 60 * 1000,
           )
             .toISOString()
             .split("T")[0],
           status: "completed",
-          total_amount: 18000.0,
           advance_amount: 9000.0,
+          tax_type: "gst",
           discount_type: "percentage",
           discount_value: 10,
           notes: "Regular customer order",
@@ -1051,14 +1094,14 @@ async function createTestPartners() {
           )
             .toISOString()
             .split("T")[0],
-          expected_delivery_date: new Date(
+          delivery_due_date: new Date(
             twoMonthsAgo.getTime() + 25 * 24 * 60 * 60 * 1000,
           )
             .toISOString()
             .split("T")[0],
           status: "cancelled",
-          total_amount: 15000.0,
           advance_amount: 5000.0,
+          tax_type: "gst",
           discount_type: "percentage",
           discount_value: 0,
           notes: "Cancelled due to design changes",
@@ -1070,14 +1113,14 @@ async function createTestPartners() {
           warehouse_id: warehouseId,
           customer_id: customerId2,
           order_date: lastMonth.toISOString().split("T")[0],
-          expected_delivery_date: new Date(
+          delivery_due_date: new Date(
             lastMonth.getTime() + 10 * 24 * 60 * 60 * 1000,
           )
             .toISOString()
             .split("T")[0],
           status: "completed",
-          total_amount: 32000.0,
           advance_amount: 16000.0,
+          tax_type: "gst",
           discount_type: "percentage",
           discount_value: 8,
           notes: "Premium silk order",
@@ -1089,14 +1132,14 @@ async function createTestPartners() {
           order_date: new Date(lastMonth.getTime() + 5 * 24 * 60 * 60 * 1000)
             .toISOString()
             .split("T")[0],
-          expected_delivery_date: new Date(
+          delivery_due_date: new Date(
             lastMonth.getTime() - 5 * 24 * 60 * 60 * 1000,
           )
             .toISOString()
             .split("T")[0], // Overdue
           status: "in_progress",
-          total_amount: 28000.0,
           advance_amount: 14000.0,
+          tax_type: "gst",
           discount_type: "percentage",
           discount_value: 5,
           notes: "Delayed due to material shortage",
@@ -1108,14 +1151,14 @@ async function createTestPartners() {
           order_date: new Date(lastMonth.getTime() + 10 * 24 * 60 * 60 * 1000)
             .toISOString()
             .split("T")[0],
-          expected_delivery_date: new Date(
+          delivery_due_date: new Date(
             lastMonth.getTime() + 25 * 24 * 60 * 60 * 1000,
           )
             .toISOString()
             .split("T")[0],
           status: "completed",
-          total_amount: 22000.0,
           advance_amount: 11000.0,
+          tax_type: "igst",
           discount_type: "percentage",
           discount_value: 12,
           notes: "Festive collection order",
@@ -1127,14 +1170,14 @@ async function createTestPartners() {
           warehouse_id: warehouseId,
           customer_id: customerId1,
           order_date: currentMonth.toISOString().split("T")[0],
-          expected_delivery_date: new Date(
+          delivery_due_date: new Date(
             currentMonth.getTime() + 20 * 24 * 60 * 60 * 1000,
           )
             .toISOString()
             .split("T")[0],
           status: "approval_pending",
-          total_amount: 35000.0,
           advance_amount: 17500.0,
+          tax_type: "gst",
           discount_type: "percentage",
           discount_value: 7,
           notes: "Awaiting customer approval on design",
@@ -1146,14 +1189,14 @@ async function createTestPartners() {
           order_date: new Date(currentMonth.getTime() + 5 * 24 * 60 * 60 * 1000)
             .toISOString()
             .split("T")[0],
-          expected_delivery_date: new Date(
+          delivery_due_date: new Date(
             currentMonth.getTime() + 25 * 24 * 60 * 60 * 1000,
           )
             .toISOString()
             .split("T")[0],
           status: "in_progress",
-          total_amount: 42000.0,
           advance_amount: 21000.0,
+          tax_type: "gst",
           discount_type: "percentage",
           discount_value: 10,
           notes: "Large order in production",
@@ -1167,14 +1210,14 @@ async function createTestPartners() {
           )
             .toISOString()
             .split("T")[0],
-          expected_delivery_date: new Date(
+          delivery_due_date: new Date(
             currentMonth.getTime() - 2 * 24 * 60 * 60 * 1000,
           )
             .toISOString()
             .split("T")[0], // Overdue
           status: "in_progress",
-          total_amount: 19000.0,
           advance_amount: 9500.0,
+          tax_type: "no_tax",
           discount_type: "percentage",
           discount_value: 5,
           notes: "Rush order - overdue",
@@ -1188,14 +1231,14 @@ async function createTestPartners() {
           )
             .toISOString()
             .split("T")[0],
-          expected_delivery_date: new Date(
+          delivery_due_date: new Date(
             currentMonth.getTime() + 30 * 24 * 60 * 60 * 1000,
           )
             .toISOString()
             .split("T")[0],
           status: "approval_pending",
-          total_amount: 38000.0,
           advance_amount: 19000.0,
+          tax_type: "gst",
           discount_type: "percentage",
           discount_value: 15,
           notes: "New customer - premium discount",
@@ -1203,10 +1246,15 @@ async function createTestPartners() {
       ];
 
       for (const order of testSalesOrders) {
+        // Store intended final status
+        const finalStatus = order.status;
+
+        // Insert order with approval_pending status first
         const { data, error } = await supabase
           .from("sales_orders")
           .insert({
             ...order,
+            status: "approval_pending", // Always start with pending
             created_by: userId,
           })
           .select()
@@ -1219,7 +1267,7 @@ async function createTestPartners() {
 
         const orderId = data.id;
         console.log(
-          `✅ Created sales order: SEQ-${data.sequence_number} (${order.status})`,
+          `✅ Created sales order: SEQ-${data.sequence_number} (pending → ${finalStatus})`,
         );
 
         // Create order items (2-4 products per order)
@@ -1227,9 +1275,9 @@ async function createTestPartners() {
         for (let i = 0; i < itemCount && i < productsList.length; i++) {
           const requiredQty = Math.floor(Math.random() * 20) + 5; // 5-25 units
           const dispatchedQty =
-            order.status === "completed"
+            finalStatus === "completed"
               ? requiredQty
-              : order.status === "cancelled"
+              : finalStatus === "cancelled"
                 ? 0
                 : Math.floor(requiredQty * (Math.random() * 0.5 + 0.3)); // 30-80% dispatched
 
@@ -1255,9 +1303,361 @@ async function createTestPartners() {
             );
           }
         }
+
+        // Update to final status
+        if (finalStatus !== "approval_pending") {
+          const { error: updateError } = await supabase
+            .from("sales_orders")
+            .update({ status: finalStatus })
+            .eq("id", orderId);
+
+          if (updateError) {
+            console.error(
+              `   ❌ Failed to update order to ${finalStatus}: ${updateError.message}`,
+            );
+          } else {
+            console.log(`   ✅ Updated order status to ${finalStatus}`);
+          }
+        }
       }
 
       console.log("\n✨ Test sales orders created successfully!");
+    }
+  }
+
+  // Create purchase orders
+  console.log("\n📦 Creating test purchase orders...\n");
+
+  if (supplierError || !supplierPartners || supplierPartners.length === 0) {
+    console.error("❌ No suppliers found for creating purchase orders");
+  } else {
+    const supplierId1 = supplierPartners[0].id;
+    const supplierId2 =
+      supplierPartners.length > 1 ? supplierPartners[1].id : supplierId1;
+
+    // Get agent IDs if available
+    const { data: agentPartners } = await supabase
+      .from("partners")
+      .select("id")
+      .eq("company_id", companyId)
+      .eq("partner_type", "agent")
+      .limit(2);
+
+    const agentId1 =
+      agentPartners && agentPartners.length > 0 ? agentPartners[0].id : null;
+
+    // Get product IDs
+    const { data: productsList, error: productsError } = await supabase
+      .from("products")
+      .select("id, name")
+      .eq("company_id", companyId)
+      .limit(8);
+
+    if (productsError || !productsList || productsList.length === 0) {
+      console.error("❌ No products found for creating purchase orders");
+    } else {
+      // Create dates spanning 3 months
+      const now = new Date();
+      const currentMonth = new Date(now.getFullYear(), now.getMonth(), 5);
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+      const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 20);
+
+      // Define 10 purchase orders with different statuses
+      // Status distribution: 15% approval_pending, 25% in_progress, 50% completed, 10% cancelled
+      const testPurchaseOrders = [
+        // Two months ago - all completed/cancelled
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId1,
+          agent_id: agentId1,
+          order_date: twoMonthsAgo.toISOString().split("T")[0],
+          delivery_due_date: new Date(
+            twoMonthsAgo.getTime() + 15 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "completed",
+          advance_amount: 15000.0,
+          tax_type: "gst",
+          discount_type: "percentage",
+          discount_value: 5,
+          payment_terms: "30 days net",
+          supplier_invoice_number: "INV-2024-1001",
+          notes: "Bulk fabric purchase for wedding season",
+        },
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId2,
+          order_date: new Date(twoMonthsAgo.getTime() + 5 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          delivery_due_date: new Date(
+            twoMonthsAgo.getTime() + 20 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "completed",
+          advance_amount: 12000.0,
+          tax_type: "gst",
+          discount_type: "percentage",
+          discount_value: 8,
+          payment_terms: "15 days net",
+          supplier_invoice_number: "INV-2024-1002",
+          notes: "Regular supplier order",
+        },
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId1,
+          order_date: new Date(
+            twoMonthsAgo.getTime() + 10 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          delivery_due_date: new Date(
+            twoMonthsAgo.getTime() + 25 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "cancelled",
+          advance_amount: 8000.0,
+          tax_type: "gst",
+          discount_type: "percentage",
+          discount_value: 0,
+          notes: "Cancelled due to quality issues",
+          status_notes: "Supplier unable to meet quality standards",
+        },
+
+        // Last month - mix of statuses
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId2,
+          agent_id: agentId1,
+          order_date: lastMonth.toISOString().split("T")[0],
+          delivery_due_date: new Date(
+            lastMonth.getTime() + 10 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "completed",
+          advance_amount: 20000.0,
+          tax_type: "gst",
+          discount_type: "percentage",
+          discount_value: 10,
+          payment_terms: "45 days net",
+          supplier_invoice_number: "INV-2024-1003",
+          notes: "Premium silk fabrics order",
+        },
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId1,
+          order_date: new Date(lastMonth.getTime() + 5 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          delivery_due_date: new Date(
+            lastMonth.getTime() - 5 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0], // Overdue
+          status: "in_progress",
+          advance_amount: 18000.0,
+          tax_type: "igst",
+          discount_type: "percentage",
+          discount_value: 5,
+          payment_terms: "30 days net",
+          notes: "Delayed shipment from supplier",
+        },
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId2,
+          order_date: new Date(lastMonth.getTime() + 10 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          delivery_due_date: new Date(
+            lastMonth.getTime() + 25 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "completed",
+          advance_amount: 16000.0,
+          tax_type: "gst",
+          discount_type: "percentage",
+          discount_value: 12,
+          payment_terms: "20 days net",
+          supplier_invoice_number: "INV-2024-1004",
+          notes: "Cotton fabric stock replenishment",
+        },
+
+        // Current month - mostly pending/in progress
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId1,
+          agent_id: agentId1,
+          order_date: currentMonth.toISOString().split("T")[0],
+          delivery_due_date: new Date(
+            currentMonth.getTime() + 20 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "approval_pending",
+          advance_amount: 22000.0,
+          tax_type: "gst",
+          discount_type: "percentage",
+          discount_value: 7,
+          payment_terms: "30 days net",
+          notes: "Awaiting management approval",
+        },
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId2,
+          order_date: new Date(currentMonth.getTime() + 5 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          delivery_due_date: new Date(
+            currentMonth.getTime() + 25 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "in_progress",
+          advance_amount: 26000.0,
+          tax_type: "no_tax",
+          discount_type: "percentage",
+          discount_value: 10,
+          payment_terms: "45 days net",
+          notes: "Large order - partial shipment received",
+        },
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId1,
+          order_date: new Date(
+            currentMonth.getTime() + 10 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          delivery_due_date: new Date(
+            currentMonth.getTime() + 30 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "completed",
+          advance_amount: 14000.0,
+          tax_type: "gst",
+          discount_type: "percentage",
+          discount_value: 5,
+          payment_terms: "15 days net",
+          supplier_invoice_number: "INV-2024-1005",
+          notes: "Express delivery completed",
+        },
+        {
+          company_id: companyId,
+          warehouse_id: warehouseId,
+          supplier_id: supplierId2,
+          agent_id: agentId1,
+          order_date: new Date(
+            currentMonth.getTime() + 15 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          delivery_due_date: new Date(
+            currentMonth.getTime() + 30 * 24 * 60 * 60 * 1000,
+          )
+            .toISOString()
+            .split("T")[0],
+          status: "approval_pending",
+          advance_amount: 24000.0,
+          tax_type: "gst",
+          discount_type: "percentage",
+          discount_value: 15,
+          payment_terms: "60 days net",
+          notes: "New supplier - awaiting approval",
+        },
+      ];
+
+      for (const order of testPurchaseOrders) {
+        // Store intended final status
+        const finalStatus = order.status;
+
+        // Insert order with approval_pending status first
+        const { data, error } = await supabase
+          .from("purchase_orders")
+          .insert({
+            ...order,
+            status: "approval_pending", // Always start with pending
+            created_by: userId,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error(`❌ Failed to create purchase order: ${error.message}`);
+          continue;
+        }
+
+        const orderId = data.id;
+        console.log(
+          `✅ Created purchase order: PO-${data.sequence_number} (pending → ${finalStatus})`,
+        );
+
+        // Create order items (2-4 products per order)
+        const itemCount = Math.floor(Math.random() * 3) + 2; // 2-4 items
+        for (let i = 0; i < itemCount && i < productsList.length; i++) {
+          const requiredQty = Math.floor(Math.random() * 20) + 5; // 5-25 units
+          const receivedQty =
+            finalStatus === "completed"
+              ? requiredQty
+              : finalStatus === "cancelled"
+                ? 0
+                : Math.floor(requiredQty * (Math.random() * 0.5 + 0.3)); // 30-80% received
+
+          const { error: itemError } = await supabase
+            .from("purchase_order_items")
+            .insert({
+              company_id: companyId,
+              warehouse_id: warehouseId,
+              purchase_order_id: orderId,
+              product_id: productsList[i].id,
+              required_quantity: requiredQty,
+              received_quantity: receivedQty,
+              notes: `${productsList[i].name} - ${requiredQty} units`,
+            });
+
+          if (itemError) {
+            console.error(
+              `   ❌ Failed to create order item: ${itemError.message}`,
+            );
+          } else {
+            console.log(
+              `   ✅ Added item: ${productsList[i].name} (${receivedQty}/${requiredQty} received)`,
+            );
+          }
+        }
+
+        // Update to final status
+        if (finalStatus !== "approval_pending") {
+          const { error: updateError } = await supabase
+            .from("purchase_orders")
+            .update({ status: finalStatus })
+            .eq("id", orderId);
+
+          if (updateError) {
+            console.error(
+              `   ❌ Failed to update order to ${finalStatus}: ${updateError.message}`,
+            );
+          } else {
+            console.log(`   ✅ Updated order status to ${finalStatus}`);
+          }
+        }
+      }
+
+      console.log("\n✨ Test purchase orders created successfully!");
     }
   }
 
@@ -1459,6 +1859,1254 @@ async function createTestPartners() {
     }
 
     console.log("\n✨ Test QR code batches created successfully!");
+  }
+
+  // ================================================
+  // ACCOUNTING: Invoices, Adjustment Notes, Payments
+  // ================================================
+
+  // Fetch ledger IDs for invoices and payments
+  console.log("\n💰 Fetching ledgers for accounting...\n");
+
+  const { data: ledgers, error: ledgersError } = await supabase
+    .from("ledgers")
+    .select("id, name, ledger_type, partner_id")
+    .eq("company_id", companyId);
+
+  if (ledgersError || !ledgers || ledgers.length === 0) {
+    console.error("❌ No ledgers found. Ledgers should be auto-created!");
+    console.error(
+      "   Make sure migration 0060_auto_create_ledgers.sql is applied.",
+    );
+  } else {
+    console.log(`✅ Found ${ledgers.length} ledgers`);
+
+    // Create dates spanning 3 months for invoices and payments
+    const now = new Date();
+    const month1 = new Date(now.getFullYear(), now.getMonth(), 10); // Current month
+    const month2 = new Date(now.getFullYear(), now.getMonth() - 1, 15); // Last month
+    const month3 = new Date(now.getFullYear(), now.getMonth() - 2, 20); // 2 months ago
+
+    // Map ledgers by type and partner
+    const salesLedger = ledgers.find((l) => l.name === "Sales");
+    const salesReturnLedger = ledgers.find((l) => l.name === "Sales Return");
+    const purchaseLedger = ledgers.find((l) => l.name === "Purchase");
+    const purchaseReturnLedger = ledgers.find(
+      (l) => l.name === "Purchase Return",
+    );
+    const cashLedger = ledgers.find((l) => l.ledger_type === "cash");
+    const bankLedger = ledgers.find((l) => l.ledger_type === "bank");
+    const tdsPayableLedger = ledgers.find((l) => l.name === "TDS Payable");
+    const tcsReceivableLedger = ledgers.find(
+      (l) => l.name === "TCS Receivable",
+    );
+    const partyLedgers = ledgers.filter((l) => l.ledger_type === "party");
+
+    // Validate required ledgers exist
+    if (!salesLedger) {
+      console.error("❌ Sales ledger not found!");
+      return;
+    }
+    if (!salesReturnLedger) {
+      console.error("❌ Sales Return ledger not found!");
+      return;
+    }
+    if (!purchaseLedger) {
+      console.error("❌ Purchase ledger not found!");
+      return;
+    }
+    if (!purchaseReturnLedger) {
+      console.error("❌ Purchase Return ledger not found!");
+      return;
+    }
+
+    // Map partner IDs to their ledger IDs
+    const partnerLedgerMap = new Map<string, string>();
+    partyLedgers.forEach((ledger) => {
+      if (ledger.partner_id) {
+        partnerLedgerMap.set(ledger.partner_id, ledger.id);
+      }
+    });
+
+    if (
+      customerError ||
+      !customerPartners ||
+      customerPartners.length === 0 ||
+      supplierError ||
+      !supplierPartners ||
+      supplierPartners.length === 0
+    ) {
+      console.error(
+        "❌ Customers or suppliers not available for invoices (already checked earlier)",
+      );
+    } else {
+      // ================================================
+      // SALES INVOICES
+      // ================================================
+      console.log("\n📄 Creating sales invoices...\n");
+
+      // Get goods outwards to link
+      const { data: goodsOutwards, error: outwardsError } = await supabase
+        .from("goods_outwards")
+        .select("id, outward_date")
+        .eq("company_id", companyId)
+        .order("outward_date", { ascending: true })
+        .limit(12);
+
+      if (outwardsError || !goodsOutwards || goodsOutwards.length === 0) {
+        console.error("❌ No goods outwards found for sales invoices");
+      } else {
+        console.log(`   Found ${goodsOutwards.length} goods outwards\n`);
+
+        // Get products for invoice items
+        const { data: invoiceProducts, error: invProdError } = await supabase
+          .from("products")
+          .select("id, cost_price_per_unit, selling_price_per_unit, gst_rate")
+          .eq("company_id", companyId)
+          .limit(8);
+
+        if (invProdError || !invoiceProducts || invoiceProducts.length === 0) {
+          console.error("❌ No products found for invoice items");
+        } else {
+          const salesInvoiceData = [
+            {
+              customer_id: customerPartners[0].id,
+              outward_id: goodsOutwards[0]?.id,
+              invoice_date: goodsOutwards[0]?.outward_date || month3,
+              tax_type: "gst",
+              discount_type: "none",
+              discount_value: 0,
+              items: [
+                {
+                  product_id: invoiceProducts[0].id,
+                  quantity: 10,
+                  rate: invoiceProducts[0].selling_price_per_unit,
+                },
+                {
+                  product_id: invoiceProducts[1].id,
+                  quantity: 15,
+                  rate: invoiceProducts[1].selling_price_per_unit,
+                },
+              ],
+            },
+            {
+              customer_id: customerPartners[1]?.id || customerPartners[0].id,
+              outward_id: goodsOutwards[1]?.id,
+              invoice_date: goodsOutwards[1]?.outward_date || month3,
+              tax_type: "igst",
+              discount_type: "percentage",
+              discount_value: 5,
+              items: [
+                {
+                  product_id: invoiceProducts[2].id,
+                  quantity: 20,
+                  rate: invoiceProducts[2].selling_price_per_unit,
+                },
+                {
+                  product_id: invoiceProducts[3].id,
+                  quantity: 12,
+                  rate: invoiceProducts[3].selling_price_per_unit,
+                },
+              ],
+            },
+            {
+              customer_id: customerPartners[0].id,
+              outward_id: goodsOutwards[2]?.id,
+              invoice_date: goodsOutwards[2]?.outward_date || month3,
+              tax_type: "no_tax",
+              discount_type: "flat_amount",
+              discount_value: 500,
+              items: [
+                {
+                  product_id: invoiceProducts[4].id,
+                  quantity: 25,
+                  rate: invoiceProducts[4].selling_price_per_unit,
+                },
+              ],
+            },
+            {
+              customer_id: customerPartners[1]?.id || customerPartners[0].id,
+              outward_id: goodsOutwards[3]?.id,
+              invoice_date: goodsOutwards[3]?.outward_date || month2,
+              tax_type: "gst",
+              discount_type: "percentage",
+              discount_value: 10,
+              items: [
+                {
+                  product_id: invoiceProducts[5].id,
+                  quantity: 18,
+                  rate: invoiceProducts[5].selling_price_per_unit,
+                },
+                {
+                  product_id: invoiceProducts[6].id,
+                  quantity: 22,
+                  rate: invoiceProducts[6].selling_price_per_unit,
+                },
+                {
+                  product_id: invoiceProducts[7].id,
+                  quantity: 8,
+                  rate: invoiceProducts[7].selling_price_per_unit,
+                },
+              ],
+            },
+            {
+              customer_id: customerPartners[0].id,
+              outward_id: goodsOutwards[4]?.id,
+              invoice_date: goodsOutwards[4]?.outward_date || month2,
+              tax_type: "igst",
+              discount_type: "none",
+              discount_value: 0,
+              items: [
+                {
+                  product_id: invoiceProducts[0].id,
+                  quantity: 30,
+                  rate: invoiceProducts[0].selling_price_per_unit,
+                },
+                {
+                  product_id: invoiceProducts[2].id,
+                  quantity: 15,
+                  rate: invoiceProducts[2].selling_price_per_unit,
+                },
+              ],
+            },
+            {
+              customer_id: customerPartners[1]?.id || customerPartners[0].id,
+              outward_id: goodsOutwards[5]?.id,
+              invoice_date: goodsOutwards[5]?.outward_date || month2,
+              tax_type: "gst",
+              discount_type: "flat_amount",
+              discount_value: 1000,
+              items: [
+                {
+                  product_id: invoiceProducts[1].id,
+                  quantity: 40,
+                  rate: invoiceProducts[1].selling_price_per_unit,
+                },
+              ],
+            },
+            {
+              customer_id: customerPartners[0].id,
+              outward_id: goodsOutwards[6]?.id,
+              invoice_date: goodsOutwards[6]?.outward_date || month1,
+              tax_type: "no_tax",
+              discount_type: "none",
+              discount_value: 0,
+              items: [
+                {
+                  product_id: invoiceProducts[3].id,
+                  quantity: 12,
+                  rate: invoiceProducts[3].selling_price_per_unit,
+                },
+                {
+                  product_id: invoiceProducts[4].id,
+                  quantity: 18,
+                  rate: invoiceProducts[4].selling_price_per_unit,
+                },
+              ],
+            },
+            {
+              customer_id: customerPartners[1]?.id || customerPartners[0].id,
+              outward_id: goodsOutwards[7]?.id,
+              invoice_date: goodsOutwards[7]?.outward_date || month1,
+              tax_type: "gst",
+              discount_type: "percentage",
+              discount_value: 8,
+              items: [
+                {
+                  product_id: invoiceProducts[5].id,
+                  quantity: 35,
+                  rate: invoiceProducts[5].selling_price_per_unit,
+                },
+                {
+                  product_id: invoiceProducts[6].id,
+                  quantity: 20,
+                  rate: invoiceProducts[6].selling_price_per_unit,
+                },
+              ],
+            },
+            {
+              customer_id: customerPartners[0].id,
+              outward_id: goodsOutwards[8]?.id,
+              invoice_date: goodsOutwards[8]?.outward_date || month1,
+              tax_type: "igst",
+              discount_type: "percentage",
+              discount_value: 5,
+              items: [
+                {
+                  product_id: invoiceProducts[7].id,
+                  quantity: 25,
+                  rate: invoiceProducts[7].selling_price_per_unit,
+                },
+                {
+                  product_id: invoiceProducts[0].id,
+                  quantity: 10,
+                  rate: invoiceProducts[0].selling_price_per_unit,
+                },
+              ],
+            },
+            {
+              customer_id: customerPartners[1]?.id || customerPartners[0].id,
+              outward_id: goodsOutwards[9]?.id,
+              invoice_date: goodsOutwards[9]?.outward_date || month1,
+              tax_type: "gst",
+              discount_type: "none",
+              discount_value: 0,
+              items: [
+                {
+                  product_id: invoiceProducts[1].id,
+                  quantity: 50,
+                  rate: invoiceProducts[1].selling_price_per_unit,
+                },
+              ],
+            },
+            {
+              customer_id: customerPartners[0].id,
+              outward_id: goodsOutwards[10]?.id,
+              invoice_date: goodsOutwards[10]?.outward_date || month1,
+              tax_type: "no_tax",
+              discount_type: "flat_amount",
+              discount_value: 750,
+              items: [
+                {
+                  product_id: invoiceProducts[2].id,
+                  quantity: 28,
+                  rate: invoiceProducts[2].selling_price_per_unit,
+                },
+                {
+                  product_id: invoiceProducts[3].id,
+                  quantity: 16,
+                  rate: invoiceProducts[3].selling_price_per_unit,
+                },
+              ],
+            },
+            {
+              customer_id: customerPartners[1]?.id || customerPartners[0].id,
+              outward_id: goodsOutwards[11]?.id,
+              invoice_date: goodsOutwards[11]?.outward_date || month1,
+              tax_type: "gst",
+              discount_type: "percentage",
+              discount_value: 12,
+              items: [
+                {
+                  product_id: invoiceProducts[4].id,
+                  quantity: 45,
+                  rate: invoiceProducts[4].selling_price_per_unit,
+                },
+                {
+                  product_id: invoiceProducts[5].id,
+                  quantity: 22,
+                  rate: invoiceProducts[5].selling_price_per_unit,
+                },
+                {
+                  product_id: invoiceProducts[6].id,
+                  quantity: 14,
+                  rate: invoiceProducts[6].selling_price_per_unit,
+                },
+              ],
+            },
+          ];
+
+          const salesInvoiceIds: string[] = [];
+
+          for (const invoice of salesInvoiceData) {
+            const partyLedgerId = partnerLedgerMap.get(invoice.customer_id);
+            if (!partyLedgerId) {
+              console.error(
+                `   ❌ No party ledger found for customer ${invoice.customer_id}`,
+              );
+              continue;
+            }
+
+            const { data: invoiceSlug, error: invoiceError } =
+              await supabase.rpc("create_invoice_with_items", {
+                p_invoice_type: "sales",
+                p_party_ledger_id: partyLedgerId,
+                p_counter_ledger_id: salesLedger.id,
+                p_warehouse_id: warehouseId,
+                p_invoice_date: invoice.invoice_date,
+                p_payment_terms: "Net 30 days",
+                p_due_date: new Date(
+                  new Date(invoice.invoice_date).getTime() +
+                    30 * 24 * 60 * 60 * 1000,
+                )
+                  .toISOString()
+                  .split("T")[0],
+                p_tax_type: invoice.tax_type,
+                p_discount_type: invoice.discount_type,
+                p_discount_value: invoice.discount_value,
+                p_supplier_invoice_number: null,
+                p_supplier_invoice_date: null,
+                p_notes: "Test sales invoice - auto-generated",
+                p_attachments: [],
+                p_items: invoice.items,
+                p_goods_movement_ids: invoice.outward_id
+                  ? [invoice.outward_id]
+                  : [],
+                p_company_id: companyId,
+              });
+
+            if (invoiceError) {
+              console.error(
+                `   ❌ Failed to create sales invoice: ${invoiceError.message}`,
+              );
+            } else {
+              console.log(`   ✅ Created sales invoice: ${invoiceSlug}`);
+
+              // Get the invoice ID for later use
+              const { data: invoiceRecord } = await supabase
+                .from("invoices")
+                .select("id")
+                .eq("slug", invoiceSlug)
+                .single();
+
+              if (invoiceRecord) {
+                salesInvoiceIds.push(invoiceRecord.id);
+              }
+            }
+          }
+
+          console.log(
+            `\n✨ Created ${salesInvoiceIds.length} sales invoices successfully!\n`,
+          );
+
+          // ================================================
+          // PURCHASE INVOICES
+          // ================================================
+          console.log("📦 Creating purchase invoices...\n");
+
+          // Get goods inwards to link
+          const { data: goodsInwards, error: inwardsError } = await supabase
+            .from("goods_inwards")
+            .select("id, inward_date")
+            .eq("company_id", companyId)
+            .order("inward_date", { ascending: true })
+            .limit(12);
+
+          if (inwardsError || !goodsInwards || goodsInwards.length === 0) {
+            console.error("❌ No goods inwards found for purchase invoices");
+          } else {
+            console.log(`   Found ${goodsInwards.length} goods inwards\n`);
+
+            const purchaseInvoiceData = [
+              {
+                supplier_id: supplierPartners[0].id,
+                inward_id: goodsInwards[0]?.id,
+                invoice_date: goodsInwards[0]?.inward_date || month3,
+                tax_type: "gst",
+                discount_type: "none",
+                discount_value: 0,
+                supplier_invoice_number: "SUP-INV-001",
+                items: [
+                  {
+                    product_id: invoiceProducts[0].id,
+                    quantity: 50,
+                    rate: invoiceProducts[0].cost_price_per_unit,
+                  },
+                  {
+                    product_id: invoiceProducts[1].id,
+                    quantity: 40,
+                    rate: invoiceProducts[1].cost_price_per_unit,
+                  },
+                ],
+              },
+              {
+                supplier_id: supplierPartners[1]?.id || supplierPartners[0].id,
+                inward_id: goodsInwards[1]?.id,
+                invoice_date: goodsInwards[1]?.inward_date || month3,
+                tax_type: "igst",
+                discount_type: "percentage",
+                discount_value: 8,
+                supplier_invoice_number: "SUP-INV-002",
+                items: [
+                  {
+                    product_id: invoiceProducts[2].id,
+                    quantity: 60,
+                    rate: invoiceProducts[2].cost_price_per_unit,
+                  },
+                ],
+              },
+              {
+                supplier_id: supplierPartners[0].id,
+                inward_id: goodsInwards[2]?.id,
+                invoice_date: goodsInwards[2]?.inward_date || month3,
+                tax_type: "no_tax",
+                discount_type: "flat_amount",
+                discount_value: 2000,
+                supplier_invoice_number: "SUP-INV-003",
+                items: [
+                  {
+                    product_id: invoiceProducts[3].id,
+                    quantity: 100,
+                    rate: invoiceProducts[3].cost_price_per_unit,
+                  },
+                  {
+                    product_id: invoiceProducts[4].id,
+                    quantity: 75,
+                    rate: invoiceProducts[4].cost_price_per_unit,
+                  },
+                ],
+              },
+              {
+                supplier_id: supplierPartners[1]?.id || supplierPartners[0].id,
+                inward_id: goodsInwards[3]?.id,
+                invoice_date: goodsInwards[3]?.inward_date || month2,
+                tax_type: "gst",
+                discount_type: "percentage",
+                discount_value: 5,
+                supplier_invoice_number: "SUP-INV-004",
+                items: [
+                  {
+                    product_id: invoiceProducts[5].id,
+                    quantity: 55,
+                    rate: invoiceProducts[5].cost_price_per_unit,
+                  },
+                  {
+                    product_id: invoiceProducts[6].id,
+                    quantity: 45,
+                    rate: invoiceProducts[6].cost_price_per_unit,
+                  },
+                ],
+              },
+              {
+                supplier_id: supplierPartners[0].id,
+                inward_id: goodsInwards[4]?.id,
+                invoice_date: goodsInwards[4]?.inward_date || month2,
+                tax_type: "igst",
+                discount_type: "none",
+                discount_value: 0,
+                supplier_invoice_number: "SUP-INV-005",
+                items: [
+                  {
+                    product_id: invoiceProducts[7].id,
+                    quantity: 80,
+                    rate: invoiceProducts[7].cost_price_per_unit,
+                  },
+                ],
+              },
+              {
+                supplier_id: supplierPartners[1]?.id || supplierPartners[0].id,
+                inward_id: goodsInwards[5]?.id,
+                invoice_date: goodsInwards[5]?.inward_date || month2,
+                tax_type: "gst",
+                discount_type: "flat_amount",
+                discount_value: 1500,
+                supplier_invoice_number: "SUP-INV-006",
+                items: [
+                  {
+                    product_id: invoiceProducts[0].id,
+                    quantity: 90,
+                    rate: invoiceProducts[0].cost_price_per_unit,
+                  },
+                  {
+                    product_id: invoiceProducts[2].id,
+                    quantity: 70,
+                    rate: invoiceProducts[2].cost_price_per_unit,
+                  },
+                ],
+              },
+              {
+                supplier_id: supplierPartners[0].id,
+                inward_id: goodsInwards[6]?.id,
+                invoice_date: goodsInwards[6]?.inward_date || month1,
+                tax_type: "no_tax",
+                discount_type: "percentage",
+                discount_value: 10,
+                supplier_invoice_number: "SUP-INV-007",
+                items: [
+                  {
+                    product_id: invoiceProducts[1].id,
+                    quantity: 65,
+                    rate: invoiceProducts[1].cost_price_per_unit,
+                  },
+                ],
+              },
+              {
+                supplier_id: supplierPartners[1]?.id || supplierPartners[0].id,
+                inward_id: goodsInwards[7]?.id,
+                invoice_date: goodsInwards[7]?.inward_date || month1,
+                tax_type: "gst",
+                discount_type: "none",
+                discount_value: 0,
+                supplier_invoice_number: "SUP-INV-008",
+                items: [
+                  {
+                    product_id: invoiceProducts[3].id,
+                    quantity: 120,
+                    rate: invoiceProducts[3].cost_price_per_unit,
+                  },
+                  {
+                    product_id: invoiceProducts[4].id,
+                    quantity: 85,
+                    rate: invoiceProducts[4].cost_price_per_unit,
+                  },
+                ],
+              },
+              {
+                supplier_id: supplierPartners[0].id,
+                inward_id: goodsInwards[8]?.id,
+                invoice_date: goodsInwards[8]?.inward_date || month1,
+                tax_type: "igst",
+                discount_type: "percentage",
+                discount_value: 7,
+                supplier_invoice_number: "SUP-INV-009",
+                items: [
+                  {
+                    product_id: invoiceProducts[5].id,
+                    quantity: 95,
+                    rate: invoiceProducts[5].cost_price_per_unit,
+                  },
+                ],
+              },
+              {
+                supplier_id: supplierPartners[1]?.id || supplierPartners[0].id,
+                inward_id: goodsInwards[9]?.id,
+                invoice_date: goodsInwards[9]?.inward_date || month1,
+                tax_type: "gst",
+                discount_type: "flat_amount",
+                discount_value: 2500,
+                supplier_invoice_number: "SUP-INV-010",
+                items: [
+                  {
+                    product_id: invoiceProducts[6].id,
+                    quantity: 110,
+                    rate: invoiceProducts[6].cost_price_per_unit,
+                  },
+                  {
+                    product_id: invoiceProducts[7].id,
+                    quantity: 75,
+                    rate: invoiceProducts[7].cost_price_per_unit,
+                  },
+                ],
+              },
+              {
+                supplier_id: supplierPartners[0].id,
+                inward_id: goodsInwards[10]?.id,
+                invoice_date: goodsInwards[10]?.inward_date || month1,
+                tax_type: "no_tax",
+                discount_type: "none",
+                discount_value: 0,
+                supplier_invoice_number: "SUP-INV-011",
+                items: [
+                  {
+                    product_id: invoiceProducts[0].id,
+                    quantity: 130,
+                    rate: invoiceProducts[0].cost_price_per_unit,
+                  },
+                ],
+              },
+              {
+                supplier_id: supplierPartners[1]?.id || supplierPartners[0].id,
+                inward_id: goodsInwards[11]?.id,
+                invoice_date: goodsInwards[11]?.inward_date || month1,
+                tax_type: "gst",
+                discount_type: "percentage",
+                discount_value: 12,
+                supplier_invoice_number: "SUP-INV-012",
+                items: [
+                  {
+                    product_id: invoiceProducts[1].id,
+                    quantity: 88,
+                    rate: invoiceProducts[1].cost_price_per_unit,
+                  },
+                  {
+                    product_id: invoiceProducts[2].id,
+                    quantity: 92,
+                    rate: invoiceProducts[2].cost_price_per_unit,
+                  },
+                  {
+                    product_id: invoiceProducts[3].id,
+                    quantity: 66,
+                    rate: invoiceProducts[3].cost_price_per_unit,
+                  },
+                ],
+              },
+            ];
+
+            const purchaseInvoiceIds: string[] = [];
+
+            for (const invoice of purchaseInvoiceData) {
+              const partyLedgerId = partnerLedgerMap.get(invoice.supplier_id);
+              if (!partyLedgerId) {
+                console.error(
+                  `   ❌ No party ledger found for supplier ${invoice.supplier_id}`,
+                );
+                continue;
+              }
+
+              const { data: invoiceSlug, error: invoiceError } =
+                await supabase.rpc("create_invoice_with_items", {
+                  p_invoice_type: "purchase",
+                  p_party_ledger_id: partyLedgerId,
+                  p_counter_ledger_id: purchaseLedger.id,
+                  p_warehouse_id: warehouseId,
+                  p_invoice_date: invoice.invoice_date,
+                  p_payment_terms: "Net 30 days",
+                  p_due_date: new Date(
+                    new Date(invoice.invoice_date).getTime() +
+                      30 * 24 * 60 * 60 * 1000,
+                  )
+                    .toISOString()
+                    .split("T")[0],
+                  p_tax_type: invoice.tax_type,
+                  p_discount_type: invoice.discount_type,
+                  p_discount_value: invoice.discount_value,
+                  p_supplier_invoice_number: invoice.supplier_invoice_number,
+                  p_supplier_invoice_date: invoice.invoice_date,
+                  p_notes: "Test purchase invoice - auto-generated",
+                  p_attachments: [],
+                  p_items: invoice.items,
+                  p_goods_movement_ids: invoice.inward_id
+                    ? [invoice.inward_id]
+                    : [],
+                  p_company_id: companyId,
+                });
+
+              if (invoiceError) {
+                console.error(
+                  `   ❌ Failed to create purchase invoice: ${invoiceError.message}`,
+                );
+              } else {
+                console.log(`   ✅ Created purchase invoice: ${invoiceSlug}`);
+
+                // Get the invoice ID for later use
+                const { data: invoiceRecord } = await supabase
+                  .from("invoices")
+                  .select("id")
+                  .eq("slug", invoiceSlug)
+                  .single();
+
+                if (invoiceRecord) {
+                  purchaseInvoiceIds.push(invoiceRecord.id);
+                }
+              }
+            }
+
+            console.log(
+              `\n✨ Created ${purchaseInvoiceIds.length} purchase invoices successfully!\n`,
+            );
+
+            // ================================================
+            // ADJUSTMENT NOTES
+            // ================================================
+            console.log("📝 Creating adjustment notes...\n");
+
+            const allInvoiceIds = [...salesInvoiceIds, ...purchaseInvoiceIds];
+
+            if (allInvoiceIds.length === 0) {
+              console.error("❌ No invoices available for adjustment notes");
+            } else {
+              const adjustmentNoteData = [
+                // Credit Notes
+                {
+                  invoice_id: salesInvoiceIds[0],
+                  adjustment_type: "credit",
+                  reason: "Price correction as per agreement with customer",
+                  items: [
+                    {
+                      product_id: invoiceProducts[0].id,
+                      quantity: 2,
+                      rate: invoiceProducts[0].selling_price_per_unit,
+                      gst_rate: invoiceProducts[0].gst_rate,
+                    },
+                  ],
+                },
+                {
+                  invoice_id: purchaseInvoiceIds[0],
+                  adjustment_type: "credit",
+                  reason: "Damaged goods return - 10% quantity found defective",
+                  items: [
+                    {
+                      product_id: invoiceProducts[1].id,
+                      quantity: 4,
+                      rate: invoiceProducts[1].cost_price_per_unit,
+                      gst_rate: invoiceProducts[1].gst_rate,
+                    },
+                  ],
+                },
+                {
+                  invoice_id: salesInvoiceIds[1],
+                  adjustment_type: "credit",
+                  reason: "Billing error - incorrect GST rate applied",
+                  items: [
+                    {
+                      product_id: invoiceProducts[2].id,
+                      quantity: 3,
+                      rate: invoiceProducts[2].selling_price_per_unit,
+                      gst_rate: invoiceProducts[2].gst_rate,
+                    },
+                  ],
+                },
+                {
+                  invoice_id: salesInvoiceIds[2],
+                  adjustment_type: "credit",
+                  reason: "Customer complaint - goodwill adjustment",
+                  items: [
+                    {
+                      product_id: invoiceProducts[3].id,
+                      quantity: 5,
+                      rate: invoiceProducts[3].selling_price_per_unit,
+                      gst_rate: invoiceProducts[3].gst_rate,
+                    },
+                  ],
+                },
+                {
+                  invoice_id: purchaseInvoiceIds[1],
+                  adjustment_type: "credit",
+                  reason: "Supplier credit for quality issues",
+                  items: [
+                    {
+                      product_id: invoiceProducts[4].id,
+                      quantity: 6,
+                      rate: invoiceProducts[4].cost_price_per_unit,
+                      gst_rate: invoiceProducts[4].gst_rate,
+                    },
+                  ],
+                },
+                // Debit Notes
+                {
+                  invoice_id: salesInvoiceIds[3],
+                  adjustment_type: "debit",
+                  reason: "Additional packing charges not included",
+                  items: [
+                    {
+                      product_id: invoiceProducts[5].id,
+                      quantity: 2,
+                      rate: 100,
+                      gst_rate: invoiceProducts[5].gst_rate,
+                    },
+                  ],
+                },
+                {
+                  invoice_id: purchaseInvoiceIds[2],
+                  adjustment_type: "debit",
+                  reason: "Price revision as per market rate increase",
+                  items: [
+                    {
+                      product_id: invoiceProducts[6].id,
+                      quantity: 3,
+                      rate: invoiceProducts[6].cost_price_per_unit * 0.1,
+                      gst_rate: invoiceProducts[6].gst_rate,
+                    },
+                  ],
+                },
+                {
+                  invoice_id: salesInvoiceIds[4],
+                  adjustment_type: "debit",
+                  reason: "Freight charges not included in original invoice",
+                  items: [
+                    {
+                      product_id: invoiceProducts[7].id,
+                      quantity: 1,
+                      rate: 500,
+                      gst_rate: invoiceProducts[7].gst_rate,
+                    },
+                  ],
+                },
+              ];
+
+              for (const note of adjustmentNoteData) {
+                if (!note.invoice_id) {
+                  continue;
+                }
+
+                // Fetch invoice details to determine counter ledger
+                const { data: invoice } = await supabase
+                  .from("invoices")
+                  .select("invoice_type, outstanding_amount")
+                  .eq("id", note.invoice_id)
+                  .single();
+
+                if (!invoice) {
+                  console.error(
+                    `   ❌ Invoice not found for adjustment note: ${note.invoice_id}`,
+                  );
+                  continue;
+                }
+
+                // Check if invoice has sufficient outstanding for credit notes
+                if (
+                  note.adjustment_type === "credit" &&
+                  invoice.outstanding_amount === 0
+                ) {
+                  console.log(
+                    `   ⏭️  Skipping credit note - invoice already fully paid/credited`,
+                  );
+                  continue;
+                }
+
+                // Determine counter ledger based on invoice type + adjustment type
+                let counterLedgerId: string;
+                if (note.adjustment_type === "credit") {
+                  // Credit Note: Sales Return or Purchase Return
+                  counterLedgerId =
+                    invoice.invoice_type === "sales"
+                      ? salesReturnLedger.id
+                      : purchaseReturnLedger.id;
+                } else {
+                  // Debit Note: Sales or Purchase
+                  counterLedgerId =
+                    invoice.invoice_type === "sales"
+                      ? salesLedger.id
+                      : purchaseLedger.id;
+                }
+
+                const { data: adjustmentNoteId, error: adjError } =
+                  await supabase.rpc("create_adjustment_note_with_items", {
+                    p_invoice_id: note.invoice_id,
+                    p_warehouse_id: warehouseId,
+                    p_counter_ledger_id: counterLedgerId,
+                    p_adjustment_type: note.adjustment_type,
+                    p_adjustment_date: new Date().toISOString().split("T")[0],
+                    p_reason: note.reason,
+                    p_notes: `Test ${note.adjustment_type} note - auto-generated`,
+                    p_attachments: [],
+                    p_items: note.items,
+                    p_company_id: companyId,
+                  });
+
+                if (adjError) {
+                  console.error(
+                    `   ❌ Failed to create ${note.adjustment_type} note: ${adjError.message}`,
+                  );
+                } else {
+                  // Fetch the adjustment note number for logging
+                  const { data: adjNote } = await supabase
+                    .from("adjustment_notes")
+                    .select("adjustment_number")
+                    .eq("id", adjustmentNoteId)
+                    .single();
+
+                  console.log(
+                    `   ✅ Created ${note.adjustment_type} note: ${adjNote?.adjustment_number || adjustmentNoteId}`,
+                  );
+                }
+              }
+
+              console.log("\n✨ Adjustment notes created successfully!\n");
+            }
+
+            // ================================================
+            // PAYMENTS
+            // ================================================
+            console.log("💳 Creating payments...\n");
+
+            if (!cashLedger || !bankLedger) {
+              console.error(
+                "❌ Cash or Bank ledger not found. Cannot create payments.",
+              );
+            } else {
+              // Fetch invoices with outstanding amounts for payment allocation
+              const { data: openInvoices, error: openInvError } = await supabase
+                .from("invoices")
+                .select(
+                  "id, invoice_number, invoice_type, party_ledger_id, outstanding_amount",
+                )
+                .eq("company_id", companyId)
+                .gt("outstanding_amount", 0)
+                .order("invoice_date", { ascending: true });
+
+              if (openInvError || !openInvoices || openInvoices.length === 0) {
+                console.error("❌ No open invoices found for payments");
+              } else {
+                console.log(
+                  `   Found ${openInvoices.length} invoices with outstanding amounts\n`,
+                );
+
+                const salesInvoicesForPayment = openInvoices.filter(
+                  (inv) => inv.invoice_type === "sales",
+                );
+                const purchaseInvoicesForPayment = openInvoices.filter(
+                  (inv) => inv.invoice_type === "purchase",
+                );
+
+                // Payment modes for variety
+                const paymentModes = [
+                  "cash",
+                  "upi",
+                  "neft",
+                  "cheque",
+                  "rtgs",
+                  "card",
+                ];
+
+                // ================================================
+                // RECEIPTS (against sales invoices)
+                // ================================================
+                const receiptData = [
+                  // Fully settled
+                  {
+                    invoice: salesInvoicesForPayment[0],
+                    percentage: 100,
+                    mode: paymentModes[1],
+                    reference: "UPI/123456789",
+                  },
+                  {
+                    invoice: salesInvoicesForPayment[1],
+                    percentage: 100,
+                    mode: paymentModes[2],
+                    reference: "NEFT/UTR987654321",
+                  },
+                  {
+                    invoice: salesInvoicesForPayment[2],
+                    percentage: 100,
+                    mode: paymentModes[5],
+                    reference: "CARD/AUTH456789",
+                  },
+                  // Partially paid
+                  {
+                    invoice: salesInvoicesForPayment[3],
+                    percentage: 60,
+                    mode: paymentModes[3],
+                    reference: "CHQ/123456",
+                  },
+                  {
+                    invoice: salesInvoicesForPayment[4],
+                    percentage: 50,
+                    mode: paymentModes[4],
+                    reference: "RTGS/UTR111222333",
+                  },
+                  {
+                    invoice: salesInvoicesForPayment[5],
+                    percentage: 70,
+                    mode: paymentModes[1],
+                    reference: "UPI/987654321",
+                  },
+                  // Advance payment (no invoice)
+                  {
+                    invoice: null,
+                    amount: 25000,
+                    mode: paymentModes[0],
+                    reference: "CASH-ADV",
+                  },
+                ];
+
+                for (const receipt of receiptData) {
+                  if (!receipt.invoice && !receipt.amount) {
+                    continue;
+                  }
+
+                  const totalAmount = receipt.invoice
+                    ? (receipt.invoice.outstanding_amount *
+                        receipt.percentage) /
+                      100
+                    : receipt.amount;
+
+                  const allocations = receipt.invoice
+                    ? [
+                        {
+                          allocation_type: "against_ref",
+                          invoice_id: receipt.invoice.id,
+                          amount_applied: totalAmount,
+                        },
+                      ]
+                    : [
+                        {
+                          allocation_type: "advance",
+                          invoice_id: null,
+                          amount_applied: totalAmount,
+                        },
+                      ];
+
+                  const { data: paymentId, error: paymentError } =
+                    await supabase.rpc("create_payment_with_allocations", {
+                      p_voucher_type: "receipt",
+                      p_party_ledger_id: receipt.invoice
+                        ? receipt.invoice.party_ledger_id
+                        : partnerLedgerMap.get(customerPartners[0].id)!,
+                      p_counter_ledger_id: bankLedger.id,
+                      p_tds_ledger_id: tcsReceivableLedger?.id || null,
+                      p_payment_date: new Date().toISOString().split("T")[0],
+                      p_payment_mode: receipt.mode,
+                      p_reference_number: receipt.reference,
+                      p_reference_date: new Date().toISOString().split("T")[0],
+                      p_total_amount: totalAmount,
+                      p_tds_applicable: false,
+                      p_tds_rate: 0,
+                      p_notes: receipt.invoice
+                        ? `Receipt against ${receipt.invoice.invoice_number}`
+                        : "Advance receipt",
+                      p_attachments: [],
+                      p_allocations: allocations,
+                      p_company_id: companyId,
+                    });
+
+                  if (paymentError) {
+                    console.error(
+                      `   ❌ Failed to create receipt: ${paymentError.message}`,
+                    );
+                  } else {
+                    // Fetch the payment number for logging
+                    const { data: payment } = await supabase
+                      .from("payments")
+                      .select("payment_number")
+                      .eq("id", paymentId)
+                      .single();
+
+                    console.log(
+                      `   ✅ Created receipt: ${payment?.payment_number || paymentId} (₹${totalAmount.toFixed(2)})`,
+                    );
+                  }
+                }
+
+                // ================================================
+                // PAYMENTS (against purchase invoices)
+                // ================================================
+                const vendorPaymentData = [
+                  // Fully settled
+                  {
+                    invoice: purchaseInvoicesForPayment[0],
+                    percentage: 100,
+                    mode: paymentModes[2],
+                    reference: "NEFT/UTR444555666",
+                    tds: false,
+                  },
+                  {
+                    invoice: purchaseInvoicesForPayment[1],
+                    percentage: 100,
+                    mode: paymentModes[4],
+                    reference: "RTGS/UTR777888999",
+                    tds: false,
+                  },
+                  {
+                    invoice: purchaseInvoicesForPayment[2],
+                    percentage: 100,
+                    mode: paymentModes[3],
+                    reference: "CHQ/654321",
+                    tds: false,
+                  },
+                  // Partially paid
+                  {
+                    invoice: purchaseInvoicesForPayment[3],
+                    percentage: 80,
+                    mode: paymentModes[2],
+                    reference: "NEFT/UTR101112131",
+                    tds: false,
+                  },
+                  {
+                    invoice: purchaseInvoicesForPayment[4],
+                    percentage: 60,
+                    mode: paymentModes[4],
+                    reference: "RTGS/UTR141516171",
+                    tds: false,
+                  },
+                  {
+                    invoice: purchaseInvoicesForPayment[5],
+                    percentage: 75,
+                    mode: paymentModes[1],
+                    reference: "UPI/181920212",
+                    tds: false,
+                  },
+                  // With TDS
+                  {
+                    invoice: purchaseInvoicesForPayment[6],
+                    percentage: 100,
+                    mode: paymentModes[2],
+                    reference: "NEFT/UTR222324252",
+                    tds: true,
+                    tds_rate: 1,
+                  },
+                  {
+                    invoice: purchaseInvoicesForPayment[7],
+                    percentage: 100,
+                    mode: paymentModes[4],
+                    reference: "RTGS/UTR262728293",
+                    tds: true,
+                    tds_rate: 2,
+                  },
+                  // Advance payment (no invoice)
+                  {
+                    invoice: null,
+                    amount: 50000,
+                    mode: paymentModes[2],
+                    reference: "NEFT-ADV/303132333",
+                    tds: false,
+                  },
+                ];
+
+                for (const payment of vendorPaymentData) {
+                  if (!payment.invoice && !payment.amount) {
+                    continue;
+                  }
+
+                  const totalAmount = payment.invoice
+                    ? (payment.invoice.outstanding_amount *
+                        payment.percentage) /
+                      100
+                    : payment.amount;
+
+                  // Calculate net amount after TDS deduction
+                  const tdsAmount = payment.tds
+                    ? totalAmount * ((payment.tds_rate || 0) / 100)
+                    : 0;
+                  const netAmount = totalAmount - tdsAmount;
+
+                  const allocations = payment.invoice
+                    ? [
+                        {
+                          allocation_type: "against_ref",
+                          invoice_id: payment.invoice.id,
+                          amount_applied: netAmount, // Use net amount for allocation
+                        },
+                      ]
+                    : [
+                        {
+                          allocation_type: "advance",
+                          invoice_id: null,
+                          amount_applied: netAmount, // Use net amount for allocation
+                        },
+                      ];
+
+                  const { data: paymentId, error: paymentError } =
+                    await supabase.rpc("create_payment_with_allocations", {
+                      p_voucher_type: "payment",
+                      p_party_ledger_id: payment.invoice
+                        ? payment.invoice.party_ledger_id
+                        : partnerLedgerMap.get(supplierPartners[0].id)!,
+                      p_counter_ledger_id: bankLedger.id,
+                      p_tds_ledger_id: tdsPayableLedger?.id || null,
+                      p_payment_date: new Date().toISOString().split("T")[0],
+                      p_payment_mode: payment.mode,
+                      p_reference_number: payment.reference,
+                      p_reference_date: new Date().toISOString().split("T")[0],
+                      p_total_amount: totalAmount,
+                      p_tds_applicable: payment.tds || false,
+                      p_tds_rate: payment.tds_rate || 0,
+                      p_notes: payment.invoice
+                        ? `Payment against ${payment.invoice.invoice_number}`
+                        : "Advance payment to supplier",
+                      p_attachments: [],
+                      p_allocations: allocations,
+                      p_company_id: companyId,
+                    });
+
+                  if (paymentError) {
+                    console.error(
+                      `   ❌ Failed to create payment: ${paymentError.message}`,
+                    );
+                  } else {
+                    // Fetch the payment number for logging
+                    const { data: pymnt } = await supabase
+                      .from("payments")
+                      .select("payment_number")
+                      .eq("id", paymentId)
+                      .single();
+
+                    const tdsInfo = payment.tds
+                      ? ` with ${payment.tds_rate}% TDS`
+                      : "";
+                    console.log(
+                      `   ✅ Created payment: ${pymnt?.payment_number || paymentId} (₹${totalAmount.toFixed(2)}${tdsInfo})`,
+                    );
+                  }
+                }
+
+                console.log("\n✨ Payments created successfully!\n");
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   // Create invite for the test company

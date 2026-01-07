@@ -20,6 +20,7 @@ interface DatePickerProps {
   onChange?: (date: Date | undefined) => void;
   required?: boolean;
   className?: string;
+  disabled?: (date: Date) => boolean;
 }
 
 export function DatePicker({
@@ -29,6 +30,7 @@ export function DatePicker({
   onChange,
   required = false,
   className,
+  disabled,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -40,6 +42,11 @@ export function DatePicker({
     const day = String(value.getDate()).padStart(2, "0");
     return `${day}-${month}-${year}`;
   }, [value]);
+
+  // Calculate year range for dropdown (10 years in past, 10 years in future)
+  const currentYear = new Date().getFullYear();
+  const fromYear = currentYear - 20;
+  const toYear = currentYear + 20;
 
   return (
     <div className={`${className || ""}`}>
@@ -75,6 +82,9 @@ export function DatePicker({
             mode="single"
             selected={value}
             captionLayout="dropdown"
+            fromYear={fromYear}
+            toYear={toYear}
+            disabled={disabled}
             onSelect={(date) => {
               if (onChange) {
                 onChange(date);

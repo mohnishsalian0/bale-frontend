@@ -11,14 +11,22 @@ export const STALE_TIME = {
   PRODUCTS: 5 * 60 * 1000, // 5 minutes
   PARTNERS: 5 * 60 * 1000, // 5 minutes
   WAREHOUSES: 10 * 60 * 1000, // 10 minutes
+  LEDGERS: 5 * 60 * 1000, // 5 minutes (ledgers are master data)
 
   // Transactional Data - Changes more frequently
   STOCK_UNITS: 2 * 60 * 1000, // 2 minutes
   SALES_ORDERS: 3 * 60 * 1000, // 3 minutes
+  PURCHASE_ORDERS: 3 * 60 * 1000, // 3 minutes
   STOCK_FLOW: 3 * 60 * 1000, // 3 minutes (goods inward/outward)
+  INVOICES: 3 * 60 * 1000, // 3 minutes
+  PAYMENTS: 3 * 60 * 1000, // 3 minutes
+  ADJUSTMENT_NOTES: 3 * 60 * 1000, // 3 minutes
 
   // Real-time Data - Needs frequent updates
   DASHBOARD: 30 * 1000, // 30 seconds
+
+  // Aggregate Data - Calculated summaries that change less frequently
+  AGGREGATES: 5 * 60 * 1000, // 5 minutes
 
   // Public Data
   CATALOG: 5 * 60 * 1000, // 5 minutes
@@ -35,6 +43,7 @@ export const GC_TIME = {
   DEFAULT: 10 * 60 * 1000, // 10 minutes
   MASTER_DATA: 30 * 60 * 1000, // 30 minutes (products, partners, warehouses)
   TRANSACTIONAL: 5 * 60 * 1000, // 5 minutes (stock, orders)
+  AGGREGATES: 10 * 60 * 1000, // 10 minutes (aggregate summaries)
   REALTIME: 2 * 60 * 1000, // 2 minutes (dashboard)
 } as const;
 

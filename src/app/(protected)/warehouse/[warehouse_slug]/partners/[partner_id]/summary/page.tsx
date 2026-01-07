@@ -61,7 +61,7 @@ export default function PartnerSummaryPage({ params }: PageParams) {
       <Section
         title="Contact information"
         subtitle=""
-        icon={() => <IconUser className="size-5" />}
+        icon={() => <IconUser />}
       >
         <div className="space-y-3">
           {/* Contact Person */}
@@ -117,7 +117,7 @@ export default function PartnerSummaryPage({ params }: PageParams) {
       <Section
         title="Financial information"
         subtitle=""
-        icon={() => <IconCurrencyRupee className="size-5" />}
+        icon={() => <IconCurrencyRupee />}
       >
         <div className="space-y-3">
           {/* GST Number */}
@@ -144,7 +144,7 @@ export default function PartnerSummaryPage({ params }: PageParams) {
           title="Notes"
           subtitle=""
           onEdit={() => {}}
-          icon={() => <IconNotes className="size-5" />}
+          icon={() => <IconNotes />}
         >
           <p className="text-sm text-gray-700 whitespace-pre-wrap">
             {partner.notes}

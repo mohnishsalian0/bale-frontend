@@ -22,10 +22,7 @@ import { ProductCard } from "./ProductCard";
 import { ProductQuantitySheet } from "../ProductQuantitySheet";
 import { LoadingState } from "@/components/layouts/loading-state";
 import type { PublicProduct } from "@/lib/queries/catalog";
-import {
-  usePublicCompany,
-  usePublicProducts,
-} from "@/lib/query/hooks/catalog";
+import { usePublicCompany, usePublicProducts } from "@/lib/query/hooks/catalog";
 
 export default function StorePage() {
   const params = useParams();

@@ -17,6 +17,7 @@ const badgeVariants = cva(
       color: {
         blue: "",
         green: "",
+        yellow: "",
         orange: "",
         red: "",
         gray: "",
@@ -55,6 +56,23 @@ const badgeVariants = cva(
         color: "green",
         variant: "outline",
         class: "bg-transparent border-green-700 text-green-700",
+      },
+      // Yellow variants
+      {
+        color: "yellow",
+        variant: "default",
+        class: "border-transparent bg-yellow-700 text-yellow-100",
+      },
+      {
+        color: "yellow",
+        variant: "secondary",
+        class:
+          "border-transparent bg-yellow-100 text-yellow-700 border-yellow-200",
+      },
+      {
+        color: "yellow",
+        variant: "outline",
+        class: "bg-transparent border-yellow-700 text-yellow-700",
       },
       // Orange variants
       {

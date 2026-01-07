@@ -27,14 +27,19 @@ type StockUnitWithProductListViewRaw = StockUnitListView & {
         Tables<"products">,
         | "id"
         | "sequence_number"
+        | "product_code"
         | "name"
         | "show_on_catalog"
         | "is_active"
         | "stock_type"
         | "measuring_unit"
+        | "cost_price_per_unit"
+        | "selling_price_per_unit"
         | "product_images"
         | "min_stock_alert"
         | "min_stock_threshold"
+        | "tax_type"
+        | "gst_rate"
       > & {
         attributes: ProductAttribute[] | null;
       })
@@ -213,7 +218,7 @@ export async function getStockUnitsWithInward(
       goods_inward:goods_inwards!created_from_inward_id(
         id, sequence_number, inward_date, inward_type,
         partner:partners!goods_inwards_partner_id_fkey(
-          id, first_name, last_name, company_name
+          id, first_name, last_name, display_name, company_name
         ),
         from_warehouse:warehouses!goods_inwards_from_warehouse_id_fkey(
           id, name
@@ -371,5 +376,23 @@ export async function updateStockUnits(
   if (errors.length > 0) {
     console.error("Error updating stock units:", errors);
     throw new Error(`Failed to update ${errors.length} stock units`);
+  }
+}
+
+/**
+ * Delete a stock unit (soft delete)
+ * Note: Hard delete is blocked by database trigger if has_outward = true
+ */
+export async function deleteStockUnit(id: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("stock_units")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error deleting stock unit:", error);
+    throw error;
   }
 }

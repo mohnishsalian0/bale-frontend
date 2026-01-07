@@ -135,6 +135,7 @@ export async function getSalesOrderById(
 				id,
 				first_name,
 				last_name,
+				display_name,
 				email,
 				phone_number,
 				address_line1,
