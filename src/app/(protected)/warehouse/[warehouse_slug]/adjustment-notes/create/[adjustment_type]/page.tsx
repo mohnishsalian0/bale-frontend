@@ -193,7 +193,7 @@ export default function CreateAdjustmentNotePage() {
         onSuccess: (adjustmentNumber) => {
           toast.success(successMessage);
           router.push(
-            `/warehouse/${warehouse_slug}/adjustment-notes/${adjustmentNumber}`,
+            `/warehouse/${warehouse_slug}/adjustment-notes/${adjustmentNumber}/details`,
           );
         },
         onError: (error) => {

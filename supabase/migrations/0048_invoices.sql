@@ -437,11 +437,12 @@ CREATE OR REPLACE FUNCTION update_invoices_search_vector()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.search_vector :=
-        setweight(to_tsvector('english', COALESCE(NEW.invoice_number, '')), 'A') ||
+        setweight(to_tsvector('simple', COALESCE(NEW.sequence_number::text, '')), 'A') ||
+        setweight(to_tsvector('simple', COALESCE(NEW.invoice_number, '')), 'A') ||
         setweight(to_tsvector('english', COALESCE(NEW.party_name, '')), 'B') ||
         setweight(to_tsvector('english', COALESCE(NEW.party_display_name, '')), 'B') ||
         setweight(to_tsvector('english', COALESCE(NEW.company_name, '')), 'B') ||
-        setweight(to_tsvector('english', COALESCE(NEW.supplier_invoice_number, '')), 'B') ||
+        setweight(to_tsvector('simple', COALESCE(NEW.supplier_invoice_number, '')), 'B') ||
         setweight(to_tsvector('english', COALESCE(NEW.notes, '')), 'C');
     RETURN NEW;
 END;

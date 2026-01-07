@@ -191,6 +191,7 @@ export type Database = {
           party_state: string | null;
           reason: string;
           round_off_amount: number | null;
+          search_vector: unknown;
           sequence_number: number;
           slug: string;
           subtotal_amount: number | null;
@@ -257,6 +258,7 @@ export type Database = {
           party_state?: string | null;
           reason: string;
           round_off_amount?: number | null;
+          search_vector?: unknown;
           sequence_number: number;
           slug: string;
           subtotal_amount?: number | null;
@@ -323,6 +325,7 @@ export type Database = {
           party_state?: string | null;
           reason?: string;
           round_off_amount?: number | null;
+          search_vector?: unknown;
           sequence_number?: number;
           slug?: string;
           subtotal_amount?: number | null;
@@ -2258,6 +2261,7 @@ export type Database = {
           payment_number: string;
           reference_date: string | null;
           reference_number: string | null;
+          search_vector: unknown;
           sequence_number: number;
           slug: string;
           tally_guid: string | null;
@@ -2296,6 +2300,7 @@ export type Database = {
           payment_number: string;
           reference_date?: string | null;
           reference_number?: string | null;
+          search_vector?: unknown;
           sequence_number: number;
           slug: string;
           tally_guid?: string | null;
@@ -2334,6 +2339,7 @@ export type Database = {
           payment_number?: string;
           reference_date?: string | null;
           reference_number?: string | null;
+          search_vector?: unknown;
           sequence_number?: number;
           slug?: string;
           tally_guid?: string | null;
@@ -2655,7 +2661,7 @@ export type Database = {
           hsn_code: string | null;
           id: string;
           is_active: boolean;
-          measuring_unit: string | null;
+          measuring_unit: string;
           min_stock_alert: boolean | null;
           min_stock_threshold: number | null;
           modified_by: string | null;
@@ -2683,7 +2689,7 @@ export type Database = {
           hsn_code?: string | null;
           id?: string;
           is_active?: boolean;
-          measuring_unit?: string | null;
+          measuring_unit: string;
           min_stock_alert?: boolean | null;
           min_stock_threshold?: number | null;
           modified_by?: string | null;
@@ -2711,7 +2717,7 @@ export type Database = {
           hsn_code?: string | null;
           id?: string;
           is_active?: boolean;
-          measuring_unit?: string | null;
+          measuring_unit?: string;
           min_stock_alert?: boolean | null;
           min_stock_threshold?: number | null;
           modified_by?: string | null;
@@ -3330,6 +3336,73 @@ export type Database = {
           },
         ];
       };
+      stock_unit_adjustments: {
+        Row: {
+          adjustment_date: string;
+          company_id: string;
+          created_at: string;
+          created_by: string;
+          deleted_at: string | null;
+          id: string;
+          modified_by: string | null;
+          quantity_adjusted: number;
+          reason: string;
+          stock_unit_id: string;
+          updated_at: string;
+          warehouse_id: string;
+        };
+        Insert: {
+          adjustment_date: string;
+          company_id?: string;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          id?: string;
+          modified_by?: string | null;
+          quantity_adjusted: number;
+          reason: string;
+          stock_unit_id: string;
+          updated_at?: string;
+          warehouse_id: string;
+        };
+        Update: {
+          adjustment_date?: string;
+          company_id?: string;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          id?: string;
+          modified_by?: string | null;
+          quantity_adjusted?: number;
+          reason?: string;
+          stock_unit_id?: string;
+          updated_at?: string;
+          warehouse_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "stock_unit_adjustments_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_unit_adjustments_stock_unit_id_fkey";
+            columns: ["stock_unit_id"];
+            isOneToOne: false;
+            referencedRelation: "stock_units";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_unit_adjustments_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       stock_units: {
         Row: {
           company_id: string;
@@ -3758,6 +3831,20 @@ export type Database = {
         Returns: string;
       };
       get_current_user_id: { Args: never; Returns: string };
+      get_inventory_aggregates: {
+        Args: { p_warehouse_id: string };
+        Returns: {
+          product_count: number;
+          total_quantities: Json;
+        }[];
+      };
+      get_invoice_aggregates: {
+        Args: { p_invoice_type: string; p_warehouse_id: string };
+        Returns: {
+          invoice_count: number;
+          total_outstanding: number;
+        }[];
+      };
       get_job_type_suggestions: {
         Args: { company_id_param?: string; search_term?: string };
         Returns: {
@@ -3777,11 +3864,25 @@ export type Database = {
         Args: { p_company_id?: string; p_table_name: string };
         Returns: number;
       };
+      get_purchase_order_aggregates: {
+        Args: { p_warehouse_id: string };
+        Returns: {
+          order_count: number;
+          pending_quantities: Json;
+        }[];
+      };
       get_quality_grade_suggestions: {
         Args: { company_id_param?: string; search_term?: string };
         Returns: {
           quality_grade: string;
           usage_count: number;
+        }[];
+      };
+      get_sales_order_aggregates: {
+        Args: { p_warehouse_id: string };
+        Returns: {
+          order_count: number;
+          pending_quantities: Json;
         }[];
       };
       get_tag_suggestions: {

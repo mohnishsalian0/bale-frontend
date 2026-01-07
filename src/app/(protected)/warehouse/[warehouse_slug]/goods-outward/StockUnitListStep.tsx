@@ -5,7 +5,7 @@ import { IconBox } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { StockStatusBadge } from "@/components/ui/stock-status-badge";
 import { formatAbsoluteDate } from "@/lib/utils/date";
-import { formatStockUnitNumber } from "@/lib/utils/product";
+import { formatStockUnitNumber, getStockUnitInfo } from "@/lib/utils/product";
 import {
   getMeasuringUnitAbbreviation,
   pluralizeMeasuringUnitAbbreviation,
@@ -141,7 +141,7 @@ export function StockUnitListStep({
           groupedUnits.map((group) => (
             <div key={group.inward.id} className="border-t border-gray-200">
               {/* Inward Header */}
-              <div className="flex items-center justify-between px-4 py-2 bg-gray-100">
+              <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-gray-100">
                 <span className="text-sm font-semibold text-gray-700">
                   GI-{group.inward.sequence_number}
                 </span>
@@ -184,17 +184,9 @@ export function StockUnitListStep({
                       </div>
 
                       {/* Additional Details */}
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 mt-1">
-                        {unit.quality_grade && (
-                          <span>Grade: {unit.quality_grade}</span>
-                        )}
-                        {unit.supplier_number && (
-                          <span>Supplier #: {unit.supplier_number}</span>
-                        )}
-                        {unit.warehouse_location && (
-                          <span>Location: {unit.warehouse_location}</span>
-                        )}
-                      </div>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {getStockUnitInfo(unit)}
+                      </p>
                     </div>
 
                     <div className="shrink-0">

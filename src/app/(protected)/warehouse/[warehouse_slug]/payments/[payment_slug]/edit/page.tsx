@@ -257,7 +257,9 @@ export default function EditPaymentPage() {
   };
 
   const handleCancel = () => {
-    router.push(`/warehouse/${warehouse.slug}/payments/${payment_slug}`);
+    router.push(
+      `/warehouse/${warehouse.slug}/payments/${payment_slug}/details`,
+    );
   };
 
   const handleSubmit = () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { IconBolt, IconTrash, IconPhoto } from "@tabler/icons-react";
 import { IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
 import { toast } from "sonner";
@@ -28,12 +28,14 @@ interface StockUnitScannerStepProps {
   scannedUnits: ScannedStockUnit[];
   onScannedUnitsChange: (units: ScannedStockUnit[]) => void;
   warehouseId: string;
+  orderProducts?: Record<string, number>; // productId -> requested_quantity
 }
 
 export function StockUnitScannerStep({
   scannedUnits,
   onScannedUnitsChange,
   warehouseId,
+  orderProducts = {},
 }: StockUnitScannerStepProps) {
   const [error, setError] = useState<string | null>(null);
   const [torch, setTorch] = useState(false);
@@ -45,6 +47,12 @@ export function StockUnitScannerStep({
     editingIndex?: number;
     initialQuantity?: number;
   } | null>(null);
+
+  // Extract product IDs from orderProducts for validation
+  const orderProductIds = useMemo(() => {
+    const productIds = Object.keys(orderProducts);
+    return productIds.length > 0 ? new Set(productIds) : null;
+  }, [orderProducts]);
 
   const handleScan = async (detectedCodes: IDetectedBarcode[]) => {
     if (paused || detectedCodes.length === 0) return;
@@ -64,6 +72,19 @@ export function StockUnitScannerStep({
 
       if (!stockUnitWithProduct.product) {
         setError("Product not found");
+        setTimeout(() => {
+          setError(null);
+          setPaused(false);
+        }, SCAN_DELAY);
+        return;
+      }
+
+      // Validate product is in the order (hard block)
+      if (
+        orderProductIds &&
+        !orderProductIds.has(stockUnitWithProduct.product.id)
+      ) {
+        setError("This product is not in the selected order");
         setTimeout(() => {
           setError(null);
           setPaused(false);
@@ -389,6 +410,7 @@ export function StockUnitScannerStep({
           warehouseId={warehouseId}
           scannedUnits={scannedUnits}
           onScannedUnitsChange={onScannedUnitsChange}
+          orderProducts={orderProducts}
         />
       )}
 

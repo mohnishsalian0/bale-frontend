@@ -12,8 +12,11 @@ import type {
   CompletePurchaseOrderData,
   PurchaseOrder,
 } from "@/types/purchase-orders.types";
-import type { ProductAttributeAssignmentsRaw } from "@/types/products.types";
-import { transformAttributes } from "./products";
+import {
+  PRODUCT_LIST_VIEW_SELECT,
+  transformProductListView,
+  ProductListViewRaw,
+} from "./products";
 
 // Re-export types for convenience
 export type {
@@ -33,21 +36,10 @@ export type {
 
 /**
  * Raw type for purchase order item in detail view
- * Includes nested product with attribute assignments
+ * Uses ProductListViewRaw for consistency
  */
 type PurchaseOrderItemDetailViewRaw = Tables<"purchase_order_items"> & {
-  product:
-    | (Pick<
-        Tables<"products">,
-        | "id"
-        | "name"
-        | "stock_type"
-        | "measuring_unit"
-        | "product_images"
-        | "sequence_number"
-      > &
-        ProductAttributeAssignmentsRaw)
-    | null;
+  product: ProductListViewRaw | null;
 };
 
 /**
@@ -67,6 +59,30 @@ type PurchaseOrderDetailViewRaw = Tables<"purchase_orders"> & {
   warehouse: Tables<"warehouses"> | null;
   purchase_order_items: PurchaseOrderItemDetailViewRaw[];
 };
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Transform purchase order items to flatten attributes
+ * Shared by getPurchaseOrderByNumber and getPurchaseOrderById
+ */
+function transformPurchaseOrderItems(
+  items: PurchaseOrderItemDetailViewRaw[],
+): PurchaseOrderItemDetailView[] {
+  return items.map((item) => {
+    if (!item.product) {
+      return { ...item, product: null };
+    }
+
+    // Use shared transform function from products.ts
+    return {
+      ...item,
+      product: transformProductListView(item.product),
+    };
+  });
+}
 
 // ============================================================================
 // QUERIES
@@ -208,15 +224,7 @@ export async function getPurchaseOrderByNumber(
 			warehouse:warehouse_id(*),
 			purchase_order_items(
 				*,
-				product:product_id(
-					id,
-					name,
-					stock_type,
-					measuring_unit,
-					product_images,
-					sequence_number,
-					attributes:product_attributes!inner(id, name, group_name, color_hex)
-				)
+				product:product_id(${PRODUCT_LIST_VIEW_SELECT})
 			)
 		`,
     )
@@ -227,34 +235,55 @@ export async function getPurchaseOrderByNumber(
   if (error) throw error;
   if (!data) throw new Error("Order not found");
 
-  // Transform purchase order items to flatten attributes
-  const transformedItems: PurchaseOrderItemDetailView[] =
-    data.purchase_order_items.map((item) => {
-      if (!item.product) {
-        return { ...item, product: null };
-      }
+  // Return transformed purchase order
+  return {
+    ...data,
+    purchase_order_items: transformPurchaseOrderItems(
+      data.purchase_order_items,
+    ),
+  };
+}
 
-      // Transform attributes using shared utility
-      const { materials, colors, tags } = transformAttributes(item.product);
+/**
+ * Fetch a single purchase order by ID (UUID)
+ */
+export async function getPurchaseOrderById(
+  orderId: string,
+): Promise<PurchaseOrderDetailView> {
+  const supabase = createClient();
 
-      // Remove nested assignments field
-      const { attributes: _attributes, ...productRest } = item.product;
+  const { data, error } = await supabase
+    .from("purchase_orders")
+    .select(
+      `
+			*,
+			supplier:supplier_id(
+				*,
+				ledger:ledgers!partner_id(id, name)
+			),
+			agent:agent_id(
+				id, first_name, last_name, display_name, company_name
+			),
+			warehouse:warehouse_id(*),
+			purchase_order_items(
+				*,
+				product:product_id(${PRODUCT_LIST_VIEW_SELECT})
+			)
+		`,
+    )
+    .eq("id", orderId)
+    .is("deleted_at", null)
+    .single<PurchaseOrderDetailViewRaw>();
 
-      return {
-        ...item,
-        product: {
-          ...productRest,
-          materials,
-          colors,
-          tags,
-        },
-      };
-    });
+  if (error) throw error;
+  if (!data) throw new Error("Order not found");
 
   // Return transformed purchase order
   return {
     ...data,
-    purchase_order_items: transformedItems,
+    purchase_order_items: transformPurchaseOrderItems(
+      data.purchase_order_items,
+    ),
   };
 }
 

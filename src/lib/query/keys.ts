@@ -138,6 +138,16 @@ export const queryKeys = {
     recentPartners: () => ["dashboard", "recent-partners"] as const,
     accounting: () => ["dashboard", "accounting"] as const,
     orders: () => ["dashboard", "orders"] as const,
+
+    // Stats
+    invoices: (filters?: Record<string, unknown>) =>
+      ["dashboard", "invoices", filters] as const,
+    salesOrderStats: (warehouseId: string) =>
+      ["dashboard", "sales-orders-stats", warehouseId] as const,
+    purchaseOrderStats: (warehouseId: string) =>
+      ["dashboard", "purchase-orders-stats", warehouseId] as const,
+    inventoryStats: (warehouseId: string) =>
+      ["dashboard", "inventory-stats", warehouseId] as const,
   },
 
   // Catalog (Public)
@@ -212,4 +222,12 @@ export const queryKeys = {
     byInvoice: (invoiceId: string, page?: number) =>
       ["adjustment-notes", "invoice", invoiceId, page] as const,
   },
+} as const;
+
+// Stock Unit Adjustments (separate from main queryKeys for circular dependency avoidance)
+export const stockUnitAdjustmentKeys = {
+  all: ["stock-unit-adjustments"] as const,
+  byStockUnit: (stockUnitId: string) =>
+    ["stock-unit-adjustments", "stock-unit", stockUnitId] as const,
+  byId: (id: string) => ["stock-unit-adjustments", "detail", id] as const,
 } as const;

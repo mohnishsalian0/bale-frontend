@@ -77,6 +77,9 @@ CREATE TABLE payments (
     cancelled_by UUID,
     cancellation_reason TEXT,
 
+    -- Full-text search
+    search_vector tsvector,
+
     UNIQUE(company_id, voucher_type, sequence_number),
     UNIQUE(company_id, payment_number),
     UNIQUE(company_id, slug) -- Unique within company for URL routing
@@ -257,6 +260,27 @@ CREATE TRIGGER trigger_auto_cancel_allocations
     FOR EACH ROW
     WHEN (OLD.is_cancelled IS FALSE AND NEW.is_cancelled IS TRUE)
     EXECUTE FUNCTION auto_cancel_allocations_on_payment_cancel();
+
+-- Update search vector for full-text search
+CREATE OR REPLACE FUNCTION update_payments_search_vector()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.search_vector :=
+        setweight(to_tsvector('simple', COALESCE(NEW.sequence_number::text, '')), 'A') ||
+        setweight(to_tsvector('simple', COALESCE(NEW.payment_number, '')), 'A') ||
+        setweight(to_tsvector('simple', COALESCE(NEW.payment_mode::text, '')), 'A') ||
+        setweight(to_tsvector('english', COALESCE(NEW.party_name, '')), 'B') ||
+        setweight(to_tsvector('english', COALESCE(NEW.party_display_name, '')), 'B') ||
+        setweight(to_tsvector('english', COALESCE(NEW.counter_ledger_name, '')), 'B') ||
+        setweight(to_tsvector('simple', COALESCE(NEW.reference_number, '')), 'B') ||
+        setweight(to_tsvector('english', COALESCE(NEW.notes, '')), 'C');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_payments_search_vector
+    BEFORE INSERT OR UPDATE ON payments
+    FOR EACH ROW EXECUTE FUNCTION update_payments_search_vector();
 
 -- =====================================================
 -- RLS POLICIES

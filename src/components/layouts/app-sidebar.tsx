@@ -13,6 +13,7 @@ import {
   IconTruck,
   IconTruckLoading,
   IconShirt,
+  IconBuilding,
 } from "@tabler/icons-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -47,99 +48,105 @@ type NavItem = {
   permission: string;
 };
 
-const NAV_GROUPS: NavGroup[] = [
-  {
-    title: "Inventory",
-    nav_items: [
-      {
-        label: "Products",
-        path: "products",
-        icon: IconShirt,
-        permission: "inventory.products.read",
-      },
-      {
-        label: "Goods movement",
-        path: "stock-flow",
-        icon: IconTruck,
-        permission: "movement.read",
-      },
-      {
-        label: "QR codes",
-        path: "qr-codes",
-        icon: IconQrcode,
-        permission: "inventory.qr_batches.read",
-      },
-    ],
-  },
-  {
-    title: "Orders",
-    nav_items: [
-      {
-        label: "Sales orders",
-        path: "sales-orders",
-        icon: IconShoppingCart,
-        permission: "sales_orders.read",
-      },
-      {
-        label: "Purchase orders",
-        path: "purchase-orders",
-        icon: IconTruckLoading,
-        permission: "purchase_orders.read",
-      },
-    ],
-  },
-  {
-    title: "Bills & Payments",
-    nav_items: [
-      {
-        label: "Invoices",
-        path: "invoices",
-        icon: IconReceipt,
-        permission: "invoices.read",
-      },
-      {
-        label: "Payments",
-        path: "payments",
-        icon: IconCash,
-        permission: "payments.read",
-      },
-      {
-        label: "Adjustment Notes",
-        path: "adjustment-notes",
-        icon: IconReceiptRefund,
-        permission: "invoices.read",
-      },
-    ],
-  },
-  {
-    title: "Business",
-    nav_items: [
-      {
-        label: "Partners",
-        path: "partners",
-        icon: IconUsers,
-        permission: "partners.read",
-      },
-      {
-        label: "Staff",
-        path: "staff",
-        icon: IconIdBadge2,
-        permission: "users.read",
-      },
-    ],
-  },
-  // {
-  //   label: "Reports",
-  //   path: "reports",
-  //   icon: IconChartBar,
-  //   permission: "reports.read",
-  // },
-];
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const { warehouse } = useSession();
   const { setOpenMobile, isMobile, setOpen } = useSidebar();
+
+  const NAV_GROUPS: NavGroup[] = [
+    {
+      title: "Inventory",
+      nav_items: [
+        {
+          label: "Products",
+          path: `/warehouse/${warehouse.slug}/products`,
+          icon: IconShirt,
+          permission: "inventory.products.read",
+        },
+        {
+          label: "Goods movement",
+          path: `/warehouse/${warehouse.slug}/stock-flow`,
+          icon: IconTruck,
+          permission: "movement.read",
+        },
+        {
+          label: "QR codes",
+          path: `/warehouse/${warehouse.slug}/qr-codes`,
+          icon: IconQrcode,
+          permission: "inventory.qr_batches.read",
+        },
+      ],
+    },
+    {
+      title: "Orders",
+      nav_items: [
+        {
+          label: "Sales orders",
+          path: `/warehouse/${warehouse.slug}/sales-orders`,
+          icon: IconShoppingCart,
+          permission: "sales_orders.read",
+        },
+        {
+          label: "Purchase orders",
+          path: `/warehouse/${warehouse.slug}/purchase-orders`,
+          icon: IconTruckLoading,
+          permission: "purchase_orders.read",
+        },
+      ],
+    },
+    {
+      title: "Bills & Payments",
+      nav_items: [
+        {
+          label: "Invoices",
+          path: `/warehouse/${warehouse.slug}/invoices`,
+          icon: IconReceipt,
+          permission: "invoices.read",
+        },
+        {
+          label: "Payments",
+          path: `/warehouse/${warehouse.slug}/payments`,
+          icon: IconCash,
+          permission: "payments.read",
+        },
+        {
+          label: "Adjustment Notes",
+          path: `/warehouse/${warehouse.slug}/adjustment-notes`,
+          icon: IconReceiptRefund,
+          permission: "invoices.read",
+        },
+      ],
+    },
+    {
+      title: "Business",
+      nav_items: [
+        {
+          label: "Partners",
+          path: `/warehouse/${warehouse.slug}/partners`,
+          icon: IconUsers,
+          permission: "partners.read",
+        },
+        {
+          label: "Staff",
+          path: `/warehouse/${warehouse.slug}/staff`,
+          icon: IconIdBadge2,
+          permission: "users.read",
+        },
+        {
+          label: "Company",
+          path: "/company",
+          icon: IconBuilding,
+          permission: "companies.read",
+        },
+      ],
+    },
+    // {
+    //   label: "Reports",
+    //   path: "reports",
+    //   icon: IconChartBar,
+    //   permission: "reports.read",
+    // },
+  ];
 
   const handleClick = () => {
     if (isMobile) {
@@ -191,9 +198,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarGroupContent>
               <SidebarMenu className="gap-0">
                 {item.nav_items.map((item) => {
-                  const href = item.external
-                    ? item.path
-                    : `/warehouse/${warehouse.slug}/${item.path}`;
+                  const href = item.path;
                   const isActive = pathname === href;
                   const TrailingIcon = item.trailingIcon;
 

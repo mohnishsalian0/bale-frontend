@@ -164,8 +164,7 @@ export function InvoiceDetailsStep({
               className="flex-1"
             />
             <DatePicker
-              label="Supplier invoice date"
-              placeholder="Pick a date"
+              placeholder="Supplier invoice date (Optional)"
               value={
                 formData.supplierInvoiceDate
                   ? new Date(formData.supplierInvoiceDate)

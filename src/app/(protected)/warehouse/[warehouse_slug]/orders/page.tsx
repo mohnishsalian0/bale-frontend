@@ -15,11 +15,39 @@ import {
 import { Button } from "@/components/ui/button";
 import { ActiveOrdersSection } from "../dashboard/ActiveOrdersSection";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  useSalesOrderAggregates,
+  usePurchaseOrderAggregates,
+} from "@/lib/query/hooks/aggregates";
+import { formatMeasuringUnitQuantities } from "@/lib/utils/measuring-units";
 
 export default function OrdersPage() {
   const router = useRouter();
   const { warehouse } = useSession();
   const isMobile = useIsMobile();
+
+  // Fetch order aggregates
+  const { data: salesOrderStats } = useSalesOrderAggregates({
+    warehouseId: warehouse.id,
+  });
+
+  const { data: purchaseOrderStats } = usePurchaseOrderAggregates({
+    warehouseId: warehouse.id,
+  });
+
+  // Calculate totals
+  const totalPendingOrders =
+    (salesOrderStats?.count || 0) + (purchaseOrderStats?.count || 0);
+
+  // Merge quantities from both sales and purchase orders
+  const combinedQuantities = new Map(
+    salesOrderStats?.pending_quantities_by_unit || [],
+  );
+  purchaseOrderStats?.pending_quantities_by_unit.forEach((qty, unit) => {
+    combinedQuantities.set(unit, (combinedQuantities.get(unit) || 0) + qty);
+  });
+
+  const pendingFulfillment = formatMeasuringUnitQuantities(combinedQuantities);
 
   // Quick actions array
   const quickActions: QuickAction[] = [
@@ -40,10 +68,6 @@ export default function OrdersPage() {
     },
   ];
 
-  // TODO: Replace with real aggregates from database when available
-  const staticPendingOrdersCount = "[X]";
-  const staticPendingFulfillment = "[Y]";
-
   return (
     <div className="relative flex flex-col grow">
       {/* Header */}
@@ -55,14 +79,14 @@ export default function OrdersPage() {
             <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
             <p className="text-sm text-gray-500 mt-2">
               <span className="text-teal-700 font-medium">
-                {staticPendingOrdersCount}
+                {totalPendingOrders}
               </span>
               <span> pending orders</span>
               <span> • </span>
               <span className="text-teal-700 font-medium">
-                {staticPendingFulfillment}
+                {pendingFulfillment}
               </span>
-              <span className="text-gray-500"> units pending fulfillment</span>
+              <span className="text-gray-500"> pending fulfillment</span>
             </p>
           </div>
         </div>
@@ -122,14 +146,14 @@ export default function OrdersPage() {
 
       {/* Active Sales Orders Section */}
       <ActiveOrdersSection
-        title="Active sales orders"
+        title={`Active sales orders ${salesOrderStats?.count ? `(${salesOrderStats.count})` : ""}`}
         orderType="sales"
         warehouseSlug={warehouse.slug}
       />
 
       {/* Active Purchase Orders Section */}
       <ActiveOrdersSection
-        title="Active purchase orders"
+        title={`Active purchase orders ${purchaseOrderStats?.count ? `(${purchaseOrderStats.count})` : ""}`}
         orderType="purchase"
         warehouseSlug={warehouse.slug}
       />

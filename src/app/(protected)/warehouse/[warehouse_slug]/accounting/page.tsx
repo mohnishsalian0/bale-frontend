@@ -11,7 +11,7 @@ import {
 import {
   IconReceiptRupee,
   IconCurrencyRupee,
-  IconFileText,
+  IconReceiptRefund,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { ActiveInvoicesSection } from "./ActiveInvoicesSection";
@@ -19,6 +19,8 @@ import { PartnerOutstandingSection } from "./PartnerOutstandingSection";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PaymentTypeDialog } from "../payments/PaymentTypeDialog";
 import type { VoucherType } from "@/types/database/enums";
+import { useInvoiceAggregates } from "@/lib/query/hooks/aggregates";
+import { formatCurrency } from "@/lib/utils/currency";
 
 export default function AccountingPage() {
   const router = useRouter();
@@ -30,9 +32,27 @@ export default function AccountingPage() {
   const [paymentVoucherType, setPaymentVoucherType] =
     useState<VoucherType | null>(null);
 
-  // TODO: Replace with real aggregates from database when available
-  const staticOpenInvoicesCount = "[X]";
-  const staticTotalOutstanding = "[Y]";
+  // Fetch invoice aggregates for sales and purchase
+  const { data: salesInvoiceStats } = useInvoiceAggregates({
+    filters: {
+      warehouse_id: warehouse.id,
+      invoice_type: "sales",
+    },
+  });
+
+  const { data: purchaseInvoiceStats } = useInvoiceAggregates({
+    filters: {
+      warehouse_id: warehouse.id,
+      invoice_type: "purchase",
+    },
+  });
+
+  // Calculate totals
+  const totalOpenInvoices =
+    (salesInvoiceStats?.count || 0) + (purchaseInvoiceStats?.count || 0);
+  const totalOutstanding =
+    (salesInvoiceStats?.total_outstanding || 0) +
+    (purchaseInvoiceStats?.total_outstanding || 0);
 
   // Quick actions array
   const quickActions: QuickAction[] = [
@@ -63,12 +83,12 @@ export default function AccountingPage() {
       },
     },
     {
-      icon: IconFileText,
+      icon: IconReceiptRefund,
       label: "Credit note",
       href: `/warehouse/${warehouse.slug}/adjustment-notes/create/credit`,
     },
     {
-      icon: IconFileText,
+      icon: IconReceiptRefund,
       label: "Debit note",
       href: `/warehouse/${warehouse.slug}/adjustment-notes/create/debit`,
     },
@@ -87,12 +107,12 @@ export default function AccountingPage() {
             </h1>
             <p className="text-sm text-gray-500 mt-2">
               <span className="text-teal-700 font-medium">
-                {staticOpenInvoicesCount}
+                {totalOpenInvoices}
               </span>
               <span> open invoices</span>
               <span> • </span>
               <span className="text-teal-700 font-medium">
-                {staticTotalOutstanding}
+                {formatCurrency(totalOutstanding)}
               </span>
               <span className="text-gray-500"> outstanding</span>
             </p>
@@ -159,14 +179,14 @@ export default function AccountingPage() {
 
       {/* Active Sales Invoices Section */}
       <ActiveInvoicesSection
-        title="Active sales invoices"
+        title={`Active sales invoices ${salesInvoiceStats?.count ? `(${salesInvoiceStats.count})` : ""}`}
         invoiceType="sales"
         warehouseSlug={warehouse.slug}
       />
 
       {/* Active Purchase Invoices Section */}
       <ActiveInvoicesSection
-        title="Active purchase invoices"
+        title={`Active purchase invoices ${purchaseInvoiceStats?.count ? `(${purchaseInvoiceStats.count})` : ""}`}
         invoiceType="purchase"
         warehouseSlug={warehouse.slug}
       />

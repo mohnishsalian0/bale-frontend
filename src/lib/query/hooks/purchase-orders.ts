@@ -12,6 +12,7 @@ import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getPurchaseOrders,
   getPurchaseOrderByNumber,
+  getPurchaseOrderById,
   createPurchaseOrder,
   approvePurchaseOrder,
   cancelPurchaseOrder,
@@ -90,6 +91,18 @@ export function usePurchaseOrderByNumber(sequenceNumber: string | null) {
     queryFn: () => getPurchaseOrderByNumber(sequenceNumber!),
     ...getQueryOptions(STALE_TIME.PURCHASE_ORDERS, GC_TIME.TRANSACTIONAL),
     enabled: !!sequenceNumber,
+  });
+}
+
+/**
+ * Fetch single purchase order by ID (UUID)
+ */
+export function usePurchaseOrderById(orderId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.purchaseOrders.detail(orderId || ""),
+    queryFn: () => getPurchaseOrderById(orderId!),
+    ...getQueryOptions(STALE_TIME.PURCHASE_ORDERS, GC_TIME.TRANSACTIONAL),
+    enabled: !!orderId,
   });
 }
 

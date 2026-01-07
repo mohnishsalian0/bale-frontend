@@ -109,10 +109,10 @@ export function SalesOrderInfiniteList({
                           text={displayStatusData.text}
                         />
                       </div>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 mt-1">
                         {getFullProductInfo(order.sales_order_items)}
                       </p>
-                      <p className="text-xs text-gray-500 truncate">
+                      <p className="text-xs text-gray-500 truncate mt-1">
                         {customerName} · {formatAbsoluteDate(order.created_at)}
                       </p>
                     </div>

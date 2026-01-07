@@ -12,8 +12,11 @@ import type {
   CompleteSalesOrderData,
   SalesOrderUpdate,
 } from "@/types/sales-orders.types";
-import type { ProductAttributeAssignmentsRaw } from "@/types/products.types";
-import { transformAttributes } from "./products";
+import {
+  PRODUCT_LIST_VIEW_SELECT,
+  transformProductListView,
+  ProductListViewRaw,
+} from "./products";
 
 // Re-export types for convenience
 export type {
@@ -33,22 +36,10 @@ export type {
 
 /**
  * Raw type for sales order item in detail view
- * Includes nested product with attribute assignments
+ * Uses ProductListViewRaw for consistency
  */
 type SalesOrderItemDetailViewRaw = Tables<"sales_order_items"> & {
-  product:
-    | (Pick<
-        Tables<"products">,
-        | "id"
-        | "name"
-        | "stock_type"
-        | "measuring_unit"
-        | "product_images"
-        | "sequence_number"
-        | "product_code"
-      > &
-        ProductAttributeAssignmentsRaw)
-    | null;
+  product: ProductListViewRaw | null;
 };
 
 /**
@@ -68,6 +59,30 @@ type SalesOrderDetailViewRaw = Tables<"sales_orders"> & {
   warehouse: Tables<"warehouses"> | null;
   sales_order_items: SalesOrderItemDetailViewRaw[];
 };
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Transform sales order items to flatten attributes
+ * Shared by getSalesOrderByNumber and getSalesOrderById
+ */
+function transformSalesOrderItems(
+  items: SalesOrderItemDetailViewRaw[],
+): SalesOrderItemDetailView[] {
+  return items.map((item) => {
+    if (!item.product) {
+      return { ...item, product: null };
+    }
+
+    // Use shared transform function from products.ts
+    return {
+      ...item,
+      product: transformProductListView(item.product),
+    };
+  });
+}
 
 // ============================================================================
 // QUERIES
@@ -209,16 +224,7 @@ export async function getSalesOrderByNumber(
 			warehouse:warehouse_id(*),
 			sales_order_items(
 				*,
-				product:product_id(
-					id,
-					name,
-					stock_type,
-					measuring_unit,
-					product_images,
-					sequence_number,
-					product_code,
-					attributes:product_attributes!inner(id, name, group_name, color_hex)
-				)
+				product:product_id(${PRODUCT_LIST_VIEW_SELECT})
 			)
 		`,
     )
@@ -229,34 +235,51 @@ export async function getSalesOrderByNumber(
   if (error) throw error;
   if (!data) throw new Error("Order not found");
 
-  // Transform sales order items to flatten attributes
-  const transformedItems: SalesOrderItemDetailView[] =
-    data.sales_order_items.map((item) => {
-      if (!item.product) {
-        return { ...item, product: null };
-      }
+  // Return transformed sales order
+  return {
+    ...data,
+    sales_order_items: transformSalesOrderItems(data.sales_order_items),
+  };
+}
 
-      // Transform attributes using shared utility
-      const { materials, colors, tags } = transformAttributes(item.product);
+/**
+ * Fetch a single sales order by ID (UUID)
+ */
+export async function getSalesOrderById(
+  orderId: string,
+): Promise<SalesOrderDetailView> {
+  const supabase = createClient();
 
-      // Remove nested assignments field
-      const { attributes: _attributes, ...productRest } = item.product;
+  const { data, error } = await supabase
+    .from("sales_orders")
+    .select(
+      `
+			*,
+			customer:customer_id(
+				*,
+				ledger:ledgers!partner_id(id, name)
+			),
+			agent:agent_id(
+				id, first_name, last_name, display_name, company_name
+			),
+			warehouse:warehouse_id(*),
+			sales_order_items(
+				*,
+				product:product_id(${PRODUCT_LIST_VIEW_SELECT})
+			)
+		`,
+    )
+    .eq("id", orderId)
+    .is("deleted_at", null)
+    .single<SalesOrderDetailViewRaw>();
 
-      return {
-        ...item,
-        product: {
-          ...productRest,
-          materials,
-          colors,
-          tags,
-        },
-      };
-    });
+  if (error) throw error;
+  if (!data) throw new Error("Order not found");
 
   // Return transformed sales order
   return {
     ...data,
-    sales_order_items: transformedItems,
+    sales_order_items: transformSalesOrderItems(data.sales_order_items),
   };
 }
 

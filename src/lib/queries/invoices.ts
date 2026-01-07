@@ -55,6 +55,7 @@ export async function getInvoices(
 				party_ledger_id,
         party_name,
         party_display_name,
+				supplier_invoice_number,
         warehouse_id,
         has_payment,
         exported_to_tally_at,

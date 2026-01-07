@@ -656,7 +656,7 @@ async function createTestPartners() {
         gsm: 130,
         thread_count_cm: 65,
         stock_type: "piece",
-        measuring_unit: null,
+        measuring_unit: "piece",
         cost_price_per_unit: 400.0,
         selling_price_per_unit: 600.0,
         show_on_catalog: true,

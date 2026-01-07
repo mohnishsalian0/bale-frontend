@@ -22,7 +22,7 @@ CREATE TABLE products (
 
     -- Stock information
     stock_type VARCHAR(10) NOT NULL CHECK (stock_type IN ('roll', 'batch', 'piece')),
-    measuring_unit VARCHAR(20) CHECK (measuring_unit IN ('metre', 'yard', 'kilogram', 'unit')),
+    measuring_unit VARCHAR(20) NOT NULL CHECK (measuring_unit IN ('metre', 'yard', 'kilogram', 'unit', 'piece')),
     cost_price_per_unit DECIMAL(15,2),
     selling_price_per_unit DECIMAL(15,2),
     min_stock_alert BOOLEAN DEFAULT FALSE,
@@ -51,7 +51,7 @@ CREATE TABLE products (
     CHECK (
         (stock_type = 'roll' AND measuring_unit IN ('metre', 'yard', 'kilogram')) OR
         (stock_type = 'batch' AND measuring_unit = 'unit') OR
-        (stock_type = 'piece' AND measuring_unit IS NULL)
+        (stock_type = 'piece' AND measuring_unit = 'piece')
     ),
 
     UNIQUE(company_id, sequence_number),

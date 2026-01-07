@@ -248,7 +248,7 @@ export default function StockUnitsPage({ params }: PageParams) {
           groupedUnits.map((group) => (
             <div key={group.inward.id} className="border-t border-gray-200">
               {/* Inward Header */}
-              <div className="flex items-center justify-between px-4 py-2 bg-gray-100">
+              <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-gray-100">
                 <span className="text-sm font-semibold text-gray-700">
                   GI-{group.inward.sequence_number}
                 </span>

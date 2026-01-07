@@ -84,11 +84,12 @@ export function StockUnitQuantitySheet({
     <div className="flex flex-col gap-4 pb-1 md:px-0 overflow-x-hidden">
       <div className="flex gap-4">
         {/* Quantity Input */}
-        <div className="flex flex-1 items-end gap-1 shrink-0">
+        <div className="flex flex-1 items-center gap-2 shrink-0">
           <InputWrapper
             type="number"
-            label={`Quantity (${maxQuantity} ${unitAbbreviation} avail.)`}
+            label={`Quantity`}
             rightText={unitAbbreviation}
+            helpText={`${maxQuantity} ${unitAbbreviation} available`}
             min="0"
             max={maxQuantity}
             step={stockType === "roll" ? "0.1" : "1"}

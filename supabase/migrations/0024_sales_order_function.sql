@@ -317,14 +317,14 @@ BEGIN
     END IF;
 
     -- Get customer name
-    SELECT CONCAT(first_name, ' ', last_name, ' ', COALESCE(company_name, ''))
+    SELECT display_name
     INTO v_customer_name
     FROM partners
     WHERE id = NEW.customer_id;
 
     -- Get agent name (if exists)
     IF NEW.agent_id IS NOT NULL THEN
-        SELECT CONCAT(first_name, ' ', last_name, ' ', COALESCE(company_name, ''))
+        SELECT display_name
         INTO v_agent_name
         FROM partners
         WHERE id = NEW.agent_id;

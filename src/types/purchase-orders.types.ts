@@ -1,4 +1,4 @@
-import { ProductAttribute } from "@/types/products.types";
+import { ProductListView } from "@/types/products.types";
 import type { Tables, TablesUpdate } from "./database/supabase";
 import { DisplayStatus } from "@/lib/utils/purchase-order";
 
@@ -70,25 +70,10 @@ export interface PurchaseOrderListView extends PurchaseOrder {
 
 /**
  * Purchase order item with full product details (for order detail page)
- * Includes materials, colors, and tags
+ * Uses ProductListView for consistency across the app
  */
 export interface PurchaseOrderItemDetailView extends PurchaseOrderItem {
-  product:
-    | (Pick<
-        Product,
-        | "id"
-        | "name"
-        | "stock_type"
-        | "measuring_unit"
-        | "product_images"
-        | "sequence_number"
-        | "stock_type"
-      > & {
-        materials: ProductAttribute[];
-        colors: ProductAttribute[];
-        tags: ProductAttribute[];
-      })
-    | null;
+  product: ProductListView | null;
 }
 
 /**

@@ -13,13 +13,12 @@ import { InventoryProductListStep } from "./InventoryProductListStep";
 import { StockUnitListStep } from "./StockUnitListStep";
 import { StockUnitQuantitySheet } from "./StockUnitQuantitySheet";
 import { PieceQuantitySheet } from "./PieceQuantitySheet";
-import { getProducts, getProductAttributeLists } from "@/lib/queries/products";
 import {
   getStockUnits,
   getStockUnitWithProductDetail,
 } from "@/lib/queries/stock-units";
 import type { ScannedStockUnit } from "./QRScannerStep";
-import type { ProductListView, ProductAttribute } from "@/types/products.types";
+import type { ProductWithInventoryListView } from "@/types/products.types";
 import type { StockUnitWithProductDetailView } from "@/types/stock-units.types";
 import type { StockType } from "@/types/database/enums";
 
@@ -31,6 +30,7 @@ interface SelectInventorySheetProps {
   warehouseId: string;
   scannedUnits: ScannedStockUnit[];
   onScannedUnitsChange: (units: ScannedStockUnit[]) => void;
+  orderProducts?: Record<string, number>; // productId -> requested_quantity
 }
 
 export function SelectInventorySheet({
@@ -39,30 +39,19 @@ export function SelectInventorySheet({
   warehouseId,
   scannedUnits,
   onScannedUnitsChange,
+  orderProducts = {},
 }: SelectInventorySheetProps) {
   const [currentStep, setCurrentStep] =
     useState<SelectInventoryStep>("products");
-  const [products, setProducts] = useState<ProductListView[]>([]);
-  const [materials, setMaterials] = useState<ProductAttribute[]>([]);
-  const [colors, setColors] = useState<ProductAttribute[]>([]);
-  const [tags, setTags] = useState<ProductAttribute[]>([]);
-  const [loading, setLoading] = useState(false);
 
   // Selected state
   const [selectedProduct, setSelectedProduct] =
-    useState<ProductListView | null>(null);
+    useState<ProductWithInventoryListView | null>(null);
   const [selectedStockUnit, setSelectedStockUnit] =
     useState<StockUnitWithProductDetailView | null>(null);
 
   // Quantity sheet state
   const [showQuantitySheet, setShowQuantitySheet] = useState(false);
-
-  // Load products on mount
-  useEffect(() => {
-    if (open) {
-      loadData();
-    }
-  }, [open]);
 
   // Reset state when sheet closes
   useEffect(() => {
@@ -74,27 +63,7 @@ export function SelectInventorySheet({
     }
   }, [open]);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // Fetch products and attributes in parallel
-      const [productsData, attributeLists] = await Promise.all([
-        getProducts(),
-        getProductAttributeLists(),
-      ]);
-
-      setProducts(productsData.data);
-      setMaterials(attributeLists.materials);
-      setColors(attributeLists.colors);
-      setTags(attributeLists.tags);
-    } catch (error) {
-      console.error("Error loading products:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleProductSelect = async (product: ProductListView) => {
+  const handleProductSelect = async (product: ProductWithInventoryListView) => {
     setSelectedProduct(product);
     const stockType = product.stock_type as StockType;
 
@@ -214,12 +183,9 @@ export function SelectInventorySheet({
             {currentStep === "products" && (
               <>
                 <InventoryProductListStep
-                  products={products}
-                  materials={materials}
-                  colors={colors}
-                  tags={tags}
-                  loading={loading}
+                  warehouseId={warehouseId}
                   scannedUnits={scannedUnits}
+                  orderProducts={orderProducts}
                   onProductSelect={handleProductSelect}
                 />
 

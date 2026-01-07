@@ -3,18 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  IconPhone,
-  IconMail,
-  IconWorld,
   IconMapPin,
   IconPencil,
   IconBuilding,
   IconPlus,
-  IconBuildingWarehouse,
   IconCurrencyRupee,
+  IconShare,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Section } from "@/components/layouts/section";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { LoadingState } from "@/components/layouts/loading-state";
@@ -24,14 +20,23 @@ import { CompanyEditSheet } from "@/app/(protected)/company/CompanyEditSheet";
 import { useCompany } from "@/lib/query/hooks/company";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
 import {
-  formatWebsiteUrl,
   getFormattedCompanyAddress,
+  getCompanyContactInfo,
 } from "@/lib/utils/company";
+import {
+  getWarehouseFormattedAddress,
+  getWarehouseContactDetails,
+} from "@/lib/utils/warehouse";
+import { Warehouse } from "@/types/warehouses.types";
+import { PermissionGate } from "@/components/auth/PermissionGate";
 
 export default function CompanyPage() {
   const router = useRouter();
   const [showEditCompany, setShowEditCompany] = useState(false);
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
+  const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(
+    null,
+  );
 
   // Fetch company and warehouses using TanStack Query hooks
   const {
@@ -71,6 +76,44 @@ export default function CompanyPage() {
   const hasContactInfo =
     company.phone_number || company.email || company.website_url;
 
+  const handleEditWarehouse = (warehouse: Warehouse, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingWarehouse(warehouse);
+    setShowCreateWarehouse(true);
+  };
+
+  const handleShareWarehouse = (warehouse: Warehouse, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    // Build address string
+    const addressParts = [
+      warehouse.name,
+      warehouse.address_line1,
+      warehouse.address_line2,
+      warehouse.city && warehouse.state
+        ? `${warehouse.city}, ${warehouse.state}`
+        : warehouse.city || warehouse.state,
+      warehouse.pin_code ? `- ${warehouse.pin_code}` : "",
+      warehouse.country,
+    ].filter(Boolean);
+
+    const message = `📍 Warehouse Location\\n\\n${addressParts.join("\\n")}`;
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/?text=${encodedMessage}`, "_blank");
+  };
+
+  const handleNewWarehouse = () => {
+    setEditingWarehouse(null);
+    setShowCreateWarehouse(true);
+  };
+
+  const handleSheetClose = (open: boolean) => {
+    setShowCreateWarehouse(open);
+    if (!open) {
+      setEditingWarehouse(null);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       {/* Header Section */}
@@ -92,54 +135,15 @@ export default function CompanyPage() {
 
             {/* Business Type */}
             {company.business_type && (
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-700 mt-1">
                 {company.business_type}
               </p>
             )}
 
             {/* Contact Info Row */}
             {hasContactInfo && (
-              <div className="flex items-center flex-wrap gap-2 mt-2 text-sm text-gray-700">
-                {company.phone_number && (
-                  <>
-                    <IconPhone className="size-4 shrink-0" />
-                    <span>{company.phone_number}</span>
-                  </>
-                )}
-
-                {company.phone_number &&
-                  (company.email || company.website_url) && (
-                    <span className="text-gray-400">•</span>
-                  )}
-
-                {company.email && (
-                  <>
-                    <IconMail className="size-4 shrink-0" />
-                    <span className="truncate">{company.email}</span>
-                  </>
-                )}
-
-                {company.email && company.website_url && (
-                  <span className="text-gray-400">•</span>
-                )}
-
-                {company.website_url && (
-                  <>
-                    <IconWorld className="size-4 shrink-0" />
-                    <a
-                      href={
-                        company.website_url.startsWith("http")
-                          ? company.website_url
-                          : `https://${company.website_url}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline truncate"
-                    >
-                      {formatWebsiteUrl(company.website_url)}
-                    </a>
-                  </>
-                )}
+              <div className="flex items-center flex-wrap gap-2 mt-1 text-sm text-gray-700">
+                {getCompanyContactInfo(company)}
               </div>
             )}
           </div>
@@ -210,14 +214,12 @@ export default function CompanyPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900">Warehouses</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowCreateWarehouse(true)}
-              >
-                <IconPlus className="size-4 mr-1" />
-                New warehouse
-              </Button>
+              <PermissionGate permission="warehouses.create" mode="disable">
+                <Button variant="ghost" size="sm" onClick={handleNewWarehouse}>
+                  <IconPlus />
+                  New warehouse
+                </Button>
+              </PermissionGate>
             </div>
 
             {/* Warehouse Cards */}
@@ -229,51 +231,84 @@ export default function CompanyPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 gap-3">
-                {warehouses.map((warehouse) => (
-                  <Card
-                    key={warehouse.id}
-                    className="cursor-pointer hover:bg-gray-50 transition-colors"
-                    onClick={() =>
-                      router.push(`/warehouse/${warehouse.slug}/dashboard`)
-                    }
-                  >
-                    <CardContent className="p-3">
-                      <div className="flex items-center gap-3">
-                        <ImageWrapper
-                          size="md"
-                          shape="square"
-                          imageUrl={undefined}
-                          alt={warehouse.name}
-                          placeholderIcon={IconBuildingWarehouse}
-                        />
-                        <div className="flex-1 min-w-0">
+              <div className="flex flex-col gap-2">
+                {warehouses.map((warehouse) => {
+                  const formattedAddress =
+                    getWarehouseFormattedAddress(warehouse);
+                  const contactDetails = getWarehouseContactDetails(warehouse);
+
+                  return (
+                    <div
+                      key={warehouse.id}
+                      onClick={() =>
+                        router.push(`/warehouse/${warehouse.slug}/dashboard`)
+                      }
+                      className="flex items-center gap-3 p-4 rounded-lg cursor-pointer select-none transition-all bg-background border border-border hover:bg-gray-50"
+                    >
+                      {/* Content */}
+                      <div className="flex-1 min-w-0 flex flex-col">
+                        <p
+                          className="text-base font-medium text-gray-700 truncate"
+                          title={warehouse.name}
+                        >
+                          {warehouse.name}
+                        </p>
+                        <p
+                          className="text-sm text-gray-500"
+                          title={formattedAddress}
+                        >
+                          {formattedAddress}
+                        </p>
+                        {contactDetails && (
                           <p
-                            className="font-medium text-gray-700 truncate"
-                            title={warehouse.name}
+                            className="text-sm font-medium text-gray-500"
+                            title={contactDetails}
                           >
-                            {warehouse.name}
+                            {contactDetails}
                           </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            {warehouse.city || "No location"}
-                          </p>
-                        </div>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-1">
+                        <PermissionGate
+                          permission="warehouses.update"
+                          mode="disable"
+                        >
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleEditWarehouse(warehouse, e)}
+                          >
+                            <IconPencil />
+                            Edit
+                          </Button>
+                        </PermissionGate>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => handleShareWarehouse(warehouse, e)}
+                        >
+                          <IconShare />
+                          Share
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Add Warehouse Sheet */}
+      {/* Add/Edit Warehouse Sheet */}
       {showCreateWarehouse && (
         <WarehouseFormSheet
-          key="new-warehouse"
+          key={editingWarehouse ? editingWarehouse.id : "new-warehouse"}
           open={showCreateWarehouse}
-          onOpenChange={setShowCreateWarehouse}
+          onOpenChange={handleSheetClose}
+          warehouse={editingWarehouse}
         />
       )}
 

@@ -429,7 +429,9 @@ export default function CreateInvoicePage() {
     createInvoice.mutate(invoiceData, {
       onSuccess: (invoiceNumber) => {
         toast.success(successMessage);
-        router.push(`/warehouse/${warehouse.slug}/invoices/${invoiceNumber}`);
+        router.push(
+          `/warehouse/${warehouse.slug}/invoices/${invoiceNumber}/details`,
+        );
       },
       onError: (error) => {
         console.error("Error creating invoice:", error);

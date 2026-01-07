@@ -113,11 +113,12 @@ export async function getPayments(
     query = query.lte("payment_date", filters.date_to);
   }
 
-  // Apply search filter (payment_number or reference_number)
+  // Apply full-text search filter
   if (filters?.search) {
-    query = query.or(
-      `payment_number.ilike.%${filters.search}%,reference_number.ilike.%${filters.search}%`,
-    );
+    query = query.textSearch("search_vector", filters.search, {
+      type: "websearch",
+      config: "english",
+    });
   }
 
   // Default ordering: most recent first

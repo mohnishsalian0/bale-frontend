@@ -87,15 +87,16 @@ export function ProductQuantitySheet({
   const grandTotal = lineTotal + taxAmount;
 
   const formContent = (
-    <div className="flex flex-col gap-6 md:px-0 overflow-x-hidden">
+    <div className="flex flex-col gap-6">
       {/* Quantity Input */}
       <div className="flex flex-col gap-3">
-        <div className="flex flex-1 items-end gap-2">
+        <div className="flex flex-1 items-center gap-2 shrink-0">
           <InputWrapper
             type="number"
             value={quantity}
-            label={`Quantity (${product.inventory.in_stock_quantity} ${unitAbbreviation} avail.)`}
+            label={`Quantity`}
             rightText={unitAbbreviation}
+            helpText={`${product.inventory.in_stock_quantity} ${unitAbbreviation} available`}
             min="0"
             step={product.stock_type === "roll" ? "0.1" : "1"}
             placeholder={product.stock_type === "roll" ? "0.0" : "0"}

@@ -189,19 +189,29 @@ export function WarehouseFormSheet({
                     {...register("addressLine2")}
                   />
                   <div className="flex gap-4">
-                    <InputWrapper placeholder="City" {...register("city")} />
-                    <InputWrapper placeholder="State" {...register("state")} />
+                    <InputWrapper
+                      placeholder="City"
+                      {...register("city")}
+                      className="flex-1"
+                    />
+                    <InputWrapper
+                      placeholder="State"
+                      {...register("state")}
+                      className="flex-1"
+                    />
                   </div>
                   <div className="flex gap-4">
                     <InputWrapper
                       placeholder="Country"
                       {...register("country")}
+                      className="flex-1"
                     />
                     <InputWrapper
                       placeholder="Pin code"
                       {...register("pinCode")}
                       isError={!!errors.pinCode}
                       errorText={errors.pinCode?.message}
+                      className="flex-1"
                     />
                   </div>
                 </div>

@@ -378,3 +378,21 @@ export async function updateStockUnits(
     throw new Error(`Failed to update ${errors.length} stock units`);
   }
 }
+
+/**
+ * Delete a stock unit (soft delete)
+ * Note: Hard delete is blocked by database trigger if has_outward = true
+ */
+export async function deleteStockUnit(id: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("stock_units")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error deleting stock unit:", error);
+    throw error;
+  }
+}
