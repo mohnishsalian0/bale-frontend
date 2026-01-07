@@ -38,6 +38,7 @@ export async function middleware(request: NextRequest) {
 
   // Define public routes (from (public) route group)
   const isPublic =
+    pathname === "/" ||
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/invite/") ||
     (pathname.startsWith("/company/") && pathname !== "/company");
