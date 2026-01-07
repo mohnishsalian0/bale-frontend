@@ -11,7 +11,6 @@ import { useCurrentUser, useUserMutations } from "@/lib/query/hooks/users";
 import { Warehouse } from "@/types/warehouses.types";
 import { getWarehouseFormattedAddress } from "@/lib/utils/warehouse";
 import { toast } from "sonner";
-import { Separator } from "@/components/ui/separator";
 
 export default function WarehouseSelectionPage() {
   const router = useRouter();
@@ -105,7 +104,7 @@ export default function WarehouseSelectionPage() {
             </p>
           </div>
         ) : (
-          <ul className="flex flex-col border border-border">
+          <ul className="flex flex-col border-x border-b border-border">
             {warehouses.map((warehouse) => {
               const formattedAddress = getWarehouseFormattedAddress(warehouse);
 
@@ -136,7 +135,6 @@ export default function WarehouseSelectionPage() {
                       </p>
                     </div>
                   </div>
-                  <Separator />
                 </li>
               );
             })}

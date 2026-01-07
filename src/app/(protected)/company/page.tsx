@@ -151,11 +151,11 @@ export default function CompanyPage() {
           {/* Edit Button */}
           <Button
             variant="ghost"
-            size="icon"
             onClick={() => setShowEditCompany(true)}
             className="shrink-0"
           >
             <IconPencil />
+            Edit
           </Button>
         </div>
       </div>
