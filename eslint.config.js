@@ -129,6 +129,19 @@ export default [
       "coverage/",
       "scripts/",
       "next-env.d.ts",
+      // Google Apps Script files (not part of Next.js app)
+      "CRM-CODE-ONLY.js",
+      "MEETING-LOG-CRM.js",
+      // Playwright tests and config
+      "tests/",
+      "test-results/",
+      "playwright-report/",
+      "playwright.config.ts",
+      // Nested bale-frontend project
+      "bale-frontend/",
+      // Temporary files
+      "nul",
+      "*.log",
     ],
   },
 ];

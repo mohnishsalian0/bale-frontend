@@ -23,5 +23,14 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "bale-frontend",
+    "tests",
+    "playwright.config.ts",
+    "CRM-CODE-ONLY.js",
+    "MEETING-LOG-CRM.js",
+    "test-results",
+    "playwright-report"
+  ]
 }
