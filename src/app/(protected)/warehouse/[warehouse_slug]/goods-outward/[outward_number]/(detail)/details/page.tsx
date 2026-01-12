@@ -95,7 +95,6 @@ export default function OutwardDetailsPage({ params }: PageParams) {
       <Section
         title={reasonTitle}
         subtitle="Reason for outward"
-        onEdit={() => {}}
         icon={ReasonIcon}
       >
         {reasonLink && (
@@ -112,7 +111,6 @@ export default function OutwardDetailsPage({ params }: PageParams) {
       <Section
         title={receiverName}
         subtitle="Receiver"
-        onEdit={() => {}}
         icon={
           isWarehouseTransfer
             ? () => <IconBuildingWarehouse />
@@ -138,7 +136,6 @@ export default function OutwardDetailsPage({ params }: PageParams) {
       <Section
         title={outward.warehouse?.name || "Unknown Warehouse"}
         subtitle="Outward source"
-        onEdit={() => {}}
         icon={() => <IconBuildingWarehouse />}
       >
         {outward.warehouse &&
@@ -161,7 +158,6 @@ export default function OutwardDetailsPage({ params }: PageParams) {
       <Section
         title={getTransportTypeDisplay(outward.transport_type)}
         subtitle="Transport"
-        onEdit={() => {}}
         icon={() => <TransportIcon />}
       >
         <div className="space-y-3">
@@ -194,7 +190,6 @@ export default function OutwardDetailsPage({ params }: PageParams) {
       <Section
         title="Outward notes"
         subtitle={outward.notes || "No note added"}
-        onEdit={() => {}}
         icon={() => <IconNote />}
       />
     </div>

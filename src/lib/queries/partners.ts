@@ -39,8 +39,10 @@ export const PARTNER_LIST_VIEW_SELECT = `
 // Select query for PartnerWithOrderStatsDetailView
 export const PARTNER_WITH_ORDER_STATS_DETAIL_VIEW_SELECT = `
   *,
-  order_stats:partner_order_aggregates(*),
-  credit_aggregates:partner_credit_aggregates(*)
+  sales_aggregates:partner_sales_aggregates(*),
+  purchase_aggregates:partner_purchase_aggregates(*),
+  receivables_aggregates:partner_receivables_aggregates(*),
+  payables_aggregates:partner_payables_aggregates(*)
 `;
 
 // Select query for PartnerWithStatsListView
@@ -60,7 +62,7 @@ export const PARTNER_WITH_ORDER_STATS_LIST_VIEW_SELECT = `
   credit_limit_enabled,
   credit_limit,
   ledger:ledgers!partner_id(id, name),
-  order_stats:partner_order_aggregates(
+  sales_aggregates:partner_sales_aggregates(
     approval_pending_count,
     approval_pending_value,
     in_progress_count,
@@ -68,7 +70,21 @@ export const PARTNER_WITH_ORDER_STATS_LIST_VIEW_SELECT = `
     total_orders,
     lifetime_order_value
   ),
-  credit_aggregates:partner_credit_aggregates(
+  purchase_aggregates:partner_purchase_aggregates(
+    approval_pending_count,
+    approval_pending_value,
+    in_progress_count,
+    in_progress_value,
+    total_orders,
+    lifetime_order_value
+  ),
+  receivables_aggregates:partner_receivables_aggregates(
+    total_invoice_amount,
+    total_outstanding_amount,
+    total_paid_amount,
+    invoice_count
+  ),
+  payables_aggregates:partner_payables_aggregates(
     total_invoice_amount,
     total_outstanding_amount,
     total_paid_amount,
@@ -182,16 +198,22 @@ export async function getPartnersWithStats(
   if (error) throw error;
 
   // Transform the data to match PartnerWithStatsListView type
-  // Supabase returns ledger as array, but we want single object
+  // Supabase returns aggregates as arrays, but we want single objects
   const transformedData = (data || []).map((partner) => ({
     ...partner,
     ledger: Array.isArray(partner.ledger) ? partner.ledger[0] : partner.ledger,
-    order_stats: Array.isArray(partner.order_stats)
-      ? partner.order_stats[0]
-      : partner.order_stats,
-    credit_aggregates: Array.isArray(partner.credit_aggregates)
-      ? partner.credit_aggregates[0]
-      : partner.credit_aggregates,
+    sales_aggregates: Array.isArray(partner.sales_aggregates)
+      ? partner.sales_aggregates[0]
+      : partner.sales_aggregates,
+    purchase_aggregates: Array.isArray(partner.purchase_aggregates)
+      ? partner.purchase_aggregates[0]
+      : partner.purchase_aggregates,
+    receivables_aggregates: Array.isArray(partner.receivables_aggregates)
+      ? partner.receivables_aggregates[0]
+      : partner.receivables_aggregates,
+    payables_aggregates: Array.isArray(partner.payables_aggregates)
+      ? partner.payables_aggregates[0]
+      : partner.payables_aggregates,
   })) as PartnerWithStatsListView[];
 
   return transformedData;

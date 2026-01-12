@@ -5,7 +5,7 @@ import type {
 import { PurchaseOrderItemListView } from "@/types/purchase-orders.types";
 import { getPartnerName, PartnerNameFields } from "./partner";
 import { getMeasuringUnitAbbreviation } from "./measuring-units";
-import { formatDueDate } from "./date";
+import { getDueTimeForStatus } from "./date";
 
 export type DisplayStatus = PurchaseOrderStatus | "overdue";
 
@@ -58,13 +58,13 @@ export function getOrderDisplayStatus(
     dueDate.setHours(0, 0, 0, 0);
 
     const isOverdue = dueDate < today;
-    const formattedDueDate = formatDueDate(expectedDeliveryDate);
+    const dueTime = getDueTimeForStatus(expectedDeliveryDate);
 
     // If we have a formatted due date (within 14 days or overdue), use it
-    if (formattedDueDate) {
+    if (dueTime) {
       return {
         status: isOverdue ? "overdue" : "in_progress",
-        text: formattedDueDate,
+        text: dueTime,
       };
     }
   }

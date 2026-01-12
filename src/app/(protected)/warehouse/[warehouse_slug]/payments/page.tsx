@@ -224,7 +224,7 @@ export default function PaymentsPage() {
         {/* Mascot */}
         <div className="relative size-25 shrink-0">
           <Image
-            src=""
+            src="/illustrations/payment-bank.png"
             alt="Payments"
             fill
             sizes="100px"

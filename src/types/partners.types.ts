@@ -1,8 +1,10 @@
 import type { Tables, TablesInsert, TablesUpdate } from "./database/supabase";
 
 export type Partner = Tables<"partners">;
-type PartnerOrderAggregate = Tables<"partner_order_aggregates">;
-type PartnerCreditAggregate = Tables<"partner_credit_aggregates">;
+type PartnerSalesAggregate = Tables<"partner_sales_aggregates">;
+type PartnerPurchaseAggregate = Tables<"partner_purchase_aggregates">;
+type PartnerReceivablesAggregate = Tables<"partner_receivables_aggregates">;
+type PartnerPayablesAggregate = Tables<"partner_payables_aggregates">;
 type Ledger = Tables<"ledgers">;
 
 // ============================================================================
@@ -15,7 +17,8 @@ export interface PartnerFilters extends Record<string, unknown> {
   order_by?:
     | "first_name"
     | "last_interaction_at"
-    | "credit_aggregates.total_outstanding_amount";
+    | "receivables_aggregates.total_outstanding_amount"
+    | "payables_aggregates.total_outstanding_amount";
   order_direction?: "asc" | "desc";
 }
 
@@ -58,8 +61,8 @@ export type PartnerDetailView = Partner;
  * Used in: partners list page with stats, accounting dashboard
  */
 export interface PartnerWithStatsListView extends PartnerListView {
-  order_stats: Pick<
-    PartnerOrderAggregate,
+  sales_aggregates: Pick<
+    PartnerSalesAggregate,
     | "approval_pending_count"
     | "approval_pending_value"
     | "in_progress_count"
@@ -67,8 +70,24 @@ export interface PartnerWithStatsListView extends PartnerListView {
     | "total_orders"
     | "lifetime_order_value"
   > | null;
-  credit_aggregates: Pick<
-    PartnerCreditAggregate,
+  purchase_aggregates: Pick<
+    PartnerPurchaseAggregate,
+    | "approval_pending_count"
+    | "approval_pending_value"
+    | "in_progress_count"
+    | "in_progress_value"
+    | "total_orders"
+    | "lifetime_order_value"
+  > | null;
+  receivables_aggregates: Pick<
+    PartnerReceivablesAggregate,
+    | "total_invoice_amount"
+    | "total_outstanding_amount"
+    | "total_paid_amount"
+    | "invoice_count"
+  > | null;
+  payables_aggregates: Pick<
+    PartnerPayablesAggregate,
     | "total_invoice_amount"
     | "total_outstanding_amount"
     | "total_paid_amount"
@@ -77,12 +96,14 @@ export interface PartnerWithStatsListView extends PartnerListView {
 }
 
 /**
- * Partner with full order statistics for detail views
+ * Partner with full order and credit statistics for detail views
  * Used in: partner detail page
  */
 export interface PartnerWithOrderStatsDetailView extends PartnerDetailView {
-  order_stats: PartnerOrderAggregate | null;
-  credit_aggregates: PartnerCreditAggregate | null;
+  sales_aggregates: PartnerSalesAggregate | null;
+  purchase_aggregates: PartnerPurchaseAggregate | null;
+  receivables_aggregates: PartnerReceivablesAggregate | null;
+  payables_aggregates: PartnerPayablesAggregate | null;
 }
 
 // ============================================================================

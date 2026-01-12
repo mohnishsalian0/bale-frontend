@@ -59,7 +59,7 @@ export function AdjustmentProductSelectionStep({
       </div>
 
       {/* Product List - Scrollable */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1">
         {invoiceItems.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-gray-500">No products in invoice</p>

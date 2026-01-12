@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { formatCurrency } from "@/lib/utils/currency";
+import { formatCurrency, roundCurrency } from "@/lib/utils/currency";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import type { AllocationType } from "@/types/database/enums";
 import type { OutstandingInvoiceView } from "@/types/payments.types";
@@ -26,17 +26,29 @@ export function PaymentReviewStep({
   tdsApplicable,
   tdsRate,
 }: PaymentReviewStepProps) {
-  // Calculate totals
+  // Calculate totals - matches backend logic from 0058_payment_functions.sql
   const calculations = useMemo(() => {
-    const totalAmount =
+    // Step 1: Calculate total amount and round (matches backend lines 47, 96)
+    let totalAmount =
       allocationType === "advance"
-        ? parseFloat(advanceAmount) || 0
-        : invoiceAllocations.reduce((sum, a) => sum + a.amount, 0);
+        ? roundCurrency(parseFloat(advanceAmount) || 0)
+        : invoiceAllocations.reduce(
+            (sum, a) => sum + roundCurrency(a.amount),
+            0,
+          );
+    totalAmount = roundCurrency(totalAmount);
 
+    // Step 2: Round TDS rate (matches backend line 48)
+    const tdsRateRounded = tdsRate ? roundCurrency(parseFloat(tdsRate)) : 0;
+
+    // Step 3: Calculate TDS amount and round (matches backend line 86)
     const tdsAmount =
-      tdsApplicable && tdsRate ? (totalAmount * parseFloat(tdsRate)) / 100 : 0;
+      tdsApplicable && tdsRateRounded > 0
+        ? roundCurrency((totalAmount * tdsRateRounded) / 100)
+        : 0;
 
-    const netAmount = totalAmount - tdsAmount;
+    // Step 4: Calculate net amount (matches backend line 90)
+    const netAmount = roundCurrency(totalAmount - tdsAmount);
 
     return {
       totalAmount,

@@ -179,7 +179,7 @@ export function SelectInventorySheet({
           </SheetHeader>
 
           {/* Content based on current step */}
-          <div className="flex flex-col h-full overflow-hidden">
+          <div className="flex flex-col flex-1 overflow-hidden">
             {currentStep === "products" && (
               <>
                 <InventoryProductListStep
@@ -188,18 +188,6 @@ export function SelectInventorySheet({
                   orderProducts={orderProducts}
                   onProductSelect={handleProductSelect}
                 />
-
-                {/* Footer */}
-                <SheetFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleCancel}
-                    className="w-full"
-                  >
-                    Close
-                  </Button>
-                </SheetFooter>
               </>
             )}
 
@@ -209,9 +197,31 @@ export function SelectInventorySheet({
                 warehouseId={warehouseId}
                 scannedUnits={scannedUnits}
                 onStockUnitSelect={handleStockUnitSelect}
-                onBack={handleBackToProducts}
               />
             )}
+
+            {/* Footer */}
+            <SheetFooter>
+              {currentStep === "products" ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  className="w-full"
+                >
+                  Close
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleBackToProducts}
+                  className="w-full"
+                >
+                  Back
+                </Button>
+              )}
+            </SheetFooter>
           </div>
         </SheetContent>
       </Sheet>

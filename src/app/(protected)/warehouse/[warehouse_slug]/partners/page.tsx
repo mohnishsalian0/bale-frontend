@@ -3,27 +3,24 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import {
-  IconMapPin,
-  IconPhone,
-  IconPlus,
-  IconSearch,
-} from "@tabler/icons-react";
+import { IconSearch } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/ui/fab";
 import { TabPills } from "@/components/ui/tab-pills";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { PartnerFormSheet } from "./PartnerFormSheet";
-import { usePartners } from "@/lib/query/hooks/partners";
+import { usePartnersWithStats } from "@/lib/query/hooks/partners";
 import { useSession } from "@/contexts/session-context";
 import { getInitials } from "@/lib/utils/initials";
 import type { PartnerType } from "@/types/database/enums";
-import { getFormattedAddress, getPartnerName } from "@/lib/utils/partner";
+import { getPartnerName, getPartnerInfo } from "@/lib/utils/partner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { CardActions } from "@/components/layouts/card-actions";
+import { getPartnerActions } from "@/lib/utils/action-menu";
+import { formatCurrency } from "@/lib/utils/currency";
+import type { PartnerWithStatsListView } from "@/types/partners.types";
 
 const PARTNER_TYPES: { value: PartnerType | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -33,18 +30,6 @@ const PARTNER_TYPES: { value: PartnerType | "all"; label: string }[] = [
   { value: "agent", label: "Agent" },
 ];
 
-function getActionLabel(type: PartnerType): string {
-  switch (type) {
-    case "customer":
-      return "Sales order";
-    case "supplier":
-    case "vendor":
-      return "Goods inward";
-    default:
-      return "Job work";
-  }
-}
-
 export default function PartnersPage() {
   const router = useRouter();
   const { warehouse } = useSession();
@@ -53,28 +38,65 @@ export default function PartnersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreatePartner, setShowCreatePartner] = useState(false);
 
-  // Fetch all partners using TanStack Query
+  // Fetch all partners with stats using TanStack Query
   const {
     data: allPartners = [],
     isLoading: loading,
     isError: error,
     refetch,
-  } = usePartners();
+  } = usePartnersWithStats({
+    partner_type: selectedType === "all" ? undefined : selectedType,
+  });
 
   // Filter partners by search query
   const filteredPartners = allPartners.filter((partner) => {
     const name = getPartnerName(partner);
-    if (!name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-
-    // Type filter
-    if (selectedType !== "all" && partner.partner_type !== selectedType) {
-      return false;
-    }
-
-    return true;
+    return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
+
+  // Handler functions
+  const handleEdit = (partner: PartnerWithStatsListView) => {
+    router.push(`/warehouse/${warehouse.slug}/partners/${partner.id}/edit`);
+  };
+
+  const handleDelete = (partner: PartnerWithStatsListView) => {
+    // TODO: Show delete dialog
+    console.log("Delete partner:", partner.id);
+  };
+
+  const handleCreateSalesOrder = (partner: PartnerWithStatsListView) => {
+    router.push(
+      `/warehouse/${warehouse.slug}/sales-orders/create?customer=${partner.id}`,
+    );
+  };
+
+  const handleCreatePurchaseOrder = (partner: PartnerWithStatsListView) => {
+    router.push(
+      `/warehouse/${warehouse.slug}/purchase-orders/create?supplier=${partner.id}`,
+    );
+  };
+
+  const handleCreateSalesInvoice = (partner: PartnerWithStatsListView) => {
+    router.push(
+      `/warehouse/${warehouse.slug}/invoices/create/sales?partner=${partner.id}`,
+    );
+  };
+
+  const handleCreatePurchaseInvoice = (partner: PartnerWithStatsListView) => {
+    router.push(
+      `/warehouse/${warehouse.slug}/invoices/create/purchase?partner=${partner.id}`,
+    );
+  };
+
+  const handleRecordReceipt = (partner: PartnerWithStatsListView) => {
+    // TODO: Open payment modal with receipt type
+    console.log("Record receipt for partner:", partner.id);
+  };
+
+  const handleRecordPayment = (partner: PartnerWithStatsListView) => {
+    // TODO: Open payment modal with payment type
+    console.log("Record payment for partner:", partner.id);
+  };
 
   // Loading state
   if (loading) {
@@ -147,96 +169,126 @@ export default function PartnersPage() {
         />
       </div>
 
-      {/* Partner Cards */}
-      <li className="grid grid-cols-1 lg:grid-cols-2 3xl:grid-cols-3 gap-4 items-stretch px-4">
+      {/* Partner List */}
+      <div className="flex-1 overflow-y-auto">
         {filteredPartners.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-gray-600 mb-2">No partners found</p>
             <p className="text-sm text-gray-500">
               {searchQuery
                 ? "Try adjusting your search"
-                : `Add your first ${selectedType.toLowerCase()}`}
+                : `Add your first ${selectedType === "all" ? "partner" : selectedType.toLowerCase()}`}
             </p>
           </div>
         ) : (
-          filteredPartners.map((partner) => {
-            const name = getPartnerName(partner);
-            const type = partner.partner_type as PartnerType;
-            const address = getFormattedAddress(partner).join(", ");
+          <div className="flex flex-col border-b border-border">
+            {filteredPartners.map((partner) => {
+              const partnerName = getPartnerName(partner);
+              const partnerInfo = getPartnerInfo(partner);
+              const partnerType = partner.partner_type as PartnerType;
 
-            return (
-              <ul key={partner.id}>
-                <Card
-                  className="cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() =>
-                    router.push(
-                      `/warehouse/${warehouse.slug}/partners/${partner.id}`,
-                    )
-                  }
+              // Calculate outstanding amount and label based on partner type
+              const isReceivable = partnerType === "customer";
+              const outstandingAmount = isReceivable
+                ? partner.receivables_aggregates?.total_outstanding_amount || 0
+                : partnerType === "supplier" || partnerType === "vendor"
+                  ? partner.payables_aggregates?.total_outstanding_amount || 0
+                  : 0;
+              const outstandingLabel = isReceivable ? "to receive" : "to pay";
+              const outstandingColor = isReceivable
+                ? "text-teal-700"
+                : "text-yellow-700";
+
+              // Get action items for this partner
+              const actionItems = getPartnerActions(partner, {
+                onEdit: () => handleEdit(partner),
+                onDelete: () => handleDelete(partner),
+                onCreateSalesOrder:
+                  partner.partner_type === "customer"
+                    ? () => handleCreateSalesOrder(partner)
+                    : undefined,
+                onCreatePurchaseOrder:
+                  partner.partner_type === "supplier" ||
+                  partner.partner_type === "vendor"
+                    ? () => handleCreatePurchaseOrder(partner)
+                    : undefined,
+                onCreateSalesInvoice:
+                  partner.partner_type === "customer"
+                    ? () => handleCreateSalesInvoice(partner)
+                    : undefined,
+                onCreatePurchaseInvoice:
+                  partner.partner_type === "supplier" ||
+                  partner.partner_type === "vendor"
+                    ? () => handleCreatePurchaseInvoice(partner)
+                    : undefined,
+                onRecordReceipt:
+                  partner.partner_type === "customer"
+                    ? () => handleRecordReceipt(partner)
+                    : undefined,
+                onRecordPayment:
+                  partner.partner_type === "supplier" ||
+                  partner.partner_type === "vendor"
+                    ? () => handleRecordPayment(partner)
+                    : undefined,
+              });
+
+              return (
+                <div
+                  key={partner.id}
+                  className="flex flex-col gap-2 p-4 border-t border-dashed border-gray-300"
                 >
-                  <CardContent className="p-4 pb-3 flex flex-col gap-4">
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/warehouse/${warehouse.slug}/partners/${partner.id}`,
+                      )
+                    }
+                    className="flex items-center gap-3 text-left hover:cursor-pointer"
+                  >
+                    {/* Partner Image */}
+                    <ImageWrapper
+                      size="md"
+                      shape="circle"
+                      imageUrl={partner.image_url || undefined}
+                      alt={partnerName}
+                      placeholderInitials={getInitials(partnerName)}
+                    />
+
                     {/* Partner Info */}
-                    <div className="flex gap-4">
-                      {/* Avatar */}
-                      <ImageWrapper
-                        size="lg"
-                        shape="circle"
-                        alt={name}
-                        placeholderInitials={getInitials(name)}
-                      />
-
-                      {/* Details */}
-                      <div className="flex-1 flex justify-between py-2">
-                        <div className="flex flex-col">
-                          <p className="text-base font-medium text-gray-700">
-                            {name}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {PARTNER_TYPES.find((t) => t.value === type)?.label}
-                          </p>
-                        </div>
-                      </div>
+                    <div className="flex-1 min-w-0">
+                      <p
+                        title={partnerName}
+                        className="text-base font-medium text-gray-700 truncate"
+                      >
+                        {partnerName}
+                      </p>
+                      <p
+                        title={partnerInfo}
+                        className="text-sm text-gray-500 truncate"
+                      >
+                        {partnerInfo}
+                      </p>
                     </div>
 
-                    {/* Contact Info */}
-                    <div className="flex gap-6 px-2 text-sm">
-                      <div className="flex gap-1.5 items-center">
-                        <IconMapPin className="size-4 text-gray-500 shrink-0" />
-                        <span className="text-gray-700">
-                          {address || "No address"}
-                        </span>
+                    {/* Outstanding Amount */}
+                    {outstandingAmount > 0 && (
+                      <div className="text-right shrink-0">
+                        <p className={`text-sm font-semibold ${outstandingColor}`}>
+                          {formatCurrency(outstandingAmount)}
+                        </p>
+                        <p className="text-xs text-gray-500">{outstandingLabel}</p>
                       </div>
-                      <div className="flex gap-1.5 items-center text-nowrap">
-                        <IconPhone className="size-4 text-primary-700" />
-                        <span
-                          className={
-                            partner.phone_number
-                              ? "text-primary-700 font-medium"
-                              : "text-gray-700"
-                          }
-                        >
-                          {partner.phone_number || "No phone number"}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
+                    )}
+                  </button>
 
-                  <CardFooter className="px-6 pb-4 pt-0">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-primary-700"
-                    >
-                      <IconPlus />
-                      {getActionLabel(type)}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </ul>
-            );
-          })
+                  {/* Action Buttons */}
+                  <CardActions items={actionItems} maxVisibleActions={2} />
+                </div>
+              );
+            })}
+          </div>
         )}
-      </li>
+      </div>
 
       {/* Floating Action Button */}
       <Fab

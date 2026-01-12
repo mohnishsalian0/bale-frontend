@@ -11,11 +11,13 @@ import {
   useGoodsOutwardBySequenceNumber,
   useGoodsOutwardMutations,
 } from "@/lib/query/hooks/stock-flow";
+import { useCompany } from "@/lib/query/hooks/company";
 import { ActionsFooter } from "@/components/layouts/actions-footer";
 import { getGoodsOutwardActions } from "@/lib/utils/action-menu";
 import { CancelDialog } from "@/components/layouts/cancel-dialog";
 import { DeleteDialog } from "@/components/layouts/delete-dialog";
 import { toast } from "sonner";
+import { downloadDeliveryChallanPDF } from "@/lib/pdf/delivery-challan-pdf-generator";
 
 interface LayoutParams {
   params: Promise<{
@@ -37,6 +39,7 @@ export default function GoodsOutwardDetailLayout({
   // Dialog states
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   // Fetch goods outward using TanStack Query
   const {
@@ -44,6 +47,9 @@ export default function GoodsOutwardDetailLayout({
     isLoading: loading,
     isError: error,
   } = useGoodsOutwardBySequenceNumber(outward_number);
+
+  // Fetch company data for PDF
+  const { data: company } = useCompany();
 
   // Mutations
   const { cancelOutward, deleteOutward } =
@@ -96,6 +102,21 @@ export default function GoodsOutwardDetailLayout({
         },
       },
     );
+  };
+
+  const handleDownload = async () => {
+    if (!outward || !company) return;
+
+    setDownloading(true);
+    try {
+      await downloadDeliveryChallanPDF(outward, company);
+      toast.success("Delivery challan downloaded successfully");
+    } catch (error) {
+      console.error("Error downloading delivery challan:", error);
+      toast.error("Failed to download delivery challan");
+    } finally {
+      setDownloading(false);
+    }
   };
 
   // Loading state
@@ -152,6 +173,10 @@ export default function GoodsOutwardDetailLayout({
               onEdit: handleEdit,
               onDelete: () => setShowDeleteDialog(true),
               onCancel: () => setShowCancelDialog(true),
+              onDownload: handleDownload,
+            },
+            {
+              downloading,
             },
           )}
         />

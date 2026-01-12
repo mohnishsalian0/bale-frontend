@@ -46,6 +46,8 @@ import { toast } from "sonner";
 import { InvoiceStatusBadge } from "@/components/ui/invoice-status-badge";
 import { InvoiceAllocationModal } from "@/app/(protected)/warehouse/[warehouse_slug]/payments/create/InvoiceAllocationModal";
 import type { OutstandingInvoiceView } from "@/types/payments.types";
+import { downloadInvoicePDF } from "@/lib/pdf/invoice-pdf-generator";
+import { Progress } from "@/components/ui/progress";
 
 interface PageParams {
   params: Promise<{
@@ -108,6 +110,26 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
 
   const invoiceTypeLabel =
     invoice?.invoice_type === "sales" ? "Sales invoice" : "Purchase invoice";
+
+  // Calculate payment progress and color
+  const paymentProgress = useMemo((): {
+    percentage: number;
+    color: "blue" | "yellow";
+    showBar: boolean;
+  } => {
+    if (!invoice) return { percentage: 0, color: "blue", showBar: false };
+
+    const totalAmount = invoice.total_amount || 0;
+    const outstandingAmount = invoice.outstanding_amount || 0;
+    const paidAmount = totalAmount - outstandingAmount;
+    const percentage = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
+
+    const showBar =
+      invoice.status === "partially_paid" || invoice.status === "overdue";
+    const color = invoice.status === "overdue" ? "yellow" : "blue";
+
+    return { percentage, color, showBar };
+  }, [invoice]);
 
   const handleCancel = (reason: string) => {
     if (!invoice) return;
@@ -185,13 +207,22 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
     );
   };
 
+  const handleDownload = async () => {
+    if (!invoice) return;
+    try {
+      await downloadInvoicePDF(invoice);
+      toast.success("Invoice downloaded successfully");
+    } catch (error) {
+      console.error("Error downloading invoice:", error);
+      toast.error("Failed to download invoice");
+    }
+  };
+
   // Footer action items
   const footerItems = invoice
     ? getInvoiceActions(invoice, {
         onMakePayment: handleMakePayment,
-        onDownload: () => {
-          // TODO: Implement download
-        },
+        onDownload: handleDownload,
         onCreateAdjustment: () => {
           const adjustmentType =
             invoice.invoice_type === "sales" ? "credit" : "debit";
@@ -253,13 +284,21 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
             <p className="text-lg font-semibold text-gray-700">
               ₹{formatCurrency(financials?.totalAmount || 0)}
             </p>
-            {invoice.outstanding_amount !== null && (
-              <p className="text-sm text-gray-500 mt-1">
-                Outstanding: ₹{formatCurrency(invoice.outstanding_amount)}
-              </p>
-            )}
           </div>
         </div>
+
+        {/* Progress Bar */}
+        {paymentProgress.showBar && invoice.outstanding_amount !== null && (
+          <div className="mt-4 max-w-sm">
+            <p className="text-sm text-gray-700 mb-1">
+              Outstanding: ₹{formatCurrency(invoice.outstanding_amount)}
+            </p>
+            <Progress
+              color={paymentProgress.color}
+              value={paymentProgress.percentage}
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -267,7 +306,7 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
           {/* Payments Section */}
           <Section
             title="Payments"
-            subtitle={`${payments.length} payments`}
+            subtitle={`${payments.length} payment${payments.length !== 1 ? "s" : ""}`}
             icon={() => <IconCurrencyRupee />}
           >
             {payments.length > 0 && (
@@ -351,7 +390,7 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
 
           <Section
             title="Adjustments"
-            subtitle={`${adjustmentNotes.length} adjustments`}
+            subtitle={`${adjustmentNotes.length} adjustment${adjustmentNotes.length !== 1 ? "s" : ""}`}
             icon={() => <IconReceiptRefund />}
           >
             {adjustmentNotes.length > 0 && (

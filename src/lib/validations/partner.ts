@@ -2,7 +2,7 @@ import { z } from "zod";
 import { PARTNER_TYPES } from "@/types/database/enums";
 import {
   optionalString,
-  phoneNumberSchema,
+  optionalPhoneSchema,
   optionalEmailSchema,
   optionalPinCodeSchema,
   optionalGstSchema,
@@ -24,7 +24,7 @@ export const partnerSchema = z
     }),
     firstName: optionalPersonalNameSchema,
     lastName: optionalPersonalNameSchema,
-    phoneNumber: phoneNumberSchema,
+    phoneNumber: optionalPhoneSchema,
     email: optionalEmailSchema,
 
     // Required business details

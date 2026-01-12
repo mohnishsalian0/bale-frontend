@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body className="overflow-y-hidden">
         <QueryProvider>
           {children}
           <Toaster position="top-right" />

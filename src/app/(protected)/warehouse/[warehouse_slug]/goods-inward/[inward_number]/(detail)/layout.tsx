@@ -44,7 +44,6 @@ export default function GoodsInwardDetailLayout({
     isLoading: loading,
     isError: error,
   } = useGoodsInwardBySequenceNumber(inward_number);
-  console.log(inward);
 
   // Mutations
   const { cancelInward, deleteInward } = useGoodsInwardMutations(inward_number);
