@@ -239,7 +239,7 @@ export async function getOutstandingInvoices(
     .in("status", ["open", "partially_paid"])
     .gt("outstanding_amount", 0)
     .is("deleted_at", null)
-    .order("invoice_date", { ascending: true });
+    .order("due_date", { ascending: true });
 
   if (error) throw error;
 

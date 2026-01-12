@@ -26,7 +26,6 @@ interface StockUnitListStepProps {
   warehouseId: string;
   scannedUnits: ScannedStockUnit[];
   onStockUnitSelect: (stockUnitId: string) => void;
-  onBack: () => void;
 }
 
 export function StockUnitListStep({
@@ -34,7 +33,6 @@ export function StockUnitListStep({
   warehouseId,
   scannedUnits,
   onStockUnitSelect,
-  onBack,
 }: StockUnitListStepProps) {
   // Fetch stock units for this product (no status filter)
   const { data: stockUnitsResponse, isLoading } = useStockUnitsWithInward(
@@ -96,18 +94,6 @@ export function StockUnitListStep({
 
         <div className="flex-1 flex items-center justify-center">
           <p className="text-sm text-gray-500">Loading stock units...</p>
-        </div>
-
-        {/* Footer */}
-        <div className="px-4 py-4 border-t border-gray-200 shrink-0">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onBack}
-            className="w-full"
-          >
-            Back
-          </Button>
         </div>
       </div>
     );
@@ -213,18 +199,6 @@ export function StockUnitListStep({
             </div>
           ))
         )}
-      </div>
-
-      {/* Footer */}
-      <div className="px-4 py-4 border-t border-gray-200 shrink-0">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onBack}
-          className="w-full"
-        >
-          Back
-        </Button>
       </div>
     </div>
   );

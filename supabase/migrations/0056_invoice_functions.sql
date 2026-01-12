@@ -269,7 +269,7 @@ BEGIN
         -- Company snapshot (complete)
         company_name, company_address_line1, company_address_line2, company_city,
         company_state, company_country, company_pincode, company_gst_number,
-        company_pan_number, company_email, company_phone
+        company_pan_number, company_email, company_phone, company_logo_url, company_website_url
     ) VALUES (
         v_company_id, p_invoice_type::invoice_type_enum, v_sequence_number, v_invoice_number, v_slug,
         p_party_ledger_id, v_party_ledger_name, p_counter_ledger_id, v_counter_ledger_name,
@@ -313,7 +313,9 @@ BEGIN
         v_company_rec.gst_number,
         v_company_rec.pan_number,
         v_company_rec.email,
-        v_company_rec.phone_number
+        v_company_rec.phone_number,
+        v_company_rec.logo_url,
+        v_company_rec.website_url
     ) RETURNING id INTO v_invoice_id;
 
     -- =====================================================
@@ -656,7 +658,9 @@ BEGIN
         company_gst_number = v_company_rec.gst_number,
         company_pan_number = v_company_rec.pan_number,
         company_email = v_company_rec.email,
-        company_phone = v_company_rec.phone_number
+        company_phone = v_company_rec.phone_number,
+        company_logo_url = v_company_rec.logo_url,
+        company_website_url = v_company_rec.website_url
     WHERE id = p_invoice_id;
 
     -- =====================================================

@@ -60,8 +60,10 @@ export default function PartnerDetailLayout({
     isError: partnerError,
   } = usePartnerWithOrderStats(partner_id);
 
-  // Get aggregates from partner data
-  const order_stats = partner?.order_stats;
+  // Get aggregates from partner data based on partner type
+  const order_stats = partner?.partner_type === "customer"
+    ? partner?.sales_aggregates
+    : partner?.purchase_aggregates;
   const totalOrders = order_stats?.total_orders || 0;
   const totalOrderValue = order_stats?.lifetime_order_value || 0;
   const pendingOrdersCount =
@@ -143,7 +145,7 @@ export default function PartnerDetailLayout({
   }
 
   // Determine if partner has orders
-  const hasOrders = (partner.order_stats?.total_orders ?? 0) > 0;
+  const hasOrders = (order_stats?.total_orders ?? 0) > 0;
 
   const partnerName = getPartnerName(partner);
   const partnerType = partner.partner_type as PartnerType;
@@ -340,7 +342,7 @@ export default function PartnerDetailLayout({
         >
           {hasOrders && (
             <p className="text-sm text-gray-500">
-              Total orders: <b>{partner?.order_stats?.total_orders || 0}</b>
+              Total orders: <b>{order_stats?.total_orders || 0}</b>
             </p>
           )}
         </ResponsiveDialog>

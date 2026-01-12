@@ -6,7 +6,6 @@ import {
   IconCurrencyRupee,
   IconPercentage,
   IconTruck,
-  IconUpload,
 } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
 import { InputWrapper } from "@/components/ui/input-wrapper";
@@ -59,12 +58,12 @@ export function QuickOrderDetailsStep({
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
   const { data: agents = [] } = usePartners({ partner_type: "agent" });
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      onChange({ documentFile: file });
-    }
-  };
+  // const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (file) {
+  //     onChange({ documentFile: file });
+  //   }
+  // };
 
   // Disable delivery dates before order date
   const isDeliveryDateDisabled = (date: Date) => {
@@ -289,26 +288,26 @@ export function QuickOrderDetailsStep({
             />
 
             {/* File Upload */}
-            <div>
-              <label
-                htmlFor="document-upload"
-                className="flex items-center justify-center gap-2 h-11 px-4 border border-input rounded-md cursor-pointer hover:bg-accent transition-colors"
-              >
-                <IconUpload className="size-4" />
-                <span className="text-sm">
-                  {formData.documentFile
-                    ? formData.documentFile.name
-                    : "Upload document"}
-                </span>
-              </label>
-              <input
-                id="document-upload"
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={handleFileSelect}
-                className="sr-only"
-              />
-            </div>
+            {/* <div> */}
+            {/*   <label */}
+            {/*     htmlFor="document-upload" */}
+            {/*     className="flex items-center justify-center gap-2 h-11 px-4 border border-input rounded-md cursor-pointer hover:bg-accent transition-colors" */}
+            {/*   > */}
+            {/*     <IconUpload className="size-4" /> */}
+            {/*     <span className="text-sm"> */}
+            {/*       {formData.documentFile */}
+            {/*         ? formData.documentFile.name */}
+            {/*         : "Upload document"} */}
+            {/*     </span> */}
+            {/*   </label> */}
+            {/*   <input */}
+            {/*     id="document-upload" */}
+            {/*     type="file" */}
+            {/*     accept=".pdf,.jpg,.jpeg,.png" */}
+            {/*     onChange={handleFileSelect} */}
+            {/*     className="sr-only" */}
+            {/*   /> */}
+            {/* </div> */}
           </div>
         </CollapsibleContent>
       </Collapsible>

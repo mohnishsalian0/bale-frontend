@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   IconChevronDown,
   IconCurrencyRupee,
-  IconPhoto,
   IconPercentage,
 } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
@@ -60,16 +59,16 @@ export function InvoiceDetailsStep({
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
   const { data: warehouses = [] } = useWarehouses();
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    // Filter for images and PDFs only
-    const validFiles = files.filter((file) => {
-      const isImage = file.type.startsWith("image/");
-      const isPDF = file.type === "application/pdf";
-      return isImage || isPDF;
-    });
-    setFormData({ ...formData, files: [...formData.files, ...validFiles] });
-  };
+  // const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const files = Array.from(e.target.files || []);
+  //   // Filter for images and PDFs only
+  //   const validFiles = files.filter((file) => {
+  //     const isImage = file.type.startsWith("image/");
+  //     const isPDF = file.type === "application/pdf";
+  //     return isImage || isPDF;
+  //   });
+  //   setFormData({ ...formData, files: [...formData.files, ...validFiles] });
+  // };
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -281,45 +280,45 @@ export function InvoiceDetailsStep({
             />
 
             {/* Add Files */}
-            <label className="border border-primary-700 rounded-lg h-11 flex items-center justify-center gap-3 cursor-pointer text-primary-700 hover:bg-primary-50 transition-colors shadow-gray-sm">
-              <IconPhoto className="size-4" />
-              <span className="text-sm font-normal">Add files</span>
-              <input
-                type="file"
-                accept="image/*,.pdf"
-                multiple
-                onChange={handleFileSelect}
-                className="sr-only"
-              />
-            </label>
+            {/* <label className="border border-primary-700 rounded-lg h-11 flex items-center justify-center gap-3 cursor-pointer text-primary-700 hover:bg-primary-50 transition-colors shadow-gray-sm"> */}
+            {/*   <IconPhoto className="size-4" /> */}
+            {/*   <span className="text-sm font-normal">Add files</span> */}
+            {/*   <input */}
+            {/*     type="file" */}
+            {/*     accept="image/*,.pdf" */}
+            {/*     multiple */}
+            {/*     onChange={handleFileSelect} */}
+            {/*     className="sr-only" */}
+            {/*   /> */}
+            {/* </label> */}
 
             {/* File List */}
-            {formData.files.length > 0 && (
-              <div className="flex flex-col gap-2">
-                {formData.files.map((file, index) => (
-                  <div
-                    key={index}
-                    className="text-sm text-gray-700 flex items-center justify-between"
-                  >
-                    <span title={file.name} className="truncate">
-                      {file.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newFiles = formData.files.filter(
-                          (_, i) => i !== index,
-                        );
-                        setFormData({ ...formData, files: newFiles });
-                      }}
-                      className="text-red-600 hover:text-red-700 ml-2"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* {formData.files.length > 0 && ( */}
+            {/*   <div className="flex flex-col gap-2"> */}
+            {/*     {formData.files.map((file, index) => ( */}
+            {/*       <div */}
+            {/*         key={index} */}
+            {/*         className="text-sm text-gray-700 flex items-center justify-between" */}
+            {/*       > */}
+            {/*         <span title={file.name} className="truncate"> */}
+            {/*           {file.name} */}
+            {/*         </span> */}
+            {/*         <button */}
+            {/*           type="button" */}
+            {/*           onClick={() => { */}
+            {/*             const newFiles = formData.files.filter( */}
+            {/*               (_, i) => i !== index, */}
+            {/*             ); */}
+            {/*             setFormData({ ...formData, files: newFiles }); */}
+            {/*           }} */}
+            {/*           className="text-red-600 hover:text-red-700 ml-2" */}
+            {/*         > */}
+            {/*           Remove */}
+            {/*         </button> */}
+            {/*       </div> */}
+            {/*     ))} */}
+            {/*   </div> */}
+            {/* )} */}
           </div>
         </CollapsibleContent>
       </Collapsible>

@@ -32,6 +32,7 @@ CREATE TABLE product_inventory_aggregates (
     -- Metadata
     last_updated_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ,
 
     UNIQUE(product_id, warehouse_id)
 );
@@ -280,6 +281,112 @@ CREATE TRIGGER trg_create_product_inventory_aggregates
 AFTER INSERT ON products
 FOR EACH ROW
 EXECUTE FUNCTION trigger_create_product_inventory_aggregates();
+
+-- Trigger function to create aggregates when a new warehouse is created
+CREATE OR REPLACE FUNCTION trigger_create_warehouse_inventory_aggregates()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Create aggregate records for all products in the company
+    INSERT INTO product_inventory_aggregates (
+        product_id,
+        warehouse_id,
+        company_id,
+        in_stock_units,
+        in_stock_quantity,
+        in_stock_value,
+        dispatched_units,
+        dispatched_quantity,
+        dispatched_value,
+        removed_units,
+        removed_quantity,
+        removed_value,
+        total_units_received,
+        total_quantity_received,
+        pending_qr_units
+    )
+    SELECT
+        p.id,
+        NEW.id,
+        NEW.company_id,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+    FROM products p
+    WHERE p.company_id = NEW.company_id
+    ON CONFLICT (product_id, warehouse_id) DO NOTHING;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger on warehouses table to initialize aggregates
+CREATE TRIGGER trg_create_warehouse_inventory_aggregates
+AFTER INSERT ON warehouses
+FOR EACH ROW
+EXECUTE FUNCTION trigger_create_warehouse_inventory_aggregates();
+
+-- Trigger function to soft-delete aggregates when a product is soft-deleted
+CREATE OR REPLACE FUNCTION trigger_soft_delete_product_inventory_aggregates()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_has_inventory BOOLEAN;
+BEGIN
+    -- Only proceed if deleted_at is being set (soft-delete operation)
+    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN
+        -- Check if product has any inventory across all warehouses
+        SELECT EXISTS (
+            SELECT 1
+            FROM product_inventory_aggregates
+            WHERE product_id = NEW.id
+            AND (
+                total_units_received > 0 OR
+                total_quantity_received > 0
+            )
+        ) INTO v_has_inventory;
+
+        -- Prevent deletion if product ever had inventory
+        IF v_has_inventory THEN
+            RAISE EXCEPTION 'Cannot delete product: Product has inventory history (inward/outward transactions exist). Products with transaction history cannot be deleted. Please mark the product as inactive instead.'
+                USING ERRCODE = 'check_violation',
+                      HINT = 'Use is_active flag to deactivate products with inventory history';
+        END IF;
+
+        -- If no inventory, soft-delete all aggregate records
+        UPDATE product_inventory_aggregates
+        SET deleted_at = NEW.deleted_at,
+            last_updated_at = NOW()
+        WHERE product_id = NEW.id
+        AND deleted_at IS NULL;
+    END IF;
+
+    -- If product is being restored (deleted_at set to NULL)
+    IF NEW.deleted_at IS NULL AND OLD.deleted_at IS NOT NULL THEN
+        -- Restore aggregate records
+        UPDATE product_inventory_aggregates
+        SET deleted_at = NULL,
+            last_updated_at = NOW()
+        WHERE product_id = NEW.id
+        AND deleted_at IS NOT NULL;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger on products table to handle soft-delete
+CREATE TRIGGER trg_soft_delete_product_inventory_aggregates
+BEFORE UPDATE OF deleted_at ON products
+FOR EACH ROW
+EXECUTE FUNCTION trigger_soft_delete_product_inventory_aggregates();
 
 -- Add comment
 COMMENT ON TABLE product_inventory_aggregates IS 'Aggregated inventory metrics per product per warehouse, segregated by stock unit status. Updated automatically via triggers.';

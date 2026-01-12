@@ -13,7 +13,7 @@ CREATE TABLE partners (
     first_name VARCHAR(50),
     last_name VARCHAR(50),
     company_name VARCHAR(200) NOT NULL,
-    phone_number VARCHAR(15) NOT NULL,
+    phone_number VARCHAR(15),
     email VARCHAR(100),
     
     -- Partner type
@@ -66,7 +66,7 @@ CREATE TABLE partners (
     -- Computed display name (defaults to company_name)
     display_name TEXT GENERATED ALWAYS AS (company_name) STORED,
 
-		UNIQUE (company_id, phone_number)
+		UNIQUE (company_id, company_name)
 );
 
 

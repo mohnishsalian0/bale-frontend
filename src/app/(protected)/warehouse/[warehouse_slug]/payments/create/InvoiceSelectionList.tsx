@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { useOutstandingInvoices } from "@/lib/query/hooks/payments";
-import { formatAbsoluteDate } from "@/lib/utils/date";
 import { formatCurrency } from "@/lib/utils/currency";
 import { IconTrash, IconPlus } from "@tabler/icons-react";
 import type { OutstandingInvoiceView } from "@/types/payments.types";
+import { getInvoiceInfo } from "@/lib/utils/invoice";
 
 interface InvoiceSelectionListProps {
   invoices: OutstandingInvoiceView[];
@@ -63,6 +63,7 @@ export function InvoiceSelectionList({
             {invoices.map((invoice) => {
               const allocatedAmount = getAllocatedAmount(invoice.id);
               const isAllocated = allocatedAmount > 0;
+              const invoiceInfo = getInvoiceInfo(invoice);
 
               return (
                 <div
@@ -74,10 +75,7 @@ export function InvoiceSelectionList({
                     <p className="text-base font-medium text-gray-700">
                       {invoice.invoice_number}
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {formatAbsoluteDate(invoice.invoice_date)} • Outstanding:{" "}
-                      {formatCurrency(invoice.outstanding_amount)}
-                    </p>
+                    <p className="text-sm text-gray-500 mt-1">{invoiceInfo}</p>
                   </div>
 
                   {/* Action Buttons */}

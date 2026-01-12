@@ -41,7 +41,7 @@ export function PaymentTypeDialog({
           onClick={() => handleSelect("advance")}
           className="flex flex-col p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors text-left"
         >
-          <p className="text-base font-medium text-gray-900">
+          <p className="text-base font-medium text-gray-700">
             {isReceipt ? "Advance Receipt" : "Advance Payment"}
           </p>
           <p className="text-sm text-gray-500">
@@ -54,7 +54,7 @@ export function PaymentTypeDialog({
           onClick={() => handleSelect("against_ref")}
           className="flex flex-col p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors text-left"
         >
-          <p className="text-base font-medium text-gray-900">
+          <p className="text-base font-medium text-gray-700">
             Against Invoices
           </p>
           <p className="text-sm text-gray-500">

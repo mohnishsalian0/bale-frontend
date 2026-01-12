@@ -123,6 +123,8 @@ CREATE TABLE invoices (
     company_pan_number VARCHAR(10),
     company_email VARCHAR(100),
     company_phone VARCHAR(20),
+    company_logo_url TEXT,
+    company_website_url VARCHAR(200),
 
     -- Notes and attachments
     notes TEXT,

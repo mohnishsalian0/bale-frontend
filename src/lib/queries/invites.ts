@@ -5,22 +5,12 @@ import type {
   InviteCreateParams,
   AcceptInviteParams,
 } from "@/types/invites.types";
-import { Warehouse } from "@/types/warehouses.types";
 
 // ============================================================================
 // RAW TYPES - For Supabase responses
 // ============================================================================
 
 type Invite = Tables<"invites">;
-
-type InviteListViewRaw = Omit<InviteListView, "warehouse_names">;
-
-type InviteWarehousesListViewRaw = Pick<
-  Tables<"invite_warehouses">,
-  "invite_id"
-> & {
-  warehouse: Pick<Warehouse, "name">;
-};
 
 /**
  * Fetch invite by token/code
@@ -84,7 +74,11 @@ export const INVITE_LIST_VIEW_SELECT = `
   company_name,
   all_warehouses_access,
   expires_at,
-  created_at
+  used_at,
+  created_at,
+  invite_warehouses(
+    warehouse:warehouse_id(name)
+  )
 `;
 
 // ============================================================================
@@ -99,63 +93,33 @@ export const INVITE_LIST_VIEW_SELECT = `
 export async function getActiveInvites(): Promise<InviteListView[]> {
   const supabase = createClient();
 
-  // Fetch active invites (not used and not expired)
-  const { data: invites, error: invitesError } = await supabase
+  const { data: invites, error } = await supabase
     .from("invites")
     .select(INVITE_LIST_VIEW_SELECT)
     .is("used_at", null)
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false });
+  console.log(invites);
 
-  if (invitesError) throw invitesError;
-  if (!invites || invites.length === 0) return [];
+  if (error) throw error;
+  if (!invites) return [];
 
-  // Filter invites that need warehouse data (not all_warehouses_access)
-  const invitesNeedingWarehouses = invites.filter(
-    (i) => !i.all_warehouses_access,
-  );
+  return invites.map((invite): InviteListView => {
+    // 1. Flatten warehouse names safely
+    const warehouse_names = (invite.invite_warehouses ?? [])
+      .map((iw) => {
+        const warehouse = Array.isArray(iw.warehouse)
+          ? iw.warehouse?.[0]
+          : iw.warehouse;
+        return warehouse.name as string;
+      })
+      .filter((name): name is string => Boolean(name));
 
-  if (invitesNeedingWarehouses.length === 0) {
-    // All invites have all_warehouses_access, return with empty arrays
-    return invites.map((invite) => ({
+    return {
       ...invite,
-      warehouse_names: [],
-    })) as InviteListView[];
-  }
-
-  const inviteIds = invitesNeedingWarehouses.map(
-    (i: InviteListViewRaw) => i.id,
-  );
-
-  // Fetch warehouse assignments for these invites
-  const { data: inviteWarehouses, error: warehousesError } = await supabase
-    .from("invite_warehouses")
-    .select("invite_id, warehouse:warehouse_id(name)")
-    .in("invite_id", inviteIds);
-
-  if (warehousesError) throw warehousesError;
-
-  // Build warehouse map
-  const warehouseMap = new Map<string, string[]>();
-  (
-    (inviteWarehouses as unknown as InviteWarehousesListViewRaw[]) || []
-  ).forEach((iw) => {
-    const warehouseName = iw.warehouse?.name;
-    if (!warehouseName) return;
-
-    if (!warehouseMap.has(iw.invite_id)) {
-      warehouseMap.set(iw.invite_id, []);
-    }
-    warehouseMap.get(iw.invite_id)!.push(warehouseName);
+      warehouse_names: invite.all_warehouses_access ? [] : warehouse_names,
+    };
   });
-
-  // Combine data
-  return invites.map((invite: InviteListViewRaw) => ({
-    ...invite,
-    warehouse_names: invite.all_warehouses_access
-      ? []
-      : warehouseMap.get(invite.id) || [],
-  })) as InviteListView[];
 }
 
 /**
