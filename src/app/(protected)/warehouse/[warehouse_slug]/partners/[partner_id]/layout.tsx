@@ -61,9 +61,10 @@ export default function PartnerDetailLayout({
   } = usePartnerWithOrderStats(partner_id);
 
   // Get aggregates from partner data based on partner type
-  const order_stats = partner?.partner_type === "customer"
-    ? partner?.sales_aggregates
-    : partner?.purchase_aggregates;
+  const order_stats =
+    partner?.partner_type === "customer"
+      ? partner?.sales_aggregates
+      : partner?.purchase_aggregates;
   const totalOrders = order_stats?.total_orders || 0;
   const totalOrderValue = order_stats?.lifetime_order_value || 0;
   const pendingOrdersCount =

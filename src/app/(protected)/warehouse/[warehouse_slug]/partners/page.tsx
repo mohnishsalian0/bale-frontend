@@ -273,10 +273,14 @@ export default function PartnersPage() {
                     {/* Outstanding Amount */}
                     {outstandingAmount > 0 && (
                       <div className="text-right shrink-0">
-                        <p className={`text-sm font-semibold ${outstandingColor}`}>
+                        <p
+                          className={`text-sm font-semibold ${outstandingColor}`}
+                        >
                           {formatCurrency(outstandingAmount)}
                         </p>
-                        <p className="text-xs text-gray-500">{outstandingLabel}</p>
+                        <p className="text-xs text-gray-500">
+                          {outstandingLabel}
+                        </p>
                       </div>
                     )}
                   </button>

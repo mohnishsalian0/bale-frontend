@@ -219,8 +219,7 @@ function groupItemsByProduct(
       grouped.set(productId, {
         productName: item.stock_unit.product.name,
         productHSN: item.stock_unit.product.hsn_code || null,
-        measuringUnit: item.stock_unit.product
-          .measuring_unit as MeasuringUnit,
+        measuringUnit: item.stock_unit.product.measuring_unit as MeasuringUnit,
         noOfUnits: 1,
         totalQuantity: item.quantity_dispatched,
       });
@@ -380,9 +379,7 @@ export function DeliveryChallanPDF({
               <Text style={styles.textLine}>
                 {outward.outward_type
                   .split("_")
-                  .map(
-                    (word) => word.charAt(0).toUpperCase() + word.slice(1),
-                  )
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                   .join(" ")}
               </Text>
             </View>
@@ -459,9 +456,7 @@ export function DeliveryChallanPDF({
 
           {/* Right: Destination (Partner or Warehouse) */}
           <View style={styles.column}>
-            <Text style={styles.textLine}>
-              Destination (Received at)
-            </Text>
+            <Text style={styles.textLine}>Destination (Received at)</Text>
             <Text style={styles.sectionTitle}>{destinationName}</Text>
             {destinationAddress !== "-" && (
               <Text style={styles.textLine}>{destinationAddress}</Text>

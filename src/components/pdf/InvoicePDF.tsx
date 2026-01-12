@@ -494,9 +494,9 @@ export function InvoicePDF({ invoice }: InvoicePDFProps) {
                     State: {invoice.warehouse_state}
                   </Text>
                 )}
-                {invoice.warehouse_gst_number && (
+                {invoice.company_gst_number && (
                   <Text style={styles.textLine}>
-                    GSTIN: {invoice.warehouse_gst_number}
+                    GSTIN: {invoice.company_gst_number}
                   </Text>
                 )}
               </>

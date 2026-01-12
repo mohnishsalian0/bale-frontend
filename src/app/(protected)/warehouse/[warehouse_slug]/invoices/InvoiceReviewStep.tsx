@@ -117,7 +117,9 @@ export function InvoiceReviewStep({
       // Calculate proportional discount for this line (lines 174-178)
       const proportionalDiscount =
         subtotal > 0
-          ? roundCurrency((item.lineGrossAmount / subtotal) * globalDiscountAmount)
+          ? roundCurrency(
+              (item.lineGrossAmount / subtotal) * globalDiscountAmount,
+            )
           : 0;
 
       item.lineDiscountAmount = proportionalDiscount;

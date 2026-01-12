@@ -265,10 +265,18 @@ export function PaymentPDF({ payment, company }: PaymentPDFProps) {
   const payeeName = isReceipt
     ? company.name || "-"
     : payment.party_name || payment.party_display_name || "-";
-  const payerGSTIN = isReceipt ? payment.party_gst_number || "-" : company.gst_number || "-";
-  const payeeGSTIN = isReceipt ? company.gst_number || "-" : payment.party_gst_number || "-";
-  const payerPAN = isReceipt ? payment.party_pan_number || "-" : company.pan_number || "-";
-  const payeePAN = isReceipt ? company.pan_number || "-" : payment.party_pan_number || "-";
+  const payerGSTIN = isReceipt
+    ? payment.party_gst_number || "-"
+    : company.gst_number || "-";
+  const payeeGSTIN = isReceipt
+    ? company.gst_number || "-"
+    : payment.party_gst_number || "-";
+  const payerPAN = isReceipt
+    ? payment.party_pan_number || "-"
+    : company.pan_number || "-";
+  const payeePAN = isReceipt
+    ? company.pan_number || "-"
+    : payment.party_pan_number || "-";
 
   return (
     <Document>
@@ -277,10 +285,7 @@ export function PaymentPDF({ payment, company }: PaymentPDFProps) {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             {company.logo_url && (
-              <Image
-                src={company.logo_url || ""}
-                style={styles.companyLogo}
-              />
+              <Image src={company.logo_url || ""} style={styles.companyLogo} />
             )}
             <View style={styles.companyInfo}>
               <Text style={styles.companyName}>{company.name}</Text>
@@ -443,7 +448,9 @@ export function PaymentPDF({ payment, company }: PaymentPDFProps) {
             <View style={styles.totalsSection}>
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Total Amount</Text>
-                <Text style={styles.totalValue}>{formatAmount(totalAmount)}</Text>
+                <Text style={styles.totalValue}>
+                  {formatAmount(totalAmount)}
+                </Text>
               </View>
 
               {payment.tds_applicable && tdsAmount > 0 && (
