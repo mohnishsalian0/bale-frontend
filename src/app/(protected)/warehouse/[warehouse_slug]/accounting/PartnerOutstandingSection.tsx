@@ -35,7 +35,10 @@ export function PartnerOutstandingSection({
   } = usePartnersWithStats({
     partner_type: partnerType,
     limit: 5,
-    order_by: partnerType === "customer" ? "receivables_aggregates.total_outstanding_amount" : "payables_aggregates.total_outstanding_amount",
+    order_by:
+      partnerType === "customer"
+        ? "receivables_aggregates.total_outstanding_amount"
+        : "payables_aggregates.total_outstanding_amount",
     order_direction: "desc",
   });
 

@@ -27,8 +27,7 @@ export async function downloadDeliveryChallanPDF(
   const blob = await generateDeliveryChallanPDF(outward, company);
 
   // Generate filename if not provided
-  const challanFilename =
-    filename || `DC-GO-${outward.sequence_number}.pdf`;
+  const challanFilename = filename || `DC-GO-${outward.sequence_number}.pdf`;
 
   // Create download link
   const url = URL.createObjectURL(blob);
