@@ -1,7 +1,8 @@
 "use client";
 
-import { IconBuilding, IconPhone } from "@tabler/icons-react";
+import { IconBuilding, IconPhone, IconEdit } from "@tabler/icons-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getInitials } from "@/lib/utils/initials";
 import { RoleBadge } from "@/components/ui/role-badge";
@@ -9,9 +10,15 @@ import type { StaffListView } from "@/types/staff.types";
 
 interface StaffMembersTabProps {
   staff: StaffListView[];
+  currentUserId: string;
+  onEdit: (member: StaffListView) => void;
 }
 
-export function StaffMembersTab({ staff }: StaffMembersTabProps) {
+export function StaffMembersTab({
+  staff,
+  currentUserId,
+  onEdit,
+}: StaffMembersTabProps) {
   return (
     <li className="grid grid-cols-1 lg:grid-cols-2 3xl:grid-cols-3 gap-4 items-stretch p-4">
       {staff.length === 0 ? (
@@ -46,16 +53,16 @@ export function StaffMembersTab({ staff }: StaffMembersTabProps) {
                       <IconBuilding className="size-3.5 shrink-0" />
                       <p
                         title={
-                          member.warehouse_names.length > 0
-                            ? member.warehouse_names.join(", ")
+                          member.warehouses.length > 0
+                            ? member.warehouses.map(w => w.name).join(", ")
                             : "Not assigned yet"
                         }
                         className="text-sm text-gray-500 truncate"
                       >
-                        {member.warehouse_names.length > 0
-                          ? member.warehouse_names.length === 1
-                            ? member.warehouse_names[0]
-                            : `${member.warehouse_names[0]}, +${member.warehouse_names.length - 1} more`
+                        {member.warehouses.length > 0
+                          ? member.warehouses.length === 1
+                            ? member.warehouses[0].name
+                            : `${member.warehouses[0].name}, +${member.warehouses.length - 1} more`
                           : "Not assigned yet"}
                       </p>
                     </div>
@@ -73,6 +80,19 @@ export function StaffMembersTab({ staff }: StaffMembersTabProps) {
                       role={member.role as "admin" | "staff"}
                       className="absolute top-4 right-4"
                     />
+
+                    {/* Edit Button - Only show if not current user */}
+                    {member.id !== currentUserId && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute bottom-4 right-4 size-8"
+                        onClick={() => onEdit(member)}
+                        title="Edit staff member"
+                      >
+                        <IconEdit className="size-4" />
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

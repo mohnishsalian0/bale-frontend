@@ -1,6 +1,35 @@
 import type { Tables } from "@/types/database/supabase";
+import type { QueryData } from "@supabase/supabase-js";
+import {
+  buildStaffMembersQuery,
+  buildStaffMemberByIdQuery,
+} from "@/lib/queries/users";
 
 type User = Tables<"users">;
+
+// ============================================================================
+// RAW TYPES (QueryData inferred from query builders)
+// ============================================================================
+
+/**
+ * Raw type inferred from buildStaffMembersQuery
+ * Used as bridge between Supabase response and StaffListView
+ */
+export type StaffListViewRaw = QueryData<
+  ReturnType<typeof buildStaffMembersQuery>
+>[number];
+
+/**
+ * Raw type inferred from buildStaffMemberByIdQuery
+ * Used as bridge between Supabase response and StaffDetailView
+ */
+export type StaffDetailViewRaw = QueryData<
+  ReturnType<typeof buildStaffMemberByIdQuery>
+>;
+
+// ============================================================================
+// STAFF VIEW TYPES
+// ============================================================================
 
 /**
  * Staff member with minimal details for list views
@@ -18,10 +47,10 @@ export interface StaffListView extends Pick<
   | "all_warehouses_access"
 > {
   /**
-   * Array of warehouse names the staff member is assigned to
+   * Array of warehouses the staff member is assigned to
    * Empty array if all_warehouses_access is true
    */
-  warehouse_names: string[];
+  warehouses: Array<{ id: string; name: string }>;
 }
 
 /**
@@ -30,8 +59,8 @@ export interface StaffListView extends Pick<
  */
 export interface StaffDetailView extends User {
   /**
-   * Array of warehouse names the staff member is assigned to
+   * Array of warehouses the staff member is assigned to
    * Empty array if all_warehouses_access is true
    */
-  warehouse_names: string[];
+  warehouses: Array<{ id: string; name: string }>;
 }

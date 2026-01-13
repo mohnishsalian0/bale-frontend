@@ -10,6 +10,7 @@ import {
   getUserPermissions,
   getStaffMembers,
   getStaffMemberById,
+  updateStaffMember,
 } from "@/lib/queries/users";
 import type { TablesUpdate } from "@/types/database/supabase";
 
@@ -99,4 +100,30 @@ export function useStaffMemberById(userId: string | null) {
     ...getQueryOptions(STALE_TIME.USER, GC_TIME.MASTER_DATA),
     enabled: !!userId,
   });
+}
+
+/**
+ * Staff member mutations (update role and warehouse assignments)
+ */
+export function useStaffMutations() {
+  const queryClient = useQueryClient();
+
+  const update = useMutation({
+    mutationFn: (params: {
+      userId: string;
+      companyId: string;
+      role: string;
+      allWarehousesAccess: boolean;
+      warehouseIds: string[];
+    }) => updateStaffMember(params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.users.all(),
+      });
+    },
+  });
+
+  return {
+    update,
+  };
 }
