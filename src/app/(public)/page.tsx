@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +13,7 @@ import {
   IconChartBar,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
+import PublicHeader from "@/components/layouts/public-header";
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
@@ -127,44 +129,53 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-dvh">
-      {/* Hero Section */}
-      <section className="container max-w-6xl mx-auto px-4 py-12 md:py-20">
-        <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-          {/* Left: Text Content */}
-          <div className="flex-1 text-center md:text-left">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 leading-tight">
-              Every Roll Matters.{" "}
-              <span className="text-primary-700">
-                Let&apos;s make sure it&apos;s counted.
-              </span>
-            </h1>
-            <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl">
-              That&apos;s why we built a tool that keeps your fabric organised
-              and lets you focus on important tasks.
-            </p>
-            <Button onClick={handleTryDemo} size="lg" className="text-lg px-8">
-              Try Demo
-            </Button>
-          </div>
+    <div className="min-h-screen w-full overflow-x-hidden">
+      {/* Header */}
+      <PublicHeader />
 
-          {/* Right: Mascot */}
-          <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 shrink-0">
-            <Image
-              src="/mascot/welcome.png"
-              alt="Bale mascot welcoming you"
-              fill
-              sizes="(max-width: 768px) 256px, (max-width: 1024px) 320px, 384px"
-              className="object-contain"
-              priority
-            />
+      {/* Hero Section */}
+      <section className="w-full bg-white">
+        <div className="max-w-6xl mx-auto px-4 py-12 md:py-20">
+          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+            {/* Left: Text Content */}
+            <div className="flex-1 text-center md:text-left">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 leading-tight">
+                Every Roll Matters.{" "}
+                <span className="text-primary-700">
+                  Let&apos;s make sure it&apos;s counted.
+                </span>
+              </h1>
+              <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl">
+                That&apos;s why we built a tool that keeps your fabric organised
+                and lets you focus on important tasks.
+              </p>
+              <Button
+                onClick={handleTryDemo}
+                size="lg"
+                className="text-lg px-8"
+              >
+                Try Demo
+              </Button>
+            </div>
+
+            {/* Right: Mascot */}
+            <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 shrink-0">
+              <Image
+                src="/mascot/welcome.png"
+                alt="Bale mascot welcoming you"
+                fill
+                sizes="(max-width: 768px) 256px, (max-width: 1024px) 320px, 384px"
+                className="object-contain"
+                priority
+              />
+            </div>
           </div>
         </div>
       </section>
 
       {/* Benefits Section */}
-      <section className="bg-white py-16 md:py-24">
-        <div className="container max-w-6xl mx-auto px-4">
+      <section id="features" className="w-full bg-background-100">
+        <div className="max-w-6xl mx-auto px-4 py-16 md:py-24">
           {/* Section Header */}
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -181,7 +192,7 @@ export default function LandingPage() {
             {benefits.map((benefit) => (
               <div
                 key={benefit.letter}
-                className="flex flex-col gap-4 p-6 rounded-lg border border-gray-200 bg-background-100 hover:border-primary-500 transition-colors"
+                className="flex flex-col gap-4 p-6 rounded-lg border border-gray-200 bg-white hover:border-primary-500 transition-colors"
               >
                 <div className="flex items-start gap-4">
                   {/* Letter Badge */}
@@ -215,8 +226,8 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 md:py-24">
-        <div className="container max-w-6xl mx-auto px-4">
+      <section className="w-full bg-white">
+        <div className="max-w-6xl mx-auto px-4 py-16 md:py-24">
           {/* Section Header */}
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -269,8 +280,8 @@ export default function LandingPage() {
       </section>
 
       {/* Invite Form Section */}
-      <section id="invite-form" className="bg-white py-16 md:py-24">
-        <div className="container max-w-4xl mx-auto px-4">
+      <section id="invite-form" className="w-full bg-background-100">
+        <div className="max-w-4xl mx-auto px-4 py-16 md:py-24">
           <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
             {/* Left: Form */}
             <div className="flex-1 w-full">
@@ -345,8 +356,8 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 md:py-24">
-        <div className="container max-w-4xl mx-auto px-4">
+      <section className="w-full bg-white">
+        <div className="max-w-6xl mx-auto px-4 py-16 md:py-24">
           {/* Section Header */}
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -389,8 +400,8 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container max-w-6xl mx-auto px-4">
+      <footer className="w-full bg-gray-900 text-white">
+        <div className="max-w-6xl mx-auto px-4 py-12">
           {/* Tagline */}
           <div className="text-center mb-8">
             <p className="text-lg font-semibold text-gray-300">
@@ -400,30 +411,30 @@ export default function LandingPage() {
 
           {/* Links */}
           <div className="flex flex-wrap justify-center gap-4 md:gap-8 mb-8 text-sm">
-            <a
+            <Link
               href="/privacy"
               className="text-gray-400 hover:text-white transition-colors"
             >
               Privacy Policy
-            </a>
-            <a
+            </Link>
+            <Link
               href="/terms"
               className="text-gray-400 hover:text-white transition-colors"
             >
               Terms & Conditions
-            </a>
-            <a
+            </Link>
+            <Link
               href="/refund-policy"
               className="text-gray-400 hover:text-white transition-colors"
             >
               Refund Policy
-            </a>
-            <a
+            </Link>
+            <Link
               href="/shipping-policy"
               className="text-gray-400 hover:text-white transition-colors"
             >
               Shipping & Returns
-            </a>
+            </Link>
             <a
               href="mailto:bale.inventory@gmail.com"
               className="text-gray-400 hover:text-white transition-colors"
@@ -434,7 +445,7 @@ export default function LandingPage() {
 
           {/* Copyright */}
           <div className="text-center text-sm text-gray-500">
-            © 2025 Bale. All rights reserved.
+            © 2026 Bale. All rights reserved.
           </div>
         </div>
       </footer>
