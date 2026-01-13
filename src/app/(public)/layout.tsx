@@ -11,5 +11,7 @@ interface PublicLayoutProps {
  * Ensures proper scrolling and responsive behavior
  */
 export default function PublicLayout({ children }: PublicLayoutProps) {
-  return <div className="min-h-screen w-full overflow-x-hidden">{children}</div>;
+  return (
+    <div className="min-h-screen w-full overflow-x-hidden">{children}</div>
+  );
 }

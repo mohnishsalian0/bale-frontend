@@ -149,7 +149,11 @@ export default function LandingPage() {
                 That&apos;s why we built a tool that keeps your fabric organised
                 and lets you focus on important tasks.
               </p>
-              <Button onClick={handleTryDemo} size="lg" className="text-lg px-8">
+              <Button
+                onClick={handleTryDemo}
+                size="lg"
+                className="text-lg px-8"
+              >
                 Try Demo
               </Button>
             </div>
