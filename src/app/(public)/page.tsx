@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +13,7 @@ import {
   IconChartBar,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
+import PublicHeader from "@/components/layouts/public-header";
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
