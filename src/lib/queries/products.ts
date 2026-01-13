@@ -91,7 +91,10 @@ type ProductWithInventoryListViewRaw = ProductListViewRaw & {
   product_inventory_aggregates: Array<
     Pick<
       ProductInventory,
-      "in_stock_units" | "in_stock_quantity" | "in_stock_value" | "pending_qr_units"
+      | "in_stock_units"
+      | "in_stock_quantity"
+      | "in_stock_value"
+      | "pending_qr_units"
     >
   >;
 };

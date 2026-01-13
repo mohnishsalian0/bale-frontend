@@ -95,7 +95,9 @@ export default function StockFlowPage() {
     partner_id: selectedPartner !== "all" ? selectedPartner : undefined,
     product_id: selectedProduct !== "all" ? selectedProduct : undefined,
     search_term: debouncedSearchQuery || undefined,
-    date_from: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
+    date_from: dateRange?.from
+      ? format(dateRange.from, "yyyy-MM-dd")
+      : undefined,
     date_to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
   };
 
@@ -103,7 +105,9 @@ export default function StockFlowPage() {
     partner_id: selectedPartner !== "all" ? selectedPartner : undefined,
     product_id: selectedProduct !== "all" ? selectedProduct : undefined,
     search_term: debouncedSearchQuery || undefined,
-    date_from: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
+    date_from: dateRange?.from
+      ? format(dateRange.from, "yyyy-MM-dd")
+      : undefined,
     date_to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
   };
 
@@ -167,7 +171,13 @@ export default function StockFlowPage() {
     if (currentPage !== 1) {
       router.push(`/warehouse/${warehouse.slug}/stock-flow?page=1`);
     }
-  }, [debouncedSearchQuery, selectedFilter, selectedPartner, selectedProduct, dateRange]);
+  }, [
+    debouncedSearchQuery,
+    selectedFilter,
+    selectedPartner,
+    selectedProduct,
+    dateRange,
+  ]);
 
   // Handle page change
   const handlePageChange = (page: number) => {
