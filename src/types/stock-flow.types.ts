@@ -16,6 +16,7 @@ type JobWork = Tables<"job_works">;
 
 export interface InwardFilters extends Record<string, unknown> {
   partner_id?: string;
+  product_id?: string;
   date_from?: string;
   date_to?: string;
   search_term?: string;
@@ -23,6 +24,7 @@ export interface InwardFilters extends Record<string, unknown> {
 
 export interface OutwardFilters extends Record<string, unknown> {
   partner_id?: string;
+  product_id?: string;
   date_from?: string;
   date_to?: string;
   search_term?: string;

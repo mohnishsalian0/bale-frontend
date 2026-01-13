@@ -181,7 +181,7 @@ export async function getGoodsInwards(
       *,
       partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name),
 			from_warehouse:warehouses!from_warehouse_id(id, name),
-      stock_units(
+      stock_units!inner(
         product:products(${PRODUCT_LIST_VIEW_SELECT}),
         initial_quantity
       )
@@ -195,6 +195,10 @@ export async function getGoodsInwards(
   // Apply filters
   if (filters?.partner_id) {
     query = query.eq("partner_id", filters.partner_id);
+  }
+
+  if (filters?.product_id) {
+    query = query.eq("stock_units.product_id", filters.product_id);
   }
 
   if (filters?.date_from) {
@@ -253,9 +257,9 @@ export async function getGoodsOutwards(
       *,
       partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name),
 			from_warehouse:warehouses!to_warehouse_id(id, name),
-      goods_outward_items(
+      goods_outward_items!inner(
         quantity_dispatched,
-        stock_unit:stock_units(
+        stock_unit:stock_units!inner(
           product:products(${PRODUCT_LIST_VIEW_SELECT})
         )
       )
@@ -269,6 +273,13 @@ export async function getGoodsOutwards(
   // Apply filters
   if (filters?.partner_id) {
     query = query.eq("partner_id", filters.partner_id);
+  }
+
+  if (filters?.product_id) {
+    query = query.eq(
+      "goods_outward_items.stock_unit.product_id",
+      filters.product_id,
+    );
   }
 
   if (filters?.date_from) {

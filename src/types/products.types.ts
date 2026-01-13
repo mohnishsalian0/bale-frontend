@@ -96,7 +96,7 @@ export interface ProductDetailView extends Product {
 export interface ProductWithInventoryListView extends ProductListView {
   inventory: Pick<
     ProductInventory,
-    "in_stock_units" | "in_stock_quantity" | "in_stock_value"
+    "in_stock_units" | "in_stock_quantity" | "in_stock_value" | "pending_qr_units"
   >;
 }
 
