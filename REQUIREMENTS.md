@@ -644,6 +644,57 @@ Permissions are organized hierarchically with the following top-level categories
 - **Complete Traceability**: Every stock unit must reference its creating goods inward for audit trail
 - **No Direct Stock Manipulation**: Users cannot manually add/remove stock units outside of inward/outward workflows
 
+#### 3.3 Stock Unit Adjustments
+
+**Feature Description:** Track wastage, found stock, and quantity corrections for individual stock units (Warehouse-specific)
+
+**Specifications:**
+
+**Adjustment Creation**
+
+- **Adjustment Details:**
+  - Adjustment Date (required, date of adjustment)
+  - Quantity Adjusted (required, positive for additions/found stock, negative for wastage/reductions)
+  - Reason (required, free-form text explaining the adjustment - e.g., "Damaged roll - water damage", "Found extra stock during audit", "Measurement correction")
+  - Stock Unit (required, the specific stock unit being adjusted)
+  - Warehouse (auto-populated from stock unit, enforced by system)
+
+**Adjustment Types:**
+
+- **Positive Adjustments:** Found stock, measurement corrections (increases), quality upgrades
+- **Negative Adjustments:** Wastage, damage, shrinkage, measurement corrections (decreases), quality downgrades
+
+**Real-time Updates:**
+
+- Adjustment automatically triggers stock unit reconciliation
+- Stock unit `remaining_quantity` recalculated based on all adjustments
+- Inventory levels updated in real-time
+- Adjustment history maintained for audit trail
+
+**Staff Access Controls:**
+
+- Can only create adjustments for stock units in assigned warehouse
+- Adjustments require `stock_units.update` permission
+- All adjustment activities logged per warehouse
+
+**Audit Information:**
+
+- Unique ID (auto-generated in backend)
+- Created on (date, time, auto-generated)
+- Updated on (date, time, auto-generated)
+- Created by (user ID)
+- Modified by (user ID)
+- Deleted at (soft delete timestamp)
+
+**Business Rules:**
+
+- Quantity adjusted cannot be zero
+- Adjustment automatically triggers stock unit reconciliation via database trigger
+- Cannot adjust stock units from other warehouses
+- Adjustment history preserved for compliance and audit
+- Stock unit `remaining_quantity` always reflects sum of original quantity, outward quantities, and all adjustments
+- Deleting an adjustment triggers reconciliation to restore accurate quantity
+
 ### 4. Sales Order Management with Real-time Linking
 
 #### 4.1 Sales Order Creation & Management

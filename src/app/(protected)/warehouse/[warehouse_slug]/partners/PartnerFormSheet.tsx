@@ -169,7 +169,7 @@ export function PartnerFormSheet({
       const updates: PartnerUpdate = {
         first_name: data.firstName,
         last_name: data.lastName,
-        phone_number: data.phoneNumber,
+        phone_number: data.phoneNumber || null,
         email: data.email || null,
         company_name: data.companyName,
         credit_limit_enabled: data.creditLimitEnabled,
@@ -200,7 +200,7 @@ export function PartnerFormSheet({
         partner_type: data.partnerType,
         first_name: data.firstName || null,
         last_name: data.lastName || null,
-        phone_number: data.phoneNumber,
+        phone_number: data.phoneNumber || null,
         email: data.email || null,
         company_name: data.companyName,
         credit_limit_enabled: data.creditLimitEnabled,
@@ -252,7 +252,7 @@ export function PartnerFormSheet({
         {/* Form Content - Scrollable */}
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col h-full overflow-y-hidden"
+          className="flex flex-col flex-1 overflow-hidden"
         >
           <div className="flex-1 overflow-y-auto">
             {/* Image Upload & Basic Info */}
@@ -336,18 +336,6 @@ export function PartnerFormSheet({
                 isError={!!errors.companyName}
                 errorText={errors.companyName?.message}
               />
-
-              {/* Phone Number */}
-              <InputWrapper
-                type="tel"
-                label="Phone number"
-                icon={<IconPhone />}
-                placeholder="Enter phone number"
-                {...register("phoneNumber")}
-                required
-                isError={!!errors.phoneNumber}
-                errorText={errors.phoneNumber?.message}
-              />
             </div>
 
             {/* Business Details Section */}
@@ -389,6 +377,16 @@ export function PartnerFormSheet({
                     />
                   </div>
 
+                  {/* Phone Number */}
+                  <InputWrapper
+                    type="tel"
+                    icon={<IconPhone />}
+                    placeholder="Enter phone number"
+                    {...register("phoneNumber")}
+                    isError={!!errors.phoneNumber}
+                    errorText={errors.phoneNumber?.message}
+                  />
+
                   {/* Email */}
                   <InputWrapper
                     type="email"
@@ -428,19 +426,29 @@ export function PartnerFormSheet({
                     {...register("addressLine2")}
                   />
                   <div className="flex gap-4">
-                    <InputWrapper placeholder="City" {...register("city")} />
-                    <InputWrapper placeholder="State" {...register("state")} />
+                    <InputWrapper
+                      placeholder="City"
+                      {...register("city")}
+                      className="flex-1"
+                    />
+                    <InputWrapper
+                      placeholder="State"
+                      {...register("state")}
+                      className="flex-1"
+                    />
                   </div>
                   <div className="flex gap-4">
                     <InputWrapper
                       placeholder="Country"
                       {...register("country")}
+                      className="flex-1"
                     />
                     <InputWrapper
                       placeholder="Pin code"
                       {...register("pinCode")}
                       isError={!!errors.pinCode}
                       errorText={errors.pinCode?.message}
+                      className="flex-1"
                     />
                   </div>
                 </div>

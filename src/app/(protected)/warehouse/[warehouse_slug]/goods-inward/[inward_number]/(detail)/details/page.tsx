@@ -89,7 +89,6 @@ export default function InwardDetailsPage({ params }: PageParams) {
       <Section
         title={reasonTitle}
         subtitle="Reason for inward"
-        onEdit={() => {}}
         icon={ReasonIcon}
       />
 
@@ -97,7 +96,6 @@ export default function InwardDetailsPage({ params }: PageParams) {
       <Section
         title={sourceName}
         subtitle="Sender"
-        onEdit={() => {}}
         icon={
           isWarehouseTransfer
             ? () => <IconBuildingWarehouse />
@@ -123,7 +121,6 @@ export default function InwardDetailsPage({ params }: PageParams) {
       <Section
         title={inward.warehouse?.name || "Unknown Warehouse"}
         subtitle="Inward destination"
-        onEdit={() => {}}
         icon={() => <IconBuildingWarehouse />}
       >
         {inward.warehouse &&
@@ -146,7 +143,6 @@ export default function InwardDetailsPage({ params }: PageParams) {
       <Section
         title={getTransportTypeDisplay(inward.transport_type)}
         subtitle="Transport"
-        onEdit={() => {}}
         icon={() => <TransportIcon />}
       >
         <div className="space-y-3">
@@ -180,7 +176,6 @@ export default function InwardDetailsPage({ params }: PageParams) {
         <Section
           title={getPartnerName(inward.agent)}
           subtitle="Agent"
-          onEdit={() => {}}
           icon={() => <>{getInitials(getPartnerName(inward.agent))}</>}
         />
       )}
@@ -189,7 +184,6 @@ export default function InwardDetailsPage({ params }: PageParams) {
       <Section
         title="Inward notes"
         subtitle={inward.notes || "No note added"}
-        onEdit={() => {}}
         icon={() => <IconNote />}
       />
     </div>

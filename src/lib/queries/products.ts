@@ -47,7 +47,7 @@ export const PRODUCT_DETAIL_VIEW_SELECT = `
 // Select query for ProductWithInventoryListView
 export const PRODUCT_WITH_INVENTORY_LIST_VIEW_SELECT = `
 	${PRODUCT_LIST_VIEW_SELECT},
-	product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value)
+	product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value, pending_qr_units)
 `;
 
 // Select query for ProductWithInventoryDetailView
@@ -91,7 +91,10 @@ type ProductWithInventoryListViewRaw = ProductListViewRaw & {
   product_inventory_aggregates: Array<
     Pick<
       ProductInventory,
-      "in_stock_units" | "in_stock_quantity" | "in_stock_value"
+      | "in_stock_units"
+      | "in_stock_quantity"
+      | "in_stock_value"
+      | "pending_qr_units"
     >
   >;
 };
@@ -369,7 +372,7 @@ export async function getProductsWithInventory(
     });
   }
 
-  // Apply ordering (defaults to first_name ascending)
+  // Apply ordering (defaults to name ascending)
   const orderBy = filters?.order_by || "name";
   const ascending = filters?.order_direction !== "desc";
   query = query.order(orderBy, { ascending });
@@ -817,6 +820,7 @@ type LowStockProductRaw = {
     in_stock_units: number;
     in_stock_quantity: number;
     in_stock_value: number;
+    pending_qr_units: number | null;
   };
   attributes: Array<{
     id: string;

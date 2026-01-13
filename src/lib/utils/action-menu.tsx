@@ -518,15 +518,7 @@ export function getPartnerActions(
     });
   }
 
-  // Secondary button (flex-1)
-  items.push({
-    label: "Edit",
-    icon: IconEdit,
-    onClick: callbacks.onEdit,
-    variant: "outline",
-  });
-
-  // Dropdown items - Invoice actions
+  // Invoice action
   if (isCustomer && callbacks.onCreateSalesInvoice) {
     items.push({
       label: "Create sales invoice",
@@ -541,7 +533,7 @@ export function getPartnerActions(
     });
   }
 
-  // Dropdown items - Payment actions
+  // Payment action
   if (isCustomer && callbacks.onRecordReceipt) {
     items.push({
       label: "Record receipt",
@@ -555,6 +547,14 @@ export function getPartnerActions(
       onClick: callbacks.onRecordPayment,
     });
   }
+
+  // Edit
+  items.push({
+    label: "Edit",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    variant: "outline",
+  });
 
   // Delete
   items.push({
@@ -594,7 +594,8 @@ export function getInvoiceActions(
 
   // Primary CTA (first button - flex-2): Make payment
   items.push({
-    label: "Make payment",
+    label:
+      invoice.invoice_type === "sales" ? "Record receipt" : "Record payment",
     icon: IconCurrencyRupee,
     onClick: callbacks.onMakePayment,
     variant: "default",
@@ -777,16 +778,7 @@ export function getGoodsInwardActions(
     label: "Edit inward",
     icon: IconEdit,
     onClick: callbacks.onEdit,
-    variant: "default",
-    hidden: hasInvoice || isCancelled,
-  });
-
-  // Dropdown menu items: Delete - hidden if invoiced or cancelled
-  items.push({
-    label: "Delete inward",
-    icon: IconTrash,
-    onClick: callbacks.onDelete,
-    variant: "destructive",
+    variant: "outline",
     hidden: hasInvoice || isCancelled,
   });
 
@@ -797,6 +789,15 @@ export function getGoodsInwardActions(
     onClick: callbacks.onCancel,
     variant: "destructive",
     hidden: isCancelled || hasInvoice,
+  });
+
+  // Dropdown menu items: Delete - hidden if invoiced or cancelled
+  items.push({
+    label: "Delete inward",
+    icon: IconTrash,
+    onClick: callbacks.onDelete,
+    variant: "destructive",
+    hidden: hasInvoice || isCancelled,
   });
 
   return items;
@@ -810,6 +811,11 @@ export interface GoodsOutwardActionsCallbacks {
   onEdit: () => void;
   onDelete: () => void;
   onCancel: () => void;
+  onDownload: () => void;
+}
+
+export interface GoodsOutwardActionsOptions {
+  downloading?: boolean;
 }
 
 /**
@@ -820,24 +826,30 @@ export function getGoodsOutwardActions(
   hasInvoice: boolean,
   isCancelled: boolean,
   callbacks: GoodsOutwardActionsCallbacks,
+  options?: GoodsOutwardActionsOptions,
 ): ContextMenuItem[] {
   const items: ContextMenuItem[] = [];
+
+  // Dropdown menu items: Download PDF
+  items.push({
+    label: "Download PDF",
+    icon: IconDownload,
+    onClick: callbacks.onDownload,
+    disabled: options?.downloading,
+    content: options?.downloading ? (
+      <>
+        <IconDownload className="animate-pulse" />
+        Downloading...
+      </>
+    ) : undefined,
+  });
 
   // Primary CTA: Edit button - hidden if invoiced or cancelled
   items.push({
     label: "Edit outward",
     icon: IconEdit,
     onClick: callbacks.onEdit,
-    variant: "default",
-    hidden: hasInvoice || isCancelled,
-  });
-
-  // Dropdown menu items: Delete - hidden if invoiced or cancelled
-  items.push({
-    label: "Delete outward",
-    icon: IconTrash,
-    onClick: callbacks.onDelete,
-    variant: "destructive",
+    variant: "outline",
     hidden: hasInvoice || isCancelled,
   });
 
@@ -848,6 +860,15 @@ export function getGoodsOutwardActions(
     onClick: callbacks.onCancel,
     variant: "destructive",
     hidden: isCancelled || hasInvoice,
+  });
+
+  // Dropdown menu items: Delete - hidden if invoiced or cancelled
+  items.push({
+    label: "Delete outward",
+    icon: IconTrash,
+    onClick: callbacks.onDelete,
+    variant: "destructive",
+    hidden: hasInvoice || isCancelled,
   });
 
   return items;

@@ -77,10 +77,10 @@ export function formatAbsoluteDate(date: Date | string): string {
 }
 
 /**
- * Format a date for display with "Created" prefix
+ * Format a date for display with "Created on" prefix
  */
 export function formatCreatedAt(date: Date | string): string {
-  return `Created ${formatRelativeDate(date)}`;
+  return `Created on ${formatRelativeDate(date)}`;
 }
 
 /**
@@ -145,7 +145,7 @@ export function formatMonthHeader(date: Date | string): string {
  * @param dueDate - The due date to format
  * @returns Formatted text or null if more than 14 days away
  */
-export function formatDueDate(dueDate: Date | string): string | null {
+export function getDueTimeForStatus(dueDate: Date | string): string | null {
   const dateObj = typeof dueDate === "string" ? new Date(dueDate) : dueDate;
   const now = new Date();
 
@@ -202,4 +202,81 @@ export function formatDueDate(dueDate: Date | string): string | null {
 
   // More than 14 days away - return null to indicate should show original status
   return null;
+}
+
+/**
+ * Format due date with relative time for business documents
+ * Shows "Due in X time"
+ * Examples: "Due today", "Due in 5 days", "Due 2 days ago"
+ *
+ * @param dueDate - The due date to format
+ * @returns Formatted text or null if more than 14 days away
+ */
+export function getDueTimeForDisplay(dueDate: Date | string): string | null {
+  const dateObj = typeof dueDate === "string" ? new Date(dueDate) : dueDate;
+  const now = new Date();
+
+  // Set both dates to start of day for accurate day comparison
+  const dueDateStart = new Date(dateObj);
+  dueDateStart.setHours(0, 0, 0, 0);
+
+  const nowStart = new Date(now);
+  nowStart.setHours(0, 0, 0, 0);
+
+  const diffMs = dueDateStart.getTime() - nowStart.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  // Overdue (past due date)
+  if (diffDays < 0) {
+    const absDays = Math.abs(diffDays);
+
+    if (absDays === 1) {
+      return "Due 1 day ago";
+    }
+
+    if (absDays < 7) {
+      return `Due ${absDays} days ago`;
+    }
+
+    if (absDays < 30) {
+      const weeks = Math.floor(absDays / 7);
+      return weeks === 1 ? "Due 1 week ago" : `Due ${weeks} weeks ago`;
+    }
+
+    if (absDays < 365) {
+      const months = Math.floor(absDays / 30);
+      return months === 1 ? "Due 1 month ago" : `Due ${months} months ago`;
+    }
+
+    const years = Math.floor(absDays / 365);
+    return years === 1 ? "Due 1 year ago" : `Due ${years} years ago`;
+  }
+
+  // Due today
+  if (diffDays === 0) {
+    return "Due today";
+  }
+
+  // Due tomorrow
+  if (diffDays === 1) {
+    return "Due tomorrow";
+  }
+
+  // Due within 14 days
+  if (diffDays <= 7) {
+    return `Due in ${diffDays} days`;
+  }
+
+  if (diffDays < 30) {
+    const weeks = Math.floor(diffDays / 7);
+    return weeks === 1 ? "Due next week" : `Due in ${weeks} weeks`;
+  }
+
+  if (diffDays < 365) {
+    const months = Math.floor(diffDays / 30);
+    return months === 1 ? "Due next month" : `Due in ${months} months`;
+  }
+
+  const years = Math.floor(diffDays / 365);
+  return years === 1 ? "Due next year" : `Due in ${years} years`;
 }

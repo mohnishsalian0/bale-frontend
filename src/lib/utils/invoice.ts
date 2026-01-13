@@ -1,10 +1,12 @@
 import type {
   InvoiceListView,
   InvoiceItemListView,
+  Invoice,
 } from "@/types/invoices.types";
 import type { InvoiceStatus, MeasuringUnit } from "@/types/database/enums";
 import { getMeasuringUnitAbbreviation } from "./measuring-units";
-import { formatDueDate } from "./date";
+import { getDueTimeForDisplay, getDueTimeForStatus } from "./date";
+import { formatCurrency } from "./currency";
 
 export type InvoiceDisplayStatus = InvoiceStatus | "overdue";
 
@@ -34,16 +36,16 @@ export function getInvoiceDisplayStatus(
     const dueDate = new Date(invoice.due_date);
     dueDate.setHours(0, 0, 0, 0);
 
-    const formattedDueDate = formatDueDate(invoice.due_date);
+    const dueTime = getDueTimeForStatus(invoice.due_date);
 
     // If we have a formatted due date (within 14 days or overdue), use it
-    if (formattedDueDate) {
+    if (dueTime) {
       const isOverdue = dueDate < today;
       return {
         status: (isOverdue
           ? "overdue"
           : invoice.status) as InvoiceDisplayStatus,
-        text: formattedDueDate,
+        text: dueTime,
       };
     }
   }
@@ -71,4 +73,19 @@ export function getInvoiceItemSummary(items: InvoiceItemListView[]): string {
   });
 
   return summaryParts.join(", ");
+}
+
+export function getInvoiceInfo(
+  invoice: Pick<Invoice, "due_date" | "outstanding_amount">,
+): string {
+  let info = [];
+  if (invoice.due_date) {
+    info.push(getDueTimeForDisplay(invoice.due_date));
+  }
+
+  if (invoice.outstanding_amount) {
+    info.push(`Outstanding: ${formatCurrency(invoice.outstanding_amount)}`);
+  }
+
+  return info.join(" • ");
 }

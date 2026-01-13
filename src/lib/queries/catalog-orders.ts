@@ -42,7 +42,7 @@ export async function findOrCreateCustomer(
   const { data, error } = await supabase
     .from("partners")
     .upsert(payload, {
-      onConflict: "company_id,phone_number",
+      onConflict: "company_id,company_name",
       ignoreDuplicates: false,
     })
     .select()

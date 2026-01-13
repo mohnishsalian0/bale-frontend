@@ -14,6 +14,7 @@ export interface InviteListView extends Pick<
   | "company_name"
   | "all_warehouses_access"
   | "expires_at"
+  | "used_at"
   | "created_at"
 > {
   /**
@@ -27,10 +28,7 @@ export interface InviteListView extends Pick<
  * Invite details for acceptance page
  * Used in: public invite acceptance page
  */
-export interface InviteDetailView extends Pick<
-  Invite,
-  "id" | "token" | "role" | "company_name" | "company_id" | "expires_at"
-> {
+export interface InviteDetailView extends Invite {
   /**
    * Array of warehouse IDs this invite grants access to
    */

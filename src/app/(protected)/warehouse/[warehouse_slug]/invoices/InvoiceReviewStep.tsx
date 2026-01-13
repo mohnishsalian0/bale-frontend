@@ -13,7 +13,7 @@ import type {
 import { getProductsWithInventoryByIds } from "@/lib/queries/products";
 import { useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency } from "@/lib/utils/currency";
+import { formatCurrency, roundCurrency } from "@/lib/utils/currency";
 
 interface InvoiceReviewStepProps {
   warehouseId: string;
@@ -62,49 +62,75 @@ export function InvoiceReviewStep({
       });
   }, [productSelections, warehouseId]);
 
-  // Calculate totals
+  // Calculate totals - matches backend logic from 0056_invoice_functions.sql
   const calculations = useMemo(() => {
+    // Step 1: Calculate line gross amounts and build line items
     let subtotal = 0;
     const lineItems: Array<{
       product: ProductWithInventoryListView;
       quantity: number;
       rate: number;
-      lineTotal: number;
-      lineTax: number;
+      lineGrossAmount: number;
+      lineDiscountAmount: number;
+      lineTaxableValue: number;
+      lineCGST: number;
+      lineSGST: number;
+      lineIGST: number;
+      lineTotalTax: number;
     }> = [];
 
+    // Build initial line items with gross amounts (matches raw_items + initial_calc CTE)
     products.forEach((product) => {
       const selection = productSelections[product.id];
       if (!selection?.selected || selection.quantity <= 0) return;
 
-      const lineTotal = selection.quantity * selection.rate;
-      subtotal += lineTotal;
-
-      // Calculate tax for this line (only if product has GST and invoice allows tax)
-      const hasTax = product.tax_type === "gst" && taxType !== "no_tax";
-      const gstRate = hasTax ? product.gst_rate || 0 : 0;
-      const lineTax = hasTax ? (lineTotal * gstRate) / 100 : 0;
+      // Round quantity and rate (matches backend lines 142-143)
+      const qty = roundCurrency(selection.quantity);
+      const rate = roundCurrency(selection.rate);
+      const lineGrossAmount = roundCurrency(qty * rate);
+      subtotal += lineGrossAmount;
 
       lineItems.push({
         product,
-        quantity: selection.quantity,
-        rate: selection.rate,
-        lineTotal,
-        lineTax,
+        quantity: qty,
+        rate,
+        lineGrossAmount,
+        lineDiscountAmount: 0, // Will be calculated next
+        lineTaxableValue: 0, // Will be calculated next
+        lineCGST: 0,
+        lineSGST: 0,
+        lineIGST: 0,
+        lineTotalTax: 0,
       });
     });
 
-    // Calculate discount
-    let discountAmount = 0;
+    // Step 2: Calculate global discount amount (matches calc_discount CTE lines 159-167)
+    let globalDiscountAmount = 0;
     if (discountType === "percentage") {
-      discountAmount = (subtotal * discountValue) / 100;
+      globalDiscountAmount = roundCurrency((subtotal * discountValue) / 100);
     } else if (discountType === "flat_amount") {
-      discountAmount = discountValue;
+      globalDiscountAmount = roundCurrency(discountValue);
     }
 
-    const taxableAmount = subtotal - discountAmount;
+    // Step 3: Distribute discount proportionally across line items (matches with_proportional_discount CTE)
+    lineItems.forEach((item) => {
+      // Calculate proportional discount for this line (lines 174-178)
+      const proportionalDiscount =
+        subtotal > 0
+          ? roundCurrency(
+              (item.lineGrossAmount / subtotal) * globalDiscountAmount,
+            )
+          : 0;
 
-    // Calculate total tax (proportional after discount)
+      item.lineDiscountAmount = proportionalDiscount;
+
+      // Calculate taxable value (matches line 205: line_gross_amount - line_discount_amount)
+      item.lineTaxableValue = roundCurrency(
+        item.lineGrossAmount - item.lineDiscountAmount,
+      );
+    });
+
+    // Step 4: Calculate taxes per line (matches lines 222-224)
     let totalCGST = 0;
     let totalSGST = 0;
     let totalIGST = 0;
@@ -114,32 +140,54 @@ export function InvoiceReviewStep({
       if (!hasTax) return;
 
       const gstRate = item.product.gst_rate || 0;
-      const proportionalTaxable =
-        subtotal > 0 ? (item.lineTotal / subtotal) * taxableAmount : 0;
 
       if (taxType === "gst") {
-        const lineCGST = (proportionalTaxable * gstRate) / 200; // Half of GST
-        const lineSGST = (proportionalTaxable * gstRate) / 200; // Half of GST
-        totalCGST += lineCGST;
-        totalSGST += lineSGST;
+        // CGST and SGST are half of GST rate each (lines 222-223)
+        item.lineCGST = roundCurrency(
+          (item.lineTaxableValue * (gstRate / 2)) / 100,
+        );
+        item.lineSGST = roundCurrency(
+          (item.lineTaxableValue * (gstRate / 2)) / 100,
+        );
+        totalCGST += item.lineCGST;
+        totalSGST += item.lineSGST;
       } else if (taxType === "igst") {
-        const lineIGST = (proportionalTaxable * gstRate) / 100;
-        totalIGST += lineIGST;
+        // IGST is full GST rate (line 224)
+        item.lineIGST = roundCurrency((item.lineTaxableValue * gstRate) / 100);
+        totalIGST += item.lineIGST;
       }
+
+      item.lineTotalTax = roundCurrency(
+        item.lineCGST + item.lineSGST + item.lineIGST,
+      );
     });
 
-    const totalTax = totalCGST + totalSGST + totalIGST;
-    const grandTotal = taxableAmount + totalTax;
+    // Step 5: Calculate totals (matches lines 215-232)
+    const totalGrossAmount = roundCurrency(subtotal);
+    const totalDiscountAmount = roundCurrency(globalDiscountAmount);
+    const totalTaxableAmount = roundCurrency(
+      lineItems.reduce((sum, item) => sum + item.lineTaxableValue, 0),
+    );
+    totalCGST = roundCurrency(totalCGST);
+    totalSGST = roundCurrency(totalSGST);
+    totalIGST = roundCurrency(totalIGST);
+    const totalTax = roundCurrency(totalCGST + totalSGST + totalIGST);
+
+    // Step 6: Calculate grand total and round-off (matches lines 245-246)
+    const grandTotalBeforeRounding = totalTaxableAmount + totalTax;
+    const grandTotal = Math.round(grandTotalBeforeRounding); // Round to nearest integer
+    const roundOff = roundCurrency(grandTotal - grandTotalBeforeRounding);
 
     return {
       lineItems,
-      subtotal,
-      discountAmount,
-      taxableAmount,
+      subtotal: totalGrossAmount,
+      discountAmount: totalDiscountAmount,
+      taxableAmount: totalTaxableAmount,
       totalCGST,
       totalSGST,
       totalIGST,
       totalTax,
+      roundOff,
       grandTotal,
     };
   }, [products, productSelections, taxType, discountType, discountValue]);
@@ -164,59 +212,59 @@ export function InvoiceReviewStep({
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Line Items List - Scrollable */}
       <div className="flex-1 overflow-y-auto">
-        {calculations.lineItems.map(
-          ({ product, quantity, rate, lineTotal, lineTax }) => {
-            const unitAbbreviation = getMeasuringUnitAbbreviation(
-              product.measuring_unit as MeasuringUnit | null,
-            );
-            const productInfoText = getProductInfo(product);
+        {calculations.lineItems.map((item) => {
+          const unitAbbreviation = getMeasuringUnitAbbreviation(
+            item.product.measuring_unit as MeasuringUnit | null,
+          );
+          const productInfoText = getProductInfo(item.product);
 
-            return (
-              <li key={product.id}>
-                <div className="flex gap-3 p-4">
-                  <ImageWrapper
-                    size="sm"
-                    shape="square"
-                    imageUrl={product.product_images?.[0]}
-                    alt={product.name}
-                    placeholderIcon={getProductIcon(
-                      product.stock_type as StockType,
-                    )}
-                  />
+          return (
+            <li key={item.product.id}>
+              <div className="flex gap-3 p-4">
+                <ImageWrapper
+                  size="sm"
+                  shape="square"
+                  imageUrl={item.product.product_images?.[0]}
+                  alt={item.product.name}
+                  placeholderIcon={getProductIcon(
+                    item.product.stock_type as StockType,
+                  )}
+                />
 
-                  <div className="flex-1 min-w-0">
-                    <p
-                      title={product.name}
-                      className="text-sm font-medium text-gray-700 truncate"
-                    >
-                      {product.name}
-                    </p>
-                    <p
-                      title={productInfoText}
-                      className="text-sm text-gray-500 truncate"
-                    >
-                      <span>
-                        {quantity} {unitAbbreviation}
-                      </span>
-                      <span> × </span>
-                      <span>{formatCurrency(rate)}</span>
-                    </p>
+                <div className="flex-1 min-w-0">
+                  <p
+                    title={item.product.name}
+                    className="text-sm font-medium text-gray-700 truncate"
+                  >
+                    {item.product.name}
+                  </p>
+                  <p
+                    title={productInfoText}
+                    className="text-sm text-gray-500 truncate"
+                  >
+                    <span>
+                      {item.quantity} {unitAbbreviation}
+                    </span>
+                    <span> × </span>
+                    <span>{formatCurrency(item.rate)}</span>
+                  </p>
+                  {item.lineTotalTax > 0 && (
                     <p className="text-sm text-gray-500">
-                      {formatCurrency(lineTax)} GST
+                      {formatCurrency(item.lineTotalTax)} GST
                     </p>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <p className="text-sm font-semibold text-gray-700">
-                      {formatCurrency(lineTotal)}
-                    </p>
-                  </div>
+                  )}
                 </div>
-                <Separator />
-              </li>
-            );
-          },
-        )}
+
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-semibold text-gray-700">
+                    {formatCurrency(item.lineGrossAmount)}
+                  </p>
+                </div>
+              </div>
+              <Separator />
+            </li>
+          );
+        })}
       </div>
 
       {/* Totals Summary - Fixed at bottom */}
@@ -270,6 +318,18 @@ export function InvoiceReviewStep({
             <span className="text-gray-700">IGST</span>
             <span className="font-semibold">
               {formatCurrency(calculations.totalIGST)}
+            </span>
+          </div>
+        )}
+
+        {calculations.roundOff !== 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-700">Round Off</span>
+            <span
+              className={`font-semibold ${calculations.roundOff > 0 ? "text-gray-700" : "text-green-700"}`}
+            >
+              {calculations.roundOff > 0 ? "+" : ""}
+              {formatCurrency(calculations.roundOff)}
             </span>
           </div>
         )}

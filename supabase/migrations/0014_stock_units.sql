@@ -105,31 +105,8 @@ CREATE TRIGGER trigger_auto_unit_sequence
     BEFORE INSERT ON stock_units
     FOR EACH ROW EXECUTE FUNCTION auto_generate_unit_sequence();
 
--- Auto-update status based on remaining quantity
-CREATE OR REPLACE FUNCTION auto_update_stock_unit_status()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Don't override 'removed' status (manual action)
-    IF NEW.status = 'removed' THEN
-        RETURN NEW;
-    END IF;
-
-    -- Auto-set status based on remaining quantity
-    IF NEW.remaining_quantity <= 0 THEN
-        NEW.status := 'empty';
-    ELSIF NEW.remaining_quantity >= NEW.initial_quantity THEN
-        NEW.status := 'full';
-    ELSE
-        NEW.status := 'partial';
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_auto_stock_unit_status
-    BEFORE INSERT OR UPDATE OF remaining_quantity, initial_quantity ON stock_units
-    FOR EACH ROW EXECUTE FUNCTION auto_update_stock_unit_status();
+-- NOTE: Status auto-update logic has been merged into reconcile_stock_unit() function
+-- in migration 0062_stock_unit_reconciliation.sql for better consistency and maintainability.
 
 -- =====================================================
 -- STOCK UNITS TABLE RLS POLICIES

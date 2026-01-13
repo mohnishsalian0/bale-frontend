@@ -17,10 +17,13 @@ import {
 } from "@/lib/utils/invoice";
 import { getInvoiceActions } from "@/lib/utils/action-menu";
 import { useInvoices, useInvoiceMutations } from "@/lib/query/hooks/invoices";
+import { getInvoiceBySlug } from "@/lib/queries/invoices";
 import { useSession } from "@/contexts/session-context";
 import type { InvoiceListView } from "@/types/invoices.types";
 import type { InvoiceStatus } from "@/types/database/enums";
 import { toast } from "sonner";
+import { InvoiceAllocationModal } from "../payments/create/InvoiceAllocationModal";
+import { downloadInvoicePDF } from "@/lib/pdf/invoice-pdf-generator";
 
 interface ActiveInvoicesSectionProps {
   title: string;
@@ -39,6 +42,7 @@ export function ActiveInvoicesSection({
   // Dialog states
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] =
     useState<InvoiceListView | null>(null);
 
@@ -65,13 +69,48 @@ export function ActiveInvoicesSection({
 
   // Handler functions
   const handleMakePayment = (invoice: InvoiceListView) => {
-    // TODO: Open payment modal
-    console.log("Make payment for invoice:", invoice.id);
+    setSelectedInvoice(invoice);
+    setShowPaymentModal(true);
   };
 
-  const handleDownload = (invoice: InvoiceListView) => {
-    // TODO: Download invoice
-    console.log("Download invoice:", invoice.id);
+  const handleAllocatePayment = (amount: number) => {
+    if (!selectedInvoice) return;
+
+    // Determine payment type based on selected invoice type
+    const paymentType =
+      selectedInvoice.invoice_type === "sales" ? "receipt" : "payment";
+
+    // Build URL params
+    const params = new URLSearchParams({
+      from_invoice: "true",
+      party_ledger_id: selectedInvoice.party_ledger_id || "",
+      invoice_id: selectedInvoice.id,
+      invoice_slug: selectedInvoice.slug,
+      allocation_amount: amount.toString(),
+    });
+
+    // Navigate to payment create page
+    router.push(
+      `/warehouse/${warehouseSlug}/payments/create/${paymentType}/against_ref?${params.toString()}`,
+    );
+  };
+
+  const handleDownload = async (invoice: InvoiceListView) => {
+    try {
+      // Fetch full invoice details
+      const fullInvoice = await getInvoiceBySlug(invoice.slug);
+
+      if (!fullInvoice) {
+        toast.error("Unable to fetch invoice details");
+        return;
+      }
+
+      await downloadInvoicePDF(fullInvoice);
+      toast.success("Invoice downloaded successfully");
+    } catch (error) {
+      console.error("Error downloading invoice:", error);
+      toast.error("Failed to download invoice");
+    }
   };
 
   const handleCreateAdjustment = (invoice: InvoiceListView) => {
@@ -300,6 +339,14 @@ export function ActiveInvoicesSection({
           loading={deleteInvoice.isPending}
         />
       )}
+
+      {/* Payment Allocation Modal */}
+      <InvoiceAllocationModal
+        open={showPaymentModal}
+        onOpenChange={setShowPaymentModal}
+        invoice={selectedInvoice}
+        onAllocate={handleAllocatePayment}
+      />
     </div>
   );
 }

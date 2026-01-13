@@ -208,13 +208,13 @@ export default function AdjustmentNotesListPage({ params }: PageParams) {
         </div>
 
         {/* Mascot */}
-        <div className="relative size-25 shrink-0">
+        <div className="relative size-30 shrink-0">
           <Image
-            src=""
+            src="/mascot/mascot-adjusting-invoice.png"
             alt="Adjustment Notes"
             fill
-            sizes="100px"
-            className="object-contain"
+            sizes="120px"
+            className="object-contain object-bottom"
           />
         </div>
       </div>

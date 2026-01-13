@@ -5,7 +5,7 @@
 -- STOCK UNIT RECONCILIATION FUNCTION
 -- =====================================================
 
--- Reconcile stock_units: update remaining_quantity from goods_outward_items and adjustments
+-- Reconcile stock_units: update remaining_quantity and status from goods_outward_items and adjustments
 -- Triggered via BEFORE UPDATE on stock_units (dummy update pattern from goods_outward_items and adjustments)
 CREATE OR REPLACE FUNCTION reconcile_stock_unit()
 RETURNS TRIGGER AS $$
@@ -66,11 +66,23 @@ BEGIN
             NEW.initial_quantity, v_total_dispatched, v_total_adjustments;
     END IF;
 
+    -- Auto-update status based on remaining quantity
+    -- Don't override 'removed' status (manual action)
+    IF NEW.status != 'removed' THEN
+        IF NEW.remaining_quantity <= 0 THEN
+            NEW.status := 'empty';
+        ELSIF NEW.remaining_quantity >= NEW.initial_quantity THEN
+            NEW.status := 'full';
+        ELSE
+            NEW.status := 'partial';
+        END IF;
+    END IF;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION reconcile_stock_unit() IS 'Calculates remaining_quantity for stock units based on non-cancelled goods_outward_items and stock_unit_adjustments. Automatically restores stock when outwards/adjustments are cancelled/deleted. Excludes cancelled (soft-deleted) stock units from reconciliation. Validates against negative quantities.';
+COMMENT ON FUNCTION reconcile_stock_unit() IS 'Calculates remaining_quantity and auto-updates status for stock units based on non-cancelled goods_outward_items and stock_unit_adjustments. Automatically restores stock when outwards/adjustments are cancelled/deleted. Excludes cancelled (soft-deleted) stock units from reconciliation. Validates against negative quantities. Status logic: empty (<=0), full (>=initial), partial (between), removed (manual override preserved).';
 
 -- Trigger reconciliation on stock_units BEFORE INSERT OR UPDATE
 CREATE TRIGGER trigger_reconcile_stock_unit
@@ -112,6 +124,6 @@ CREATE TRIGGER trigger_reconcile_stock_on_outward_item_change
     FOR EACH ROW
     EXECUTE FUNCTION trigger_stock_unit_reconciliation();
 
-COMMENT ON FUNCTION trigger_stock_unit_reconciliation() IS 'Triggers stock_units reconciliation when goods_outward_items are created, updated, or deleted. Uses dummy update pattern to recalculate remaining_quantity. Stock is automatically restored when outwards are cancelled because cancelled items trigger this reconciliation.';
+COMMENT ON FUNCTION trigger_stock_unit_reconciliation() IS 'Triggers stock_units reconciliation when goods_outward_items are created, updated, or deleted. Uses dummy update pattern to recalculate remaining_quantity and status. Stock is automatically restored when outwards are cancelled because changes trigger this reconciliation. Note: stock_unit_adjustments also trigger reconciliation via their own trigger in migration 0065.';
 
-COMMENT ON TRIGGER trigger_reconcile_stock_unit ON stock_units IS 'Calculates remaining_quantity based on non-cancelled goods_outward_items. Triggered by dummy updates from outward item changes. Cancelling an outward cascades to items, which triggers this reconciliation automatically.';
+COMMENT ON TRIGGER trigger_reconcile_stock_unit ON stock_units IS 'Calculates remaining_quantity and status based on non-cancelled goods_outward_items and stock_unit_adjustments. Triggered by dummy updates from outward item changes. Cancelling an outward automatically triggers reconciliation.';

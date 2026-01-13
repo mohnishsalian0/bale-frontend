@@ -236,13 +236,13 @@ export default function InvoicesPage() {
         </div>
 
         {/* Mascot */}
-        <div className="relative size-25 shrink-0">
+        <div className="relative size-35 shrink-0">
           <Image
-            src=""
+            src="/mascot/mascot-signing-invoice.png"
             alt="Invoices"
             fill
-            sizes="100px"
-            className="object-contain"
+            sizes="140px"
+            className="object-contain object-bottom"
           />
         </div>
       </div>

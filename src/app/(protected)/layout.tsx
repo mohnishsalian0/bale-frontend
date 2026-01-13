@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, usePathname } from "next/navigation";
 import { SessionProvider } from "@/contexts/session-context";
 import { AppChromeProvider, useAppChrome } from "@/contexts/app-chrome-context";
 import { createClient } from "@/lib/supabase/browser";
@@ -84,7 +84,7 @@ function ChromeWrapper({
 
         <div
           id="main-content"
-          className="flex flex-col flex-1 overflow-y-auto max-w-4xl"
+          className="flex flex-col flex-1 overflow-y-auto max-w-4xl border-r border-border"
         >
           {children}
         </div>
@@ -103,7 +103,9 @@ function ChromeWrapper({
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
   const warehouseSlug = params.warehouse_slug as string | undefined;
+  const isWarehouseSelectionPage = pathname === "/warehouse";
 
   // Fetch user and permissions
   const { data: user, isLoading: userLoading } = useCurrentUser();
@@ -138,8 +140,13 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
   // Handle warehouse updates and redirects
   useEffect(() => {
+    // Skip warehouse validation on the warehouse selection page
+    if (isWarehouseSelectionPage) {
+      return;
+    }
+
     // Wait for user and permissions to load
-    if (userLoading || permissionsLoading) {
+    if (userLoading || permissionsLoading || warehouseLoading) {
       return;
     }
 
@@ -151,11 +158,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     // If no warehouse_id and no slug in URL, redirect to warehouse selection
     if (!user.warehouse_id && !warehouseSlug) {
       router.push("/warehouse");
-      return;
-    }
-
-    // Wait for warehouse query to complete
-    if (warehouseLoading) {
       return;
     }
 
@@ -190,21 +192,38 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     warehouseLoading,
     router,
     updateUserWarehouse,
+    isWarehouseSelectionPage,
   ]);
 
   // Show loading state
   const loading =
     userLoading ||
     permissionsLoading ||
-    warehouseLoading ||
+    (!isWarehouseSelectionPage && warehouseLoading) ||
     updateUserWarehouse.isPending;
 
   if (loading) {
     return <LoadingState />;
   }
 
-  // If no user or no warehouse, return null (redirecting)
-  if (!user || !warehouse) {
+  // If no user, return null (redirecting)
+  if (!user) {
+    return null;
+  }
+
+  // On warehouse selection page, we don't require a warehouse
+  if (isWarehouseSelectionPage) {
+    return (
+      <AppChromeProvider>
+        <div className="container max-w-3xl h-dvh mx-auto border-x border-border">
+          {children}
+        </div>
+      </AppChromeProvider>
+    );
+  }
+
+  // For all other pages, warehouse is required
+  if (!warehouse) {
     return null;
   }
 

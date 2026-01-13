@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { IconSearch, IconAlertTriangle } from "@tabler/icons-react";
+import { IconSearch, IconAlertTriangle, IconQrcode } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Fab } from "@/components/ui/fab";
@@ -45,9 +45,27 @@ export default function ProductsPage() {
   const [lowStockFilter, setLowStockFilter] = useState<boolean>(
     searchParams.get("low_stock") === "true",
   );
-  const [pendingQrFilter] = useState<boolean>(
+  const [pendingQrFilter, setPendingQrFilter] = useState<boolean>(
     searchParams.get("pending_qr") === "true",
   );
+  const [sortOption, setSortOption] = useState<string>("newest");
+
+  // Determine order_by and order_direction for server-side sorting
+  const { order_by, order_direction } = useMemo(() => {
+    switch (sortOption) {
+      case "oldest":
+        return {
+          order_by: "created_at" as const,
+          order_direction: "asc" as const,
+        };
+      case "newest":
+      default:
+        return {
+          order_by: "created_at" as const,
+          order_direction: "desc" as const,
+        };
+    }
+  }, [sortOption]);
   const [materialFilter, setMaterialFilter] = useState<string>("all");
   const [colorFilter, setColorFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
@@ -81,6 +99,8 @@ export default function ProductsPage() {
       is_active: true,
       search_term: debouncedSearchQuery || undefined,
       attributes: attributeFilters.length > 0 ? attributeFilters : undefined,
+      order_by,
+      order_direction,
     },
     currentPage,
     PAGE_SIZE,
@@ -114,6 +134,7 @@ export default function ProductsPage() {
     materialFilter,
     colorFilter,
     tagFilter,
+    sortOption,
   ]);
 
   // Client-side filtering for low stock and pending QR
@@ -129,13 +150,8 @@ export default function ProductsPage() {
     }
 
     // Pending QR filter
-    // TODO: This filter is not yet functional because ProductWithInventoryListView
-    // doesn't include pending_qr_count field. Need to either:
-    // 1. Extend the type to include pending_qr_units from product_inventory_aggregates
-    // 2. Or handle this filter server-side in the query
-    if (pendingQrFilter) {
-      // Placeholder - will need backend query support
-      return true; // Show all products for now when filter is active
+    if (pendingQrFilter && (product.inventory.pending_qr_units ?? 0) <= 0) {
+      return false;
     }
 
     return true;
@@ -233,9 +249,28 @@ export default function ProductsPage() {
           variant="outline"
           pressed={lowStockFilter}
           onPressedChange={setLowStockFilter}
+          title="Low stock"
         >
           <IconAlertTriangle className="size-5" />
         </Toggle>
+        <Toggle
+          aria-label="Pending QR filter"
+          variant="outline"
+          pressed={pendingQrFilter}
+          onPressedChange={setPendingQrFilter}
+          title="Pending QR"
+        >
+          <IconQrcode className="size-5" />
+        </Toggle>
+        <Select value={sortOption} onValueChange={setSortOption}>
+          <SelectTrigger className="max-w-34 h-10 shrink-0">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Newest First</SelectItem>
+            <SelectItem value="oldest">Oldest First</SelectItem>
+          </SelectContent>
+        </Select>
         <Select value={materialFilter} onValueChange={setMaterialFilter}>
           <SelectTrigger className="max-w-34 h-10 shrink-0">
             <SelectValue placeholder="Material" />

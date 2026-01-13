@@ -75,36 +75,14 @@ CREATE TRIGGER trigger_auto_adjustment_warehouse
     FOR EACH ROW EXECUTE FUNCTION auto_set_adjustment_warehouse();
 
 -- Trigger stock unit reconciliation when adjustments change
-CREATE OR REPLACE FUNCTION trigger_stock_unit_reconciliation_on_adjustment()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_stock_unit_id UUID;
-BEGIN
-    -- Get the affected stock unit ID
-    v_stock_unit_id := COALESCE(NEW.stock_unit_id, OLD.stock_unit_id);
-
-    IF v_stock_unit_id IS NOT NULL THEN
-        -- Touch the stock_unit to trigger reconcile_stock_unit()
-        -- The BEFORE UPDATE trigger will recalculate remaining_quantity
-        UPDATE stock_units
-        SET updated_at = updated_at  -- Dummy update to trigger reconciliation
-        WHERE id = v_stock_unit_id;
-    END IF;
-
-    IF TG_OP = 'DELETE' THEN
-        RETURN OLD;
-    ELSE
-        RETURN NEW;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
+-- Reuses the same trigger_stock_unit_reconciliation() function from migration 0062
+-- This ensures consistent reconciliation behavior across outward items and adjustments
 CREATE TRIGGER trigger_reconcile_stock_on_adjustment_change
     AFTER INSERT OR UPDATE OR DELETE ON stock_unit_adjustments
     FOR EACH ROW
-    EXECUTE FUNCTION trigger_stock_unit_reconciliation_on_adjustment();
+    EXECUTE FUNCTION trigger_stock_unit_reconciliation();
 
-COMMENT ON FUNCTION trigger_stock_unit_reconciliation_on_adjustment() IS 'Triggers stock_units reconciliation when adjustments are created, updated, or deleted. Uses dummy update pattern to recalculate remaining_quantity including adjustments.';
+COMMENT ON TRIGGER trigger_reconcile_stock_on_adjustment_change ON stock_unit_adjustments IS 'Triggers stock_units reconciliation when adjustments are created, updated, or deleted. Uses dummy update pattern to recalculate remaining_quantity and status including adjustments.';
 
 -- =====================================================
 -- STOCK UNIT ADJUSTMENTS RLS POLICIES

@@ -297,7 +297,7 @@ export default function PurchaseOrderDetailLayout({
               onEdit: handleEdit,
               onCreateInward: () =>
                 router.push(
-                  `/warehouse/${warehouse.slug}/goods-inward/create?order=${order.sequence_number}`,
+                  `/warehouse/${warehouse.slug}/goods-inward/create?order=${order.id}`,
                 ),
               onCreateInvoice: handleCreateInvoice,
               onComplete: () => setShowCompleteDialog(true),

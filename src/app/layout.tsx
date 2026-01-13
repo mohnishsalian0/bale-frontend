@@ -6,6 +6,10 @@ import { QueryProvider } from "@/lib/query/provider";
 export const metadata: Metadata = {
   title: "Bale - Fabric Inventory Management",
   description: "Inventory management system for fabric distributors",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -15,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body className="overflow-y-hidden">
         <QueryProvider>
           {children}
           <Toaster position="top-right" />

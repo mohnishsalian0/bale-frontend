@@ -1239,11 +1239,13 @@ export type Database = {
           company_email: string | null;
           company_gst_number: string | null;
           company_id: string;
+          company_logo_url: string | null;
           company_name: string | null;
           company_pan_number: string | null;
           company_phone: string | null;
           company_pincode: string | null;
           company_state: string | null;
+          company_website_url: string | null;
           counter_ledger_id: string;
           counter_ledger_name: string | null;
           created_at: string;
@@ -1325,11 +1327,13 @@ export type Database = {
           company_email?: string | null;
           company_gst_number?: string | null;
           company_id?: string;
+          company_logo_url?: string | null;
           company_name?: string | null;
           company_pan_number?: string | null;
           company_phone?: string | null;
           company_pincode?: string | null;
           company_state?: string | null;
+          company_website_url?: string | null;
           counter_ledger_id: string;
           counter_ledger_name?: string | null;
           created_at?: string;
@@ -1411,11 +1415,13 @@ export type Database = {
           company_email?: string | null;
           company_gst_number?: string | null;
           company_id?: string;
+          company_logo_url?: string | null;
           company_name?: string | null;
           company_pan_number?: string | null;
           company_phone?: string | null;
           company_pincode?: string | null;
           company_state?: string | null;
+          company_website_url?: string | null;
           counter_ledger_id?: string;
           counter_ledger_name?: string | null;
           created_at?: string;
@@ -1918,7 +1924,7 @@ export type Database = {
           },
         ];
       };
-      partner_credit_aggregates: {
+      partner_payables_aggregates: {
         Row: {
           company_id: string;
           created_at: string | null;
@@ -1969,14 +1975,14 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "partner_credit_aggregates_company_id_fkey";
+            foreignKeyName: "partner_payables_aggregates_company_id_fkey";
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "partner_credit_aggregates_partner_id_fkey";
+            foreignKeyName: "partner_payables_aggregates_partner_id_fkey";
             columns: ["partner_id"];
             isOneToOne: true;
             referencedRelation: "partners";
@@ -1984,7 +1990,7 @@ export type Database = {
           },
         ];
       };
-      partner_order_aggregates: {
+      partner_purchase_aggregates: {
         Row: {
           approval_pending_count: number | null;
           approval_pending_value: number | null;
@@ -1994,6 +2000,7 @@ export type Database = {
           completed_count: number | null;
           completed_value: number | null;
           created_at: string | null;
+          deleted_at: string | null;
           first_order_date: string | null;
           id: string;
           in_progress_count: number | null;
@@ -2013,6 +2020,7 @@ export type Database = {
           completed_count?: number | null;
           completed_value?: number | null;
           created_at?: string | null;
+          deleted_at?: string | null;
           first_order_date?: string | null;
           id?: string;
           in_progress_count?: number | null;
@@ -2032,6 +2040,7 @@ export type Database = {
           completed_count?: number | null;
           completed_value?: number | null;
           created_at?: string | null;
+          deleted_at?: string | null;
           first_order_date?: string | null;
           id?: string;
           in_progress_count?: number | null;
@@ -2044,14 +2053,158 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "partner_order_aggregates_company_id_fkey";
+            foreignKeyName: "partner_purchase_aggregates_company_id_fkey";
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "partner_order_aggregates_partner_id_fkey";
+            foreignKeyName: "partner_purchase_aggregates_partner_id_fkey";
+            columns: ["partner_id"];
+            isOneToOne: true;
+            referencedRelation: "partners";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      partner_receivables_aggregates: {
+        Row: {
+          company_id: string;
+          created_at: string | null;
+          first_invoice_date: string | null;
+          id: string;
+          invoice_count: number | null;
+          last_invoice_date: string | null;
+          last_payment_date: string | null;
+          last_updated_at: string | null;
+          partner_id: string;
+          total_credit_notes: number | null;
+          total_debit_notes: number | null;
+          total_invoice_amount: number | null;
+          total_outstanding_amount: number | null;
+          total_paid_amount: number | null;
+        };
+        Insert: {
+          company_id: string;
+          created_at?: string | null;
+          first_invoice_date?: string | null;
+          id?: string;
+          invoice_count?: number | null;
+          last_invoice_date?: string | null;
+          last_payment_date?: string | null;
+          last_updated_at?: string | null;
+          partner_id: string;
+          total_credit_notes?: number | null;
+          total_debit_notes?: number | null;
+          total_invoice_amount?: number | null;
+          total_outstanding_amount?: number | null;
+          total_paid_amount?: number | null;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string | null;
+          first_invoice_date?: string | null;
+          id?: string;
+          invoice_count?: number | null;
+          last_invoice_date?: string | null;
+          last_payment_date?: string | null;
+          last_updated_at?: string | null;
+          partner_id?: string;
+          total_credit_notes?: number | null;
+          total_debit_notes?: number | null;
+          total_invoice_amount?: number | null;
+          total_outstanding_amount?: number | null;
+          total_paid_amount?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "partner_receivables_aggregates_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "partner_receivables_aggregates_partner_id_fkey";
+            columns: ["partner_id"];
+            isOneToOne: true;
+            referencedRelation: "partners";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      partner_sales_aggregates: {
+        Row: {
+          approval_pending_count: number | null;
+          approval_pending_value: number | null;
+          cancelled_count: number | null;
+          cancelled_value: number | null;
+          company_id: string;
+          completed_count: number | null;
+          completed_value: number | null;
+          created_at: string | null;
+          deleted_at: string | null;
+          first_order_date: string | null;
+          id: string;
+          in_progress_count: number | null;
+          in_progress_value: number | null;
+          last_order_date: string | null;
+          last_updated_at: string | null;
+          lifetime_order_value: number | null;
+          partner_id: string;
+          total_orders: number | null;
+        };
+        Insert: {
+          approval_pending_count?: number | null;
+          approval_pending_value?: number | null;
+          cancelled_count?: number | null;
+          cancelled_value?: number | null;
+          company_id: string;
+          completed_count?: number | null;
+          completed_value?: number | null;
+          created_at?: string | null;
+          deleted_at?: string | null;
+          first_order_date?: string | null;
+          id?: string;
+          in_progress_count?: number | null;
+          in_progress_value?: number | null;
+          last_order_date?: string | null;
+          last_updated_at?: string | null;
+          lifetime_order_value?: number | null;
+          partner_id: string;
+          total_orders?: number | null;
+        };
+        Update: {
+          approval_pending_count?: number | null;
+          approval_pending_value?: number | null;
+          cancelled_count?: number | null;
+          cancelled_value?: number | null;
+          company_id?: string;
+          completed_count?: number | null;
+          completed_value?: number | null;
+          created_at?: string | null;
+          deleted_at?: string | null;
+          first_order_date?: string | null;
+          id?: string;
+          in_progress_count?: number | null;
+          in_progress_value?: number | null;
+          last_order_date?: string | null;
+          last_updated_at?: string | null;
+          lifetime_order_value?: number | null;
+          partner_id?: string;
+          total_orders?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "partner_sales_aggregates_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "partner_sales_aggregates_partner_id_fkey";
             columns: ["partner_id"];
             isOneToOne: true;
             referencedRelation: "partners";
@@ -2086,7 +2239,7 @@ export type Database = {
           notes: string | null;
           pan_number: string | null;
           partner_type: string;
-          phone_number: string;
+          phone_number: string | null;
           pin_code: string | null;
           registered_at: string | null;
           search_vector: unknown;
@@ -2120,7 +2273,7 @@ export type Database = {
           notes?: string | null;
           pan_number?: string | null;
           partner_type: string;
-          phone_number: string;
+          phone_number?: string | null;
           pin_code?: string | null;
           registered_at?: string | null;
           search_vector?: unknown;
@@ -2154,7 +2307,7 @@ export type Database = {
           notes?: string | null;
           pan_number?: string | null;
           partner_type?: string;
-          phone_number?: string;
+          phone_number?: string | null;
           pin_code?: string | null;
           registered_at?: string | null;
           search_vector?: unknown;
@@ -2481,6 +2634,7 @@ export type Database = {
         Row: {
           company_id: string;
           created_at: string | null;
+          deleted_at: string | null;
           dispatched_quantity: number | null;
           dispatched_units: number | null;
           dispatched_value: number | null;
@@ -2501,6 +2655,7 @@ export type Database = {
         Insert: {
           company_id: string;
           created_at?: string | null;
+          deleted_at?: string | null;
           dispatched_quantity?: number | null;
           dispatched_units?: number | null;
           dispatched_value?: number | null;
@@ -2521,6 +2676,7 @@ export type Database = {
         Update: {
           company_id?: string;
           created_at?: string | null;
+          deleted_at?: string | null;
           dispatched_quantity?: number | null;
           dispatched_units?: number | null;
           dispatched_value?: number | null;
@@ -3905,11 +4061,19 @@ export type Database = {
         };
         Returns: number;
       };
-      recalculate_partner_credit_aggregates: {
+      recalculate_partner_payables_aggregates: {
         Args: { p_partner_id: string };
         Returns: undefined;
       };
-      recalculate_partner_order_aggregates: {
+      recalculate_partner_purchase_aggregates: {
+        Args: { p_partner_id: string };
+        Returns: undefined;
+      };
+      recalculate_partner_receivables_aggregates: {
+        Args: { p_partner_id: string };
+        Returns: undefined;
+      };
+      recalculate_partner_sales_aggregates: {
         Args: { p_partner_id: string };
         Returns: undefined;
       };

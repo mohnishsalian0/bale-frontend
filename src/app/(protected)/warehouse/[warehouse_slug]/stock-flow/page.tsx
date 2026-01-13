@@ -45,6 +45,11 @@ import {
   getReceiverName,
   getSenderName,
 } from "@/lib/utils/stock-flow";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
+import { useInfiniteProducts } from "@/lib/query/hooks/products";
+import { Button } from "@/components/ui/button";
 
 interface StockFlowItem {
   id: string;
@@ -75,6 +80,8 @@ export default function StockFlowPage() {
     "inward",
   );
   const [selectedPartner, setSelectedPartner] = useState("all");
+  const [selectedProduct, setSelectedProduct] = useState("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   // Get current page from URL (default to 1)
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
@@ -86,12 +93,22 @@ export default function StockFlowPage() {
   // Build filters for backend
   const inwardFilters = {
     partner_id: selectedPartner !== "all" ? selectedPartner : undefined,
+    product_id: selectedProduct !== "all" ? selectedProduct : undefined,
     search_term: debouncedSearchQuery || undefined,
+    date_from: dateRange?.from
+      ? format(dateRange.from, "yyyy-MM-dd")
+      : undefined,
+    date_to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
   };
 
   const outwardFilters = {
     partner_id: selectedPartner !== "all" ? selectedPartner : undefined,
+    product_id: selectedProduct !== "all" ? selectedProduct : undefined,
     search_term: debouncedSearchQuery || undefined,
+    date_from: dateRange?.from
+      ? format(dateRange.from, "yyyy-MM-dd")
+      : undefined,
+    date_to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
   };
 
   // Fetch data based on selected filter (only one type at a time)
@@ -120,14 +137,29 @@ export default function StockFlowPage() {
   );
   const { data: partners = [], isLoading: partnersLoading } = usePartners();
 
+  // Fetch products
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteProducts(
+    {
+      is_active: true,
+    },
+    100,
+  );
+
   // Use only the selected filter's data
   const loading = isInwardView
-    ? inwardsLoading || partnersLoading
-    : outwardsLoading || partnersLoading;
+    ? inwardsLoading || partnersLoading || productsLoading
+    : outwardsLoading || partnersLoading || productsLoading;
   const error = isInwardView ? inwardsError : outwardsError;
 
   const inwards = isInwardView ? inwardsResponse?.data || [] : [];
   const outwards = isInwardView ? [] : outwardsResponse?.data || [];
+  const products = productsData?.pages.flatMap((page) => page.data) || [];
 
   const totalCount = isInwardView
     ? inwardsResponse?.totalCount || 0
@@ -139,7 +171,13 @@ export default function StockFlowPage() {
     if (currentPage !== 1) {
       router.push(`/warehouse/${warehouse.slug}/stock-flow?page=1`);
     }
-  }, [debouncedSearchQuery, selectedFilter, selectedPartner]);
+  }, [
+    debouncedSearchQuery,
+    selectedFilter,
+    selectedPartner,
+    selectedProduct,
+    dateRange,
+  ]);
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -334,7 +372,7 @@ export default function StockFlowPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4 px-4 py-4">
+      <div className="flex gap-3 px-4 py-4 overflow-x-auto scrollbar-hide shrink-0">
         {/* Tab Pills */}
         <TabPills
           options={[
@@ -347,9 +385,37 @@ export default function StockFlowPage() {
           }
         />
 
+        {/* Product Filter */}
+        <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+          <SelectTrigger className="flex-shrink-0 h-10 max-w-34">
+            <SelectValue placeholder="All products" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All products</SelectItem>
+            {products.map((product) => (
+              <SelectItem key={product.id} value={product.id}>
+                {product.name}
+              </SelectItem>
+            ))}
+
+            {/* Load more */}
+            {hasNextPage && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onMouseDown={(e) => e.preventDefault()} // Prevent dropdown from closing
+                onClick={() => fetchNextPage()}
+                className="w-full"
+              >
+                {isFetchingNextPage ? "Loading..." : "Load More"}
+              </Button>
+            )}
+          </SelectContent>
+        </Select>
+
         {/* Partner Filter */}
         <Select value={selectedPartner} onValueChange={setSelectedPartner}>
-          <SelectTrigger className="flex-1 h-10 max-w-34">
+          <SelectTrigger className="flex-shrink-0 h-10 max-w-34">
             <SelectValue placeholder="All partners" />
           </SelectTrigger>
           <SelectContent>
@@ -364,6 +430,9 @@ export default function StockFlowPage() {
             ))}
           </SelectContent>
         </Select>
+
+        {/* Date Range Picker */}
+        <DateRangePicker date={dateRange} onDateChange={setDateRange} />
       </div>
 
       {/* Stock Flow List */}
@@ -372,8 +441,11 @@ export default function StockFlowPage() {
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-gray-600 mb-2">No transactions found</p>
             <p className="text-sm text-gray-500">
-              {searchQuery
-                ? "Try adjusting your search"
+              {searchQuery ||
+              selectedProduct !== "all" ||
+              selectedPartner !== "all" ||
+              dateRange
+                ? "Try adjusting your search or filters"
                 : "Start by adding a outward or inward"}
             </p>
           </div>

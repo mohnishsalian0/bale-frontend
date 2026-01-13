@@ -116,7 +116,7 @@ export default function StockUnitsPage({ params }: PageParams) {
             <li key={item.id}>
               <div
                 onClick={() => stockUnit && handleStockUnitClick(stockUnit.id)}
-                className="flex gap-3 p-4 hover:border-gray-300 transition-colors cursor-pointer"
+                className="flex gap-3 p-4 hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 {/* Product Image */}
                 <ImageWrapper

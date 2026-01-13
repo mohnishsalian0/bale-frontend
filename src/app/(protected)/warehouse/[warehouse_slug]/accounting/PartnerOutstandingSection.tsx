@@ -35,7 +35,10 @@ export function PartnerOutstandingSection({
   } = usePartnersWithStats({
     partner_type: partnerType,
     limit: 5,
-    order_by: "credit_aggregates.total_outstanding_amount",
+    order_by:
+      partnerType === "customer"
+        ? "receivables_aggregates.total_outstanding_amount"
+        : "payables_aggregates.total_outstanding_amount",
     order_direction: "desc",
   });
 
@@ -131,7 +134,9 @@ export function PartnerOutstandingSection({
             const partnerName = getPartnerName(partner);
             const partnerInfo = getPartnerInfo(partner);
             const outstandingAmount =
-              partner.credit_aggregates?.total_outstanding_amount || 0;
+              partnerType === "customer"
+                ? partner.receivables_aggregates?.total_outstanding_amount || 0
+                : partner.payables_aggregates?.total_outstanding_amount || 0;
 
             // Get action items for this partner
             const actionItems = getPartnerActions(partner, {

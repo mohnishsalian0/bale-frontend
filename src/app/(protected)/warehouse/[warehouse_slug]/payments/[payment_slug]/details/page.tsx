@@ -8,6 +8,7 @@ import {
   IconNote,
   IconFileInvoice,
   IconUsers,
+  IconDownload,
 } from "@tabler/icons-react";
 import { formatCurrency } from "@/lib/utils/currency";
 import type { PaymentMode } from "@/types/database/enums";
@@ -16,6 +17,7 @@ import {
   usePaymentBySlug,
   usePaymentMutations,
 } from "@/lib/query/hooks/payments";
+import { useCompany } from "@/lib/query/hooks/company";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { formatAbsoluteDate } from "@/lib/utils/date";
@@ -27,6 +29,8 @@ import { getPaymentActions } from "@/lib/utils/action-menu";
 import { DeleteDialog } from "@/components/layouts/delete-dialog";
 import { CancelDialog } from "@/components/layouts/cancel-dialog";
 import { toast } from "sonner";
+import { downloadPaymentPDF } from "@/lib/pdf/payment-pdf-generator";
+import type { ContextMenuItem } from "@/lib/utils/action-menu";
 
 interface PageParams {
   params: Promise<{
@@ -44,6 +48,9 @@ export default function PaymentDetailsPage({ params }: PageParams) {
     isLoading: loading,
     isError: error,
   } = usePaymentBySlug(payment_slug);
+
+  // Fetch company data for PDF
+  const { data: company } = useCompany();
 
   // Payment mutations
   const { cancel: cancelPayment, delete: deletePayment } =
@@ -91,21 +98,43 @@ export default function PaymentDetailsPage({ params }: PageParams) {
     });
   };
 
+  const handleDownload = async () => {
+    if (!payment || !company) return;
+    try {
+      await downloadPaymentPDF(payment, company);
+      toast.success("Payment downloaded successfully");
+    } catch (error) {
+      console.error("Error downloading payment:", error);
+      toast.error("Failed to download payment");
+    }
+  };
+
   // Footer action items
-  const footerItems = payment
-    ? getPaymentActions(payment, {
-        onEdit: () => {
-          router.push(
-            `/warehouse/${warehouse_slug}/payments/${payment_slug}/edit`,
-          );
+  const footerItems: ContextMenuItem[] = payment
+    ? [
+        // Download button (always visible, primary action)
+        {
+          label: "Download",
+          icon: IconDownload,
+          onClick: handleDownload,
+          variant: "outline",
+          disabled: !company,
         },
-        onDelete: () => {
-          setShowDeleteDialog(true);
-        },
-        onCancel: () => {
-          setShowCancelDialog(true);
-        },
-      })
+        // Get standard payment actions
+        ...getPaymentActions(payment, {
+          onEdit: () => {
+            router.push(
+              `/warehouse/${warehouse_slug}/payments/${payment_slug}/edit`,
+            );
+          },
+          onDelete: () => {
+            setShowDeleteDialog(true);
+          },
+          onCancel: () => {
+            setShowCancelDialog(true);
+          },
+        }),
+      ]
     : [];
 
   // Loading state

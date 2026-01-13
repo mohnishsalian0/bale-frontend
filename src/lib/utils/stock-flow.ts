@@ -200,7 +200,10 @@ export function getInwardQuantitiesByUnit(
   // Aggregate quantities by measuring unit
   const quantitiesMap = new Map<MeasuringUnit, number>();
   stock_units.forEach((unit) => {
-    const measuringUnit = getMeasuringUnit(unit?.product || null);
+    const product = unit?.product;
+    if (!product?.measuring_unit) return; // Skip if product or measuring_unit is missing
+
+    const measuringUnit = getMeasuringUnit(product);
     const qty = Number(unit.initial_quantity) || 0;
     quantitiesMap.set(
       measuringUnit,
@@ -233,7 +236,10 @@ export function getOutwardQuantitiesByUnit(
   // Aggregate quantities by measuring unit
   const quantitiesMap = new Map<MeasuringUnit, number>();
   items.forEach((item) => {
-    const measuringUnit = getMeasuringUnit(item.stock_unit?.product || null);
+    const product = item.stock_unit?.product;
+    if (!product?.measuring_unit) return; // Skip if product or measuring_unit is missing
+
+    const measuringUnit = getMeasuringUnit(product);
     const qty = Number(item.quantity_dispatched) || 0;
     quantitiesMap.set(
       measuringUnit,

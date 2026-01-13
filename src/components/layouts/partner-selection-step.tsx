@@ -93,7 +93,7 @@ export function PartnerSelectionStep({
     }
 
     const outstanding =
-      partner.credit_aggregates?.total_outstanding_amount || 0;
+      partner.receivables_aggregates?.total_outstanding_amount || 0;
     const limit = partner.credit_limit;
     const percentage = (outstanding / limit) * 100;
 
