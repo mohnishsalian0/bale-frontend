@@ -410,13 +410,25 @@ export default function LandingPage() {
               href="/terms"
               className="text-gray-400 hover:text-white transition-colors"
             >
-              Terms of Use
+              Terms & Conditions
+            </a>
+            <a
+              href="/refund-policy"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              Refund Policy
+            </a>
+            <a
+              href="/shipping-policy"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              Shipping & Returns
             </a>
             <a
               href="mailto:bale.inventory@gmail.com"
               className="text-gray-400 hover:text-white transition-colors"
             >
-              Contact: bale.inventory@gmail.com
+              Contact Us
             </a>
           </div>
 
