@@ -10,5 +10,5 @@ interface PublicLayoutProps {
  * No authentication or session management required
  */
 export default function PublicLayout({ children }: PublicLayoutProps) {
-  return <>{children}</>;
+  return <div className="h-dvh overflow-auto">{children}</div>;
 }
