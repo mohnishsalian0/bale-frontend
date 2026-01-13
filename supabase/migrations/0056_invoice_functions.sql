@@ -12,16 +12,16 @@ CREATE OR REPLACE FUNCTION create_invoice_with_items(
     p_counter_ledger_id UUID, -- Sales/Purchase ledger
     p_warehouse_id UUID,
     p_invoice_date DATE,
-    p_payment_terms VARCHAR(100),
-    p_due_date DATE,
     p_tax_type VARCHAR(10), -- 'no_tax', 'gst', or 'igst' - selected by user on frontend
     p_discount_type VARCHAR(10), -- 'none', 'percentage', 'flat_amount'
-    p_discount_value DECIMAL(10,2), -- Percentage value or fixed amount
-    p_supplier_invoice_number VARCHAR(50), -- Only for purchase invoices (pass NULL for sales)
-    p_supplier_invoice_date DATE,           -- Only for purchase invoices (pass NULL for sales)
-    p_notes TEXT,
-    p_attachments TEXT[],
     p_items JSONB, -- Array of {product_id, quantity, rate} - tax_type and gst_rate pulled from product
+    p_payment_terms VARCHAR(100) DEFAULT NULL,
+    p_due_date DATE DEFAULT NULL,
+    p_discount_value DECIMAL(10,2) DEFAULT NULL, -- Percentage value or fixed amount
+    p_supplier_invoice_number VARCHAR(50) DEFAULT NULL, -- Only for purchase invoices (pass NULL for sales)
+    p_supplier_invoice_date DATE DEFAULT NULL,           -- Only for purchase invoices (pass NULL for sales)
+    p_notes TEXT DEFAULT NULL,
+    p_attachments TEXT[] DEFAULT NULL,
     p_source_sales_order_id UUID DEFAULT NULL, -- Source sales order reference
     p_source_purchase_order_id UUID DEFAULT NULL, -- Source purchase order reference
     p_goods_movement_ids UUID[] DEFAULT NULL, -- Array of goods_outward IDs (sales) or goods_inward IDs (purchase)
@@ -379,16 +379,16 @@ CREATE OR REPLACE FUNCTION update_invoice_with_items(
     p_counter_ledger_id UUID, -- Sales/Purchase ledger
     p_warehouse_id UUID,
     p_invoice_date DATE,
-    p_payment_terms VARCHAR(100),
-    p_due_date DATE,
     p_tax_type VARCHAR(10), -- 'no_tax', 'gst', or 'igst'
     p_discount_type VARCHAR(10), -- 'none', 'percentage', 'flat_amount'
-    p_discount_value DECIMAL(10,2),
-    p_supplier_invoice_number VARCHAR(50),
-    p_supplier_invoice_date DATE,
-    p_notes TEXT,
-    p_attachments TEXT[],
-    p_items JSONB -- Array of {product_id, quantity, rate}
+    p_items JSONB, -- Array of {product_id, quantity, rate}
+    p_payment_terms VARCHAR(100) DEFAULT NULL,
+    p_due_date DATE DEFAULT NULL,
+    p_discount_value DECIMAL(10,2) DEFAULT NULL,
+    p_supplier_invoice_number VARCHAR(50) DEFAULT NULL,
+    p_supplier_invoice_date DATE DEFAULT NULL,
+    p_notes TEXT DEFAULT NULL,
+    p_attachments TEXT[] DEFAULT NULL
 )
 RETURNS VOID
 LANGUAGE plpgsql

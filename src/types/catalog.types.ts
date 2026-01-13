@@ -1,4 +1,7 @@
 import type { Tables } from "./database/supabase";
+import type { QueryData } from "@supabase/supabase-js";
+import { buildPublicProductsQuery } from "@/lib/queries/catalog";
+import { buildPublicSalesOrderByIdQuery } from "@/lib/queries/catalog-orders";
 import type { ProductStockStatus } from "./database/enums";
 import { Product, ProductAttribute } from "./products.types";
 
@@ -7,6 +10,26 @@ type Partner = Tables<"partners">;
 type SalesOrder = Tables<"sales_orders">;
 type SalesOrderItem = Tables<"sales_order_items">;
 export type CatalogConfiguration = Tables<"catalog_configurations">;
+
+// ============================================================================
+// RAW TYPES (QueryData inferred from query builders)
+// ============================================================================
+
+/**
+ * Raw type inferred from buildPublicProductsQuery
+ * Used as bridge between Supabase response and PublicProduct
+ */
+export type PublicProductListViewRaw = QueryData<
+  ReturnType<typeof buildPublicProductsQuery>
+>[number];
+
+/**
+ * Raw type inferred from buildPublicSalesOrderByIdQuery
+ * Used as bridge between Supabase response and PublicSalesOrder
+ */
+export type PublicSalesOrderRaw = QueryData<
+  ReturnType<typeof buildPublicSalesOrderByIdQuery>
+>;
 
 // ============================================================================
 // PUBLIC  TYPES

@@ -1,19 +1,24 @@
 import { createClient } from "@/lib/supabase/browser";
+import type { Database, TablesInsert } from "@/types/database/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   StockUnitAdjustmentListView,
   StockUnitAdjustmentDetailView,
   StockUnitAdjustment,
 } from "@/types/stock-unit-adjustments.types";
 
-/**
- * Get stock unit adjustments by stock unit ID
- */
-export async function getStockUnitAdjustments(
-  stockUnitId: string,
-): Promise<StockUnitAdjustmentListView[]> {
-  const supabase = createClient();
+// ============================================================================
+// QUERY BUILDERS
+// ============================================================================
 
-  const { data, error } = await supabase
+/**
+ * Query builder for fetching stock unit adjustments
+ */
+export const buildStockUnitAdjustmentsQuery = (
+  supabase: SupabaseClient<Database>,
+  stockUnitId: string,
+) => {
+  return supabase
     .from("stock_unit_adjustments")
     .select(
       `
@@ -26,10 +31,38 @@ export async function getStockUnitAdjustments(
     .eq("stock_unit_id", stockUnitId)
     .is("deleted_at", null)
     .order("adjustment_date", { ascending: false });
+};
+
+/**
+ * Query builder for fetching a single stock unit adjustment by ID
+ */
+export const buildStockUnitAdjustmentByIdQuery = (
+  supabase: SupabaseClient<Database>,
+  id: string,
+) => {
+  return supabase
+    .from("stock_unit_adjustments")
+    .select(`*`)
+    .eq("id", id)
+    .is("deleted_at", null)
+    .single();
+};
+
+/**
+ * Get stock unit adjustments by stock unit ID
+ */
+export async function getStockUnitAdjustments(
+  stockUnitId: string,
+): Promise<StockUnitAdjustmentListView[]> {
+  const supabase = createClient();
+  const { data, error } = await buildStockUnitAdjustmentsQuery(
+    supabase,
+    stockUnitId,
+  );
 
   if (error) throw error;
 
-  return (data || []) as StockUnitAdjustmentListView[];
+  return data || [];
 }
 
 /**
@@ -39,13 +72,7 @@ export async function getStockUnitAdjustment(
   id: string,
 ): Promise<StockUnitAdjustmentDetailView> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("stock_unit_adjustments")
-    .select(`*`)
-    .eq("id", id)
-    .is("deleted_at", null)
-    .single<StockUnitAdjustmentDetailView>();
+  const { data, error } = await buildStockUnitAdjustmentByIdQuery(supabase, id);
 
   if (error) throw error;
   return data;
@@ -64,7 +91,7 @@ export async function createStockUnitAdjustment(adjustment: {
 
   const { data, error } = await supabase
     .from("stock_unit_adjustments")
-    .insert(adjustment)
+    .insert(adjustment as TablesInsert<"stock_unit_adjustments">)
     .select()
     .single<StockUnitAdjustment>();
 

@@ -1,4 +1,12 @@
 import type { Tables } from "@/types/database/supabase";
+import type { QueryData } from "@supabase/supabase-js";
+import {
+  buildStockUnitsQuery,
+  buildStockUnitsWithInwardQuery,
+  buildStockUnitWithProductDetailQuery,
+} from "@/lib/queries/stock-units";
+import { ProductDetailView, ProductListView } from "./products.types";
+import { StockUnitStatus } from "./database/enums";
 
 export type StockUnit = Tables<"stock_units">;
 type GoodsInward = Tables<"goods_inwards">;
@@ -17,11 +25,36 @@ export interface StockUnitFilters extends Record<string, unknown> {
 }
 
 // ============================================================================
-// STOCK UNIT VIEW TYPES
+// RAW TYPES (QueryData inferred from query builders)
 // ============================================================================
 
-import { ProductDetailView, ProductListView } from "./products.types";
-import { StockUnitStatus } from "./database/enums";
+/**
+ * Raw type inferred from buildStockUnitsQuery
+ * Used as bridge between Supabase response and StockUnitWithProductListView
+ */
+export type StockUnitWithProductListViewRaw = QueryData<
+  ReturnType<typeof buildStockUnitsQuery>
+>[number];
+
+/**
+ * Raw type inferred from buildStockUnitsWithInwardQuery
+ * Used as bridge between Supabase response and StockUnitWithInwardListView
+ */
+export type StockUnitWithInwardListViewRaw = QueryData<
+  ReturnType<typeof buildStockUnitsWithInwardQuery>
+>[number];
+
+/**
+ * Raw type inferred from buildStockUnitWithProductDetailQuery
+ * Used as bridge between Supabase response and StockUnitWithProductDetailView
+ */
+export type StockUnitWithProductDetailViewRaw = QueryData<
+  ReturnType<typeof buildStockUnitWithProductDetailQuery>
+>;
+
+// ============================================================================
+// STOCK UNIT VIEW TYPES
+// ============================================================================
 
 /**
  * Minimal inward view for list items

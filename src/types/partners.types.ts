@@ -1,4 +1,10 @@
 import type { Tables, TablesInsert, TablesUpdate } from "./database/supabase";
+import type { QueryData } from "@supabase/supabase-js";
+import {
+  buildPartnersQuery,
+  buildPartnersWithStatsQuery,
+  buildPartnerWithOrderStatsByIdQuery,
+} from "@/lib/queries/partners";
 
 export type Partner = Tables<"partners">;
 type PartnerSalesAggregate = Tables<"partner_sales_aggregates">;
@@ -21,6 +27,34 @@ export interface PartnerFilters extends Record<string, unknown> {
     | "payables_aggregates.total_outstanding_amount";
   order_direction?: "asc" | "desc";
 }
+
+// ============================================================================
+// RAW TYPES (QueryData inferred from query builders)
+// ============================================================================
+
+/**
+ * Raw type inferred from buildPartnersQuery
+ * Used as bridge between Supabase response and PartnerListView
+ */
+export type PartnerListViewRaw = QueryData<
+  ReturnType<typeof buildPartnersQuery>
+>[number];
+
+/**
+ * Raw type inferred from buildPartnersWithStatsQuery
+ * Used as bridge between Supabase response and PartnerWithStatsListView
+ */
+export type PartnerWithStatsListViewRaw = QueryData<
+  ReturnType<typeof buildPartnersWithStatsQuery>
+>[number];
+
+/**
+ * Raw type inferred from buildPartnerWithOrderStatsByIdQuery
+ * Used as bridge between Supabase response and PartnerWithOrderStatsDetailView
+ */
+export type PartnerWithOrderStatsDetailViewRaw = QueryData<
+  ReturnType<typeof buildPartnerWithOrderStatsByIdQuery>
+>;
 
 // ============================================================================
 // PARTNER VIEW TYPES

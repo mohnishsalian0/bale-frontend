@@ -232,9 +232,9 @@ export default function CreatePaymentPage() {
     // Auto-select TDS ledger based on voucher type
     const tdsLedgerId = formData.tdsApplicable
       ? payment_type === "receipt"
-        ? tdsLedgers.find((l) => l.name === "TCS Receivable")?.id || null
-        : tdsLedgers.find((l) => l.name === "TDS Payable")?.id || null
-      : null;
+        ? tdsLedgers.find((l) => l.name === "TCS Receivable")?.id
+        : tdsLedgers.find((l) => l.name === "TDS Payable")?.id
+      : undefined;
 
     // Calculate total amount
     const totalAmount =
@@ -265,14 +265,14 @@ export default function CreatePaymentPage() {
       counter_ledger_id: formData.counterLedgerId,
       payment_date: formData.paymentDate,
       payment_mode: formData.paymentMode as PaymentMode,
-      reference_number: formData.referenceNumber || null,
-      reference_date: formData.referenceDate || null,
+      reference_number: formData.referenceNumber || undefined,
+      reference_date: formData.referenceDate || undefined,
       total_amount: totalAmount,
       tds_applicable: formData.tdsApplicable,
-      tds_rate: formData.tdsApplicable ? parseFloat(formData.tdsRate) : null,
+      tds_rate: formData.tdsApplicable ? parseFloat(formData.tdsRate) : undefined,
       tds_ledger_id: tdsLedgerId,
-      notes: formData.notes || null,
-      attachments: null,
+      notes: formData.notes || undefined,
+      attachments: undefined,
       allocations,
     };
 

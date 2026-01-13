@@ -12,15 +12,15 @@ CREATE OR REPLACE FUNCTION create_payment_with_allocations(
     p_counter_ledger_id UUID, -- Bank or Cash ledger
     p_payment_date DATE,
     p_payment_mode VARCHAR(20), -- 'cash', 'cheque', 'neft', 'rtgs', 'upi', 'card'
-    p_reference_number VARCHAR(50),
-    p_reference_date DATE, -- Instrument date (e.g., cheque date)
     p_total_amount DECIMAL(10,2),
     p_tds_applicable BOOLEAN,
-    p_tds_rate DECIMAL(5,2),
-    p_tds_ledger_id UUID,
-    p_notes TEXT,
-    p_attachments TEXT[],
     p_allocations JSONB, -- Array of {allocation_type: 'advance'|'against_ref', invoice_id: UUID (if against_ref), amount_applied: DECIMAL}
+    p_reference_number VARCHAR(50) DEFAULT NULL,
+    p_reference_date DATE DEFAULT NULL, -- Instrument date (e.g., cheque date)
+    p_tds_rate DECIMAL(5,2) DEFAULT NULL,
+    p_tds_ledger_id UUID DEFAULT NULL,
+    p_notes TEXT DEFAULT NULL,
+    p_attachments TEXT[] DEFAULT NULL,
     p_company_id UUID DEFAULT NULL
 )
 RETURNS VARCHAR(50)
@@ -254,15 +254,15 @@ CREATE OR REPLACE FUNCTION update_payment_with_allocations(
     p_counter_ledger_id UUID,
     p_payment_date DATE,
     p_payment_mode VARCHAR(20),
-    p_reference_number VARCHAR(50),
-    p_reference_date DATE,
     p_total_amount DECIMAL(10,2),
     p_tds_applicable BOOLEAN,
-    p_tds_rate DECIMAL(5,2),
-    p_tds_ledger_id UUID,
-    p_notes TEXT,
-    p_attachments TEXT[],
-    p_allocations JSONB
+    p_allocations JSONB,
+    p_reference_number VARCHAR(50) DEFAULT NULL,
+    p_reference_date DATE DEFAULT NULL,
+    p_tds_rate DECIMAL(5,2) DEFAULT NULL,
+    p_tds_ledger_id UUID DEFAULT NULL,
+    p_notes TEXT DEFAULT NULL,
+    p_attachments TEXT[] DEFAULT NULL
 )
 RETURNS VOID
 LANGUAGE plpgsql

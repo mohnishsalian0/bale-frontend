@@ -1,7 +1,7 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { Session } from "@supabase/supabase-js";
 import { UserRole } from "@/types/database/enums";
-import type { Tables } from "@/types/database/supabase";
+import type { Database, Tables } from "@/types/database/supabase";
 
 type User = Tables<"users">;
 
@@ -9,7 +9,7 @@ type User = Tables<"users">;
  * Creates a Supabase client for use in Client Components
  */
 export function createClient() {
-  return createBrowserClient(
+  return createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );

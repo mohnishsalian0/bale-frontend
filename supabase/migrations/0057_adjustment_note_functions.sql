@@ -12,10 +12,10 @@ CREATE OR REPLACE FUNCTION create_adjustment_note_with_items(
     p_counter_ledger_id UUID, -- Sales Return/Purchase Return ledger
     p_adjustment_type VARCHAR(10), -- 'credit' or 'debit'
     p_adjustment_date DATE,
-    p_reason TEXT,
-    p_notes TEXT,
-    p_attachments TEXT[],
-    p_items JSONB, -- Array of {product_id, quantity, rate, gst_rate}
+    p_reason TEXT DEFAULT NULL,
+    p_notes TEXT DEFAULT NULL,
+    p_attachments TEXT[] DEFAULT NULL,
+    p_items JSONB DEFAULT NULL, -- Array of {product_id, quantity, rate, gst_rate}
     p_company_id UUID DEFAULT NULL
 )
 RETURNS VARCHAR(50)
@@ -301,10 +301,10 @@ CREATE OR REPLACE FUNCTION update_adjustment_note_with_items(
     p_warehouse_id UUID,
     p_counter_ledger_id UUID,
     p_adjustment_date DATE,
-    p_reason TEXT,
-    p_notes TEXT,
-    p_attachments TEXT[],
-    p_items JSONB
+    p_reason TEXT DEFAULT NULL,
+    p_notes TEXT DEFAULT NULL,
+    p_attachments TEXT[] DEFAULT NULL,
+    p_items JSONB DEFAULT NULL
 )
 RETURNS VOID
 LANGUAGE plpgsql

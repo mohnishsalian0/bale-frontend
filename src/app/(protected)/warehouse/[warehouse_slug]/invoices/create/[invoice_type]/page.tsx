@@ -411,17 +411,17 @@ export default function CreateInvoicePage() {
       counter_ledger_id: counterLedger.id, // Purchase/Sales ledger for double-entry
       warehouse_id: formData.warehouseId,
       invoice_date: formData.invoiceDate,
-      payment_terms: formData.paymentTerms || null,
-      due_date: formData.dueDate || null,
+      payment_terms: formData.paymentTerms || undefined,
+      due_date: formData.dueDate || undefined,
       tax_type: formData.taxType,
       discount_type: formData.discountType,
       discount_value:
         formData.discountType !== "none" && formData.discount
           ? parseFloat(formData.discount)
-          : null,
-      supplier_invoice_number: formData.supplierInvoiceNumber || null,
-      supplier_invoice_date: formData.supplierInvoiceDate || null,
-      notes: formData.notes || null,
+          : undefined,
+      supplier_invoice_number: formData.supplierInvoiceNumber || undefined,
+      supplier_invoice_date: formData.supplierInvoiceDate || undefined,
+      notes: formData.notes || undefined,
       items: selectedProducts,
     };
 

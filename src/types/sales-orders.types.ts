@@ -1,13 +1,15 @@
-import { ProductListView } from "@/types/products.types";
 import type { Tables, TablesUpdate } from "./database/supabase";
+import type { QueryData } from "@supabase/supabase-js";
 import { DisplayStatus } from "@/lib/utils/sales-order";
+import {
+  buildSalesOrdersQuery,
+  buildSalesOrderByNumberQuery,
+} from "@/lib/queries/sales-orders";
 
+// Base types from database (still needed for non-query uses)
 export type SalesOrder = Tables<"sales_orders">;
 export type SalesOrderUpdate = TablesUpdate<"sales_orders">;
 export type SalesOrderItem = Tables<"sales_order_items">;
-type Partner = Tables<"partners">;
-type Warehouse = Tables<"warehouses">;
-type Product = Tables<"products">;
 
 // ============================================================================
 // FILTERS
@@ -32,68 +34,40 @@ export interface SalesOrderFilters extends Record<string, unknown> {
 // =====================================================
 
 /**
- * Sales order item for list views
- * Minimal product info for quick loading
+ * Sales order with minimal details for list views
+ * Type inferred from buildSalesOrdersQuery
  * Used in: sales order list page, partner detail page
  */
-export interface SalesOrderItemListView extends SalesOrderItem {
-  product: Pick<
-    Product,
-    | "id"
-    | "name"
-    | "stock_type"
-    | "measuring_unit"
-    | "product_images"
-    | "sequence_number"
-    | "product_code"
-  > | null;
-}
+export type SalesOrderListView = QueryData<
+  ReturnType<typeof buildSalesOrdersQuery>
+>[number];
 
 /**
- * Sales order with minimal details for list views
- * Used in: sales order list page, partner detail page
+ * Sales order item for list views
+ * Extracted from SalesOrderListView nested array
  */
-export interface SalesOrderListView extends SalesOrder {
-  customer: Pick<
-    Partner,
-    "id" | "first_name" | "last_name" | "company_name" | "display_name"
-  > | null;
-  agent: Pick<
-    Partner,
-    "id" | "first_name" | "last_name" | "company_name" | "display_name"
-  > | null;
-  sales_order_items: SalesOrderItemListView[];
-}
+export type SalesOrderItemListView =
+  SalesOrderListView["sales_order_items"][number];
 
 // =====================================================
 // DETAIL VIEW TYPES (for sales order detail page)
 // =====================================================
 
 /**
- * Sales order item with full product details (for order detail page)
- * Uses ProductListView for consistency across the app
+ * Sales order with complete details
+ * Type inferred from buildSalesOrderByNumberQuery (same structure as ById)
+ * Used in: sales order detail page
  */
-export interface SalesOrderItemDetailView extends SalesOrderItem {
-  product: ProductListView | null;
-}
+export type SalesOrderDetailView = QueryData<
+  ReturnType<typeof buildSalesOrderByNumberQuery>
+>;
 
 /**
- * Sales order with complete details (for order detail page)
- * Includes customer address, agent (minimal fields), warehouse, and full product details
+ * Sales order item with full product details (for order detail page)
+ * Extracted from SalesOrderDetailView nested array
  */
-export interface SalesOrderDetailView extends SalesOrder {
-  customer:
-    | (Partner & {
-        ledger: Pick<Tables<"ledgers">, "id" | "name">[];
-      })
-    | null;
-  agent: Pick<
-    Partner,
-    "id" | "first_name" | "last_name" | "company_name" | "display_name"
-  > | null;
-  warehouse: Warehouse | null;
-  sales_order_items: SalesOrderItemDetailView[];
-}
+export type SalesOrderItemDetailView =
+  SalesOrderDetailView["sales_order_items"][number];
 
 // =====================================================
 // CREATE/UPDATE TYPES (for mutations)

@@ -1,8 +1,65 @@
 import { createClient } from "@/lib/supabase/browser";
+import type { Database } from "@/types/database/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { Tables } from "@/types/database/supabase";
 import type { StaffListView, StaffDetailView } from "@/types/staff.types";
-import { Permission, User, UserUpdate } from "@/types/users.types";
+import { User, UserUpdate } from "@/types/users.types";
 import { Warehouse } from "@/types/warehouses.types";
+
+// ============================================================================
+// QUERY BUILDERS
+// ============================================================================
+
+/**
+ * Query builder for fetching user by auth ID
+ */
+export const buildUserByAuthIdQuery = (
+  supabase: SupabaseClient<Database>,
+  authUserId: string,
+) => {
+  return supabase
+    .from("users")
+    .select("*")
+    .eq("auth_user_id", authUserId)
+    .single();
+};
+
+/**
+ * Query builder for fetching staff members list
+ */
+export const buildStaffMembersQuery = (supabase: SupabaseClient<Database>) => {
+  return supabase
+    .from("users")
+    .select(
+      `
+      id,
+      first_name,
+      last_name,
+      phone_number,
+      email,
+      profile_image_url,
+      role,
+      all_warehouses_access
+    `,
+    )
+    .is("deleted_at", null)
+    .order("first_name", { ascending: true });
+};
+
+/**
+ * Query builder for fetching a single staff member by ID
+ */
+export const buildStaffMemberByIdQuery = (
+  supabase: SupabaseClient<Database>,
+  userId: string,
+) => {
+  return supabase
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .is("deleted_at", null)
+    .single();
+};
 
 // ============================================================================
 // RAW TYPES - For Supabase responses
@@ -29,11 +86,7 @@ export async function getUser(): Promise<User> {
     throw new Error("Not authenticated");
   }
 
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("auth_user_id", authUser.id)
-    .single<User>();
+  const { data, error } = await buildUserByAuthIdQuery(supabase, authUser.id);
 
   if (error) {
     console.error("Error fetching user by auth ID:", error);
@@ -91,7 +144,7 @@ export async function getUserPermissions(roleName: string): Promise<string[]> {
     .single();
 
   if (roleError || !roleData) {
-    console.log(`Error fetching role: ${roleError}`);
+    console.error(`Error fetching role: ${roleError}`);
     throw new Error(`Error fetching role: ${roleError}`);
   }
 
@@ -105,14 +158,8 @@ export async function getUserPermissions(roleName: string): Promise<string[]> {
     console.error("Error fetching permissions:", permError);
     throw new Error(`Error fetching permissions: ${permError}`);
   }
-
   return (
-    (permData?.map(
-      (p: { permissions: Pick<Permission, "permission_path">[] }) =>
-        // @ts-expect-error permission is actually a single object
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        p.permissions.permission_path,
-    ) as string[]) ?? []
+    (permData?.map((p) => p.permissions.permission_path) as string[]) ?? []
   );
 }
 
@@ -141,20 +188,6 @@ export async function updateUser(
 }
 
 /**
- * SELECT constant for staff list view
- */
-export const STAFF_LIST_VIEW_SELECT = `
-  id,
-  first_name,
-  last_name,
-  phone_number,
-  email,
-  profile_image_url,
-  role,
-  all_warehouses_access
-`;
-
-/**
  * Fetch all staff members with their warehouse assignments
  * Users with all_warehouses_access will have empty warehouse_names array
  */
@@ -162,11 +195,8 @@ export async function getStaffMembers(): Promise<StaffListView[]> {
   const supabase = createClient();
 
   // Fetch all users (excluding deleted)
-  const { data: users, error: usersError } = await supabase
-    .from("users")
-    .select(STAFF_LIST_VIEW_SELECT)
-    .is("deleted_at", null)
-    .order("first_name", { ascending: true });
+  const { data: users, error: usersError } =
+    await buildStaffMembersQuery(supabase);
 
   if (usersError) throw usersError;
   if (!users || users.length === 0) return [];
@@ -225,13 +255,10 @@ export async function getStaffMemberById(
   userId: string,
 ): Promise<StaffDetailView | null> {
   const supabase = createClient();
-
-  const { data: user, error: userError } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", userId)
-    .is("deleted_at", null)
-    .single<User>();
+  const { data: user, error: userError } = await buildStaffMemberByIdQuery(
+    supabase,
+    userId,
+  );
 
   if (userError) {
     console.error("Error fetching staff member:", userError);

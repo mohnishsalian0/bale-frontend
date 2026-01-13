@@ -1,10 +1,51 @@
 import { createClient } from "@/lib/supabase/browser";
-import type { Tables } from "@/types/database/supabase";
+import type { Database, Tables } from "@/types/database/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   InviteListView,
   InviteCreateParams,
   AcceptInviteParams,
 } from "@/types/invites.types";
+
+// ============================================================================
+// QUERY BUILDERS
+// ============================================================================
+
+/**
+ * Query builder for fetching invite by code
+ */
+export const buildInviteByCodeQuery = (
+  supabase: SupabaseClient<Database>,
+  code: string,
+) => {
+  return supabase.from("invites").select("*").eq("token", code).single();
+};
+
+/**
+ * Query builder for fetching active invites
+ */
+export const buildActiveInvitesQuery = (supabase: SupabaseClient<Database>) => {
+  return supabase
+    .from("invites")
+    .select(
+      `
+      id,
+      token,
+      role,
+      company_name,
+      all_warehouses_access,
+      expires_at,
+      used_at,
+      created_at,
+      invite_warehouses(
+        warehouse:warehouse_id(name)
+      )
+    `,
+    )
+    .is("used_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false });
+};
 
 // ============================================================================
 // RAW TYPES - For Supabase responses
@@ -17,12 +58,7 @@ type Invite = Tables<"invites">;
  */
 export async function getInviteByCode(code: string): Promise<Invite | null> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("invites")
-    .select("*")
-    .eq("token", code)
-    .single<Invite>();
+  const { data, error } = await buildInviteByCodeQuery(supabase, code);
 
   if (error) {
     console.error("Error fetching invite:", error);
@@ -44,7 +80,6 @@ export async function acceptInvite(
 ): Promise<string> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data: newUserId, error } = await supabase.rpc(
     "create_user_from_invite",
     {
@@ -52,7 +87,7 @@ export async function acceptInvite(
       p_invite_token: params.inviteToken,
       p_first_name: params.firstName,
       p_last_name: params.lastName,
-      p_profile_image_url: params.profileImageUrl || null,
+      p_profile_image_url: params.profileImageUrl,
     },
   );
 
@@ -92,14 +127,7 @@ export const INVITE_LIST_VIEW_SELECT = `
  */
 export async function getActiveInvites(): Promise<InviteListView[]> {
   const supabase = createClient();
-
-  const { data: invites, error } = await supabase
-    .from("invites")
-    .select(INVITE_LIST_VIEW_SELECT)
-    .is("used_at", null)
-    .gt("expires_at", new Date().toISOString())
-    .order("created_at", { ascending: false });
-  console.log(invites);
+  const { data: invites, error } = await buildActiveInvitesQuery(supabase);
 
   if (error) throw error;
   if (!invites) return [];
@@ -108,10 +136,7 @@ export async function getActiveInvites(): Promise<InviteListView[]> {
     // 1. Flatten warehouse names safely
     const warehouse_names = (invite.invite_warehouses ?? [])
       .map((iw) => {
-        const warehouse = Array.isArray(iw.warehouse)
-          ? iw.warehouse?.[0]
-          : iw.warehouse;
-        return warehouse.name as string;
+        return iw.warehouse.name;
       })
       .filter((name): name is string => Boolean(name));
 
@@ -132,7 +157,6 @@ export async function createInvite(
 ): Promise<string> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data: token, error } = await supabase.rpc("create_staff_invite", {
     p_company_id: params.companyId,
     p_company_name: params.companyName,

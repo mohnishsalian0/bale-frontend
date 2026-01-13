@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/browser";
-import type { Tables } from "@/types/database/supabase";
+import type { Database, Json } from "@/types/database/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  SalesOrderFilters,
   SalesOrderListView,
   SalesOrderDetailView,
-  SalesOrderItemDetailView,
-  SalesOrderFilters,
   CreateSalesOrderData,
   CreateSalesOrderLineItem,
   UpdateSalesOrderData,
@@ -12,100 +12,34 @@ import type {
   CompleteSalesOrderData,
   SalesOrderUpdate,
 } from "@/types/sales-orders.types";
-import {
-  PRODUCT_LIST_VIEW_SELECT,
-  transformProductListView,
-  ProductListViewRaw,
-} from "./products";
 
 // Re-export types for convenience
 export type {
+  SalesOrderFilters,
   SalesOrderListView,
   SalesOrderDetailView,
-  SalesOrderFilters,
   CreateSalesOrderData,
   CreateSalesOrderLineItem,
   UpdateSalesOrderData,
   CancelSalesOrderData,
   CompleteSalesOrderData,
+  SalesOrderUpdate,
 };
 
 // ============================================================================
-// RAW TYPES - For Supabase responses
+// QUERY BUILDERS
 // ============================================================================
 
 /**
- * Raw type for sales order item in detail view
- * Uses ProductListViewRaw for consistency
+ * Query builder for fetching sales orders with optional filters and pagination
  */
-type SalesOrderItemDetailViewRaw = Tables<"sales_order_items"> & {
-  product: ProductListViewRaw | null;
-};
-
-/**
- * Raw type for sales order detail view
- * Includes nested customer, agent, warehouse, and items with raw attributes
- */
-type SalesOrderDetailViewRaw = Tables<"sales_orders"> & {
-  customer:
-    | (Tables<"partners"> & {
-        ledger: Pick<Tables<"ledgers">, "id" | "name">[];
-      })
-    | null;
-  agent: Pick<
-    Tables<"partners">,
-    "id" | "first_name" | "last_name" | "company_name" | "display_name"
-  > | null;
-  warehouse: Tables<"warehouses"> | null;
-  sales_order_items: SalesOrderItemDetailViewRaw[];
-};
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-/**
- * Transform sales order items to flatten attributes
- * Shared by getSalesOrderByNumber and getSalesOrderById
- */
-function transformSalesOrderItems(
-  items: SalesOrderItemDetailViewRaw[],
-): SalesOrderItemDetailView[] {
-  return items.map((item) => {
-    if (!item.product) {
-      return { ...item, product: null };
-    }
-
-    // Use shared transform function from products.ts
-    return {
-      ...item,
-      product: transformProductListView(item.product),
-    };
-  });
-}
-
-// ============================================================================
-// QUERIES
-// ============================================================================
-
-/**
- * Fetch sales orders for a warehouse with optional filters
- *
- * Examples:
- * - All orders: getSalesOrders(warehouseId)
- * - Pending orders: getSalesOrders(warehouseId, { status: 'approval_pending' })
- * - Active orders: getSalesOrders(warehouseId, { status: ['approval_pending', 'in_progress'] })
- * - Recent orders: getSalesOrders(warehouseId, { order_by: 'order_date', order_direction: 'desc', limit: 5 })
- */
-export async function getSalesOrders(
+export const buildSalesOrdersQuery = (
+  supabase: SupabaseClient<Database>,
   filters?: SalesOrderFilters,
   page: number = 1,
   pageSize: number = 25,
-): Promise<{ data: SalesOrderListView[]; totalCount: number }> {
-  const supabase = createClient();
-
-  // Calculate pagination range.
-  // NOTE: Filter limit takes precedence over pageSize
+) => {
+  // Calculate pagination range
   const offset = (page - 1) * pageSize;
   const limit = filters?.limit ? filters.limit : pageSize;
 
@@ -114,16 +48,16 @@ export async function getSalesOrders(
     .select(
       `
         *,
-        customer:customer_id(
+        customer:partners!customer_id(
           id, first_name, last_name, display_name, company_name
         ),
-        agent:agent_id(
+        agent:partners!agent_id(
           id, first_name, last_name, display_name, company_name
         ),
         sales_order_items!inner(
           *,
-          product:product_id!inner(
-            id, name, stock_type, measuring_unit, product_images, sequence_number
+          product:products!product_id!inner(
+            id, name, stock_type, measuring_unit, product_images, sequence_number, product_code
           )
         )
       `,
@@ -188,15 +122,120 @@ export async function getSalesOrders(
   const ascending = !!filters?.ascending;
   query = query.order(orderBy, { ascending });
 
-  // Apply pagination (ignore filters.limit if provided, use page-based pagination)
+  // Apply pagination
   query = query.range(offset, offset + limit - 1);
 
-  const { data, error, count } = await query;
+  return query;
+};
+
+/**
+ * Query builder for fetching a single sales order by sequence number
+ */
+export const buildSalesOrderByNumberQuery = (
+  supabase: SupabaseClient<Database>,
+  sequenceNumber: string,
+) => {
+  return supabase
+    .from("sales_orders")
+    .select(
+      `
+			*,
+			customer:partners!customer_id(
+				*,
+				ledger:ledgers!partner_id(id, name)
+			),
+			agent:partners!agent_id(
+				id, first_name, last_name, display_name, company_name
+			),
+			warehouse:warehouses!warehouse_id(*),
+			sales_order_items(
+				*,
+				product:products!product_id(
+          id,
+          name,
+          stock_type,
+          measuring_unit,
+          product_images,
+          product_code,
+          sequence_number
+        )
+			)
+		`,
+    )
+    .eq("sequence_number", parseInt(sequenceNumber))
+    .is("deleted_at", null)
+    .single();
+};
+
+/**
+ * Query builder for fetching a single sales order by ID
+ */
+export const buildSalesOrderByIdQuery = (
+  supabase: SupabaseClient<Database>,
+  orderId: string,
+) => {
+  return supabase
+    .from("sales_orders")
+    .select(
+      `
+			*,
+			customer:partners!customer_id(
+				*,
+				ledger:ledgers!partner_id(id, name)
+			),
+			agent:partners!agent_id(
+				id, first_name, last_name, display_name, company_name
+			),
+			warehouse:warehouses!warehouse_id(*),
+			sales_order_items(
+				*,
+				product:products!product_id(
+          id,
+          name,
+          stock_type,
+          measuring_unit,
+          product_images,
+          product_code,
+          sequence_number
+        )
+			)
+		`,
+    )
+    .eq("id", orderId)
+    .is("deleted_at", null)
+    .single();
+};
+
+// ============================================================================
+// QUERIES
+// ============================================================================
+
+/**
+ * Fetch sales orders for a warehouse with optional filters
+ *
+ * Examples:
+ * - All orders: getSalesOrders(warehouseId)
+ * - Pending orders: getSalesOrders(warehouseId, { status: 'approval_pending' })
+ * - Active orders: getSalesOrders(warehouseId, { status: ['approval_pending', 'in_progress'] })
+ * - Recent orders: getSalesOrders(warehouseId, { order_by: 'order_date', order_direction: 'desc', limit: 5 })
+ */
+export async function getSalesOrders(
+  filters?: SalesOrderFilters,
+  page: number = 1,
+  pageSize: number = 25,
+): Promise<{ data: SalesOrderListView[]; totalCount: number }> {
+  const supabase = createClient();
+  const { data, error, count } = await buildSalesOrdersQuery(
+    supabase,
+    filters,
+    page,
+    pageSize,
+  );
 
   if (error) throw error;
 
   return {
-    data: (data as SalesOrderListView[]) || [],
+    data: data || [],
     totalCount: count || 0,
   };
 }
@@ -208,38 +247,15 @@ export async function getSalesOrderByNumber(
   sequenceNumber: string,
 ): Promise<SalesOrderDetailView> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("sales_orders")
-    .select(
-      `
-			*,
-			customer:customer_id(
-				*,
-				ledger:ledgers!partner_id(id, name)
-			),
-			agent:agent_id(
-				id, first_name, last_name, display_name, company_name
-			),
-			warehouse:warehouse_id(*),
-			sales_order_items(
-				*,
-				product:product_id(${PRODUCT_LIST_VIEW_SELECT})
-			)
-		`,
-    )
-    .eq("sequence_number", parseInt(sequenceNumber))
-    .is("deleted_at", null)
-    .single<SalesOrderDetailViewRaw>();
+  const { data, error } = await buildSalesOrderByNumberQuery(
+    supabase,
+    sequenceNumber,
+  );
 
   if (error) throw error;
   if (!data) throw new Error("Order not found");
 
-  // Return transformed sales order
-  return {
-    ...data,
-    sales_order_items: transformSalesOrderItems(data.sales_order_items),
-  };
+  return data;
 }
 
 /**
@@ -249,38 +265,12 @@ export async function getSalesOrderById(
   orderId: string,
 ): Promise<SalesOrderDetailView> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("sales_orders")
-    .select(
-      `
-			*,
-			customer:customer_id(
-				*,
-				ledger:ledgers!partner_id(id, name)
-			),
-			agent:agent_id(
-				id, first_name, last_name, display_name, company_name
-			),
-			warehouse:warehouse_id(*),
-			sales_order_items(
-				*,
-				product:product_id(${PRODUCT_LIST_VIEW_SELECT})
-			)
-		`,
-    )
-    .eq("id", orderId)
-    .is("deleted_at", null)
-    .single<SalesOrderDetailViewRaw>();
+  const { data, error } = await buildSalesOrderByIdQuery(supabase, orderId);
 
   if (error) throw error;
   if (!data) throw new Error("Order not found");
 
-  // Return transformed sales order
-  return {
-    ...data,
-    sales_order_items: transformSalesOrderItems(data.sales_order_items),
-  };
+  return data;
 }
 
 /**
@@ -292,12 +282,11 @@ export async function createSalesOrder(
 ): Promise<number> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data: sequenceNumber, error } = await supabase.rpc(
     "create_sales_order_with_items",
     {
-      p_order_data: orderData,
-      p_line_items: lineItems,
+      p_order_data: orderData as unknown as Json,
+      p_line_items: lineItems as unknown as Json[],
     },
   );
 
@@ -321,12 +310,11 @@ export async function createQuickSalesOrder(
 ): Promise<number> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data: sequenceNumber, error } = await supabase.rpc(
     "quick_order_with_outward",
     {
-      p_order_data: orderData,
-      p_order_items: orderItems,
+      p_order_data: orderData as unknown as Json,
+      p_order_items: orderItems as unknown as Json[],
       p_stock_unit_items: stockUnitItems,
     },
   );
@@ -353,8 +341,8 @@ export async function approveSalesOrder(
 
   const { error } = await supabase.rpc("approve_sales_order_with_items", {
     p_order_id: orderId,
-    p_order_data: orderData,
-    p_line_items: lineItems,
+    p_order_data: orderData as unknown as Json[],
+    p_line_items: lineItems as unknown as Json[],
   });
 
   if (error) throw error;
@@ -494,8 +482,8 @@ export async function updateSalesOrderWithItems(
 
   const { error } = await supabase.rpc("update_sales_order_with_items", {
     p_order_id: orderId,
-    p_order_data: orderData,
-    p_line_items: lineItems,
+    p_order_data: orderData as unknown as Json,
+    p_line_items: lineItems as unknown as Json[],
   });
 
   if (error) throw error;

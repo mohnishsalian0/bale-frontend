@@ -4,6 +4,13 @@ import type {
   TablesUpdate,
 } from "@/types/database/supabase";
 import type { AttributeGroup } from "@/types/database/enums";
+import type { QueryData } from "@supabase/supabase-js";
+import {
+  buildProductsQuery,
+  buildProductByIdQuery,
+  buildProductsWithInventoryQuery,
+  buildProductWithInventoryByIdQuery,
+} from "@/lib/queries/products";
 
 export type Product = Tables<"products">;
 type ProductAttributeRaw = Tables<"product_attributes">;
@@ -26,11 +33,6 @@ export type ProductAttribute = Pick<
   "id" | "name" | "group_name" | "color_hex"
 >;
 
-// Common structure for attribute assignments
-export type ProductAttributeAssignmentsRaw = {
-  attributes: ProductAttribute[] | null;
-};
-
 // ============================================================================
 // FILTERS
 // ============================================================================
@@ -47,6 +49,42 @@ export interface ProductFilters extends Record<string, unknown> {
   order_by?: "name" | "created_at" | "sequence_number";
   order_direction?: "asc" | "desc";
 }
+
+// ============================================================================
+// RAW TYPES (QueryData inferred from query builders)
+// ============================================================================
+
+/**
+ * Raw type inferred from buildProductsQuery
+ * Used as bridge between Supabase response and ProductListView
+ */
+export type ProductListViewRaw = QueryData<
+  ReturnType<typeof buildProductsQuery>
+>[number];
+
+/**
+ * Raw type inferred from buildProductByIdQuery
+ * Used as bridge between Supabase response and ProductDetailView
+ */
+export type ProductDetailViewRaw = QueryData<
+  ReturnType<typeof buildProductByIdQuery>
+>;
+
+/**
+ * Raw type inferred from buildProductsWithInventoryQuery
+ * Used as bridge between Supabase response and ProductWithInventoryListView
+ */
+export type ProductWithInventoryListViewRaw = QueryData<
+  ReturnType<typeof buildProductsWithInventoryQuery>
+>[number];
+
+/**
+ * Raw type inferred from buildProductWithInventoryByIdQuery
+ * Used as bridge between Supabase response and ProductWithInventoryDetailView
+ */
+export type ProductWithInventoryDetailViewRaw = QueryData<
+  ReturnType<typeof buildProductWithInventoryByIdQuery>
+>;
 
 // ============================================================================
 // MAIN TYPES

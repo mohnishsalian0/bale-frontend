@@ -1,16 +1,20 @@
 import type { Tables } from "./database/supabase";
+import type { QueryData } from "@supabase/supabase-js";
 import type {
   VoucherType,
   PaymentMode,
   AllocationType,
 } from "./database/enums";
+import {
+  buildPaymentsQuery,
+  buildPaymentBySlugQuery,
+  buildOutstandingInvoicesQuery,
+  buildCounterLedgersQuery,
+} from "@/lib/queries/payments";
 
-// Base types from database
+// Base types from database (still needed for non-query uses)
 export type Payment = Tables<"payments">;
 export type PaymentAllocation = Tables<"payment_allocations">;
-type Ledger = Tables<"ledgers">;
-type Invoice = Tables<"invoices">;
-type ParentGroup = Tables<"parent_groups">;
 
 // ============================================================================
 // FILTERS
@@ -33,71 +37,40 @@ export interface PaymentFilters extends Record<string, unknown> {
 // =====================================================
 
 /**
- * Payment allocation with minimal details for list views
+ * Payment with minimal details for list views
+ * Type inferred from buildPaymentsQuery
+ * Used in: payment list page, partner detail page
  */
-export interface PaymentAllocationListView {
-  id: string;
-  allocation_type: AllocationType;
-  amount_applied: number;
-  invoice: Pick<Invoice, "id" | "invoice_number"> | null;
-}
+export type PaymentListView = QueryData<
+  ReturnType<typeof buildPaymentsQuery>
+>[number];
 
 /**
- * Payment with minimal details for list views
- * Used in: payment list page, partner detail page
- * Note: party and counter ledger info fetched via JOIN, not snapshots
+ * Payment allocation with minimal details for list views
+ * Extracted from PaymentListView nested array
  */
-export interface PaymentListView extends Pick<
-  Payment,
-  | "id"
-  | "payment_number"
-  | "sequence_number"
-  | "slug"
-  | "voucher_type"
-  | "payment_date"
-  | "payment_mode"
-  | "total_amount"
-  | "tds_amount"
-  | "net_amount"
-  | "reference_number"
-  | "exported_to_tally_at"
-> {
-  party_ledger: Pick<Ledger, "id" | "name"> | null;
-  counter_ledger: Pick<Ledger, "id" | "name"> | null;
-  payment_allocations: PaymentAllocationListView[];
-  reference_date: string | null;
-}
+export type PaymentAllocationListView =
+  PaymentListView["payment_allocations"][number];
 
 // =====================================================
 // DETAIL VIEW TYPES (for payment detail page)
 // =====================================================
 
 /**
- * Payment allocation with invoice details (for detail view)
+ * Payment with complete details
+ * Type inferred from buildPaymentBySlugQuery
+ * Used in: payment detail page
  */
-export interface PaymentAllocationDetailView extends PaymentAllocation {
-  invoice: Pick<
-    Invoice,
-    | "id"
-    | "slug"
-    | "invoice_number"
-    | "invoice_date"
-    | "invoice_type"
-    | "total_amount"
-    | "outstanding_amount"
-  > | null;
-}
+export type PaymentDetailView = QueryData<
+  ReturnType<typeof buildPaymentBySlugQuery>
+>;
 
 /**
- * Payment with complete details (for payment detail page)
- * Includes party ledger, counter ledger, TDS ledger, and allocations
+ * Payment allocation with invoice details (for detail view)
+ * Extracted from PaymentDetailView nested array
  */
-export interface PaymentDetailView extends Payment {
-  party_ledger: Pick<Ledger, "id" | "name" | "partner_id"> | null;
-  counter_ledger: Pick<Ledger, "id" | "name"> | null;
-  tds_ledger: Pick<Ledger, "id" | "name"> | null;
-  payment_allocations: PaymentAllocationDetailView[];
-}
+export type PaymentAllocationDetailView =
+  PaymentDetailView["payment_allocations"][number];
 
 // =====================================================
 // OUTSTANDING INVOICES (for allocation step)
@@ -105,20 +78,12 @@ export interface PaymentDetailView extends Payment {
 
 /**
  * Invoice with outstanding amount for payment allocation
+ * Type inferred from buildOutstandingInvoicesQuery
  * Used in: payment creation flow allocation step
  */
-export type OutstandingInvoiceView = Pick<
-  Invoice,
-  | "id"
-  | "invoice_number"
-  | "slug"
-  | "invoice_date"
-  | "due_date"
-  | "invoice_type"
-  | "total_amount"
-  | "outstanding_amount"
-  | "status"
->;
+export type OutstandingInvoiceView = QueryData<
+  ReturnType<typeof buildOutstandingInvoicesQuery>
+>[number];
 
 // =====================================================
 // COUNTER LEDGERS (for counter ledger selection)
@@ -126,14 +91,12 @@ export type OutstandingInvoiceView = Pick<
 
 /**
  * Bank/Cash ledger for counter ledger selection
+ * Type inferred from buildCounterLedgersQuery
  * Used in: payment creation flow details step
  */
-export interface CounterLedgerView extends Pick<
-  Ledger,
-  "id" | "name" | "ledger_type"
-> {
-  parent_group: Pick<ParentGroup, "name"> | null;
-}
+export type CounterLedgerView = QueryData<
+  ReturnType<typeof buildCounterLedgersQuery>
+>[number];
 
 // =====================================================
 // CREATE/UPDATE TYPES (for mutations)
@@ -159,13 +122,13 @@ export interface CreatePaymentData {
   counter_ledger_id: string;
   payment_date: string; // ISO format (YYYY-MM-DD)
   payment_mode: PaymentMode;
-  reference_number: string | null;
-  reference_date: string | null; // ISO format (YYYY-MM-DD)
   total_amount: number;
   tds_applicable: boolean;
-  tds_rate: number | null; // Required if tds_applicable = true
-  tds_ledger_id: string | null; // Required if tds_applicable = true
-  notes: string | null;
-  attachments: string[] | null; // Array of file URLs
   allocations: CreatePaymentAllocation[];
+  reference_number?: string;
+  reference_date?: string; // ISO format (YYYY-MM-DD)
+  tds_rate?: number; // Required if tds_applicable = true
+  tds_ledger_id?: string; // Required if tds_applicable = true
+  notes?: string;
+  attachments?: string[]; // Array of file URLs
 }

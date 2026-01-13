@@ -1,9 +1,60 @@
 import { createClient } from "@/lib/supabase/browser";
+import type { Database, TablesInsert } from "@/types/database/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   Warehouse,
   WarehouseInsert,
   WarehouseUpdate,
 } from "@/types/warehouses.types";
+
+// ============================================================================
+// QUERY BUILDERS
+// ============================================================================
+
+/**
+ * Query builder for fetching all warehouses
+ */
+export const buildWarehousesQuery = (supabase: SupabaseClient<Database>) => {
+  return supabase
+    .from("warehouses")
+    .select("*")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+};
+
+/**
+ * Query builder for fetching a single warehouse by slug
+ */
+export const buildWarehouseBySlugQuery = (
+  supabase: SupabaseClient<Database>,
+  slug: string,
+) => {
+  return supabase
+    .from("warehouses")
+    .select("*")
+    .eq("slug", slug)
+    .is("deleted_at", null)
+    .single();
+};
+
+/**
+ * Query builder for fetching a single warehouse by ID
+ */
+export const buildWarehouseByIdQuery = (
+  supabase: SupabaseClient<Database>,
+  id: string,
+) => {
+  return supabase
+    .from("warehouses")
+    .select("*")
+    .eq("id", id)
+    .is("deleted_at", null)
+    .single();
+};
+
+// ============================================================================
+// QUERY FUNCTIONS
+// ============================================================================
 
 /**
  * Fetch all warehouses for the current company
@@ -11,12 +62,7 @@ import {
  */
 export async function getWarehouses(): Promise<Warehouse[]> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("warehouses")
-    .select("*")
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false });
+  const { data, error } = await buildWarehousesQuery(supabase);
 
   if (error) {
     console.error("Error fetching warehouses:", error);
@@ -24,7 +70,7 @@ export async function getWarehouses(): Promise<Warehouse[]> {
   }
   if (!data) return [];
 
-  return data as Warehouse[];
+  return data;
 }
 
 /**
@@ -32,19 +78,13 @@ export async function getWarehouses(): Promise<Warehouse[]> {
  */
 export async function getWarehouseBySlug(slug: string): Promise<Warehouse> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("warehouses")
-    .select("*")
-    .eq("slug", slug)
-    .is("deleted_at", null)
-    .single<Warehouse>();
+  const { data, error } = await buildWarehouseBySlugQuery(supabase, slug);
 
   if (error) {
     console.error("Error fetching warehouse by slug:", error);
   }
 
-  if (!data) throw new Error("Warehoue not found");
+  if (!data) throw new Error("Warehouse not found");
 
   return data;
 }
@@ -54,13 +94,7 @@ export async function getWarehouseBySlug(slug: string): Promise<Warehouse> {
  */
 export async function getWarehouseById(id: string): Promise<Warehouse> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("warehouses")
-    .select("*")
-    .eq("id", id)
-    .is("deleted_at", null)
-    .single<Warehouse>();
+  const { data, error } = await buildWarehouseByIdQuery(supabase, id);
 
   if (error) {
     console.error("Error fetching warehouse by ID:", error);
@@ -68,7 +102,7 @@ export async function getWarehouseById(id: string): Promise<Warehouse> {
   }
 
   if (!data) {
-    throw new Error("Warehoue not found");
+    throw new Error("Warehouse not found");
   }
 
   return data;
@@ -84,7 +118,7 @@ export async function createWarehouse(
 
   const { data, error } = await supabase
     .from("warehouses")
-    .insert(warehouse)
+    .insert(warehouse as TablesInsert<"warehouses">)
     .select()
     .single<Warehouse>();
 
