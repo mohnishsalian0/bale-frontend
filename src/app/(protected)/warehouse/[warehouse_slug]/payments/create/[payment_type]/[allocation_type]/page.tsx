@@ -269,7 +269,9 @@ export default function CreatePaymentPage() {
       reference_date: formData.referenceDate || undefined,
       total_amount: totalAmount,
       tds_applicable: formData.tdsApplicable,
-      tds_rate: formData.tdsApplicable ? parseFloat(formData.tdsRate) : undefined,
+      tds_rate: formData.tdsApplicable
+        ? parseFloat(formData.tdsRate)
+        : undefined,
       tds_ledger_id: tdsLedgerId,
       notes: formData.notes || undefined,
       attachments: undefined,

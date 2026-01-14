@@ -70,7 +70,10 @@ export const buildQRBatchesQuery = (
 
   // Apply product filter at database level
   if (filters?.product_id) {
-    query = query.eq("qr_batch_items.stock_unit.product_id", filters.product_id);
+    query = query.eq(
+      "qr_batch_items.stock_unit.product_id",
+      filters.product_id,
+    );
   }
 
   return query;

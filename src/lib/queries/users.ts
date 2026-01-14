@@ -1,10 +1,8 @@
 import { createClient } from "@/lib/supabase/browser";
 import type { Database } from "@/types/database/supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Tables } from "@/types/database/supabase";
 import type { StaffListView, StaffDetailView } from "@/types/staff.types";
 import { User, UserUpdate } from "@/types/users.types";
-import { Warehouse } from "@/types/warehouses.types";
 
 // ============================================================================
 // QUERY BUILDERS
@@ -61,7 +59,6 @@ export const buildStaffMemberByIdQuery = (
     .is("deleted_at", null)
     .single();
 };
-
 
 /**
  * Fetch user

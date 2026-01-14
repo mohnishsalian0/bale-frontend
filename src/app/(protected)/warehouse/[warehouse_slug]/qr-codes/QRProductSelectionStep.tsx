@@ -16,9 +16,10 @@ import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import type { ProductListView } from "@/types/products.types";
 import type { StockType } from "@/types/database/enums";
 import {
-  useInfiniteProducts,
+  useInfiniteProductsWithInventory,
   useProductAttributes,
 } from "@/lib/query/hooks/products";
+import { useSession } from "@/contexts/session-context";
 
 interface QRProductSelectionStepProps {
   onProductSelect: (product: ProductListView) => void;
@@ -27,6 +28,7 @@ interface QRProductSelectionStepProps {
 export function QRProductSelectionStep({
   onProductSelect,
 }: QRProductSelectionStepProps) {
+  const { warehouse } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [materialFilter, setMaterialFilter] = useState<string>("all");
@@ -45,14 +47,14 @@ export function QRProductSelectionStep({
     attributeFilters.push({ group: "tag" as const, id: tagsFilter });
   }
 
-  // Fetch products and attributes
+  // Fetch products with inventory and attributes
   const {
     data: productsData,
     isLoading: productsLoading,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteProducts({
+  } = useInfiniteProductsWithInventory(warehouse.id, {
     is_active: true,
     search_term: debouncedSearchQuery || undefined,
     attributes: attributeFilters.length > 0 ? attributeFilters : undefined,
@@ -193,6 +195,15 @@ export function QRProductSelectionStep({
                       >
                         {productInfoText}
                       </p>
+                      {(product.inventory.pending_qr_units || 0) > 0 && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {product.inventory.pending_qr_units}{" "}
+                          {product.inventory.pending_qr_units === 1
+                            ? "unit"
+                            : "units"}{" "}
+                          pending QR
+                        </p>
+                      )}
                     </div>
 
                     {/* Right Chevron */}

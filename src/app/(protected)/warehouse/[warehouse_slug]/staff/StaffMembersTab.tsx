@@ -54,7 +54,7 @@ export function StaffMembersTab({
                       <p
                         title={
                           member.warehouses.length > 0
-                            ? member.warehouses.map(w => w.name).join(", ")
+                            ? member.warehouses.map((w) => w.name).join(", ")
                             : "Not assigned yet"
                         }
                         className="text-sm text-gray-500 truncate"

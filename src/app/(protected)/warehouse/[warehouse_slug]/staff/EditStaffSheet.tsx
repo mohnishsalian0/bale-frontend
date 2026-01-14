@@ -108,7 +108,9 @@ export function EditStaffSheet({
     } catch (error) {
       console.error("Error updating staff member:", error);
       setUpdateError(
-        error instanceof Error ? error.message : "Failed to update staff member",
+        error instanceof Error
+          ? error.message
+          : "Failed to update staff member",
       );
     } finally {
       setUpdating(false);
