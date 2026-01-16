@@ -10,12 +10,16 @@ import {
   buildProductByIdQuery,
   buildProductsWithInventoryQuery,
   buildProductWithInventoryByIdQuery,
+  buildProductsWithInventoryAndOrdersQuery,
+  buildProductWithInventoryAndOrdersByNumberQuery,
 } from "@/lib/queries/products";
 
 export type Product = Tables<"products">;
 type ProductAttributeRaw = Tables<"product_attributes">;
 
 export type ProductInventory = Tables<"product_inventory_aggregates">;
+export type ProductSalesOrderAggregate = Tables<"product_sales_order_aggregates">;
+export type ProductPurchaseOrderAggregate = Tables<"product_purchase_order_aggregates">;
 
 // Mutation types
 export type ProductInsert = TablesInsert<"products">;
@@ -48,6 +52,7 @@ export interface ProductFilters extends Record<string, unknown> {
   attributes?: AttributeFilter[]; // Filter by multiple attributes
   order_by?: "name" | "created_at" | "sequence_number";
   order_direction?: "asc" | "desc";
+  has_inventory?: boolean; // Filter products with in_stock_quantity > 0
 }
 
 // ============================================================================
@@ -85,6 +90,22 @@ export type ProductWithInventoryListViewRaw = QueryData<
 export type ProductWithInventoryDetailViewRaw = QueryData<
   ReturnType<typeof buildProductWithInventoryByIdQuery>
 >;
+
+/**
+ * Raw type inferred from buildProductWithInventoryAndOrdersByNumberQuery
+ * Used as bridge between Supabase response and ProductInventoryDetailView
+ */
+export type ProductInventoryDetailViewRaw = QueryData<
+  ReturnType<typeof buildProductWithInventoryAndOrdersByNumberQuery>
+>;
+
+/**
+ * Raw type inferred from buildProductsWithInventoryAndOrdersQuery
+ * Used as bridge between Supabase response and ProductInventoryView
+ */
+export type ProductInventoryViewRaw = QueryData<
+  ReturnType<typeof buildProductsWithInventoryAndOrdersQuery>
+>[number];
 
 // ============================================================================
 // MAIN TYPES
@@ -147,4 +168,44 @@ export interface ProductWithInventoryListView extends ProductListView {
  */
 export interface ProductWithInventoryDetailView extends ProductDetailView {
   inventory: ProductInventory;
+}
+
+/**
+ * Product with full inventory and order details for detail views
+ * Used in: product detail page with inventory and orders
+ */
+export interface ProductInventoryDetailView extends ProductDetailView {
+  inventory: ProductInventory;
+  sales_orders: Pick<
+    ProductSalesOrderAggregate,
+    "active_pending_quantity" | "active_required_quantity"
+  > | null;
+  purchase_orders: Pick<
+    ProductPurchaseOrderAggregate,
+    "active_pending_quantity" | "active_required_quantity"
+  > | null;
+}
+
+/**
+ * Product with inventory and order aggregates (unified view)
+ * Used in: both products page and inventory page
+ * Products page: shows all products with order data (ignores inventory display)
+ * Inventory page: shows products with stock > 0, displays inventory + orders
+ */
+export interface ProductInventoryView extends ProductListView {
+  inventory: Pick<
+    ProductInventory,
+    | "in_stock_units"
+    | "in_stock_quantity"
+    | "in_stock_value"
+    | "pending_qr_units"
+  >;
+  sales_orders: Pick<
+    ProductSalesOrderAggregate,
+    "active_pending_quantity" | "active_required_quantity"
+  > | null;
+  purchase_orders: Pick<
+    ProductPurchaseOrderAggregate,
+    "active_pending_quantity" | "active_required_quantity"
+  > | null;
 }

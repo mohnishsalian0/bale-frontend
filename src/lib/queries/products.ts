@@ -7,12 +7,16 @@ import {
   ProductDetailView,
   ProductWithInventoryListView,
   ProductWithInventoryDetailView,
+  ProductInventoryView,
+  ProductInventoryDetailView,
   ProductUpsertData,
   ProductFilters,
   ProductListViewRaw,
   ProductDetailViewRaw,
   ProductWithInventoryListViewRaw,
   ProductWithInventoryDetailViewRaw,
+  ProductInventoryViewRaw,
+  ProductInventoryDetailViewRaw,
 } from "@/types/products.types";
 import type { AttributeGroup } from "@/types/database/enums";
 import { uploadProductImage, deleteProductImagesByUrls } from "@/lib/storage";
@@ -23,7 +27,9 @@ export type {
   ProductDetailViewRaw,
   ProductWithInventoryListViewRaw,
   ProductWithInventoryDetailViewRaw,
-};
+  ProductInventoryViewRaw,
+  ProductInventoryDetailViewRaw,
+} from "@/types/products.types";
 
 // ============================================================================
 // QUERY BUILDERS
@@ -231,9 +237,9 @@ export const buildProductWithInventoryByIdQuery = (
 };
 
 /**
- * Query builder for fetching a single product with inventory by sequence number
+ * Query builder for fetching a single product with inventory and orders by sequence number
  */
-export const buildProductWithInventoryByNumberQuery = (
+export const buildProductWithInventoryAndOrdersByNumberQuery = (
   supabase: SupabaseClient<Database>,
   sequenceNumber: number,
   warehouseId: string,
@@ -244,7 +250,9 @@ export const buildProductWithInventoryByNumberQuery = (
       `
       *,
       attributes:product_attributes!inner(id, name, group_name, color_hex),
-      product_inventory_aggregates!inner(*)
+      product_inventory_aggregates!inner(*),
+      product_sales_order_aggregates(*),
+      product_purchase_order_aggregates(*)
     `,
     )
     .eq("sequence_number", sequenceNumber)
@@ -320,6 +328,80 @@ export const buildProductsWithInventoryByIdsQuery = (
     .in("id", productIds)
     .eq("product_inventory_aggregates.warehouse_id", warehouseId)
     .is("deleted_at", null);
+};
+
+/**
+ * Query builder for fetching products with inventory and order aggregates (unified query)
+ * Used in both products and inventory pages
+ * - Products page: shows all products with order data (set has_inventory=false)
+ * - Inventory page: shows products with stock > 0 (set has_inventory=true)
+ */
+export const buildProductsWithInventoryAndOrdersQuery = (
+  supabase: SupabaseClient<Database>,
+  warehouseId: string,
+  filters?: ProductFilters,
+  page: number = 1,
+  pageSize: number = 25,
+) => {
+  const offset = (page - 1) * pageSize;
+
+  let query = supabase
+    .from("products")
+    .select(
+      `
+      id,
+      sequence_number,
+      product_code,
+      name,
+      show_on_catalog,
+      is_active,
+      stock_type,
+      measuring_unit,
+      cost_price_per_unit,
+      selling_price_per_unit,
+      product_images,
+      min_stock_alert,
+      min_stock_threshold,
+      tax_type,
+      gst_rate,
+      attributes:product_attributes!inner(id, name, group_name, color_hex),
+      product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value, pending_qr_units, warehouse_id),
+      product_sales_order_aggregates(active_pending_quantity, active_required_quantity),
+      product_purchase_order_aggregates(active_pending_quantity, active_required_quantity)
+    `,
+      { count: "exact" },
+    )
+    .eq("product_inventory_aggregates.warehouse_id", warehouseId)
+    .is("deleted_at", null)
+    .range(offset, offset + pageSize - 1);
+
+  // Filter to products with stock > 0 for inventory page
+  if (filters?.has_inventory) {
+    query = query.gt("product_inventory_aggregates.in_stock_quantity", 0);
+  }
+
+  if (filters?.is_active !== undefined) {
+    query = query.eq("is_active", filters.is_active);
+  }
+
+  if (filters?.search_term && filters.search_term.trim() !== "") {
+    query = query.textSearch("search_vector", filters.search_term.trim(), {
+      type: "websearch",
+      config: "english",
+    });
+  }
+
+  if (filters?.attributes && filters.attributes.length > 0) {
+    filters.attributes.forEach((filter) => {
+      query = query.filter("attributes.id", "eq", filter.id);
+    });
+  }
+
+  const orderBy = filters?.order_by || "name";
+  const ascending = filters?.order_direction !== "desc";
+  query = query.order(orderBy, { ascending });
+
+  return query;
 };
 
 // ============================================================================
@@ -427,6 +509,66 @@ export function transformProductWithInventoryDetailView(
     colors,
     tags,
     inventory,
+  };
+}
+
+/**
+ * Transform raw product data to ProductInventoryView (unified transform for list)
+ */
+export function transformProductInventoryView(
+  product: ProductInventoryViewRaw,
+): ProductInventoryView {
+  const { materials, colors, tags } = transformAttributes(product);
+  const inventory = product.product_inventory_aggregates?.[0];
+  const sales_orders = product.product_sales_order_aggregates?.[0] || null;
+  const purchase_orders = product.product_purchase_order_aggregates?.[0] || null;
+
+  const {
+    attributes: _attributes,
+    product_inventory_aggregates: _inventory,
+    product_sales_order_aggregates: _sales,
+    product_purchase_order_aggregates: _purchase,
+    ...rest
+  } = product;
+
+  return {
+    ...rest,
+    materials,
+    colors,
+    tags,
+    inventory,
+    sales_orders,
+    purchase_orders,
+  };
+}
+
+/**
+ * Transform raw product data to ProductInventoryDetailView (unified transform for detail)
+ */
+export function transformProductInventoryDetailView(
+  product: ProductInventoryDetailViewRaw,
+): ProductInventoryDetailView {
+  const { materials, colors, tags } = transformAttributes(product);
+  const inventory = product.product_inventory_aggregates?.[0];
+  const sales_orders = product.product_sales_order_aggregates?.[0] || null;
+  const purchase_orders = product.product_purchase_order_aggregates?.[0] || null;
+
+  const {
+    attributes: _attributes,
+    product_inventory_aggregates: _inventory,
+    product_sales_order_aggregates: _sales,
+    product_purchase_order_aggregates: _purchase,
+    ...rest
+  } = product;
+
+  return {
+    ...rest,
+    materials,
+    colors,
+    tags,
+    inventory,
+    sales_orders,
+    purchase_orders,
   };
 }
 
@@ -602,14 +744,14 @@ export async function getProductsWithInventoryByIds(
 }
 
 /**
- * Get a single product with inventory (detail view) by sequence number
+ * Get a single product with inventory and orders (detail view) by sequence number
  */
-export async function getProductWithInventoryByNumber(
+export async function getProductWithInventoryAndOrdersByNumber(
   sequenceNumber: number,
   warehouseId: string,
-): Promise<ProductWithInventoryDetailView> {
+): Promise<ProductInventoryDetailView> {
   const supabase = createClient();
-  const { data, error } = await buildProductWithInventoryByNumberQuery(
+  const { data, error } = await buildProductWithInventoryAndOrdersByNumberQuery(
     supabase,
     sequenceNumber,
     warehouseId,
@@ -618,7 +760,36 @@ export async function getProductWithInventoryByNumber(
   if (error) throw error;
   if (!data) throw new Error("Product not found");
 
-  return transformProductWithInventoryDetailView(data);
+  return transformProductInventoryDetailView(data);
+}
+
+/**
+ * Get products with inventory and order aggregates for inventory page
+ * Only includes products with in_stock_quantity > 0
+ */
+export async function getProductsWithInventoryAndOrders(
+  warehouseId: string,
+  filters?: ProductFilters,
+  page: number = 1,
+  pageSize: number = 25,
+): Promise<{ data: ProductInventoryView[]; totalCount: number }> {
+  const supabase = createClient();
+  const { data, error, count } = await buildProductsWithInventoryAndOrdersQuery(
+    supabase,
+    warehouseId,
+    filters,
+    page,
+    pageSize,
+  );
+
+  if (error) throw error;
+
+  const transformedData = (data || []).map(transformProductInventoryView);
+
+  return {
+    data: transformedData,
+    totalCount: count || 0,
+  };
 }
 
 /**

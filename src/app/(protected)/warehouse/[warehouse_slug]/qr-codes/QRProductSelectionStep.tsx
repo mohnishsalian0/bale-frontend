@@ -16,7 +16,7 @@ import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import type { ProductListView } from "@/types/products.types";
 import type { StockType } from "@/types/database/enums";
 import {
-  useInfiniteProductsWithInventory,
+  useInfiniteProductsWithInventoryAndOrders,
   useProductAttributes,
 } from "@/lib/query/hooks/products";
 import { useSession } from "@/contexts/session-context";
@@ -54,7 +54,7 @@ export function QRProductSelectionStep({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteProductsWithInventory(warehouse.id, {
+  } = useInfiniteProductsWithInventoryAndOrders(warehouse.id, {
     is_active: true,
     search_term: debouncedSearchQuery || undefined,
     attributes: attributeFilters.length > 0 ? attributeFilters : undefined,

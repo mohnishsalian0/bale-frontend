@@ -16,9 +16,9 @@ import {
   getProductByNumber,
   getProductByCode,
   getProducts,
-  getProductsWithInventory,
+  getProductsWithInventoryAndOrders,
   getProductWithInventoryById,
-  getProductWithInventoryByNumber,
+  getProductWithInventoryAndOrdersByNumber,
   getLowStockProducts,
   createProductAttribute,
   createProduct,
@@ -72,9 +72,10 @@ export function useInfiniteProducts(
 }
 
 /**
- * Fetch products with inventory and infinite scroll (for sales orders)
+ * Fetch products with inventory and order aggregates using infinite scroll
+ * Used in product selection components (sales orders, goods outward, etc.)
  */
-export function useInfiniteProductsWithInventory(
+export function useInfiniteProductsWithInventoryAndOrders(
   warehouseId: string | null,
   filters?: ProductFilters,
   pageSize: number = 30,
@@ -82,11 +83,11 @@ export function useInfiniteProductsWithInventory(
 ) {
   return useInfiniteQuery({
     queryKey: [
-      ...queryKeys.products.withInventory(warehouseId || "", filters),
+      ...queryKeys.products.withInventoryAndOrders(warehouseId || "", filters),
       "infinite",
     ],
     queryFn: ({ pageParam = 1 }) =>
-      getProductsWithInventory(warehouseId!, filters, pageParam, pageSize),
+      getProductsWithInventoryAndOrders(warehouseId!, filters, pageParam, pageSize),
     getNextPageParam: (lastPage, allPages) => {
       const currentPage = allPages.length;
       const totalPages = Math.ceil(lastPage.totalCount / pageSize);
@@ -157,23 +158,24 @@ export function useProductByCode(productCode: string | null) {
 }
 
 /**
- * Fetch products with inventory for a warehouse
- * Supports full-text search via filters.search_term
+ * Fetch products with inventory and order aggregates (unified hook)
+ * Used in both products and inventory pages
+ * Set has_inventory filter to control stock filtering
  */
-export function useProductsWithInventory(
+export function useProductsWithInventoryAndOrders(
   warehouseId: string | null,
   filters?: ProductFilters,
   page: number = 1,
   pageSize: number = 25,
 ) {
   return useQuery({
-    queryKey: queryKeys.products.withInventory(
+    queryKey: queryKeys.products.withInventoryAndOrders(
       warehouseId || "",
       filters,
       page,
     ),
     queryFn: () =>
-      getProductsWithInventory(warehouseId!, filters, page, pageSize),
+      getProductsWithInventoryAndOrders(warehouseId!, filters, page, pageSize),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
     placeholderData: keepPreviousData,
     enabled: !!warehouseId,
@@ -225,19 +227,19 @@ export function useProductsWithInventoryByIds(
 }
 
 /**
- * Fetch single product with inventory by sequence number
+ * Fetch single product with inventory and orders by sequence number
  */
-export function useProductWithInventoryByNumber(
+export function useProductWithInventoryAndOrdersByNumber(
   sequenceNumber: string | null,
   warehouseId: string | null,
 ) {
   return useQuery({
-    queryKey: queryKeys.products.withInventoryByNumber(
+    queryKey: queryKeys.products.withInventoryAndOrdersByNumber(
       sequenceNumber || "",
       warehouseId || "",
     ),
     queryFn: () =>
-      getProductWithInventoryByNumber(Number(sequenceNumber), warehouseId!),
+      getProductWithInventoryAndOrdersByNumber(Number(sequenceNumber), warehouseId!),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
     enabled: !!sequenceNumber && !!warehouseId,
   });
@@ -402,7 +404,7 @@ export function useProductImageMutations() {
  */
 export function useLowStockProducts(warehouseId: string, limit?: number) {
   return useQuery({
-    queryKey: queryKeys.products.withInventory(warehouseId),
+    queryKey: [...queryKeys.products.withInventoryAndOrders(warehouseId), "low-stock", limit],
     queryFn: () => getLowStockProducts(warehouseId, limit),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.REALTIME),
   });

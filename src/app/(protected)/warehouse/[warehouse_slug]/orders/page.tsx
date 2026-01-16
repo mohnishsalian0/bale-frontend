@@ -131,7 +131,7 @@ export default function OrdersPage() {
             router.push(`/warehouse/${warehouse.slug}/sales-orders`)
           }
         >
-          View all sales
+          All sales
         </Button>
         <Button
           variant="outline"
@@ -140,7 +140,7 @@ export default function OrdersPage() {
             router.push(`/warehouse/${warehouse.slug}/purchase-orders`)
           }
         >
-          View all purchases
+          All purchases
         </Button>
       </div>
 

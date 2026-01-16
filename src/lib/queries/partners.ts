@@ -283,10 +283,8 @@ export async function getPartnersWithStats(
   const { data, error } = await buildPartnersWithStatsQuery(supabase, filters);
 
   if (error) throw error;
-  console.log("raw", data);
 
   const transformedData = (data || []).map(transformPartnerWithStatsListView);
-  console.log("transformed", transformedData);
 
   return transformedData;
 }

@@ -329,7 +329,7 @@ export default function SalesOrderDetailLayout({
               onEdit: handleEdit,
               onCreateOutward: () =>
                 router.push(
-                  `/warehouse/${warehouse.slug}/goods-outward/create?order=${order.id}`,
+                  `/warehouse/${warehouse.slug}/goods-outward/create?sales_order=${order.id}`,
                 ),
               onCreateInvoice: handleCreateInvoice,
               onComplete: () => setShowCompleteDialog(true),

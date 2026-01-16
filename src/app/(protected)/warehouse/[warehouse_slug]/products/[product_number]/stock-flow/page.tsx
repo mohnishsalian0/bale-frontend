@@ -10,7 +10,7 @@ import { ErrorState } from "@/components/layouts/error-state";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { useSession } from "@/contexts/session-context";
-import { useProductWithInventoryByNumber } from "@/lib/query/hooks/products";
+import { useProductWithInventoryAndOrdersByNumber } from "@/lib/query/hooks/products";
 import { useStockUnitsWithInward } from "@/lib/query/hooks/stock-units";
 import { useOutwardItemsByProduct } from "@/lib/query/hooks/stock-flow";
 import type { MeasuringUnit } from "@/types/database/enums";
@@ -63,7 +63,7 @@ export default function StockFlowPage({ params }: PageParams) {
 
   // Fetch product (will use cached data from layout)
   const { data: product, isLoading: productLoading } =
-    useProductWithInventoryByNumber(product_number, warehouse.id);
+    useProductWithInventoryAndOrdersByNumber(product_number, warehouse.id);
 
   // Fetch data based on selected filter (only one type at a time)
   // Pass correct page number based on active view to prevent unused query from running at wrong offset

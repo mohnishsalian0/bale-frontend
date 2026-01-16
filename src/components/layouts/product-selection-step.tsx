@@ -22,7 +22,7 @@ import {
 import type { ProductWithInventoryListView } from "@/types/products.types";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
 import {
-  useInfiniteProductsWithInventory,
+  useInfiniteProductsWithInventoryAndOrders,
   useProductAttributes,
   useProductsWithInventoryByIds,
 } from "@/lib/query/hooks/products";
@@ -108,7 +108,7 @@ export function ProductSelectionStep({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteProductsWithInventory(warehouseId, {
+  } = useInfiniteProductsWithInventoryAndOrders(warehouseId, {
     is_active: true,
     search_term: debouncedSearchQuery || undefined,
     attributes: attributeFilters.length > 0 ? attributeFilters : undefined,

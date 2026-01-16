@@ -13,7 +13,7 @@ import { formatCurrency } from "@/lib/utils/financial";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getStockTypeDisplay } from "@/lib/utils/product";
 import type { MeasuringUnit } from "@/types/database/enums";
-import { useProductWithInventoryByNumber } from "@/lib/query/hooks/products";
+import { useProductWithInventoryAndOrdersByNumber } from "@/lib/query/hooks/products";
 import { useSession } from "@/contexts/session-context";
 import { LoadingState } from "@/components/layouts/loading-state";
 
@@ -29,7 +29,7 @@ export default function SummaryPage({ params }: PageParams) {
   const { warehouse } = useSession();
 
   // Fetch product (will use cached data from layout)
-  const { data: product, isLoading } = useProductWithInventoryByNumber(
+  const { data: product, isLoading } = useProductWithInventoryAndOrdersByNumber(
     product_number,
     warehouse.id,
   );

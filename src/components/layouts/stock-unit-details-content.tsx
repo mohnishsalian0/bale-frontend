@@ -113,7 +113,7 @@ export function StockUnitDetailsContent({
               </p>
               <p
                 title={productInfoText}
-                className="text-xs text-gray-500 truncate"
+                className="text-sm text-gray-500 truncate mt-1"
               >
                 {productInfoText}
               </p>

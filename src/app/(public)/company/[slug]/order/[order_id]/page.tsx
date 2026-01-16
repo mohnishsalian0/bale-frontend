@@ -168,7 +168,7 @@ export default function OrderConfirmationPage() {
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-500">
-                    PROD-{item.product?.sequence_number}
+                    {item.product?.product_code}
                   </p>
                   <p
                     className="font-medium text-gray-700 truncate mt-1"
