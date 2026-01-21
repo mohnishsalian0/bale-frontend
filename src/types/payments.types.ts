@@ -125,10 +125,24 @@ export interface CreatePaymentData {
   total_amount: number;
   tds_applicable: boolean;
   allocations: CreatePaymentAllocation[];
-  reference_number?: string;
-  reference_date?: string; // ISO format (YYYY-MM-DD)
+
+  // Instrument fields (cheque, demand_draft)
+  instrument_number?: string;
+  instrument_date?: string; // ISO format (YYYY-MM-DD)
+  instrument_bank?: string;
+  instrument_branch?: string;
+  instrument_ifsc?: string;
+
+  // Digital payment fields (neft, rtgs, imps, upi, card)
+  transaction_id?: string;
+  vpa?: string; // UPI Virtual Payment Address
+  card_last_four?: string;
+
+  // TDS fields
   tds_rate?: number; // Required if tds_applicable = true
   tds_ledger_id?: string; // Required if tds_applicable = true
+
+  // Additional fields
   notes?: string;
   attachments?: string[]; // Array of file URLs
 }

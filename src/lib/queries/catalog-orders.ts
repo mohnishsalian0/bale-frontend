@@ -37,12 +37,12 @@ export const buildPublicSalesOrderByIdQuery = (
         display_name,
         email,
         phone_number,
-        address_line1,
-        address_line2,
-        city,
-        state,
-        country,
-        pin_code,
+        billing_address_line1,
+        billing_address_line2,
+        billing_city,
+        billing_state,
+        billing_country,
+        billing_pin_code,
         company_name,
         gst_number
       ),
@@ -82,12 +82,32 @@ export async function findOrCreateCustomer(
     last_name: formData.lastName,
     email: formData.email,
     phone_number: formData.phone,
-    address_line1: formData.addressLine1,
-    address_line2: formData.addressLine2 || undefined,
-    city: formData.city,
-    state: formData.state,
-    country: formData.country,
-    pin_code: formData.pinCode,
+    billing_address_line1: formData.addressLine1,
+    billing_address_line2: formData.addressLine2 || undefined,
+    billing_city: formData.city,
+    billing_state: formData.state,
+    billing_country: formData.country,
+    billing_pin_code: formData.pinCode,
+    shipping_same_as_billing: formData.shippingSameAsBilling,
+    // If shipping same as billing, store NULL. Otherwise store shipping fields.
+    shipping_address_line1: formData.shippingSameAsBilling
+      ? null
+      : formData.shippingAddressLine1 || undefined,
+    shipping_address_line2: formData.shippingSameAsBilling
+      ? null
+      : formData.shippingAddressLine2 || undefined,
+    shipping_city: formData.shippingSameAsBilling
+      ? null
+      : formData.shippingCity || undefined,
+    shipping_state: formData.shippingSameAsBilling
+      ? null
+      : formData.shippingState || undefined,
+    shipping_country: formData.shippingSameAsBilling
+      ? null
+      : formData.shippingCountry || undefined,
+    shipping_pin_code: formData.shippingSameAsBilling
+      ? null
+      : formData.shippingPinCode || undefined,
     gst_number: formData.gstin || undefined,
     source: "catalog",
     is_guest: true,

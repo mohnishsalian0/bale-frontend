@@ -19,16 +19,18 @@ export function getPaymentModeConfig(mode: PaymentMode): PaymentModeConfig {
       return { color: "green", variant: "secondary", label: "Cash" };
     case "cheque":
       return { color: "blue", variant: "secondary", label: "Cheque" };
+    case "demand_draft":
+      return { color: "blue", variant: "secondary", label: "Demand Draft" };
     case "neft":
       return { color: "blue", variant: "secondary", label: "NEFT" };
     case "rtgs":
       return { color: "blue", variant: "secondary", label: "RTGS" };
+    case "imps":
+      return { color: "blue", variant: "secondary", label: "IMPS" };
     case "upi":
       return { color: "green", variant: "secondary", label: "UPI" };
     case "card":
       return { color: "blue", variant: "secondary", label: "Card" };
-    case "other":
-      return { color: "gray", variant: "secondary", label: "Other" };
     default:
       return { color: "gray", variant: "secondary", label: mode };
   }

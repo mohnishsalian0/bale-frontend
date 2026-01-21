@@ -373,11 +373,12 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
                           {` • ${formatAbsoluteDate(payment.payment_date)}`}
                         </p>
 
-                        {payment.reference_number && (
+                        {(payment.instrument_number || payment.transaction_id) && (
                           <p className="text-xs text-gray-500 mt-1 text-left">
-                            Ref: {payment.reference_number}
-                            {payment.reference_date &&
-                              ` • Ref date: ${formatAbsoluteDate(payment.reference_date)}`}
+                            {payment.instrument_number && `Inst: ${payment.instrument_number}`}
+                            {payment.transaction_id && `TXN: ${payment.transaction_id}`}
+                            {payment.instrument_date &&
+                              ` • Date: ${formatAbsoluteDate(payment.instrument_date)}`}
                           </p>
                         )}
                       </div>
@@ -566,30 +567,58 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
             icon={() => <IconUser />}
           >
             <div className="space-y-3">
-              {(invoice.party_address_line1 || invoice.party_address_line2) && (
+              {/* Billing Address */}
+              {(invoice.party_billing_address_line1 || invoice.party_billing_address_line2) && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-700 flex items-center gap-1.5">
                     <IconMapPin className="size-4 text-gray-700" />
-                    Address
+                    Billing address
                   </span>
                   <div className="font-semibold text-gray-700 text-right max-w-[200px]">
-                    {invoice.party_address_line1 && (
-                      <p>{invoice.party_address_line1}</p>
+                    {invoice.party_billing_address_line1 && (
+                      <p>{invoice.party_billing_address_line1}</p>
                     )}
-                    {invoice.party_address_line2 && (
-                      <p>{invoice.party_address_line2}</p>
+                    {invoice.party_billing_address_line2 && (
+                      <p>{invoice.party_billing_address_line2}</p>
                     )}
-                    {invoice.party_city &&
-                      invoice.party_state &&
-                      invoice.party_pincode && (
+                    {invoice.party_billing_city &&
+                      invoice.party_billing_state &&
+                      invoice.party_billing_pincode && (
                         <p>
-                          {invoice.party_city}, {invoice.party_state} -{" "}
-                          {invoice.party_pincode}
+                          {invoice.party_billing_city}, {invoice.party_billing_state} -{" "}
+                          {invoice.party_billing_pincode}
                         </p>
                       )}
                   </div>
                 </div>
               )}
+
+              {/* Shipping Address */}
+              {(invoice.party_shipping_address_line1 || invoice.party_shipping_address_line2) && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-700 flex items-center gap-1.5">
+                    <IconMapPin className="size-4 text-gray-700" />
+                    Shipping address
+                  </span>
+                  <div className="font-semibold text-gray-700 text-right max-w-[200px]">
+                    {invoice.party_shipping_address_line1 && (
+                      <p>{invoice.party_shipping_address_line1}</p>
+                    )}
+                    {invoice.party_shipping_address_line2 && (
+                      <p>{invoice.party_shipping_address_line2}</p>
+                    )}
+                    {invoice.party_shipping_city &&
+                      invoice.party_shipping_state &&
+                      invoice.party_shipping_pincode && (
+                        <p>
+                          {invoice.party_shipping_city}, {invoice.party_shipping_state} -{" "}
+                          {invoice.party_shipping_pincode}
+                        </p>
+                      )}
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-between text-sm">
                 <span className="text-gray-700">GSTIN</span>
                 <span className="font-semibold text-gray-700">

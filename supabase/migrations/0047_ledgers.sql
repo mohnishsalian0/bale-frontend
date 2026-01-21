@@ -34,6 +34,7 @@ CREATE TABLE ledgers (
 
     -- Ledger identification
     name VARCHAR(200) NOT NULL,
+    system_name VARCHAR(100), -- Internal reference for seeded ledgers
     parent_group_id UUID NOT NULL REFERENCES parent_groups(id),
     ledger_type ledger_type_enum NOT NULL,
 
@@ -49,9 +50,15 @@ CREATE TABLE ledgers (
     gst_rate DECIMAL(5,2),
     gst_type VARCHAR(20), -- 'CGST', 'SGST', 'IGST', 'CESS'
 
-    -- TDS configuration
+    -- TDS configuration (for tax ledgers)
     tds_applicable BOOLEAN DEFAULT false,
     tds_rate DECIMAL(5,2), -- TDS percentage
+
+    -- Bank details (for bank ledgers)
+    bank_name VARCHAR(200),
+    account_number VARCHAR(50),
+    ifsc_code VARCHAR(11),
+    branch_name VARCHAR(200),
 
     -- System flags
     is_default BOOLEAN DEFAULT false, -- Default ledger for auto-selection
@@ -116,6 +123,16 @@ BEGIN
         RAISE EXCEPTION 'TDS rate can only be set when TDS is applicable';
     END IF;
 
+    -- Bank fields only for bank ledgers
+    IF NEW.ledger_type != 'bank' AND (
+        NEW.bank_name IS NOT NULL OR
+        NEW.account_number IS NOT NULL OR
+        NEW.ifsc_code IS NOT NULL OR
+        NEW.branch_name IS NOT NULL
+    ) THEN
+        RAISE EXCEPTION 'Bank details can only be set for bank ledgers';
+    END IF;
+
     -- Partner link only for party ledgers
     IF NEW.partner_id IS NOT NULL AND NEW.ledger_type != 'party' THEN
         RAISE EXCEPTION 'Partner linkage is only allowed for party ledgers';
@@ -128,6 +145,82 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_validate_ledger_config
     BEFORE INSERT OR UPDATE ON ledgers
     FOR EACH ROW EXECUTE FUNCTION validate_ledger_config();
+
+-- Validate IFSC code format
+ALTER TABLE ledgers ADD CONSTRAINT valid_ifsc_format
+  CHECK (
+    ifsc_code IS NULL OR
+    (LENGTH(ifsc_code) = 11 AND ifsc_code ~ '^[A-Z]{4}0[A-Z0-9]{6}$')
+  );
+
+-- Prevent deleting system ledgers and ledgers in use
+CREATE OR REPLACE FUNCTION prevent_ledger_deletion()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Prevent deleting default ledgers
+    IF OLD.is_default = true THEN
+        RAISE EXCEPTION 'Cannot delete system ledger: %', OLD.name;
+    END IF;
+
+    -- Prevent deleting partner-linked ledgers
+    IF OLD.partner_id IS NOT NULL THEN
+        RAISE EXCEPTION 'Cannot delete partner ledger. Delete the partner instead.';
+    END IF;
+
+    -- Check if ledger used in invoices
+    IF EXISTS (
+        SELECT 1 FROM invoices
+        WHERE (party_ledger_id = OLD.id OR sales_ledger_id = OLD.id OR purchase_ledger_id = OLD.id)
+        AND deleted_at IS NULL
+    ) THEN
+        RAISE EXCEPTION 'Cannot delete ledger used in invoices';
+    END IF;
+
+    -- Check if ledger used in payments
+    IF EXISTS (
+        SELECT 1 FROM payments
+        WHERE (party_ledger_id = OLD.id OR counter_ledger_id = OLD.id)
+        AND deleted_at IS NULL
+    ) THEN
+        RAISE EXCEPTION 'Cannot delete ledger used in payments';
+    END IF;
+
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_prevent_ledger_deletion
+    BEFORE DELETE ON ledgers
+    FOR EACH ROW EXECUTE FUNCTION prevent_ledger_deletion();
+
+-- Prevent editing critical fields of default ledgers
+CREATE OR REPLACE FUNCTION prevent_critical_ledger_edit()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- For default ledgers, prevent changing critical fields
+    IF OLD.is_default = true THEN
+        -- Allow name changes (for customization)
+        -- But lock system_name, ledger_type, parent_group_id
+        IF NEW.system_name IS DISTINCT FROM OLD.system_name THEN
+            RAISE EXCEPTION 'Cannot change system_name for default ledger';
+        END IF;
+
+        IF NEW.ledger_type IS DISTINCT FROM OLD.ledger_type THEN
+            RAISE EXCEPTION 'Cannot change ledger type for default ledger';
+        END IF;
+
+        IF NEW.parent_group_id IS DISTINCT FROM OLD.parent_group_id THEN
+            RAISE EXCEPTION 'Cannot change parent group for default ledger';
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_prevent_critical_ledger_edit
+    BEFORE UPDATE ON ledgers
+    FOR EACH ROW EXECUTE FUNCTION prevent_critical_ledger_edit();
 
 -- =====================================================
 -- RLS POLICIES

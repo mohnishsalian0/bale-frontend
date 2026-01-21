@@ -99,7 +99,9 @@ export default function EditSalesOrderPage({ params }: PageParams) {
     // Check if order can be edited
     if (existingOrder.status !== "approval_pending") {
       toast.error("Only orders in approval pending status can be edited");
-      router.push(`/warehouse/${warehouse.slug}/sales-orders/${sale_number}`);
+      router.push(
+        `/warehouse/${warehouse.slug}/sales-orders/${sale_number}/details`,
+      );
       return;
     }
 
@@ -201,7 +203,9 @@ export default function EditSalesOrderPage({ params }: PageParams) {
   };
 
   const handleCancel = () => {
-    router.push(`/warehouse/${warehouse.slug}/sales-orders/${sale_number}`);
+    router.push(
+      `/warehouse/${warehouse.slug}/sales-orders/${sale_number}/details`,
+    );
   };
 
   const handleSubmit = () => {
@@ -248,7 +252,7 @@ export default function EditSalesOrderPage({ params }: PageParams) {
         onSuccess: () => {
           toast.success("Sales order updated successfully");
           router.push(
-            `/warehouse/${warehouse.slug}/sales-orders/${sale_number}`,
+            `/warehouse/${warehouse.slug}/sales-orders/${sale_number}/details`,
           );
         },
         onError: (error) => {

@@ -366,8 +366,8 @@ export const buildProductsWithInventoryAndOrdersQuery = (
       gst_rate,
       attributes:product_attributes!inner(id, name, group_name, color_hex),
       product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value, pending_qr_units, warehouse_id),
-      product_sales_order_aggregates(active_pending_quantity, active_required_quantity),
-      product_purchase_order_aggregates(active_pending_quantity, active_required_quantity)
+      product_sales_order_aggregates(active_pending_quantity, active_required_quantity, active_pending_value, active_required_value),
+      product_purchase_order_aggregates(active_pending_quantity, active_required_quantity, active_pending_value, active_required_value)
     `,
       { count: "exact" },
     )
@@ -378,6 +378,16 @@ export const buildProductsWithInventoryAndOrdersQuery = (
   // Filter to products with stock > 0 for inventory page
   if (filters?.has_inventory) {
     query = query.gt("product_inventory_aggregates.in_stock_quantity", 0);
+  }
+
+  // Filter to products with pending QR codes
+  if (filters?.has_pending_qr) {
+    query = query.gt("product_inventory_aggregates.pending_qr_units", 0);
+  }
+
+  // Filter to low stock products
+  if (filters?.is_low_stock) {
+    query = query.eq("product_inventory_aggregates.is_low_stock", true);
   }
 
   if (filters?.is_active !== undefined) {
@@ -521,7 +531,8 @@ export function transformProductInventoryView(
   const { materials, colors, tags } = transformAttributes(product);
   const inventory = product.product_inventory_aggregates?.[0];
   const sales_orders = product.product_sales_order_aggregates?.[0] || null;
-  const purchase_orders = product.product_purchase_order_aggregates?.[0] || null;
+  const purchase_orders =
+    product.product_purchase_order_aggregates?.[0] || null;
 
   const {
     attributes: _attributes,
@@ -551,7 +562,8 @@ export function transformProductInventoryDetailView(
   const { materials, colors, tags } = transformAttributes(product);
   const inventory = product.product_inventory_aggregates?.[0];
   const sales_orders = product.product_sales_order_aggregates?.[0] || null;
-  const purchase_orders = product.product_purchase_order_aggregates?.[0] || null;
+  const purchase_orders =
+    product.product_purchase_order_aggregates?.[0] || null;
 
   const {
     attributes: _attributes,

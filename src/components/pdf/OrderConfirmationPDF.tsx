@@ -236,15 +236,15 @@ export function OrderConfirmationPDF({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Delivery Address</Text>
           <View style={styles.address}>
-            <Text>{order.customer?.address_line1}</Text>
-            {order.customer?.address_line2 && (
-              <Text>{order.customer.address_line2}</Text>
+            <Text>{order.customer?.billing_address_line1}</Text>
+            {order.customer?.billing_address_line2 && (
+              <Text>{order.customer.billing_address_line2}</Text>
             )}
             <Text>
-              {order.customer?.city}, {order.customer?.state}{" "}
-              {order.customer?.pin_code}
+              {order.customer?.billing_city}, {order.customer?.billing_state}{" "}
+              {order.customer?.billing_pin_code}
             </Text>
-            <Text>{order.customer?.country}</Text>
+            <Text>{order.customer?.billing_country}</Text>
           </View>
         </View>
 

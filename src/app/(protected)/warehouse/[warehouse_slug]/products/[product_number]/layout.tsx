@@ -252,7 +252,7 @@ export default function ProductDetailLayout({
               </span>
             </div>
             <p className="font-semibold text-gray-700 whitespace-pre">
-              {`${product.sales_orders?.active_pending_quantity} ${unitAbbr}  •  ₹ ${formatCurrency(product.sales_orders?.active_pending_value)}`}
+              {`${product.sales_orders?.active_pending_quantity} ${unitAbbr}  •  ₹ ${formatCurrency(product.sales_orders?.active_pending_value ?? 0)}`}
             </p>
           </div>
         </div>

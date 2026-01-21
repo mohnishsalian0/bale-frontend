@@ -25,7 +25,11 @@ import {
   StockType,
 } from "@/types/database/enums";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
-import { getFormattedAddress, getPartnerName } from "@/lib/utils/partner";
+import {
+  getFormattedAddress,
+  getPartnerName,
+  mapPartnerBillingAddress,
+} from "@/lib/utils/partner";
 import {
   calculateCompletionPercentage,
   getOrderDisplayStatus,
@@ -225,12 +229,12 @@ export default function OrderConfirmationPage() {
         {/* Address */}
         <Section
           title="Delivery Address"
-          subtitle={`${order.customer?.city || ""}, ${order.customer?.state || ""}`}
+          subtitle={`${order.customer?.billing_city || ""}, ${order.customer?.billing_state || ""}`}
           icon={IconMapPin}
         >
           <div className="text-sm text-gray-700">
             {order.customer &&
-              getFormattedAddress(order.customer).map((addrLine, index) => (
+              getFormattedAddress(mapPartnerBillingAddress(order.customer)).map((addrLine, index) => (
                 <p key={index}>{addrLine}</p>
               ))}
           </div>

@@ -31,9 +31,17 @@ interface PaymentFormData {
   counterLedgerId: string;
   paymentDate: string;
   paymentMode: PaymentMode | "";
-  referenceNumber: string;
-  referenceDate: string;
   notes: string;
+  // Instrument fields (cheque, demand_draft)
+  instrumentNumber: string;
+  instrumentDate: string;
+  instrumentBank: string;
+  instrumentBranch: string;
+  instrumentIfsc: string;
+  // Digital payment fields
+  transactionId: string;
+  vpa: string;
+  cardLastFour: string;
 }
 
 type FormStep = "partner" | "allocation" | "details" | "review";
@@ -85,9 +93,17 @@ export default function CreatePaymentPage() {
     counterLedgerId: "",
     paymentDate: "",
     paymentMode: "",
-    referenceNumber: "",
-    referenceDate: "",
     notes: "",
+    // Instrument fields
+    instrumentNumber: "",
+    instrumentDate: "",
+    instrumentBank: "",
+    instrumentBranch: "",
+    instrumentIfsc: "",
+    // Digital payment fields
+    transactionId: "",
+    vpa: "",
+    cardLastFour: "",
   });
 
   // Fetch invoices for the allocations to show in review
@@ -265,8 +281,6 @@ export default function CreatePaymentPage() {
       counter_ledger_id: formData.counterLedgerId,
       payment_date: formData.paymentDate,
       payment_mode: formData.paymentMode as PaymentMode,
-      reference_number: formData.referenceNumber || undefined,
-      reference_date: formData.referenceDate || undefined,
       total_amount: totalAmount,
       tds_applicable: formData.tdsApplicable,
       tds_rate: formData.tdsApplicable
@@ -276,6 +290,16 @@ export default function CreatePaymentPage() {
       notes: formData.notes || undefined,
       attachments: undefined,
       allocations,
+      // Instrument fields
+      instrument_number: formData.instrumentNumber || undefined,
+      instrument_date: formData.instrumentDate || undefined,
+      instrument_bank: formData.instrumentBank || undefined,
+      instrument_branch: formData.instrumentBranch || undefined,
+      instrument_ifsc: formData.instrumentIfsc || undefined,
+      // Digital payment fields
+      transaction_id: formData.transactionId || undefined,
+      vpa: formData.vpa || undefined,
+      card_last_four: formData.cardLastFour || undefined,
     };
 
     // Create payment using mutation
@@ -392,11 +416,19 @@ export default function CreatePaymentPage() {
                 counterLedgerId: formData.counterLedgerId,
                 paymentDate: formData.paymentDate,
                 paymentMode: formData.paymentMode,
-                referenceNumber: formData.referenceNumber,
-                referenceDate: formData.referenceDate,
                 notes: formData.notes,
                 tdsApplicable: formData.tdsApplicable,
                 tdsRate: formData.tdsRate,
+                // Instrument fields
+                instrumentNumber: formData.instrumentNumber,
+                instrumentDate: formData.instrumentDate,
+                instrumentBank: formData.instrumentBank,
+                instrumentBranch: formData.instrumentBranch,
+                instrumentIfsc: formData.instrumentIfsc,
+                // Digital payment fields
+                transactionId: formData.transactionId,
+                vpa: formData.vpa,
+                cardLastFour: formData.cardLastFour,
               }}
               setFormData={(updates) =>
                 setFormData((prev) => ({ ...prev, ...updates }))

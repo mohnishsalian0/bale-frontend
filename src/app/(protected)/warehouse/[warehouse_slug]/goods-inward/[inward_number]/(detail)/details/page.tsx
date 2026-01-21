@@ -16,7 +16,11 @@ import { ErrorState } from "@/components/layouts/error-state";
 import { Section } from "@/components/layouts/section";
 import { useGoodsInwardBySequenceNumber } from "@/lib/query/hooks/stock-flow";
 import { getInitials } from "@/lib/utils/initials";
-import { getPartnerName, getFormattedAddress } from "@/lib/utils/partner";
+import {
+  getPartnerName,
+  getFormattedAddress,
+  getPartnerShippingAddress,
+} from "@/lib/utils/partner";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import {
   getTransportIcon,
@@ -79,7 +83,7 @@ export default function InwardDetailsPage({ params }: PageParams) {
     : getPartnerName(inward.partner);
   const sourceAddressLines = isWarehouseTransfer
     ? getFormattedAddress(inward.from_warehouse)
-    : getFormattedAddress(inward.partner);
+    : getFormattedAddress(getPartnerShippingAddress(inward.partner));
 
   const TransportIcon = getTransportIcon(inward.transport_type);
 

@@ -211,6 +211,12 @@ export const queryKeys = {
   // Ledgers
   ledgers: {
     all: (filters?: Record<string, unknown>) => ["ledgers", filters] as const,
+    byId: (ledgerId: string) => ["ledgers", "detail", ledgerId] as const,
+  },
+
+  // Parent Groups
+  parentGroups: {
+    all: () => ["parent-groups"] as const,
   },
 
   // Adjustment Notes

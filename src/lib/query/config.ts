@@ -12,6 +12,7 @@ export const STALE_TIME = {
   PARTNERS: 5 * 60 * 1000, // 5 minutes
   WAREHOUSES: 10 * 60 * 1000, // 10 minutes
   LEDGERS: 5 * 60 * 1000, // 5 minutes (ledgers are master data)
+  PARENT_GROUPS: 30 * 60 * 1000, // 30 minutes (static system data, rarely changes)
 
   // Transactional Data - Changes more frequently
   STOCK_UNITS: 2 * 60 * 1000, // 2 minutes

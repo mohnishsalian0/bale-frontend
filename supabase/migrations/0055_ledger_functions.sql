@@ -36,57 +36,57 @@ BEGIN
     SELECT id INTO v_direct_expenses_id FROM parent_groups WHERE name = 'Direct Expenses';
 
     -- Create default Sales ledger
-    INSERT INTO ledgers (company_id, name, parent_group_id, ledger_type, is_default)
-    VALUES (NEW.id, 'Sales', v_sales_accounts_id, 'sales', true);
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, is_default)
+    VALUES (NEW.id, 'Sales', 'sales', v_sales_accounts_id, 'sales', true);
 
     -- Create Sales Return ledger (contra to Sales)
-    INSERT INTO ledgers (company_id, name, parent_group_id, ledger_type)
-    VALUES (NEW.id, 'Sales Return', v_sales_accounts_id, 'sales');
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type)
+    VALUES (NEW.id, 'Sales Return', 'sales_return', v_sales_accounts_id, 'sales');
 
     -- Create default Purchase ledger
-    INSERT INTO ledgers (company_id, name, parent_group_id, ledger_type, is_default)
-    VALUES (NEW.id, 'Purchase', v_purchase_accounts_id, 'purchase', true);
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, is_default)
+    VALUES (NEW.id, 'Purchase', 'purchase', v_purchase_accounts_id, 'purchase', true);
 
     -- Create Purchase Return ledger (contra to Purchase)
-    INSERT INTO ledgers (company_id, name, parent_group_id, ledger_type)
-    VALUES (NEW.id, 'Purchase Return', v_purchase_accounts_id, 'purchase');
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type)
+    VALUES (NEW.id, 'Purchase Return', 'purchase_return', v_purchase_accounts_id, 'purchase');
 
     -- Create GST ledgers (combined for input and output)
-    INSERT INTO ledgers (company_id, name, parent_group_id, ledger_type, gst_applicable, gst_rate, gst_type)
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, gst_applicable, gst_rate, gst_type)
     VALUES
-        (NEW.id, 'CGST', v_duties_taxes_id, 'tax', true, 0, 'CGST'),
-        (NEW.id, 'SGST', v_duties_taxes_id, 'tax', true, 0, 'SGST'),
-        (NEW.id, 'IGST', v_duties_taxes_id, 'tax', true, 0, 'IGST');
+        (NEW.id, 'CGST', 'cgst', v_duties_taxes_id, 'tax', true, 0, 'CGST'),
+        (NEW.id, 'SGST', 'sgst', v_duties_taxes_id, 'tax', true, 0, 'SGST'),
+        (NEW.id, 'IGST', 'igst', v_duties_taxes_id, 'tax', true, 0, 'IGST');
 
     -- Create TDS/TCS ledgers
-    INSERT INTO ledgers (company_id, name, parent_group_id, ledger_type, tds_applicable, tds_rate)
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, tds_applicable, tds_rate)
     VALUES
-        (NEW.id, 'TDS Payable', v_duties_taxes_id, 'tax', true, 0.1),
-        (NEW.id, 'TCS Receivable', v_duties_taxes_id, 'tax', true, 0.1);
+        (NEW.id, 'TDS Payable', 'tds_payable', v_duties_taxes_id, 'tax', true, 0.1),
+        (NEW.id, 'TCS Receivable', 'tcs_receivable', v_duties_taxes_id, 'tax', true, 0.1);
 
     -- Create Cash ledger
-    INSERT INTO ledgers (company_id, name, parent_group_id, ledger_type, is_default)
-    VALUES (NEW.id, 'Cash', v_cash_id, 'cash', true);
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, is_default)
+    VALUES (NEW.id, 'Cash', 'cash', v_cash_id, 'cash', true);
 
     -- Create default Bank ledger
-    INSERT INTO ledgers (company_id, name, parent_group_id, ledger_type, is_default)
-    VALUES (NEW.id, 'Bank Account', v_bank_accounts_id, 'bank', true);
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, is_default)
+    VALUES (NEW.id, 'Bank Account', 'bank', v_bank_accounts_id, 'bank', true);
 
     -- Create discount ledgers
-    INSERT INTO ledgers (company_id, name, parent_group_id, ledger_type)
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type)
     VALUES
-        (NEW.id, 'Sales Discount', v_indirect_expenses_id, 'expense'),
-        (NEW.id, 'Purchase Discount', v_indirect_income_id, 'income');
+        (NEW.id, 'Sales Discount', 'sales_discount', v_indirect_expenses_id, 'expense'),
+        (NEW.id, 'Purchase Discount', 'purchase_discount', v_indirect_income_id, 'income');
 
     -- Create freight ledgers
-    INSERT INTO ledgers (company_id, name, parent_group_id, ledger_type)
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type)
     VALUES
-        (NEW.id, 'Freight Outward', v_indirect_expenses_id, 'expense'),
-        (NEW.id, 'Freight Inward', v_direct_expenses_id, 'expense');
+        (NEW.id, 'Freight Outward', 'freight_outward', v_indirect_expenses_id, 'expense'),
+        (NEW.id, 'Freight Inward', 'freight_inward', v_direct_expenses_id, 'expense');
 
     -- Create round-off ledger
-    INSERT INTO ledgers (company_id, name, parent_group_id, ledger_type)
-    VALUES (NEW.id, 'Round Off', v_indirect_expenses_id, 'expense');
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type)
+    VALUES (NEW.id, 'Round Off', 'round_off', v_indirect_expenses_id, 'expense');
 
     RETURN NEW;
 END;
@@ -128,6 +128,7 @@ BEGIN
     INSERT INTO ledgers (
         company_id,
         name,
+        system_name,
         parent_group_id,
         ledger_type,
         is_bill_wise,
@@ -136,6 +137,7 @@ BEGIN
     VALUES (
         NEW.company_id,
         NEW.company_name,
+        'party',
         v_parent_group_id,
         'party',
         true,

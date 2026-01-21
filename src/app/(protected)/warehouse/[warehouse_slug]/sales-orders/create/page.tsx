@@ -181,7 +181,7 @@ export default function CreateSalesOrderPage() {
         onSuccess: (sequenceNumber) => {
           toast.success("Sales order created successfully");
           router.push(
-            `/warehouse/${warehouse.slug}/sales-orders/${sequenceNumber}`,
+            `/warehouse/${warehouse.slug}/sales-orders/${sequenceNumber}/details`,
           );
         },
         onError: (error) => {

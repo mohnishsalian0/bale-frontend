@@ -8,7 +8,7 @@
 -- Function to update partner search vector for full-text search
 -- Weight A: first_name, last_name, company_name, phone_number
 -- Weight B: email, gst_number, pan_number, partner_type
--- Weight C: city, state, address_line1, address_line2
+-- Weight C: billing and shipping addresses (city, state, address lines)
 CREATE OR REPLACE FUNCTION update_partner_search_vector()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -34,11 +34,17 @@ BEGIN
         setweight(to_tsvector('simple', COALESCE(NEW.pan_number, '')), 'B') ||
         setweight(to_tsvector('english', COALESCE(NEW.partner_type, '')), 'B') ||
 
-        -- Weight C: Location details
-        setweight(to_tsvector('english', COALESCE(NEW.city, '')), 'C') ||
-        setweight(to_tsvector('english', COALESCE(NEW.state, '')), 'C') ||
-        setweight(to_tsvector('english', COALESCE(NEW.address_line1, '')), 'C') ||
-        setweight(to_tsvector('english', COALESCE(NEW.address_line2, '')), 'C');
+        -- Weight C: Billing address details
+        setweight(to_tsvector('english', COALESCE(NEW.billing_city, '')), 'C') ||
+        setweight(to_tsvector('english', COALESCE(NEW.billing_state, '')), 'C') ||
+        setweight(to_tsvector('english', COALESCE(NEW.billing_address_line1, '')), 'C') ||
+        setweight(to_tsvector('english', COALESCE(NEW.billing_address_line2, '')), 'C') ||
+
+        -- Weight C: Shipping address details (only if different from billing)
+        setweight(to_tsvector('english', COALESCE(NEW.shipping_city, '')), 'C') ||
+        setweight(to_tsvector('english', COALESCE(NEW.shipping_state, '')), 'C') ||
+        setweight(to_tsvector('english', COALESCE(NEW.shipping_address_line1, '')), 'C') ||
+        setweight(to_tsvector('english', COALESCE(NEW.shipping_address_line2, '')), 'C');
 
     RETURN NEW;
 END;

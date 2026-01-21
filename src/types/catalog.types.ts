@@ -88,6 +88,13 @@ export interface CheckoutFormData {
   country: string;
   pinCode: string;
   gstin: string;
+  shippingSameAsBilling: boolean;
+  shippingAddressLine1: string;
+  shippingAddressLine2: string;
+  shippingCity: string;
+  shippingState: string;
+  shippingCountry: string;
+  shippingPinCode: string;
   specialInstructions: string;
   termsAccepted: boolean;
 }
@@ -121,12 +128,12 @@ export interface PublicSalesOrder extends SalesOrder {
     | "last_name"
     | "email"
     | "phone_number"
-    | "address_line1"
-    | "address_line2"
-    | "city"
-    | "state"
-    | "country"
-    | "pin_code"
+    | "billing_address_line1"
+    | "billing_address_line2"
+    | "billing_city"
+    | "billing_state"
+    | "billing_country"
+    | "billing_pin_code"
     | "company_name"
     | "gst_number"
     | "display_name"

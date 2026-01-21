@@ -53,6 +53,8 @@ export interface ProductFilters extends Record<string, unknown> {
   order_by?: "name" | "created_at" | "sequence_number";
   order_direction?: "asc" | "desc";
   has_inventory?: boolean; // Filter products with in_stock_quantity > 0
+  has_pending_qr?: boolean; // Filter products with pending_qr_units > 0
+  is_low_stock?: boolean; // Filter products with is_low_stock = TRUE
 }
 
 // ============================================================================
@@ -178,11 +180,11 @@ export interface ProductInventoryDetailView extends ProductDetailView {
   inventory: ProductInventory;
   sales_orders: Pick<
     ProductSalesOrderAggregate,
-    "active_pending_quantity" | "active_required_quantity"
+    "active_pending_quantity" | "active_required_quantity" | "active_pending_value" | "active_required_value"
   > | null;
   purchase_orders: Pick<
     ProductPurchaseOrderAggregate,
-    "active_pending_quantity" | "active_required_quantity"
+    "active_pending_quantity" | "active_required_quantity" | "active_pending_value" | "active_required_value"
   > | null;
 }
 
@@ -202,10 +204,10 @@ export interface ProductInventoryView extends ProductListView {
   >;
   sales_orders: Pick<
     ProductSalesOrderAggregate,
-    "active_pending_quantity" | "active_required_quantity"
+    "active_pending_quantity" | "active_required_quantity" | "active_pending_value" | "active_required_value"
   > | null;
   purchase_orders: Pick<
     ProductPurchaseOrderAggregate,
-    "active_pending_quantity" | "active_required_quantity"
+    "active_pending_quantity" | "active_required_quantity" | "active_pending_value" | "active_required_value"
   > | null;
 }

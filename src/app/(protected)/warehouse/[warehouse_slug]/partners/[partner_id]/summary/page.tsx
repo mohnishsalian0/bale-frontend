@@ -14,7 +14,11 @@ import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { Section } from "@/components/layouts/section";
 import { usePartnerWithOrderStats } from "@/lib/query/hooks/partners";
-import { getFormattedAddress } from "@/lib/utils/partner";
+import {
+  getFormattedAddress,
+  mapPartnerBillingAddress,
+  getPartnerShippingAddress,
+} from "@/lib/utils/partner";
 
 interface PageParams {
   params: Promise<{
@@ -49,7 +53,12 @@ export default function PartnerSummaryPage({ params }: PageParams) {
     );
   }
 
-  const addressLines = getFormattedAddress(partner);
+  const billingAddressLines = getFormattedAddress(
+    mapPartnerBillingAddress(partner),
+  );
+  const shippingAddressLines = getFormattedAddress(
+    getPartnerShippingAddress(partner),
+  );
   const contactName =
     partner.first_name && partner.last_name
       ? `${partner.first_name} ${partner.last_name}`.trim()
@@ -93,21 +102,45 @@ export default function PartnerSummaryPage({ params }: PageParams) {
               {partner.email || "—"}
             </span>
           </div>
+        </div>
+      </Section>
 
-          {/* Address */}
+      {/* Addresses Section */}
+      <Section
+        title="Addresses"
+        subtitle=""
+        icon={() => <IconMapPin />}
+      >
+        <div className="space-y-3">
+          {/* Billing Address */}
           <div className="flex justify-between text-sm">
-            <span className="text-gray-700 flex items-center gap-2">
-              <IconMapPin className="size-4" />
-              Address
-            </span>
-            {addressLines.length > 0 ? (
+            <span className="text-gray-700">Billing address</span>
+            {billingAddressLines.length > 0 ? (
               <div className="font-semibold text-gray-700 text-right max-w-[200px]">
-                {addressLines.map((line, index) => (
+                {billingAddressLines.map((line, index) => (
                   <p key={index}>{line}</p>
                 ))}
               </div>
             ) : (
-              <span className="text-gray-500 italic">No address provided</span>
+              <span className="text-gray-500 italic">—</span>
+            )}
+          </div>
+
+          {/* Shipping Address */}
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-700">Shipping address</span>
+            {partner.shipping_same_as_billing ? (
+              <span className="font-semibold text-gray-700 text-right max-w-[200px]">
+                Same as billing
+              </span>
+            ) : shippingAddressLines.length > 0 ? (
+              <div className="font-semibold text-gray-700 text-right max-w-[200px]">
+                {shippingAddressLines.map((line, index) => (
+                  <p key={index}>{line}</p>
+                ))}
+              </div>
+            ) : (
+              <span className="text-gray-500 italic">—</span>
             )}
           </div>
         </div>

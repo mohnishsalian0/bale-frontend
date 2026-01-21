@@ -1269,10 +1269,12 @@ export type Database = {
           modified_by: string | null
           notes: string | null
           outstanding_amount: number | null
-          party_address_line1: string | null
-          party_address_line2: string | null
-          party_city: string | null
-          party_country: string | null
+          party_billing_address_line1: string | null
+          party_billing_address_line2: string | null
+          party_billing_city: string | null
+          party_billing_country: string | null
+          party_billing_pincode: string | null
+          party_billing_state: string | null
           party_display_name: string | null
           party_email: string | null
           party_gst_number: string | null
@@ -1281,8 +1283,12 @@ export type Database = {
           party_name: string | null
           party_pan_number: string | null
           party_phone: string | null
-          party_pincode: string | null
-          party_state: string | null
+          party_shipping_address_line1: string | null
+          party_shipping_address_line2: string | null
+          party_shipping_city: string | null
+          party_shipping_country: string | null
+          party_shipping_pincode: string | null
+          party_shipping_state: string | null
           payment_terms: string | null
           round_off_amount: number | null
           search_vector: unknown
@@ -1357,10 +1363,12 @@ export type Database = {
           modified_by?: string | null
           notes?: string | null
           outstanding_amount?: number | null
-          party_address_line1?: string | null
-          party_address_line2?: string | null
-          party_city?: string | null
-          party_country?: string | null
+          party_billing_address_line1?: string | null
+          party_billing_address_line2?: string | null
+          party_billing_city?: string | null
+          party_billing_country?: string | null
+          party_billing_pincode?: string | null
+          party_billing_state?: string | null
           party_display_name?: string | null
           party_email?: string | null
           party_gst_number?: string | null
@@ -1369,8 +1377,12 @@ export type Database = {
           party_name?: string | null
           party_pan_number?: string | null
           party_phone?: string | null
-          party_pincode?: string | null
-          party_state?: string | null
+          party_shipping_address_line1?: string | null
+          party_shipping_address_line2?: string | null
+          party_shipping_city?: string | null
+          party_shipping_country?: string | null
+          party_shipping_pincode?: string | null
+          party_shipping_state?: string | null
           payment_terms?: string | null
           round_off_amount?: number | null
           search_vector?: unknown
@@ -1445,10 +1457,12 @@ export type Database = {
           modified_by?: string | null
           notes?: string | null
           outstanding_amount?: number | null
-          party_address_line1?: string | null
-          party_address_line2?: string | null
-          party_city?: string | null
-          party_country?: string | null
+          party_billing_address_line1?: string | null
+          party_billing_address_line2?: string | null
+          party_billing_city?: string | null
+          party_billing_country?: string | null
+          party_billing_pincode?: string | null
+          party_billing_state?: string | null
           party_display_name?: string | null
           party_email?: string | null
           party_gst_number?: string | null
@@ -1457,8 +1471,12 @@ export type Database = {
           party_name?: string | null
           party_pan_number?: string | null
           party_phone?: string | null
-          party_pincode?: string | null
-          party_state?: string | null
+          party_shipping_address_line1?: string | null
+          party_shipping_address_line2?: string | null
+          party_shipping_city?: string | null
+          party_shipping_country?: string | null
+          party_shipping_pincode?: string | null
+          party_shipping_state?: string | null
           payment_terms?: string | null
           round_off_amount?: number | null
           search_vector?: unknown
@@ -1782,6 +1800,9 @@ export type Database = {
       }
       ledgers: {
         Row: {
+          account_number: string | null
+          bank_name: string | null
+          branch_name: string | null
           company_id: string
           created_at: string
           created_by: string | null
@@ -1792,6 +1813,7 @@ export type Database = {
           gst_rate: number | null
           gst_type: string | null
           id: string
+          ifsc_code: string | null
           is_active: boolean | null
           is_bill_wise: boolean | null
           is_default: boolean | null
@@ -1801,12 +1823,16 @@ export type Database = {
           opening_balance: number | null
           parent_group_id: string
           partner_id: string | null
+          system_name: string | null
           tally_guid: string | null
           tds_applicable: boolean | null
           tds_rate: number | null
           updated_at: string
         }
         Insert: {
+          account_number?: string | null
+          bank_name?: string | null
+          branch_name?: string | null
           company_id?: string
           created_at?: string
           created_by?: string | null
@@ -1817,6 +1843,7 @@ export type Database = {
           gst_rate?: number | null
           gst_type?: string | null
           id?: string
+          ifsc_code?: string | null
           is_active?: boolean | null
           is_bill_wise?: boolean | null
           is_default?: boolean | null
@@ -1826,12 +1853,16 @@ export type Database = {
           opening_balance?: number | null
           parent_group_id: string
           partner_id?: string | null
+          system_name?: string | null
           tally_guid?: string | null
           tds_applicable?: boolean | null
           tds_rate?: number | null
           updated_at?: string
         }
         Update: {
+          account_number?: string | null
+          bank_name?: string | null
+          branch_name?: string | null
           company_id?: string
           created_at?: string
           created_by?: string | null
@@ -1842,6 +1873,7 @@ export type Database = {
           gst_rate?: number | null
           gst_type?: string | null
           id?: string
+          ifsc_code?: string | null
           is_active?: boolean | null
           is_bill_wise?: boolean | null
           is_default?: boolean | null
@@ -1851,6 +1883,7 @@ export type Database = {
           opening_balance?: number | null
           parent_group_id?: string
           partner_id?: string | null
+          system_name?: string | null
           tally_guid?: string | null
           tds_applicable?: boolean | null
           tds_rate?: number | null
@@ -2214,12 +2247,14 @@ export type Database = {
       }
       partners: {
         Row: {
-          address_line1: string | null
-          address_line2: string | null
-          city: string | null
+          billing_address_line1: string | null
+          billing_address_line2: string | null
+          billing_city: string | null
+          billing_country: string | null
+          billing_pin_code: string | null
+          billing_state: string | null
           company_id: string
           company_name: string
-          country: string | null
           created_at: string
           created_by: string | null
           credit_limit: number | null
@@ -2240,20 +2275,27 @@ export type Database = {
           pan_number: string | null
           partner_type: string
           phone_number: string | null
-          pin_code: string | null
           registered_at: string | null
           search_vector: unknown
+          shipping_address_line1: string | null
+          shipping_address_line2: string | null
+          shipping_city: string | null
+          shipping_country: string | null
+          shipping_pin_code: string | null
+          shipping_same_as_billing: boolean
+          shipping_state: string | null
           source: string
-          state: string | null
           updated_at: string
         }
         Insert: {
-          address_line1?: string | null
-          address_line2?: string | null
-          city?: string | null
+          billing_address_line1?: string | null
+          billing_address_line2?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_pin_code?: string | null
+          billing_state?: string | null
           company_id?: string
           company_name: string
-          country?: string | null
           created_at?: string
           created_by?: string | null
           credit_limit?: number | null
@@ -2274,20 +2316,27 @@ export type Database = {
           pan_number?: string | null
           partner_type: string
           phone_number?: string | null
-          pin_code?: string | null
           registered_at?: string | null
           search_vector?: unknown
+          shipping_address_line1?: string | null
+          shipping_address_line2?: string | null
+          shipping_city?: string | null
+          shipping_country?: string | null
+          shipping_pin_code?: string | null
+          shipping_same_as_billing?: boolean
+          shipping_state?: string | null
           source?: string
-          state?: string | null
           updated_at?: string
         }
         Update: {
-          address_line1?: string | null
-          address_line2?: string | null
-          city?: string | null
+          billing_address_line1?: string | null
+          billing_address_line2?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_pin_code?: string | null
+          billing_state?: string | null
           company_id?: string
           company_name?: string
-          country?: string | null
           created_at?: string
           created_by?: string | null
           credit_limit?: number | null
@@ -2308,11 +2357,16 @@ export type Database = {
           pan_number?: string | null
           partner_type?: string
           phone_number?: string | null
-          pin_code?: string | null
           registered_at?: string | null
           search_vector?: unknown
+          shipping_address_line1?: string | null
+          shipping_address_line2?: string | null
+          shipping_city?: string | null
+          shipping_country?: string | null
+          shipping_pin_code?: string | null
+          shipping_same_as_billing?: boolean
+          shipping_state?: string | null
           source?: string
-          state?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2392,6 +2446,7 @@ export type Database = {
           cancellation_reason: string | null
           cancelled_at: string | null
           cancelled_by: string | null
+          card_last_four: string | null
           company_id: string
           counter_ledger_id: string
           counter_ledger_name: string | null
@@ -2400,6 +2455,11 @@ export type Database = {
           deleted_at: string | null
           exported_to_tally_at: string | null
           id: string
+          instrument_bank: string | null
+          instrument_branch: string | null
+          instrument_date: string | null
+          instrument_ifsc: string | null
+          instrument_number: string | null
           is_cancelled: boolean
           modified_by: string | null
           net_amount: number | null
@@ -2412,8 +2472,6 @@ export type Database = {
           payment_date: string
           payment_mode: Database["public"]["Enums"]["payment_mode_enum"]
           payment_number: string
-          reference_date: string | null
-          reference_number: string | null
           search_vector: unknown
           sequence_number: number
           slug: string
@@ -2423,14 +2481,17 @@ export type Database = {
           tds_ledger_id: string | null
           tds_rate: number | null
           total_amount: number
+          transaction_id: string | null
           updated_at: string
           voucher_type: Database["public"]["Enums"]["voucher_type_enum"]
+          vpa: string | null
         }
         Insert: {
           attachments?: string[] | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
+          card_last_four?: string | null
           company_id?: string
           counter_ledger_id: string
           counter_ledger_name?: string | null
@@ -2439,6 +2500,11 @@ export type Database = {
           deleted_at?: string | null
           exported_to_tally_at?: string | null
           id?: string
+          instrument_bank?: string | null
+          instrument_branch?: string | null
+          instrument_date?: string | null
+          instrument_ifsc?: string | null
+          instrument_number?: string | null
           is_cancelled?: boolean
           modified_by?: string | null
           net_amount?: number | null
@@ -2451,8 +2517,6 @@ export type Database = {
           payment_date?: string
           payment_mode?: Database["public"]["Enums"]["payment_mode_enum"]
           payment_number: string
-          reference_date?: string | null
-          reference_number?: string | null
           search_vector?: unknown
           sequence_number: number
           slug: string
@@ -2462,14 +2526,17 @@ export type Database = {
           tds_ledger_id?: string | null
           tds_rate?: number | null
           total_amount: number
+          transaction_id?: string | null
           updated_at?: string
           voucher_type: Database["public"]["Enums"]["voucher_type_enum"]
+          vpa?: string | null
         }
         Update: {
           attachments?: string[] | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
+          card_last_four?: string | null
           company_id?: string
           counter_ledger_id?: string
           counter_ledger_name?: string | null
@@ -2478,6 +2545,11 @@ export type Database = {
           deleted_at?: string | null
           exported_to_tally_at?: string | null
           id?: string
+          instrument_bank?: string | null
+          instrument_branch?: string | null
+          instrument_date?: string | null
+          instrument_ifsc?: string | null
+          instrument_number?: string | null
           is_cancelled?: boolean
           modified_by?: string | null
           net_amount?: number | null
@@ -2490,8 +2562,6 @@ export type Database = {
           payment_date?: string
           payment_mode?: Database["public"]["Enums"]["payment_mode_enum"]
           payment_number?: string
-          reference_date?: string | null
-          reference_number?: string | null
           search_vector?: unknown
           sequence_number?: number
           slug?: string
@@ -2501,8 +2571,10 @@ export type Database = {
           tds_ledger_id?: string | null
           tds_rate?: number | null
           total_amount?: number
+          transaction_id?: string | null
           updated_at?: string
           voucher_type?: Database["public"]["Enums"]["voucher_type_enum"]
+          vpa?: string | null
         }
         Relationships: [
           {
@@ -2642,6 +2714,7 @@ export type Database = {
           in_stock_quantity: number | null
           in_stock_units: number | null
           in_stock_value: number | null
+          is_low_stock: boolean | null
           last_updated_at: string | null
           pending_qr_units: number | null
           product_id: string
@@ -2663,6 +2736,7 @@ export type Database = {
           in_stock_quantity?: number | null
           in_stock_units?: number | null
           in_stock_value?: number | null
+          is_low_stock?: boolean | null
           last_updated_at?: string | null
           pending_qr_units?: number | null
           product_id: string
@@ -2684,6 +2758,7 @@ export type Database = {
           in_stock_quantity?: number | null
           in_stock_units?: number | null
           in_stock_value?: number | null
+          is_low_stock?: boolean | null
           last_updated_at?: string | null
           pending_qr_units?: number | null
           product_id?: string
@@ -4234,19 +4309,25 @@ export type Database = {
         Args: {
           p_allocations: Json
           p_attachments?: string[]
+          p_card_last_four?: string
           p_company_id?: string
           p_counter_ledger_id: string
+          p_instrument_bank?: string
+          p_instrument_branch?: string
+          p_instrument_date?: string
+          p_instrument_ifsc?: string
+          p_instrument_number?: string
           p_notes?: string
           p_party_ledger_id: string
           p_payment_date: string
           p_payment_mode: string
-          p_reference_date?: string
-          p_reference_number?: string
           p_tds_applicable: boolean
           p_tds_ledger_id?: string
           p_tds_rate?: number
           p_total_amount: number
+          p_transaction_id?: string
           p_voucher_type: string
+          p_vpa?: string
         }
         Returns: string
       }
@@ -4430,18 +4511,24 @@ export type Database = {
         Args: {
           p_allocations: Json
           p_attachments?: string[]
+          p_card_last_four?: string
           p_counter_ledger_id: string
+          p_instrument_bank?: string
+          p_instrument_branch?: string
+          p_instrument_date?: string
+          p_instrument_ifsc?: string
+          p_instrument_number?: string
           p_notes?: string
           p_party_ledger_id: string
           p_payment_date: string
           p_payment_id: string
           p_payment_mode: string
-          p_reference_date?: string
-          p_reference_number?: string
           p_tds_applicable: boolean
           p_tds_ledger_id?: string
           p_tds_rate?: number
           p_total_amount: number
+          p_transaction_id?: string
+          p_vpa?: string
         }
         Returns: undefined
       }
@@ -4476,11 +4563,12 @@ export type Database = {
       payment_mode_enum:
         | "cash"
         | "cheque"
+        | "demand_draft"
         | "neft"
         | "rtgs"
+        | "imps"
         | "upi"
         | "card"
-        | "other"
       product_tax_applicability_enum: "no_tax" | "gst"
       tax_type_enum: "no_tax" | "gst" | "igst"
       voucher_type_enum: "payment" | "receipt"
@@ -4636,11 +4724,12 @@ export const Constants = {
       payment_mode_enum: [
         "cash",
         "cheque",
+        "demand_draft",
         "neft",
         "rtgs",
+        "imps",
         "upi",
         "card",
-        "other",
       ],
       product_tax_applicability_enum: ["no_tax", "gst"],
       tax_type_enum: ["no_tax", "gst", "igst"],

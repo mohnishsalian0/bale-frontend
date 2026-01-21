@@ -50,8 +50,9 @@ export const buildPaymentsQuery = (
         total_amount,
         tds_amount,
         net_amount,
-        reference_number,
-        reference_date,
+        instrument_number,
+        instrument_date,
+        transaction_id,
         exported_to_tally_at,
         party_ledger:ledgers!party_ledger_id(id, name),
         counter_ledger:ledgers!counter_ledger_id(id, name),
@@ -347,15 +348,24 @@ export async function createPayment(
       p_counter_ledger_id: paymentData.counter_ledger_id,
       p_payment_date: paymentData.payment_date,
       p_payment_mode: paymentData.payment_mode,
-      p_reference_number: paymentData.reference_number,
-      p_reference_date: paymentData.reference_date,
       p_total_amount: paymentData.total_amount,
       p_tds_applicable: paymentData.tds_applicable,
+      p_allocations: paymentData.allocations as unknown as Json,
+      // Instrument details (cheque, demand_draft)
+      p_instrument_number: paymentData.instrument_number,
+      p_instrument_date: paymentData.instrument_date,
+      p_instrument_bank: paymentData.instrument_bank,
+      p_instrument_branch: paymentData.instrument_branch,
+      p_instrument_ifsc: paymentData.instrument_ifsc,
+      // Digital payment details (NEFT/RTGS/IMPS/UPI/Card)
+      p_transaction_id: paymentData.transaction_id,
+      p_vpa: paymentData.vpa,
+      p_card_last_four: paymentData.card_last_four,
+      // TDS and other fields
       p_tds_rate: paymentData.tds_rate,
       p_tds_ledger_id: paymentData.tds_ledger_id,
       p_notes: paymentData.notes,
       p_attachments: paymentData.attachments,
-      p_allocations: paymentData.allocations as unknown as Json,
       p_company_id: undefined, // Set by RPC from JWT
     },
   );
@@ -401,15 +411,24 @@ export async function updatePaymentWithAllocations(
     p_counter_ledger_id: paymentData.counter_ledger_id,
     p_payment_date: paymentData.payment_date,
     p_payment_mode: paymentData.payment_mode,
-    p_reference_number: paymentData.reference_number,
-    p_reference_date: paymentData.reference_date,
     p_total_amount: paymentData.total_amount,
     p_tds_applicable: paymentData.tds_applicable,
+    p_allocations: paymentData.allocations as unknown as Json,
+    // Instrument details (cheque, demand_draft)
+    p_instrument_number: paymentData.instrument_number,
+    p_instrument_date: paymentData.instrument_date,
+    p_instrument_bank: paymentData.instrument_bank,
+    p_instrument_branch: paymentData.instrument_branch,
+    p_instrument_ifsc: paymentData.instrument_ifsc,
+    // Digital payment details (NEFT/RTGS/IMPS/UPI/Card)
+    p_transaction_id: paymentData.transaction_id,
+    p_vpa: paymentData.vpa,
+    p_card_last_four: paymentData.card_last_four,
+    // TDS and other fields
     p_tds_rate: paymentData.tds_rate,
     p_tds_ledger_id: paymentData.tds_ledger_id,
     p_notes: paymentData.notes,
     p_attachments: paymentData.attachments,
-    p_allocations: paymentData.allocations as unknown as Json,
   });
 
   if (error) throw error;

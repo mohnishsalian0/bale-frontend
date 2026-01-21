@@ -106,7 +106,7 @@ export default function EditPurchaseOrderPage({ params }: PageParams) {
     if (existingOrder.status !== "approval_pending") {
       toast.error("Only orders in approval pending status can be edited");
       router.push(
-        `/warehouse/${warehouse.slug}/purchase-orders/${purchase_number}`,
+        `/warehouse/${warehouse.slug}/purchase-orders/${purchase_number}/details`,
       );
       return;
     }
@@ -212,7 +212,7 @@ export default function EditPurchaseOrderPage({ params }: PageParams) {
 
   const handleCancel = () => {
     router.push(
-      `/warehouse/${warehouse.slug}/purchase-orders/${purchase_number}`,
+      `/warehouse/${warehouse.slug}/purchase-orders/${purchase_number}/details`,
     );
   };
 
@@ -262,7 +262,7 @@ export default function EditPurchaseOrderPage({ params }: PageParams) {
         onSuccess: () => {
           toast.success("Purchase order updated successfully");
           router.push(
-            `/warehouse/${warehouse.slug}/purchase-orders/${purchase_number}`,
+            `/warehouse/${warehouse.slug}/purchase-orders/${purchase_number}/details`,
           );
         },
         onError: (error) => {

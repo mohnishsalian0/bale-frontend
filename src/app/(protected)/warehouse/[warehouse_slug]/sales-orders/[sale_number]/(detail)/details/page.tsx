@@ -16,7 +16,11 @@ import ImageWrapper from "@/components/ui/image-wrapper";
 import { getInitials } from "@/lib/utils/initials";
 import { formatCurrency } from "@/lib/utils/financial";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
-import { getPartnerName, getFormattedAddress } from "@/lib/utils/partner";
+import {
+  getPartnerName,
+  getFormattedAddress,
+  mapPartnerBillingAddress,
+} from "@/lib/utils/partner";
 import {
   getAgentName,
   getOrderDisplayStatus,
@@ -199,14 +203,14 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
         subtitle="Customer"
         icon={() => <>{getInitials(getPartnerName(order.customer))}</>}
       >
-        {getFormattedAddress(order.customer).length > 0 && (
+        {getFormattedAddress(mapPartnerBillingAddress(order.customer)).length > 0 && (
           <div className="flex justify-between text-sm">
             <span className="text-gray-700 flex items-center gap-2">
               <IconMapPin className="size-4" />
               Address
             </span>
             <div className="font-semibold text-gray-700 text-right max-w-[200px]">
-              {getFormattedAddress(order.customer).map((line, index) => (
+              {getFormattedAddress(mapPartnerBillingAddress(order.customer)).map((line, index) => (
                 <p key={index}>{line}</p>
               ))}
             </div>

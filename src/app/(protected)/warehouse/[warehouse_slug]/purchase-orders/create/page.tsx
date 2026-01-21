@@ -185,7 +185,7 @@ export default function CreatePurchaseOrderPage() {
         onSuccess: (sequenceNumber) => {
           toast.success("Purchase order created successfully");
           router.push(
-            `/warehouse/${warehouse.slug}/purchase-orders/${sequenceNumber}`,
+            `/warehouse/${warehouse.slug}/purchase-orders/${sequenceNumber}/details`,
           );
         },
         onError: (error) => {

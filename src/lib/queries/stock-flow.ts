@@ -227,7 +227,7 @@ export const buildGoodsInwardByNumberQuery = (
     .select(
       `
       *,
-      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name, address_line1, address_line2, city, state, pin_code, country),
+      partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name, shipping_same_as_billing, shipping_address_line1, shipping_address_line2, shipping_city, shipping_state, shipping_pin_code, shipping_country, billing_address_line1, billing_address_line2, billing_city, billing_state, billing_pin_code, billing_country),
       agent:partners!goods_inwards_agent_id_fkey(first_name, last_name, display_name, company_name),
       warehouse:warehouses!goods_inwards_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       from_warehouse:warehouses!goods_inwards_from_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
@@ -255,7 +255,7 @@ export const buildGoodsOutwardByNumberQuery = (
     .select(
       `
       *,
-      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name, address_line1, address_line2, city, state, pin_code, country),
+      partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name, shipping_same_as_billing, shipping_address_line1, shipping_address_line2, shipping_city, shipping_state, shipping_pin_code, shipping_country, billing_address_line1, billing_address_line2, billing_city, billing_state, billing_pin_code, billing_country),
       agent:partners!goods_outwards_agent_id_fkey(first_name, last_name, display_name, company_name),
       warehouse:warehouses!goods_outwards_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),

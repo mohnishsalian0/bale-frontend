@@ -11,12 +11,21 @@ CREATE OR REPLACE FUNCTION create_payment_with_allocations(
     p_party_ledger_id UUID,
     p_counter_ledger_id UUID, -- Bank or Cash ledger
     p_payment_date DATE,
-    p_payment_mode VARCHAR(20), -- 'cash', 'cheque', 'neft', 'rtgs', 'upi', 'card'
+    p_payment_mode VARCHAR(20), -- 'cash', 'cheque', 'demand_draft', 'neft', 'rtgs', 'imps', 'upi', 'card'
     p_total_amount DECIMAL(10,2),
     p_tds_applicable BOOLEAN,
     p_allocations JSONB, -- Array of {allocation_type: 'advance'|'against_ref', invoice_id: UUID (if against_ref), amount_applied: DECIMAL}
-    p_reference_number VARCHAR(50) DEFAULT NULL,
-    p_reference_date DATE DEFAULT NULL, -- Instrument date (e.g., cheque date)
+    -- Instrument details (cheque, demand_draft)
+    p_instrument_number VARCHAR(20) DEFAULT NULL,
+    p_instrument_date DATE DEFAULT NULL,
+    p_instrument_bank VARCHAR(100) DEFAULT NULL,
+    p_instrument_branch VARCHAR(100) DEFAULT NULL,
+    p_instrument_ifsc VARCHAR(11) DEFAULT NULL,
+    -- Digital payment details (NEFT/RTGS/IMPS/UPI/Card)
+    p_transaction_id VARCHAR(50) DEFAULT NULL,
+    p_vpa VARCHAR(100) DEFAULT NULL, -- For UPI
+    p_card_last_four VARCHAR(4) DEFAULT NULL, -- For card payments
+    -- TDS and other fields
     p_tds_rate DECIMAL(5,2) DEFAULT NULL,
     p_tds_ledger_id UUID DEFAULT NULL,
     p_notes TEXT DEFAULT NULL,
@@ -111,8 +120,17 @@ BEGIN
         counter_ledger_id,
         payment_date,
         payment_mode,
-        reference_number,
-        reference_date,
+        -- Instrument details
+        instrument_number,
+        instrument_date,
+        instrument_bank,
+        instrument_branch,
+        instrument_ifsc,
+        -- Digital payment details
+        transaction_id,
+        vpa,
+        card_last_four,
+        -- Amounts and TDS
         total_amount,
         tds_applicable,
         tds_rate,
@@ -139,8 +157,17 @@ BEGIN
         p_counter_ledger_id,
         p_payment_date,
         p_payment_mode::payment_mode_enum,
-        p_reference_number,
-        p_reference_date,
+        -- Instrument details
+        p_instrument_number,
+        p_instrument_date,
+        p_instrument_bank,
+        p_instrument_branch,
+        p_instrument_ifsc,
+        -- Digital payment details
+        p_transaction_id,
+        p_vpa,
+        p_card_last_four,
+        -- Amounts and TDS
         p_total_amount,
         p_tds_applicable,
         p_tds_rate,
@@ -241,7 +268,7 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION create_payment_with_allocations IS 'Creates a payment/receipt with allocations atomically. Validates allocation amounts against invoice outstanding. Handles TDS calculation. Supports advance and against_ref allocations. Auto-creates advance allocation for any unallocated remainder. IMPORTANT: Allocations are validated against total_amount (gross), not net_amount. When TDS is applicable, allocations settle invoices at gross amount while net_amount represents actual cash flow.';
+COMMENT ON FUNCTION create_payment_with_allocations IS 'Creates a payment/receipt with allocations atomically. Validates allocation amounts against invoice outstanding. Handles TDS calculation. Supports advance and against_ref allocations. Auto-creates advance allocation for any unallocated remainder. IMPORTANT: Allocations are validated against total_amount (gross), not net_amount. When TDS is applicable, allocations settle invoices at gross amount while net_amount represents actual cash flow. Supports payment mode specific fields: instrument details for cheque/DD, digital payment details for NEFT/RTGS/IMPS/UPI/Card.';
 
 -- =====================================================
 -- UPDATE PAYMENT WITH ALLOCATIONS FUNCTION
@@ -257,8 +284,17 @@ CREATE OR REPLACE FUNCTION update_payment_with_allocations(
     p_total_amount DECIMAL(10,2),
     p_tds_applicable BOOLEAN,
     p_allocations JSONB,
-    p_reference_number VARCHAR(50) DEFAULT NULL,
-    p_reference_date DATE DEFAULT NULL,
+    -- Instrument details (cheque, demand_draft)
+    p_instrument_number VARCHAR(20) DEFAULT NULL,
+    p_instrument_date DATE DEFAULT NULL,
+    p_instrument_bank VARCHAR(100) DEFAULT NULL,
+    p_instrument_branch VARCHAR(100) DEFAULT NULL,
+    p_instrument_ifsc VARCHAR(11) DEFAULT NULL,
+    -- Digital payment details (NEFT/RTGS/IMPS/UPI/Card)
+    p_transaction_id VARCHAR(50) DEFAULT NULL,
+    p_vpa VARCHAR(100) DEFAULT NULL,
+    p_card_last_four VARCHAR(4) DEFAULT NULL,
+    -- TDS and other fields
     p_tds_rate DECIMAL(5,2) DEFAULT NULL,
     p_tds_ledger_id UUID DEFAULT NULL,
     p_notes TEXT DEFAULT NULL,
@@ -335,8 +371,17 @@ BEGIN
         counter_ledger_id = p_counter_ledger_id,
         payment_date = p_payment_date,
         payment_mode = p_payment_mode::payment_mode_enum,
-        reference_number = p_reference_number,
-        reference_date = p_reference_date,
+        -- Instrument details
+        instrument_number = p_instrument_number,
+        instrument_date = p_instrument_date,
+        instrument_bank = p_instrument_bank,
+        instrument_branch = p_instrument_branch,
+        instrument_ifsc = p_instrument_ifsc,
+        -- Digital payment details
+        transaction_id = p_transaction_id,
+        vpa = p_vpa,
+        card_last_four = p_card_last_four,
+        -- Amounts and TDS
         total_amount = p_total_amount,
         tds_applicable = p_tds_applicable,
         tds_rate = p_tds_rate,
@@ -436,4 +481,4 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION update_payment_with_allocations IS 'Updates a payment/receipt with allocations atomically. Validates payment is not cancelled or exported to Tally. Deletes old allocations (restoring invoice outstanding amounts) and creates new ones. Refreshes all snapshot fields. Validates allocation amounts against invoice outstanding.';
+COMMENT ON FUNCTION update_payment_with_allocations IS 'Updates a payment/receipt with allocations atomically. Validates payment is not cancelled or exported to Tally. Deletes old allocations (restoring invoice outstanding amounts) and creates new ones. Refreshes all snapshot fields. Validates allocation amounts against invoice outstanding. Supports payment mode specific fields: instrument details for cheque/DD, digital payment details for NEFT/RTGS/IMPS/UPI/Card.';

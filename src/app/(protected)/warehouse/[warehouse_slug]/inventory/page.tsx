@@ -128,6 +128,8 @@ export default function InventoryPage() {
       order_by,
       order_direction,
       has_inventory: true, // FILTER TO ONLY PRODUCTS WITH STOCK > 0
+      has_pending_qr: pendingQrFilter || undefined, // SERVER-SIDE: Filter products with pending QR > 0
+      is_low_stock: lowStockFilter || undefined, // SERVER-SIDE: Filter low stock products
     },
     currentPage,
     PAGE_SIZE,
@@ -164,26 +166,6 @@ export default function InventoryPage() {
     tagFilter,
     sortOption,
   ]);
-
-  // Client-side filtering for low stock and pending QR
-  const filteredProducts = productsData.filter((product) => {
-    // Low stock filter
-    if (
-      lowStockFilter &&
-      (!product.min_stock_alert ||
-        (product.min_stock_threshold ?? 0) <
-          (product.inventory.in_stock_quantity ?? 0))
-    ) {
-      return false;
-    }
-
-    // Pending QR filter
-    if (pendingQrFilter && (product.inventory.pending_qr_units ?? 0) <= 0) {
-      return false;
-    }
-
-    return true;
-  });
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -294,7 +276,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="px-4 mt-10">
+      <div className="p-4 mt-6 border-b border-border">
         <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-4">
           <h2 className="text-lg font-bold text-gray-900">
             Products in inventory
@@ -394,18 +376,16 @@ export default function InventoryPage() {
           }}
         />
       ) : (
-        <div className="flex-1 mt-4">
-          {filteredProducts.length === 0 ? (
+        <div className="flex-1">
+          {productsData.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-gray-700 mb-2">No products in stock</p>
+              <p className="text-gray-700 mb-2">No products found</p>
               <p className="text-sm text-gray-500">
-                {searchQuery
-                  ? "Try adjusting your search or filters"
-                  : "Add products via goods inward"}
+                Add products via goods inward or try adjusting your filters
               </p>
             </div>
           ) : (
-            filteredProducts.map((product) => {
+            productsData.map((product) => {
               const imageUrl = product.product_images?.[0];
               const productInfoText = getProductInfo(product);
               const lowStock =
@@ -418,6 +398,7 @@ export default function InventoryPage() {
                 product.sales_orders?.active_pending_quantity || 0;
               const purchasePending =
                 product.purchase_orders?.active_pending_quantity || 0;
+              const qrPending = product.inventory.pending_qr_units || 0;
               const unitAbbr = product.measuring_unit
                 ? getMeasuringUnitAbbreviation(
                     product.measuring_unit as MeasuringUnit,
@@ -427,7 +408,7 @@ export default function InventoryPage() {
               return (
                 <Card
                   key={product.id}
-                  className="relative rounded-none border-x-0 border-b-0 shadow-none bg-transparent cursor-pointer hover:bg-gray-100 transition-colors"
+                  className="relative rounded-none border-x-0 border-t-0 shadow-none bg-transparent cursor-pointer hover:bg-gray-100 transition-colors"
                   onClick={() =>
                     router.push(
                       `/warehouse/${warehouse.slug}/products/${product.sequence_number}`,
@@ -455,20 +436,21 @@ export default function InventoryPage() {
                         {productInfoText}
                       </p>
                       {/* Order Info */}
-                      {(orderRequest > 0 || purchasePending > 0) && (
-                        <div className="text-sm text-gray-500 space-x-2 mt-1">
-                          {orderRequest > 0 && (
-                            <Badge color="blue">
-                              Order {orderRequest} {unitAbbr}
-                            </Badge>
-                          )}
-                          {purchasePending > 0 && (
-                            <Badge color="green">
-                              Purchase {purchasePending} {unitAbbr}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
+                      <div className="text-sm text-gray-500 space-x-2 mt-1">
+                        {orderRequest > 0 && (
+                          <Badge color="blue">
+                            Order: {orderRequest} {unitAbbr}
+                          </Badge>
+                        )}
+                        {purchasePending > 0 && (
+                          <Badge color="green">
+                            Purchase: {purchasePending} {unitAbbr}
+                          </Badge>
+                        )}
+                        {qrPending > 0 && (
+                          <Badge color="gray">Pending QR: {qrPending}</Badge>
+                        )}
+                      </div>
                     </div>
 
                     {/* Quantity */}
