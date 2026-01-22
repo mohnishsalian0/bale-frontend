@@ -12,16 +12,16 @@ CREATE OR REPLACE FUNCTION create_invoice_with_items(
     p_counter_ledger_id UUID, -- Sales/Purchase ledger
     p_warehouse_id UUID,
     p_invoice_date DATE,
-    p_payment_terms VARCHAR(100),
-    p_due_date DATE,
     p_tax_type VARCHAR(10), -- 'no_tax', 'gst', or 'igst' - selected by user on frontend
     p_discount_type VARCHAR(10), -- 'none', 'percentage', 'flat_amount'
-    p_discount_value DECIMAL(10,2), -- Percentage value or fixed amount
-    p_supplier_invoice_number VARCHAR(50), -- Only for purchase invoices (pass NULL for sales)
-    p_supplier_invoice_date DATE,           -- Only for purchase invoices (pass NULL for sales)
-    p_notes TEXT,
-    p_attachments TEXT[],
     p_items JSONB, -- Array of {product_id, quantity, rate} - tax_type and gst_rate pulled from product
+    p_payment_terms VARCHAR(100) DEFAULT NULL,
+    p_due_date DATE DEFAULT NULL,
+    p_discount_value DECIMAL(10,2) DEFAULT NULL, -- Percentage value or fixed amount
+    p_supplier_invoice_number VARCHAR(50) DEFAULT NULL, -- Only for purchase invoices (pass NULL for sales)
+    p_supplier_invoice_date DATE DEFAULT NULL,           -- Only for purchase invoices (pass NULL for sales)
+    p_notes TEXT DEFAULT NULL,
+    p_attachments TEXT[] DEFAULT NULL,
     p_source_sales_order_id UUID DEFAULT NULL, -- Source sales order reference
     p_source_purchase_order_id UUID DEFAULT NULL, -- Source purchase order reference
     p_goods_movement_ids UUID[] DEFAULT NULL, -- Array of goods_outward IDs (sales) or goods_inward IDs (purchase)
@@ -264,8 +264,13 @@ BEGIN
         warehouse_state, warehouse_country, warehouse_pincode,
         -- Party snapshot (complete)
         party_name, party_display_name, party_email, party_phone,
-        party_address_line1, party_address_line2, party_city, party_state,
-        party_country, party_pincode, party_gst_number, party_pan_number,
+        -- Party billing address
+        party_billing_address_line1, party_billing_address_line2, party_billing_city, party_billing_state,
+        party_billing_country, party_billing_pincode,
+        -- Party shipping address
+        party_shipping_address_line1, party_shipping_address_line2, party_shipping_city, party_shipping_state,
+        party_shipping_country, party_shipping_pincode,
+        party_gst_number, party_pan_number,
         -- Company snapshot (complete)
         company_name, company_address_line1, company_address_line2, company_city,
         company_state, company_country, company_pincode, company_gst_number,
@@ -294,12 +299,20 @@ BEGIN
         v_partner_rec.display_name,
         v_partner_rec.email,
         v_partner_rec.phone_number,
-        v_partner_rec.address_line1,
-        v_partner_rec.address_line2,
-        v_partner_rec.city,
-        v_partner_rec.state,
-        v_partner_rec.country,
-        v_partner_rec.pin_code,
+        -- Party billing address
+        v_partner_rec.billing_address_line1,
+        v_partner_rec.billing_address_line2,
+        v_partner_rec.billing_city,
+        v_partner_rec.billing_state,
+        v_partner_rec.billing_country,
+        v_partner_rec.billing_pin_code,
+        -- Party shipping address (use billing if shipping_same_as_billing = TRUE)
+        CASE WHEN v_partner_rec.shipping_same_as_billing THEN v_partner_rec.billing_address_line1 ELSE v_partner_rec.shipping_address_line1 END,
+        CASE WHEN v_partner_rec.shipping_same_as_billing THEN v_partner_rec.billing_address_line2 ELSE v_partner_rec.shipping_address_line2 END,
+        CASE WHEN v_partner_rec.shipping_same_as_billing THEN v_partner_rec.billing_city ELSE v_partner_rec.shipping_city END,
+        CASE WHEN v_partner_rec.shipping_same_as_billing THEN v_partner_rec.billing_state ELSE v_partner_rec.shipping_state END,
+        CASE WHEN v_partner_rec.shipping_same_as_billing THEN v_partner_rec.billing_country ELSE v_partner_rec.shipping_country END,
+        CASE WHEN v_partner_rec.shipping_same_as_billing THEN v_partner_rec.billing_pin_code ELSE v_partner_rec.shipping_pin_code END,
         v_partner_rec.gst_number,
         v_partner_rec.pan_number,
         -- Company Snapshot
@@ -379,16 +392,16 @@ CREATE OR REPLACE FUNCTION update_invoice_with_items(
     p_counter_ledger_id UUID, -- Sales/Purchase ledger
     p_warehouse_id UUID,
     p_invoice_date DATE,
-    p_payment_terms VARCHAR(100),
-    p_due_date DATE,
     p_tax_type VARCHAR(10), -- 'no_tax', 'gst', or 'igst'
     p_discount_type VARCHAR(10), -- 'none', 'percentage', 'flat_amount'
-    p_discount_value DECIMAL(10,2),
-    p_supplier_invoice_number VARCHAR(50),
-    p_supplier_invoice_date DATE,
-    p_notes TEXT,
-    p_attachments TEXT[],
-    p_items JSONB -- Array of {product_id, quantity, rate}
+    p_items JSONB, -- Array of {product_id, quantity, rate}
+    p_payment_terms VARCHAR(100) DEFAULT NULL,
+    p_due_date DATE DEFAULT NULL,
+    p_discount_value DECIMAL(10,2) DEFAULT NULL,
+    p_supplier_invoice_number VARCHAR(50) DEFAULT NULL,
+    p_supplier_invoice_date DATE DEFAULT NULL,
+    p_notes TEXT DEFAULT NULL,
+    p_attachments TEXT[] DEFAULT NULL
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -491,12 +504,7 @@ BEGIN
     END IF;
 
     -- =====================================================
-    -- 3. Delete Existing Items
-    -- =====================================================
-    DELETE FROM invoice_items WHERE invoice_id = p_invoice_id;
-
-    -- =====================================================
-    -- 4. Process Items (Same logic as create)
+    -- 3. Process Items (Same logic as create)
     -- =====================================================
     CREATE TEMPORARY TABLE temp_invoice_calculations ON COMMIT DROP AS
     WITH
@@ -639,12 +647,20 @@ BEGIN
         party_display_name = v_partner_rec.display_name,
         party_email = v_partner_rec.email,
         party_phone = v_partner_rec.phone_number,
-        party_address_line1 = v_partner_rec.address_line1,
-        party_address_line2 = v_partner_rec.address_line2,
-        party_city = v_partner_rec.city,
-        party_state = v_partner_rec.state,
-        party_country = v_partner_rec.country,
-        party_pincode = v_partner_rec.pin_code,
+        -- Party billing address
+        party_billing_address_line1 = v_partner_rec.billing_address_line1,
+        party_billing_address_line2 = v_partner_rec.billing_address_line2,
+        party_billing_city = v_partner_rec.billing_city,
+        party_billing_state = v_partner_rec.billing_state,
+        party_billing_country = v_partner_rec.billing_country,
+        party_billing_pincode = v_partner_rec.billing_pin_code,
+        -- Party shipping address (use billing if shipping_same_as_billing = TRUE)
+        party_shipping_address_line1 = CASE WHEN v_partner_rec.shipping_same_as_billing THEN v_partner_rec.billing_address_line1 ELSE v_partner_rec.shipping_address_line1 END,
+        party_shipping_address_line2 = CASE WHEN v_partner_rec.shipping_same_as_billing THEN v_partner_rec.billing_address_line2 ELSE v_partner_rec.shipping_address_line2 END,
+        party_shipping_city = CASE WHEN v_partner_rec.shipping_same_as_billing THEN v_partner_rec.billing_city ELSE v_partner_rec.shipping_city END,
+        party_shipping_state = CASE WHEN v_partner_rec.shipping_same_as_billing THEN v_partner_rec.billing_state ELSE v_partner_rec.shipping_state END,
+        party_shipping_country = CASE WHEN v_partner_rec.shipping_same_as_billing THEN v_partner_rec.billing_country ELSE v_partner_rec.shipping_country END,
+        party_shipping_pincode = CASE WHEN v_partner_rec.shipping_same_as_billing THEN v_partner_rec.billing_pin_code ELSE v_partner_rec.shipping_pin_code END,
         party_gst_number = v_partner_rec.gst_number,
         party_pan_number = v_partner_rec.pan_number,
         -- Update company snapshot
@@ -664,40 +680,48 @@ BEGIN
     WHERE id = p_invoice_id;
 
     -- =====================================================
-    -- 8. Insert New Items
+    -- 8. Insert New Items and Delete Old Ones Atomically
     -- =====================================================
-    INSERT INTO invoice_items (
-        company_id, warehouse_id, invoice_id, product_id, quantity, rate, discount_amount, taxable_amount,
-        product_name, product_hsn_code, tax_type, gst_rate,
-        cgst_rate, cgst_amount, sgst_rate, sgst_amount, igst_rate, igst_amount, total_tax_amount
+    -- Use WITH to capture new item IDs, then delete old items
+    WITH new_items AS (
+        INSERT INTO invoice_items (
+            company_id, warehouse_id, invoice_id, product_id, quantity, rate, discount_amount, taxable_amount,
+            product_name, product_hsn_code, tax_type, gst_rate,
+            cgst_rate, cgst_amount, sgst_rate, sgst_amount, igst_rate, igst_amount, total_tax_amount
+        )
+        SELECT
+            v_company_id,
+            p_warehouse_id,
+            p_invoice_id,
+            product_id,
+            qty,
+            rate,
+            line_discount_amount,
+            line_taxable_value,
+            product_name,
+            hsn_code,
+            tax_type::product_tax_applicability_enum,
+            gst_rate,
+            -- CGST rate and amount
+            CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN gst_rate / 2 ELSE 0 END,
+            ROUND(CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 2 / 100) ELSE 0 END, 2),
+            -- SGST rate and amount
+            CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN gst_rate / 2 ELSE 0 END,
+            ROUND(CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 2 / 100) ELSE 0 END, 2),
+            -- IGST rate and amount
+            CASE WHEN p_tax_type = 'igst' AND tax_type = 'gst' THEN gst_rate ELSE 0 END,
+            ROUND(CASE WHEN p_tax_type = 'igst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 100) ELSE 0 END, 2),
+            -- Total Tax
+            ROUND(CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 100)
+                       WHEN p_tax_type = 'igst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 100)
+                       ELSE 0 END, 2)
+        FROM temp_invoice_calculations
+        RETURNING id
     )
-    SELECT
-        v_company_id,
-        p_warehouse_id,
-        p_invoice_id,
-        product_id,
-        qty,
-        rate,
-        line_discount_amount,
-        line_taxable_value,
-        product_name,
-        hsn_code,
-        tax_type::product_tax_applicability_enum,
-        gst_rate,
-        -- CGST rate and amount
-        CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN gst_rate / 2 ELSE 0 END,
-        ROUND(CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 2 / 100) ELSE 0 END, 2),
-        -- SGST rate and amount
-        CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN gst_rate / 2 ELSE 0 END,
-        ROUND(CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 2 / 100) ELSE 0 END, 2),
-        -- IGST rate and amount
-        CASE WHEN p_tax_type = 'igst' AND tax_type = 'gst' THEN gst_rate ELSE 0 END,
-        ROUND(CASE WHEN p_tax_type = 'igst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 100) ELSE 0 END, 2),
-        -- Total Tax
-        ROUND(CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 100)
-                   WHEN p_tax_type = 'igst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 100)
-                   ELSE 0 END, 2)
-    FROM temp_invoice_calculations;
+    -- Delete old items (those not in the new_items CTE)
+    DELETE FROM invoice_items
+    WHERE invoice_id = p_invoice_id
+      AND id NOT IN (SELECT id FROM new_items);
 END;
 $$;
 

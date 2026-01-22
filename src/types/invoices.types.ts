@@ -1,12 +1,14 @@
 import type { Tables } from "./database/supabase";
+import type { QueryData } from "@supabase/supabase-js";
 import type { InvoiceStatus, InvoiceTaxType } from "./database/enums";
+import {
+  buildInvoicesQuery,
+  buildInvoiceBySlugQuery,
+} from "@/lib/queries/invoices";
 
-// Base types from database
+// Base types from database (still needed for non-query uses)
 export type Invoice = Tables<"invoices">;
 export type InvoiceItem = Tables<"invoice_items">;
-type Ledger = Tables<"ledgers">;
-type Warehouse = Tables<"warehouses">;
-type Product = Tables<"products">;
 
 // ============================================================================
 // FILTERS
@@ -22,6 +24,8 @@ export interface InvoiceFilters extends Record<string, unknown> {
   date_to?: string; // Date range end (YYYY-MM-DD)
   search?: string; // Search term for search_vector
   exported_to_tally?: boolean; // Filter by export status
+  source_sales_order_id?: string; // Filter by source sales order
+  source_purchase_order_id?: string; // Filter by source purchase order
 }
 
 // =====================================================
@@ -29,81 +33,40 @@ export interface InvoiceFilters extends Record<string, unknown> {
 // =====================================================
 
 /**
- * Invoice item for list views
- * Minimal product info for quick loading
+ * Invoice with minimal details for list views
+ * Type inferred from buildInvoicesQuery
  * Used in: invoice list page, partner detail page
  */
-export interface InvoiceItemListView extends InvoiceItem {
-  product: Pick<
-    Product,
-    | "id"
-    | "name"
-    | "stock_type"
-    | "measuring_unit"
-    | "product_images"
-    | "sequence_number"
-  > | null;
-}
+export type InvoiceListView = QueryData<
+  ReturnType<typeof buildInvoicesQuery>
+>[number];
 
 /**
- * Invoice with minimal details for list views
+ * Invoice item for list views
+ * Extracted from InvoiceListView nested array
  * Used in: invoice list page, partner detail page
  */
-export interface InvoiceListView extends Pick<
-  Invoice,
-  | "id"
-  | "invoice_number"
-  | "sequence_number"
-  | "slug"
-  | "invoice_type"
-  | "invoice_date"
-  | "due_date"
-  | "status"
-  | "total_amount"
-  | "outstanding_amount"
-  | "party_ledger_id"
-  | "party_name"
-  | "party_display_name"
-  | "supplier_invoice_number"
-  | "warehouse_id"
-  | "has_payment"
-  | "has_adjustment"
-  | "is_cancelled"
-  | "exported_to_tally_at"
-> {
-  party_ledger: Pick<Ledger, "id" | "name" | "partner_id"> | null;
-  invoice_items: InvoiceItemListView[];
-}
+export type InvoiceItemListView = InvoiceListView["invoice_items"][number];
 
 // =====================================================
 // DETAIL VIEW TYPES (for invoice detail page)
 // =====================================================
 
 /**
- * Invoice item with full product details (for invoice detail page)
+ * Invoice with complete details
+ * Type inferred from buildInvoiceBySlugQuery
+ * Used in: invoice detail page
  */
-export interface InvoiceItemDetailView extends InvoiceItem {
-  product: Pick<
-    Product,
-    | "id"
-    | "name"
-    | "stock_type"
-    | "measuring_unit"
-    | "product_images"
-    | "sequence_number"
-  > | null;
-}
+export type InvoiceDetailView = QueryData<
+  ReturnType<typeof buildInvoiceBySlugQuery>
+>;
 
 /**
- * Invoice with complete details (for invoice detail page)
- * Includes party ledger reference, warehouse reference, and full item details
- * Party/warehouse snapshots are already in invoice fields
+ * Invoice item with full product details
+ * Extracted from InvoiceDetailView nested array
+ * Used in: invoice detail page
  */
-export interface InvoiceDetailView extends Invoice {
-  party_ledger: Pick<Ledger, "id" | "name" | "partner_id"> | null;
-  warehouse: Pick<Warehouse, "id" | "name"> | null;
-  invoice_items: InvoiceItemDetailView[];
-}
+export type InvoiceItemDetailView = InvoiceDetailView["invoice_items"][number];
 
 // =====================================================
 // CREATE/UPDATE TYPES (for mutations)
@@ -130,13 +93,16 @@ export interface CreateInvoiceData {
   counter_ledger_id: string; // Sales/Purchase/Sales Return/Purchase Return ledger for double-entry
   warehouse_id: string;
   invoice_date: string; // ISO format (YYYY-MM-DD)
-  payment_terms: string | null;
-  due_date: string | null; // ISO format (YYYY-MM-DD)
   tax_type: InvoiceTaxType; // Invoice-level: 'no_tax', 'gst', or 'igst'
   discount_type: "none" | "percentage" | "flat_amount";
-  discount_value: number | null;
-  supplier_invoice_number?: string | null; // Purchase only
-  supplier_invoice_date?: string | null; // Purchase only
-  notes: string | null;
   items: CreateInvoiceItem[];
+  payment_terms?: string;
+  due_date?: string; // ISO format (YYYY-MM-DD)
+  discount_value?: number;
+  supplier_invoice_number?: string; // Purchase only
+  supplier_invoice_date?: string; // Purchase only
+  notes?: string;
+  source_sales_order_id?: string;
+  source_purchase_order_id?: string;
+  goods_movement_ids?: string[];
 }

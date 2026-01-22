@@ -13,6 +13,10 @@ import type { Company } from "@/types/companies.types";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import type { MeasuringUnit } from "@/types/database/enums";
+import {
+  getPartnerShippingAddress,
+  getFormattedAddress,
+} from "@/lib/utils/partner";
 
 // Register Poppins font which has proper Unicode support
 Font.register({
@@ -266,17 +270,7 @@ export function DeliveryChallanPDF({
       : "-";
 
   const destinationAddress = hasPartner
-    ? [
-        outward.partner?.address_line1,
-        outward.partner?.address_line2,
-        outward.partner?.city && outward.partner?.pin_code
-          ? `${outward.partner.city} - ${outward.partner.pin_code}`
-          : outward.partner?.city || outward.partner?.pin_code,
-        outward.partner?.state,
-        outward.partner?.country,
-      ]
-        .filter(Boolean)
-        .join(", ")
+    ? getFormattedAddress(getPartnerShippingAddress(outward.partner)).join(", ")
     : hasToWarehouse
       ? [
           outward.to_warehouse?.address_line1,

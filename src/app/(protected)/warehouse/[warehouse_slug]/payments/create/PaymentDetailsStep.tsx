@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { InputWrapper } from "@/components/ui/input-wrapper";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -37,11 +36,19 @@ interface PaymentDetailsFormData {
   counterLedgerId: string;
   paymentDate: string;
   paymentMode: PaymentMode | "";
-  referenceNumber: string;
-  referenceDate: string;
   notes: string;
   tdsApplicable: boolean;
   tdsRate: string;
+  // Instrument fields (cheque, demand_draft)
+  instrumentNumber?: string;
+  instrumentDate?: string;
+  instrumentBank?: string;
+  instrumentBranch?: string;
+  instrumentIfsc?: string;
+  // Digital payment fields
+  transactionId?: string;
+  vpa?: string;
+  cardLastFour?: string;
 }
 
 interface PaymentDetailsStepProps {
@@ -160,13 +167,144 @@ export function PaymentDetailsStep({
           >
             <RadioGroupItem value="cash">Cash</RadioGroupItem>
             <RadioGroupItem value="cheque">Cheque</RadioGroupItem>
+            <RadioGroupItem value="demand_draft">Demand Draft</RadioGroupItem>
             <RadioGroupItem value="neft">NEFT</RadioGroupItem>
             <RadioGroupItem value="rtgs">RTGS</RadioGroupItem>
+            <RadioGroupItem value="imps">IMPS</RadioGroupItem>
             <RadioGroupItem value="upi">UPI</RadioGroupItem>
             <RadioGroupItem value="card">Card</RadioGroupItem>
-            <RadioGroupItem value="other">Other</RadioGroupItem>
           </RadioGroup>
         </div>
+
+        {/* Instrument Fields - Cheque & Demand Draft */}
+        {(formData.paymentMode === "cheque" ||
+          formData.paymentMode === "demand_draft") && (
+          <>
+            <div className="flex gap-4">
+              <InputWrapper
+                type="text"
+                placeholder={`Enter ${formData.paymentMode === "cheque" ? "cheque" : "DD"} number`}
+                value={formData.instrumentNumber || ""}
+                onChange={(e) =>
+                  setFormData({ instrumentNumber: e.target.value })
+                }
+                maxLength={20}
+                className="flex-1"
+              />
+
+              <DatePicker
+                placeholder={`Enter ${formData.paymentMode === "cheque" ? "Cheque" : "DD"} date`}
+                value={
+                  formData.instrumentDate
+                    ? new Date(formData.instrumentDate)
+                    : undefined
+                }
+                onChange={(date) =>
+                  setFormData({
+                    instrumentDate: date ? dateToISOString(date) : "",
+                  })
+                }
+                className="flex-1"
+              />
+            </div>
+
+            <div className="flex gap-4">
+              <InputWrapper
+                type="text"
+                placeholder="Enter drawer bank name"
+                value={formData.instrumentBank || ""}
+                onChange={(e) =>
+                  setFormData({ instrumentBank: e.target.value })
+                }
+                maxLength={100}
+                className="flex-1"
+              />
+
+              <InputWrapper
+                type="text"
+                placeholder="Enter drawer branch name"
+                value={formData.instrumentBranch || ""}
+                onChange={(e) =>
+                  setFormData({ instrumentBranch: e.target.value })
+                }
+                maxLength={100}
+                className="flex-1"
+              />
+            </div>
+
+            <InputWrapper
+              type="text"
+              placeholder="Enter drawer IFSC code"
+              value={formData.instrumentIfsc || ""}
+              onChange={(e) =>
+                setFormData({ instrumentIfsc: e.target.value.toUpperCase() })
+              }
+              maxLength={11}
+            />
+          </>
+        )}
+
+        {/* Digital Payment Fields - NEFT/RTGS/IMPS */}
+        {(formData.paymentMode === "neft" ||
+          formData.paymentMode === "rtgs" ||
+          formData.paymentMode === "imps") && (
+          <InputWrapper
+            type="text"
+            placeholder="Enter transaction ID or UTR number"
+            value={formData.transactionId || ""}
+            onChange={(e) => setFormData({ transactionId: e.target.value })}
+            maxLength={50}
+          />
+        )}
+
+        {/* UPI Fields */}
+        {formData.paymentMode === "upi" && (
+          <div className="flex gap-4">
+            <InputWrapper
+              type="text"
+              placeholder="Enter UPI transaction ID"
+              value={formData.transactionId || ""}
+              onChange={(e) => setFormData({ transactionId: e.target.value })}
+              maxLength={50}
+              className="flex-1"
+            />
+
+            <InputWrapper
+              type="text"
+              placeholder="Enter UPI ID (e.g., user@upi)"
+              value={formData.vpa || ""}
+              onChange={(e) => setFormData({ vpa: e.target.value })}
+              maxLength={100}
+              className="flex-1"
+            />
+          </div>
+        )}
+
+        {/* Card Payment Fields */}
+        {formData.paymentMode === "card" && (
+          <div className="flex gap-4">
+            <InputWrapper
+              type="text"
+              placeholder="Enter transaction ID"
+              value={formData.transactionId || ""}
+              onChange={(e) => setFormData({ transactionId: e.target.value })}
+              maxLength={50}
+              className="flex-1"
+            />
+
+            <InputWrapper
+              type="text"
+              placeholder="Enter last 4 digits of the card"
+              value={formData.cardLastFour || ""}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, "");
+                setFormData({ cardLastFour: value });
+              }}
+              maxLength={4}
+              className="flex-1"
+            />
+          </div>
+        )}
 
         {/* Direct Tax */}
         <div className="space-y-2">
@@ -233,38 +371,6 @@ export function PaymentDetailsStep({
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="flex flex-col gap-6">
-            {/* Reference Number */}
-            <div className="space-y-2">
-              <Label htmlFor="reference-number">Reference Number</Label>
-              <Input
-                id="reference-number"
-                type="text"
-                placeholder="Enter reference number"
-                value={formData.referenceNumber}
-                onChange={(e) =>
-                  setFormData({ referenceNumber: e.target.value })
-                }
-              />
-            </div>
-
-            {/* Reference Date */}
-            <div className="space-y-2">
-              <Label>Reference Date</Label>
-              <DatePicker
-                placeholder="Pick a date"
-                value={
-                  formData.referenceDate
-                    ? new Date(formData.referenceDate)
-                    : undefined
-                }
-                onChange={(date) =>
-                  setFormData({
-                    referenceDate: date ? dateToISOString(date) : "",
-                  })
-                }
-              />
-            </div>
-
             {/* Notes */}
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>

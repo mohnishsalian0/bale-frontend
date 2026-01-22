@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { IconCurrencyRupee, IconMinus, IconPlus } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
@@ -28,6 +28,14 @@ export function ProductQuantitySheet({
 }: ProductQuantitySheetProps) {
   const [quantity, setQuantity] = useState(initialQuantity);
   const [rate, setRate] = useState(initialRate);
+
+  // Reset state when sheet opens or initial values change
+  useEffect(() => {
+    if (open) {
+      setQuantity(initialQuantity);
+      setRate(initialRate);
+    }
+  }, [open, initialQuantity, initialRate]);
 
   const handleCancel = (e: React.MouseEvent) => {
     e.preventDefault();

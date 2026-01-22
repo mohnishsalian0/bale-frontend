@@ -12,10 +12,10 @@ CREATE OR REPLACE FUNCTION create_adjustment_note_with_items(
     p_counter_ledger_id UUID, -- Sales Return/Purchase Return ledger
     p_adjustment_type VARCHAR(10), -- 'credit' or 'debit'
     p_adjustment_date DATE,
-    p_reason TEXT,
-    p_notes TEXT,
-    p_attachments TEXT[],
-    p_items JSONB, -- Array of {product_id, quantity, rate, gst_rate}
+    p_reason TEXT DEFAULT NULL,
+    p_notes TEXT DEFAULT NULL,
+    p_attachments TEXT[] DEFAULT NULL,
+    p_items JSONB DEFAULT NULL, -- Array of {product_id, quantity, rate, gst_rate}
     p_company_id UUID DEFAULT NULL
 )
 RETURNS VARCHAR(50)
@@ -234,12 +234,12 @@ BEGIN
         v_partner_rec.display_name,
         v_partner_rec.email,
         v_partner_rec.phone_number,
-        v_partner_rec.address_line1,
-        v_partner_rec.address_line2,
-        v_partner_rec.city,
-        v_partner_rec.state,
-        v_partner_rec.country,
-        v_partner_rec.pin_code,
+        v_partner_rec.billing_address_line1,
+        v_partner_rec.billing_address_line2,
+        v_partner_rec.billing_city,
+        v_partner_rec.billing_state,
+        v_partner_rec.billing_country,
+        v_partner_rec.billing_pin_code,
         v_partner_rec.gst_number,
         v_partner_rec.pan_number,
         -- Company Snapshot
@@ -301,10 +301,10 @@ CREATE OR REPLACE FUNCTION update_adjustment_note_with_items(
     p_warehouse_id UUID,
     p_counter_ledger_id UUID,
     p_adjustment_date DATE,
-    p_reason TEXT,
-    p_notes TEXT,
-    p_attachments TEXT[],
-    p_items JSONB
+    p_reason TEXT DEFAULT NULL,
+    p_notes TEXT DEFAULT NULL,
+    p_attachments TEXT[] DEFAULT NULL,
+    p_items JSONB DEFAULT NULL
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -495,12 +495,12 @@ BEGIN
         party_display_name = v_partner_rec.display_name,
         party_email = v_partner_rec.email,
         party_phone = v_partner_rec.phone_number,
-        party_address_line1 = v_partner_rec.address_line1,
-        party_address_line2 = v_partner_rec.address_line2,
-        party_city = v_partner_rec.city,
-        party_state = v_partner_rec.state,
-        party_country = v_partner_rec.country,
-        party_pincode = v_partner_rec.pin_code,
+        party_address_line1 = v_partner_rec.billing_address_line1,
+        party_address_line2 = v_partner_rec.billing_address_line2,
+        party_city = v_partner_rec.billing_city,
+        party_state = v_partner_rec.billing_state,
+        party_country = v_partner_rec.billing_country,
+        party_pincode = v_partner_rec.billing_pin_code,
         party_gst_number = v_partner_rec.gst_number,
         party_pan_number = v_partner_rec.pan_number,
         -- Refresh company snapshot

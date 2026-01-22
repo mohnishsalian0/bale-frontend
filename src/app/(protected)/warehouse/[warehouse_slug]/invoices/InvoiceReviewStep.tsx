@@ -14,6 +14,13 @@ import { getProductsWithInventoryByIds } from "@/lib/queries/products";
 import { useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, roundCurrency } from "@/lib/utils/currency";
+import type { Partner } from "@/types/partners.types";
+import {
+  mapPartnerBillingAddress,
+  getPartnerShippingAddress,
+  getFormattedAddress,
+} from "@/lib/utils/partner";
+import { getInitials } from "@/lib/utils/initials";
 
 interface InvoiceReviewStepProps {
   warehouseId: string;
@@ -24,6 +31,24 @@ interface InvoiceReviewStepProps {
   taxType: InvoiceTaxType;
   discountType: "none" | "percentage" | "flat_amount";
   discountValue: number;
+  partner?: Pick<
+    Partner,
+    | "display_name"
+    | "gst_number"
+    | "billing_address_line1"
+    | "billing_address_line2"
+    | "billing_city"
+    | "billing_state"
+    | "billing_country"
+    | "billing_pin_code"
+    | "shipping_same_as_billing"
+    | "shipping_address_line1"
+    | "shipping_address_line2"
+    | "shipping_city"
+    | "shipping_state"
+    | "shipping_country"
+    | "shipping_pin_code"
+  > | null;
 }
 
 export function InvoiceReviewStep({
@@ -32,6 +57,7 @@ export function InvoiceReviewStep({
   taxType,
   discountType,
   discountValue,
+  partner,
 }: InvoiceReviewStepProps) {
   const [products, setProducts] = useState<ProductWithInventoryListView[]>([]);
   const [loading, setLoading] = useState(true);
@@ -209,9 +235,78 @@ export function InvoiceReviewStep({
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Line Items List - Scrollable */}
-      <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto">
+      {/* Partner Section */}
+      {partner && (
+        <div className="border-b border-border">
+          <div className="flex items-center gap-3 p-4">
+            {/* Partner Image */}
+            <ImageWrapper
+              size="sm"
+              shape="circle"
+              imageUrl={undefined}
+              alt={partner.display_name || "Partner"}
+              placeholderInitials={getInitials(
+                partner.display_name || "Partner",
+              )}
+            />
+
+            {/* Partner Info */}
+            <div className="flex-1 min-w-0">
+              <p
+                title={partner.display_name || "Partner"}
+                className="text-base font-medium text-gray-700 truncate"
+              >
+                {partner.display_name || "Partner"}
+              </p>
+              {partner.gst_number && (
+                <p
+                  title={`GSTIN: ${partner.gst_number}`}
+                  className="text-sm text-gray-500 truncate"
+                >
+                  GSTIN: {partner.gst_number}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Addresses */}
+          <div className="flex border-t border-border">
+            {/* Billing Address */}
+            <div className="flex-1 p-4 border-r border-border">
+              <p className="text-xs font-medium text-gray-500 mb-2">
+                Billing Address
+              </p>
+              <div className="text-sm text-gray-700">
+                {getFormattedAddress(mapPartnerBillingAddress(partner)).map(
+                  (line, idx) => (
+                    <p key={idx}>{line}</p>
+                  ),
+                )}
+              </div>
+            </div>
+
+            {/* Shipping Address */}
+            <div className="flex-1 p-4">
+              <p className="text-xs font-medium text-gray-500 mb-2">
+                Shipping Address
+              </p>
+              <div className="text-sm text-gray-700 space-y-0.5">
+                {partner.shipping_same_as_billing ? (
+                  <p className="text-gray-500 italic">Same as billing</p>
+                ) : (
+                  getFormattedAddress(getPartnerShippingAddress(partner)).map(
+                    (line, idx) => <p key={idx}>{line}</p>,
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Line Items List */}
+      <div>
         {calculations.lineItems.map((item) => {
           const unitAbbreviation = getMeasuringUnitAbbreviation(
             item.product.measuring_unit as MeasuringUnit | null,
@@ -267,8 +362,8 @@ export function InvoiceReviewStep({
         })}
       </div>
 
-      {/* Totals Summary - Fixed at bottom */}
-      <div className="border-t border-gray-200 p-4 space-y-4">
+      {/* Totals Summary */}
+      <div className="p-4 space-y-4">
         <div className="flex justify-between text-sm">
           <span className="text-gray-700">Subtotal</span>
           <span className="font-semibold">

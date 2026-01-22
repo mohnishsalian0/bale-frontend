@@ -21,6 +21,7 @@ interface PartnerSelectionStepProps {
   partnerType: PartnerType;
   selectedPartnerId: string | null;
   onSelectPartner: (partnerId: string, ledgerId: string) => void;
+  disablePartnerChange?: boolean;
 }
 
 interface CreditWarning {
@@ -34,6 +35,7 @@ export function PartnerSelectionStep({
   partnerType,
   selectedPartnerId,
   onSelectPartner,
+  disablePartnerChange = false,
 }: PartnerSelectionStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddPartner, setShowAddPartner] = useState(false);
@@ -152,7 +154,12 @@ export function PartnerSelectionStep({
   }, [partners, searchQuery, selectedPartnerId]);
 
   return (
-    <>
+    <div className="relative flex flex-col flex-1">
+      {/* Disable Overlay */}
+      {disablePartnerChange && (
+        <div className="absolute inset-0 bg-white/50 z-10 cursor-not-allowed" />
+      )}
+
       {/* Header Section */}
       <div className="flex flex-col gap-3 p-4 shrink-0 border-b border-border">
         <div className="flex items-center justify-between">
@@ -261,6 +268,6 @@ export function PartnerSelectionStep({
         onOpenChange={setShowAddPartner}
         partnerType={partnerType}
       />
-    </>
+    </div>
   );
 }

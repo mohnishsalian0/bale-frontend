@@ -1,44 +1,38 @@
 import { createClient } from "@/lib/supabase/browser";
-import type { TablesUpdate } from "@/types/database/supabase";
+import type { TablesUpdate, Database, Json } from "@/types/database/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  PaymentFilters,
   PaymentListView,
   PaymentDetailView,
-  PaymentFilters,
-  CreatePaymentData,
   OutstandingInvoiceView,
   CounterLedgerView,
+  CreatePaymentData,
 } from "@/types/payments.types";
 
 // Re-export types for convenience
 export type {
+  PaymentFilters,
   PaymentListView,
   PaymentDetailView,
-  PaymentFilters,
-  CreatePaymentData,
   OutstandingInvoiceView,
   CounterLedgerView,
+  CreatePaymentData,
 };
 
 // ============================================================================
-// QUERIES
+// QUERY BUILDERS
 // ============================================================================
 
 /**
- * Fetch payments with optional filters and pagination
- * RLS automatically filters by company_id
- *
- * Examples:
- * - All payments: getPayments()
- * - Payments only: getPayments({ voucher_type: 'payment' })
- * - Search: getPayments({ search: 'PMT/2024-25/0001' })
+ * Query builder for fetching payments with optional filters and pagination
  */
-export async function getPayments(
+export const buildPaymentsQuery = (
+  supabase: SupabaseClient<Database>,
   filters?: PaymentFilters,
   page: number = 1,
   pageSize: number = 25,
-): Promise<{ data: PaymentListView[]; totalCount: number }> {
-  const supabase = createClient();
-
+) => {
   // Calculate pagination range
   const offset = (page - 1) * pageSize;
 
@@ -56,16 +50,17 @@ export async function getPayments(
         total_amount,
         tds_amount,
         net_amount,
-        reference_number,
-        reference_date,
+        instrument_number,
+        instrument_date,
+        transaction_id,
         exported_to_tally_at,
-        party_ledger:party_ledger_id(id, name),
-        counter_ledger:counter_ledger_id(id, name),
+        party_ledger:ledgers!party_ledger_id(id, name),
+        counter_ledger:ledgers!counter_ledger_id(id, name),
         payment_allocations!inner(
           id,
           allocation_type,
           amount_applied,
-          invoice:invoice_id(
+          invoice:invoices!invoice_id(
             id,
             invoice_number
           )
@@ -129,38 +124,27 @@ export async function getPayments(
   // Apply pagination
   query = query.range(offset, offset + pageSize - 1);
 
-  const { data, count, error } = await query;
-
-  if (error) {
-    throw error;
-  }
-
-  return {
-    data: (data as unknown as PaymentListView[]) || [],
-    totalCount: count || 0,
-  };
-}
+  return query;
+};
 
 /**
- * Fetch a single payment by payment number
- * Returns complete payment with allocations, ledgers
+ * Query builder for fetching a single payment by slug
  */
-export async function getPaymentBySlug(
+export const buildPaymentBySlugQuery = (
+  supabase: SupabaseClient<Database>,
   paymentSlug: string,
-): Promise<PaymentDetailView> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
+) => {
+  return supabase
     .from("payments")
     .select(
       `
         *,
-        party_ledger:party_ledger_id(id, name, partner_id),
-        counter_ledger:counter_ledger_id(id, name),
-        tds_ledger:tds_ledger_id(id, name),
+        party_ledger:ledgers!party_ledger_id(id, name, partner_id),
+        counter_ledger:ledgers!counter_ledger_id(id, name),
+        tds_ledger:ledgers!tds_ledger_id(id, name),
         payment_allocations!inner(
           *,
-          invoice:invoice_id(
+          invoice:invoices!invoice_id(
             id,
             slug,
             invoice_number,
@@ -174,7 +158,107 @@ export async function getPaymentBySlug(
     )
     .eq("slug", paymentSlug)
     .is("deleted_at", null)
-    .single<PaymentDetailView>();
+    .single();
+};
+
+/**
+ * Query builder for fetching outstanding invoices for a party
+ */
+export const buildOutstandingInvoicesQuery = (
+  supabase: SupabaseClient<Database>,
+  partyLedgerId: string,
+  invoiceType: "sales" | "purchase",
+) => {
+  return supabase
+    .from("invoices")
+    .select(
+      `
+        id,
+        invoice_number,
+				slug,
+        invoice_date,
+        due_date,
+        invoice_type,
+        total_amount,
+        outstanding_amount,
+        status
+      `,
+    )
+    .eq("party_ledger_id", partyLedgerId)
+    .eq("invoice_type", invoiceType)
+    .in("status", ["open", "partially_paid"])
+    .gt("outstanding_amount", 0)
+    .is("deleted_at", null)
+    .order("due_date", { ascending: true });
+};
+
+/**
+ * Query builder for fetching counter ledgers (bank/cash accounts)
+ */
+export const buildCounterLedgersQuery = (
+  supabase: SupabaseClient<Database>,
+) => {
+  return supabase
+    .from("ledgers")
+    .select(
+      `
+        id,
+        name,
+        ledger_type,
+        parent_group:parent_groups!parent_group_id(name)
+      `,
+    )
+    .in("ledger_type", ["bank", "cash"])
+    .eq("is_active", true)
+    .is("deleted_at", null)
+    .order("name", { ascending: true });
+};
+
+// ============================================================================
+// QUERIES
+// ============================================================================
+
+/**
+ * Fetch payments with optional filters and pagination
+ * RLS automatically filters by company_id
+ *
+ * Examples:
+ * - All payments: getPayments()
+ * - Payments only: getPayments({ voucher_type: 'payment' })
+ * - Search: getPayments({ search: 'PMT/2024-25/0001' })
+ */
+export async function getPayments(
+  filters?: PaymentFilters,
+  page: number = 1,
+  pageSize: number = 25,
+): Promise<{ data: PaymentListView[]; totalCount: number }> {
+  const supabase = createClient();
+  const { data, count, error } = await buildPaymentsQuery(
+    supabase,
+    filters,
+    page,
+    pageSize,
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    data: data || [],
+    totalCount: count || 0,
+  };
+}
+
+/**
+ * Fetch a single payment by payment number
+ * Returns complete payment with allocations, ledgers
+ */
+export async function getPaymentBySlug(
+  paymentSlug: string,
+): Promise<PaymentDetailView> {
+  const supabase = createClient();
+  const { data, error } = await buildPaymentBySlugQuery(supabase, paymentSlug);
 
   if (error) throw error;
   if (!data) throw new Error("Payment not found");
@@ -218,32 +302,15 @@ export async function getOutstandingInvoices(
   invoiceType: "sales" | "purchase",
 ): Promise<OutstandingInvoiceView[]> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("invoices")
-    .select(
-      `
-        id,
-        invoice_number,
-				slug,
-        invoice_date,
-        due_date,
-        invoice_type,
-        total_amount,
-        outstanding_amount,
-        status
-      `,
-    )
-    .eq("party_ledger_id", partyLedgerId)
-    .eq("invoice_type", invoiceType)
-    .in("status", ["open", "partially_paid"])
-    .gt("outstanding_amount", 0)
-    .is("deleted_at", null)
-    .order("due_date", { ascending: true });
+  const { data, error } = await buildOutstandingInvoicesQuery(
+    supabase,
+    partyLedgerId,
+    invoiceType,
+  );
 
   if (error) throw error;
 
-  return (data || []) as OutstandingInvoiceView[];
+  return data || [];
 }
 
 /**
@@ -252,25 +319,11 @@ export async function getOutstandingInvoices(
  */
 export async function getCounterLedgers(): Promise<CounterLedgerView[]> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("ledgers")
-    .select(
-      `
-        id,
-        name,
-        ledger_type,
-        parent_group:parent_group_id(name)
-      `,
-    )
-    .in("ledger_type", ["bank", "cash"])
-    .eq("is_active", true)
-    .is("deleted_at", null)
-    .order("name", { ascending: true });
+  const { data, error } = await buildCounterLedgersQuery(supabase);
 
   if (error) throw error;
 
-  return (data || []) as unknown as CounterLedgerView[];
+  return data || [];
 }
 
 // ============================================================================
@@ -287,7 +340,6 @@ export async function createPayment(
 ): Promise<string> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data: paymentId, error } = await supabase.rpc(
     "create_payment_with_allocations",
     {
@@ -296,15 +348,24 @@ export async function createPayment(
       p_counter_ledger_id: paymentData.counter_ledger_id,
       p_payment_date: paymentData.payment_date,
       p_payment_mode: paymentData.payment_mode,
-      p_reference_number: paymentData.reference_number,
-      p_reference_date: paymentData.reference_date,
       p_total_amount: paymentData.total_amount,
       p_tds_applicable: paymentData.tds_applicable,
+      p_allocations: paymentData.allocations as unknown as Json,
+      // Instrument details (cheque, demand_draft)
+      p_instrument_number: paymentData.instrument_number,
+      p_instrument_date: paymentData.instrument_date,
+      p_instrument_bank: paymentData.instrument_bank,
+      p_instrument_branch: paymentData.instrument_branch,
+      p_instrument_ifsc: paymentData.instrument_ifsc,
+      // Digital payment details (NEFT/RTGS/IMPS/UPI/Card)
+      p_transaction_id: paymentData.transaction_id,
+      p_vpa: paymentData.vpa,
+      p_card_last_four: paymentData.card_last_four,
+      // TDS and other fields
       p_tds_rate: paymentData.tds_rate,
       p_tds_ledger_id: paymentData.tds_ledger_id,
       p_notes: paymentData.notes,
       p_attachments: paymentData.attachments,
-      p_allocations: paymentData.allocations,
       p_company_id: undefined, // Set by RPC from JWT
     },
   );
@@ -350,15 +411,24 @@ export async function updatePaymentWithAllocations(
     p_counter_ledger_id: paymentData.counter_ledger_id,
     p_payment_date: paymentData.payment_date,
     p_payment_mode: paymentData.payment_mode,
-    p_reference_number: paymentData.reference_number,
-    p_reference_date: paymentData.reference_date,
     p_total_amount: paymentData.total_amount,
     p_tds_applicable: paymentData.tds_applicable,
+    p_allocations: paymentData.allocations as unknown as Json,
+    // Instrument details (cheque, demand_draft)
+    p_instrument_number: paymentData.instrument_number,
+    p_instrument_date: paymentData.instrument_date,
+    p_instrument_bank: paymentData.instrument_bank,
+    p_instrument_branch: paymentData.instrument_branch,
+    p_instrument_ifsc: paymentData.instrument_ifsc,
+    // Digital payment details (NEFT/RTGS/IMPS/UPI/Card)
+    p_transaction_id: paymentData.transaction_id,
+    p_vpa: paymentData.vpa,
+    p_card_last_four: paymentData.card_last_four,
+    // TDS and other fields
     p_tds_rate: paymentData.tds_rate,
     p_tds_ledger_id: paymentData.tds_ledger_id,
     p_notes: paymentData.notes,
     p_attachments: paymentData.attachments,
-    p_allocations: paymentData.allocations,
   });
 
   if (error) throw error;

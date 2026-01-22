@@ -159,7 +159,7 @@ export default function PartnerOrdersPage({ params }: PageParams) {
                   key={order.id}
                   onClick={() =>
                     router.push(
-                      `/warehouse/${warehouse_slug}/sales-orders/${order.sequence_number}`,
+                      `/warehouse/${warehouse_slug}/sales-orders/${order.sequence_number}/details`,
                     )
                   }
                   className="w-full flex flex-col gap-2 p-4 border-t border-dashed border-gray-300 hover:bg-gray-50 transition-colors"

@@ -9,12 +9,18 @@ import { useGoodsInwardBySequenceNumber } from "@/lib/query/hooks/stock-flow";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getStockUnitInfo } from "@/lib/utils/product";
 import { formatStockUnitNumber } from "@/lib/utils/product";
-import { MeasuringUnit, StockType } from "@/types/database/enums";
+import {
+  MeasuringUnit,
+  StockType,
+  StockUnitStatus,
+} from "@/types/database/enums";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import type { Tables } from "@/types/database/supabase";
 import { Separator } from "@/components/ui/separator";
 import { StockUnitDetailsModal } from "@/components/layouts/stock-unit-modal";
 import { useStockUnitWithProductDetail } from "@/lib/query/hooks/stock-units";
+import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
+import { StockStatusBadge } from "@/components/ui/stock-status-badge";
 
 type StockUnit = Tables<"stock_units">;
 type Product = Tables<"products">;
@@ -126,19 +132,41 @@ export default function StockUnitsPage({ params }: PageParams) {
                 {/* Stock Unit Details */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <p
-                      className="font-medium text-gray-700 truncate"
-                      title={productName}
-                    >
-                      {productName}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p
+                        className="font-medium text-gray-700 truncate"
+                        title={productName}
+                      >
+                        {productName}
+                      </p>
+                      <StockStatusBadge
+                        status={item.status as StockUnitStatus}
+                      />
+                    </div>
                     <span className="shrink-0 text-sm font-bold text-gray-700">
                       {item.initial_quantity} {unitAbbreviation}
                     </span>
                   </div>
 
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 mt-1">
                     {formatStockUnitNumber(item.sequence_number, stockType)}
+                    {" • "}
+                    <span
+                      className={`text-sm mt-1 ${
+                        item.qr_generated_at
+                          ? "text-gray-500"
+                          : "text-green-700"
+                      }`}
+                      title={
+                        item.qr_generated_at
+                          ? formatAbsoluteDate(item.qr_generated_at)
+                          : ""
+                      }
+                    >
+                      {item.qr_generated_at
+                        ? `QR generated ${formatRelativeDate(item.qr_generated_at)}`
+                        : "QR pending"}
+                    </span>
                   </p>
 
                   {/* Additional Details */}

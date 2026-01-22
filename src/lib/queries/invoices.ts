@@ -1,40 +1,34 @@
 import { createClient } from "@/lib/supabase/browser";
-import type { TablesUpdate } from "@/types/database/supabase";
+import type { TablesUpdate, Database, Json } from "@/types/database/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  InvoiceFilters,
   InvoiceListView,
   InvoiceDetailView,
-  InvoiceFilters,
   CreateInvoiceData,
 } from "@/types/invoices.types";
 
 // Re-export types for convenience
 export type {
+  InvoiceFilters,
   InvoiceListView,
   InvoiceDetailView,
-  InvoiceFilters,
   CreateInvoiceData,
 };
 
 // ============================================================================
-// QUERIES
+// QUERY BUILDERS
 // ============================================================================
 
 /**
- * Fetch invoices with optional filters and pagination
- * RLS automatically filters by company_id and warehouse access
- *
- * Examples:
- * - All invoices: getInvoices()
- * - Sales only: getInvoices({ invoice_type: 'sales' })
- * - Search: getInvoices({ search: 'customer name' })
+ * Query builder for fetching invoices with optional filters and pagination
  */
-export async function getInvoices(
+export const buildInvoicesQuery = (
+  supabase: SupabaseClient<Database>,
   filters?: InvoiceFilters,
   page: number = 1,
   pageSize: number = 25,
-): Promise<{ data: InvoiceListView[]; totalCount: number }> {
-  const supabase = createClient();
-
+) => {
   // Calculate pagination range
   const offset = (page - 1) * pageSize;
 
@@ -58,6 +52,8 @@ export async function getInvoices(
 				supplier_invoice_number,
         warehouse_id,
         has_payment,
+        has_adjustment,
+        is_cancelled,
         exported_to_tally_at,
         invoice_items!inner(
           *,
@@ -115,6 +111,19 @@ export async function getInvoices(
     });
   }
 
+  // Apply source sales order filter
+  if (filters?.source_sales_order_id) {
+    query = query.eq("source_sales_order_id", filters.source_sales_order_id);
+  }
+
+  // Apply source purchase order filter
+  if (filters?.source_purchase_order_id) {
+    query = query.eq(
+      "source_purchase_order_id",
+      filters.source_purchase_order_id,
+    );
+  }
+
   // Default ordering: most recent first
   query = query
     .order("invoice_date", { ascending: false })
@@ -123,14 +132,68 @@ export async function getInvoices(
   // Apply pagination
   query = query.range(offset, offset + pageSize - 1);
 
-  const { data, count, error } = await query;
+  return query;
+};
+
+/**
+ * Query builder for fetching a single invoice by slug
+ */
+export const buildInvoiceBySlugQuery = (
+  supabase: SupabaseClient<Database>,
+  invoiceSlug: string,
+) => {
+  return supabase
+    .from("invoices")
+    .select(
+      `
+        *,
+        invoice_items!inner(
+          *,
+          product:product_id(
+            id, name, stock_type, measuring_unit, product_images, sequence_number
+          )
+        ),
+        party_ledger:ledgers!party_ledger_id(id, name, partner_id),
+        warehouse:warehouses!warehouse_id(id, name)
+      `,
+    )
+    .eq("slug", invoiceSlug)
+    .is("deleted_at", null)
+    .single();
+};
+
+// ============================================================================
+// QUERIES
+// ============================================================================
+
+/**
+ * Fetch invoices with optional filters and pagination
+ * RLS automatically filters by company_id and warehouse access
+ *
+ * Examples:
+ * - All invoices: getInvoices()
+ * - Sales only: getInvoices({ invoice_type: 'sales' })
+ * - Search: getInvoices({ search: 'customer name' })
+ */
+export async function getInvoices(
+  filters?: InvoiceFilters,
+  page: number = 1,
+  pageSize: number = 25,
+): Promise<{ data: InvoiceListView[]; totalCount: number }> {
+  const supabase = createClient();
+  const { data, count, error } = await buildInvoicesQuery(
+    supabase,
+    filters,
+    page,
+    pageSize,
+  );
 
   if (error) {
     throw error;
   }
 
   return {
-    data: data as InvoiceListView[],
+    data: data || [],
     totalCount: count || 0,
   };
 }
@@ -143,25 +206,7 @@ export async function getInvoiceBySlug(
   invoiceSlug: string,
 ): Promise<InvoiceDetailView> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("invoices")
-    .select(
-      `
-        *,
-        invoice_items!inner(
-          *,
-          product:product_id(
-            id, name, stock_type, measuring_unit, product_images, sequence_number
-          )
-        ),
-        party_ledger:party_ledger_id(id, name, partner_id),
-        warehouse:warehouse_id(id, name)
-      `,
-    )
-    .eq("slug", invoiceSlug)
-    .is("deleted_at", null)
-    .single<InvoiceDetailView>();
+  const { data, error } = await buildInvoiceBySlugQuery(supabase, invoiceSlug);
 
   if (error) throw error;
   if (!data) throw new Error("Invoice not found");
@@ -195,7 +240,6 @@ export async function createInvoice(
 ): Promise<string> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data: invoiceId, error } = await supabase.rpc(
     "create_invoice_with_items",
     {
@@ -209,12 +253,16 @@ export async function createInvoice(
       p_tax_type: invoiceData.tax_type,
       p_discount_type: invoiceData.discount_type,
       p_discount_value: invoiceData.discount_value,
-      p_supplier_invoice_number: invoiceData.supplier_invoice_number || null,
-      p_supplier_invoice_date: invoiceData.supplier_invoice_date || null,
+      p_supplier_invoice_number:
+        invoiceData.supplier_invoice_number || undefined,
+      p_supplier_invoice_date: invoiceData.supplier_invoice_date || undefined,
       p_notes: invoiceData.notes,
-      p_attachments: null, // Attachments not implemented yet
-      p_items: invoiceData.items,
-      p_goods_movement_ids: null, // Goods movements not linked yet
+      p_attachments: undefined, // Attachments not implemented yet
+      p_items: invoiceData.items as unknown as Json,
+      p_source_sales_order_id: invoiceData.source_sales_order_id || undefined,
+      p_source_purchase_order_id:
+        invoiceData.source_purchase_order_id || undefined,
+      p_goods_movement_ids: invoiceData.goods_movement_ids || undefined,
       p_company_id: undefined, // Set by RPC from JWT
     },
   );
@@ -265,11 +313,11 @@ export async function updateInvoiceWithItems(
     p_tax_type: invoiceData.tax_type,
     p_discount_type: invoiceData.discount_type,
     p_discount_value: invoiceData.discount_value,
-    p_supplier_invoice_number: invoiceData.supplier_invoice_number || null,
-    p_supplier_invoice_date: invoiceData.supplier_invoice_date || null,
+    p_supplier_invoice_number: invoiceData.supplier_invoice_number,
+    p_supplier_invoice_date: invoiceData.supplier_invoice_date,
     p_notes: invoiceData.notes,
-    p_attachments: null, // Attachments not implemented yet
-    p_items: invoiceData.items,
+    p_attachments: undefined, // Attachments not implemented yet
+    p_items: invoiceData.items as unknown as Json,
   });
 
   if (error) throw error;

@@ -174,7 +174,7 @@ export function useStockFlowMutations(warehouseId: string) {
         queryKey: queryKeys.stockUnits.all(warehouseId),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.products.withInventory(warehouseId),
+        queryKey: queryKeys.products.withInventoryAndOrders(warehouseId),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.dashboard.all(warehouseId),
@@ -204,7 +204,7 @@ export function useStockFlowMutations(warehouseId: string) {
         queryKey: queryKeys.stockUnits.all(warehouseId),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.products.withInventory(warehouseId),
+        queryKey: queryKeys.products.withInventoryAndOrders(warehouseId),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.dashboard.all(warehouseId),

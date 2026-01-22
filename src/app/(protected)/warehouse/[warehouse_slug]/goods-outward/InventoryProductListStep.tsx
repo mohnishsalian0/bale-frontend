@@ -21,7 +21,7 @@ import type { ProductWithInventoryListView } from "@/types/products.types";
 import type { StockType, MeasuringUnit } from "@/types/database/enums";
 import type { ScannedStockUnit } from "./QRScannerStep";
 import {
-  useInfiniteProductsWithInventory,
+  useInfiniteProductsWithInventoryAndOrders,
   useProductAttributes,
   useProductsWithInventoryByIds,
 } from "@/lib/query/hooks/products";
@@ -77,7 +77,7 @@ export function InventoryProductListStep({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteProductsWithInventory(
+  } = useInfiniteProductsWithInventoryAndOrders(
     warehouseId,
     {
       is_active: true,

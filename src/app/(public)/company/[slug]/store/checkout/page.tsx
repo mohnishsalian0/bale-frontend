@@ -5,10 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { IconArrowLeft, IconLoader2, IconTrash } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { InputWrapper } from "@/components/ui/input-wrapper";
 import { useCart, type CartItem } from "@/contexts/cart-context";
 import { getCompanyBySlug, type PublicCompany } from "@/lib/queries/catalog";
 import { createCatalogOrder } from "@/lib/queries/catalog-orders";
@@ -32,6 +32,13 @@ interface CheckoutFormData {
   country: string;
   pinCode: string;
   gstin: string;
+  shippingSameAsBilling: boolean;
+  shippingAddressLine1: string;
+  shippingAddressLine2: string;
+  shippingCity: string;
+  shippingState: string;
+  shippingCountry: string;
+  shippingPinCode: string;
   specialInstructions: string;
   termsAccepted: boolean;
 }
@@ -62,6 +69,13 @@ export default function CheckoutPage() {
     country: "",
     pinCode: "",
     gstin: "",
+    shippingSameAsBilling: true,
+    shippingAddressLine1: "",
+    shippingAddressLine2: "",
+    shippingCity: "",
+    shippingState: "",
+    shippingCountry: "",
+    shippingPinCode: "",
     specialInstructions: "",
     termsAccepted: false,
   });
@@ -128,7 +142,19 @@ export default function CheckoutPage() {
       !formData.country ||
       !formData.pinCode
     ) {
-      toast.error("Please fill in all required address fields");
+      toast.error("Please fill in all required billing address fields");
+      return;
+    }
+
+    if (
+      !formData.shippingSameAsBilling &&
+      (!formData.shippingAddressLine1 ||
+        !formData.shippingCity ||
+        !formData.shippingState ||
+        !formData.shippingCountry ||
+        !formData.shippingPinCode)
+    ) {
+      toast.error("Please fill in all required shipping address fields");
       return;
     }
 
@@ -268,168 +294,254 @@ export default function CheckoutPage() {
             Contact Details
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="firstName" className="mb-1" required>
-                First Name
-              </Label>
-              <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    firstName: e.target.value,
-                  }))
-                }
-                required
-              />
-            </div>
+            <InputWrapper
+              label="First Name"
+              placeholder="Enter first name"
+              id="firstName"
+              value={formData.firstName}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  firstName: e.target.value,
+                }))
+              }
+              required
+            />
 
-            <div>
-              <Label htmlFor="lastName" className="mb-1" required>
-                Last Name{" "}
-              </Label>
-              <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, lastName: e.target.value }))
-                }
-                required
-              />
-            </div>
+            <InputWrapper
+              label="Last Name"
+              placeholder="Enter last name"
+              id="lastName"
+              value={formData.lastName}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, lastName: e.target.value }))
+              }
+              required
+            />
 
-            <div>
-              <Label htmlFor="phone" className="mb-1" required>
-                Phone{" "}
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                required
-              />
-            </div>
+            <InputWrapper
+              label="Phone"
+              placeholder="Enter phone number"
+              type="tel"
+              id="phone"
+              value={formData.phone}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, phone: e.target.value }))
+              }
+              required
+            />
 
-            <div>
-              <Label htmlFor="email" className="mb-1">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, email: e.target.value }))
-                }
-              />
-            </div>
+            <InputWrapper
+              label="Email"
+              placeholder="Enter email address"
+              type="email"
+              id="email"
+              value={formData.email}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, email: e.target.value }))
+              }
+            />
           </div>
         </section>
 
         {/* Address */}
         <section className="rounded-lg border-2 border-border p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Address</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            Billing Address
+          </h2>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="addressLine1" className="mb-1" required>
-                Address Line 1{" "}
-              </Label>
-              <Input
-                id="addressLine1"
-                value={formData.addressLine1}
+            <InputWrapper
+              label="Address Line 1"
+              placeholder="Enter address line 1"
+              id="addressLine1"
+              value={formData.addressLine1}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  addressLine1: e.target.value,
+                }))
+              }
+              required
+            />
+
+            <InputWrapper
+              label="Address Line 2"
+              placeholder="Enter address line 2"
+              id="addressLine2"
+              value={formData.addressLine2}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  addressLine2: e.target.value,
+                }))
+              }
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InputWrapper
+                label="City"
+                placeholder="Enter city"
+                id="city"
+                value={formData.city}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, city: e.target.value }))
+                }
+                required
+              />
+
+              <InputWrapper
+                label="State"
+                placeholder="Enter state"
+                id="state"
+                value={formData.state}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, state: e.target.value }))
+                }
+                required
+              />
+
+              <InputWrapper
+                label="Country"
+                placeholder="Enter country"
+                id="country"
+                value={formData.country}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    addressLine1: e.target.value,
+                    country: e.target.value,
+                  }))
+                }
+                required
+              />
+
+              <InputWrapper
+                label="Pin Code"
+                placeholder="Enter pin code"
+                id="pinCode"
+                value={formData.pinCode}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    pinCode: e.target.value,
                   }))
                 }
                 required
               />
             </div>
 
-            <div>
-              <Label htmlFor="addressLine2" className="mb-1">
-                Address Line 2
-              </Label>
-              <Input
-                id="addressLine2"
-                value={formData.addressLine2}
-                onChange={(e) =>
+            {/* Shipping Same as Billing Checkbox */}
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox
+                id="shippingSameAsBilling"
+                checked={formData.shippingSameAsBilling}
+                onCheckedChange={(checked) =>
                   setFormData((prev) => ({
                     ...prev,
-                    addressLine2: e.target.value,
+                    shippingSameAsBilling: checked === true,
                   }))
                 }
               />
+              <Label
+                htmlFor="shippingSameAsBilling"
+                className="text-sm font-medium leading-none cursor-pointer"
+              >
+                Shipping address same as billing address
+              </Label>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="city" className="mb-1" required>
-                  City{" "}
-                </Label>
-                <Input
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, city: e.target.value }))
-                  }
-                  required
-                />
-              </div>
+            {/* Shipping Address (conditional) */}
+            {!formData.shippingSameAsBilling && (
+              <div className="space-y-4 pt-4 border-t">
+                <h3 className="text-base font-semibold text-gray-900">
+                  Shipping Address
+                </h3>
 
-              <div>
-                <Label htmlFor="state" className="mb-1" required>
-                  State{" "}
-                </Label>
-                <Input
-                  id="state"
-                  value={formData.state}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, state: e.target.value }))
-                  }
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="country" className="mb-1" required>
-                  Country{" "}
-                </Label>
-                <Input
-                  id="country"
-                  value={formData.country}
+                <InputWrapper
+                  label="Address Line 1"
+                  placeholder="Enter shipping address line 1"
+                  id="shippingAddressLine1"
+                  value={formData.shippingAddressLine1}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      country: e.target.value,
+                      shippingAddressLine1: e.target.value,
                     }))
                   }
                   required
                 />
-              </div>
 
-              <div>
-                <Label htmlFor="pinCode" className="mb-1" required>
-                  Pin Code{" "}
-                </Label>
-                <Input
-                  id="pinCode"
-                  value={formData.pinCode}
+                <InputWrapper
+                  label="Address Line 2"
+                  placeholder="Enter shipping address line 2"
+                  id="shippingAddressLine2"
+                  value={formData.shippingAddressLine2}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      pinCode: e.target.value,
+                      shippingAddressLine2: e.target.value,
                     }))
                   }
-                  required
                 />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputWrapper
+                    label="City"
+                    placeholder="Enter city"
+                    id="shippingCity"
+                    value={formData.shippingCity}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        shippingCity: e.target.value,
+                      }))
+                    }
+                    required
+                  />
+
+                  <InputWrapper
+                    label="State"
+                    placeholder="Enter state"
+                    id="shippingState"
+                    value={formData.shippingState}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        shippingState: e.target.value,
+                      }))
+                    }
+                    required
+                  />
+
+                  <InputWrapper
+                    label="Country"
+                    placeholder="Enter country"
+                    id="shippingCountry"
+                    value={formData.shippingCountry}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        shippingCountry: e.target.value,
+                      }))
+                    }
+                    required
+                  />
+
+                  <InputWrapper
+                    label="Pin Code"
+                    placeholder="Enter pin code"
+                    id="shippingPinCode"
+                    value={formData.shippingPinCode}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        shippingPinCode: e.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </section>
 
@@ -439,19 +551,15 @@ export default function CheckoutPage() {
             Additional Information
           </h2>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="gstin" className="mb-1">
-                GSTIN
-              </Label>
-              <Input
-                id="gstin"
-                placeholder="22AAAAA0000A1Z5"
-                value={formData.gstin}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, gstin: e.target.value }))
-                }
-              />
-            </div>
+            <InputWrapper
+              label="GSTIN"
+              placeholder="22AAAAA0000A1Z5"
+              id="gstin"
+              value={formData.gstin}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, gstin: e.target.value }))
+              }
+            />
 
             <div>
               <Label htmlFor="specialInstructions" className="mb-1">

@@ -18,7 +18,7 @@ import { ProductFormSheet } from "../ProductFormSheet";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import IconStore from "@/components/icons/IconStore";
 import {
-  useProductWithInventoryByNumber,
+  useProductWithInventoryAndOrdersByNumber,
   useProductMutations,
 } from "@/lib/query/hooks/products";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
@@ -57,7 +57,7 @@ export default function ProductDetailLayout({
     data: product,
     isLoading: productLoading,
     isError: productError,
-  } = useProductWithInventoryByNumber(product_number, warehouse.id);
+  } = useProductWithInventoryAndOrdersByNumber(product_number, warehouse.id);
 
   // Handler for catalog visibility toggle
   const handleToggleCatalogVisibility = () => {
@@ -252,7 +252,7 @@ export default function ProductDetailLayout({
               </span>
             </div>
             <p className="font-semibold text-gray-700 whitespace-pre">
-              {`0 ${unitAbbr}  •  ₹ 0`}
+              {`${product.sales_orders?.active_pending_quantity} ${unitAbbr}  •  ₹ ${formatCurrency(product.sales_orders?.active_pending_value ?? 0)}`}
             </p>
           </div>
         </div>

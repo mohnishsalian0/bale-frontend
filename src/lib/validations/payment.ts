@@ -71,8 +71,20 @@ export const basePaymentSchema = z.object({
     message: "Payment mode is required",
   }),
   total_amount: positiveNumberSchema,
-  reference_number: z.string().max(50).nullable(),
-  reference_date: z.date().nullable(),
+
+  // Instrument fields (cheque, demand_draft) - all optional
+  instrument_number: z.string().max(20).nullable().optional(),
+  instrument_date: z.date().nullable().optional(),
+  instrument_bank: z.string().max(100).nullable().optional(),
+  instrument_branch: z.string().max(100).nullable().optional(),
+  instrument_ifsc: z.string().max(11).nullable().optional(),
+
+  // Digital payment fields (neft, rtgs, imps, upi, card) - all optional
+  transaction_id: z.string().max(50).nullable().optional(),
+  vpa: z.string().max(100).nullable().optional(),
+  card_last_four: z.string().max(4).nullable().optional(),
+
+  // Additional fields
   notes: z.string().max(1000).nullable(),
 });
 

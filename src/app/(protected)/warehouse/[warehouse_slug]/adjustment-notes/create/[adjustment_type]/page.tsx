@@ -185,8 +185,8 @@ export default function CreateAdjustmentNotePage() {
         adjustment_type: adjustment_type,
         adjustment_date: formData.adjustmentDate,
         reason: formData.reason,
-        notes: formData.notes || null,
-        attachments: null,
+        notes: formData.notes || undefined,
+        attachments: undefined,
         items,
       },
       {

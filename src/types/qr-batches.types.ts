@@ -1,10 +1,34 @@
-import type { Tables } from "./database/supabase";
-import type { TablesInsert } from "./database/supabase";
+import type { Tables, TablesInsert } from "./database/supabase";
+import type { QueryData } from "@supabase/supabase-js";
+import {
+  buildQRBatchesQuery,
+  buildQRBatchByIdQuery,
+} from "@/lib/queries/qr-batches";
 import type { StockUnitWithProductDetailView } from "./stock-units.types";
 import type { ProductListView } from "./products.types";
 
 type QRBatch = Tables<"qr_batches">;
 type QRBatchItem = Tables<"qr_batch_items">;
+
+// ============================================================================
+// RAW TYPES (QueryData inferred from query builders)
+// ============================================================================
+
+/**
+ * Raw type inferred from buildQRBatchesQuery
+ * Used as bridge between Supabase response and QRBatchListView
+ */
+export type QRBatchListViewRaw = QueryData<
+  ReturnType<typeof buildQRBatchesQuery>
+>[number];
+
+/**
+ * Raw type inferred from buildQRBatchByIdQuery
+ * Used as bridge between Supabase response and QRBatchDetailView
+ */
+export type QRBatchDetailViewRaw = QueryData<
+  ReturnType<typeof buildQRBatchByIdQuery>
+>;
 
 // =====================================================
 // FILTERS

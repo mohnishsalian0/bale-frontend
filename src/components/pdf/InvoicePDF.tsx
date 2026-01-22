@@ -413,7 +413,7 @@ export function InvoicePDF({ invoice }: InvoicePDFProps) {
               <Text style={styles.textLine}>Place of Supply</Text>
               <Text style={styles.textLine}>
                 {invoice.invoice_type === "sales"
-                  ? invoice.party_state || "-"
+                  ? invoice.party_shipping_state || "-"
                   : invoice.warehouse_state || "-"}
               </Text>
             </View>
@@ -436,21 +436,27 @@ export function InvoicePDF({ invoice }: InvoicePDFProps) {
             <Text style={styles.sectionTitle}>
               {invoice.party_name || invoice.party_display_name}
             </Text>
-            {invoice.party_address_line1 && (
-              <Text style={styles.textLine}>{invoice.party_address_line1}</Text>
-            )}
-            {invoice.party_address_line2 && (
-              <Text style={styles.textLine}>{invoice.party_address_line2}</Text>
-            )}
-            {(invoice.party_city || invoice.party_pincode) && (
+            {invoice.party_billing_address_line1 && (
               <Text style={styles.textLine}>
-                {[invoice.party_city, invoice.party_pincode]
+                {invoice.party_billing_address_line1}
+              </Text>
+            )}
+            {invoice.party_billing_address_line2 && (
+              <Text style={styles.textLine}>
+                {invoice.party_billing_address_line2}
+              </Text>
+            )}
+            {(invoice.party_billing_city || invoice.party_billing_pincode) && (
+              <Text style={styles.textLine}>
+                {[invoice.party_billing_city, invoice.party_billing_pincode]
                   .filter(Boolean)
                   .join(" - ")}
               </Text>
             )}
-            {invoice.party_state && (
-              <Text style={styles.textLine}>State: {invoice.party_state}</Text>
+            {invoice.party_billing_state && (
+              <Text style={styles.textLine}>
+                State: {invoice.party_billing_state}
+              </Text>
             )}
             {invoice.party_gst_number && (
               <Text style={styles.textLine}>
@@ -501,7 +507,42 @@ export function InvoicePDF({ invoice }: InvoicePDFProps) {
                 )}
               </>
             ) : (
-              <Text style={styles.sectionTitle}>TODO</Text>
+              <>
+                <Text style={styles.sectionTitle}>
+                  {invoice.party_name || invoice.party_display_name}
+                </Text>
+                {invoice.party_shipping_address_line1 && (
+                  <Text style={styles.textLine}>
+                    {invoice.party_shipping_address_line1}
+                  </Text>
+                )}
+                {invoice.party_shipping_address_line2 && (
+                  <Text style={styles.textLine}>
+                    {invoice.party_shipping_address_line2}
+                  </Text>
+                )}
+                {(invoice.party_shipping_city ||
+                  invoice.party_shipping_pincode) && (
+                  <Text style={styles.textLine}>
+                    {[
+                      invoice.party_shipping_city,
+                      invoice.party_shipping_pincode,
+                    ]
+                      .filter(Boolean)
+                      .join(" - ")}
+                  </Text>
+                )}
+                {invoice.party_shipping_state && (
+                  <Text style={styles.textLine}>
+                    State: {invoice.party_shipping_state}
+                  </Text>
+                )}
+                {invoice.party_gst_number && (
+                  <Text style={styles.textLine}>
+                    GSTIN: {invoice.party_gst_number}
+                  </Text>
+                )}
+              </>
             )}
           </View>
         </View>

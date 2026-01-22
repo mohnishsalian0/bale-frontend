@@ -327,19 +327,33 @@ export function PaymentPDF({ payment, company }: PaymentPDFProps) {
               </Text>
             </View>
 
-            {payment.reference_number && (
+            {payment.instrument_number && (
               <View style={styles.sectionRow}>
-                <Text style={styles.textLine}>Reference No.</Text>
-                <Text style={styles.textLine}>{payment.reference_number}</Text>
+                <Text style={styles.textLine}>Instrument No.</Text>
+                <Text style={styles.textLine}>{payment.instrument_number}</Text>
               </View>
             )}
 
-            {payment.reference_date && (
+            {payment.instrument_date && (
               <View style={styles.sectionRow}>
-                <Text style={styles.textLine}>Reference Date</Text>
+                <Text style={styles.textLine}>Instrument Date</Text>
                 <Text style={styles.textLine}>
-                  {formatAbsoluteDate(payment.reference_date)}
+                  {formatAbsoluteDate(payment.instrument_date)}
                 </Text>
+              </View>
+            )}
+
+            {payment.transaction_id && (
+              <View style={styles.sectionRow}>
+                <Text style={styles.textLine}>Transaction ID</Text>
+                <Text style={styles.textLine}>{payment.transaction_id}</Text>
+              </View>
+            )}
+
+            {payment.vpa && (
+              <View style={styles.sectionRow}>
+                <Text style={styles.textLine}>UPI ID</Text>
+                <Text style={styles.textLine}>{payment.vpa}</Text>
               </View>
             )}
           </View>

@@ -1,13 +1,15 @@
-import { ProductListView } from "@/types/products.types";
 import type { Tables, TablesUpdate } from "./database/supabase";
+import type { QueryData } from "@supabase/supabase-js";
 import { DisplayStatus } from "@/lib/utils/purchase-order";
+import {
+  buildPurchaseOrdersQuery,
+  buildPurchaseOrderByNumberQuery,
+} from "@/lib/queries/purchase-orders";
 
+// Base types from database (still needed for non-query uses)
 export type PurchaseOrder = Tables<"purchase_orders">;
 export type PurchaseOrderUpdate = TablesUpdate<"purchase_orders">;
 export type PurchaseOrderItem = Tables<"purchase_order_items">;
-type Partner = Tables<"partners">;
-type Warehouse = Tables<"warehouses">;
-type Product = Tables<"products">;
 
 // ============================================================================
 // FILTERS
@@ -32,67 +34,40 @@ export interface PurchaseOrderFilters extends Record<string, unknown> {
 // =====================================================
 
 /**
- * Purchase order item for list views
- * Minimal product info for quick loading
+ * Purchase order with minimal details for list views
+ * Type inferred from buildPurchaseOrdersQuery
  * Used in: purchase order list page, partner detail page
  */
-export interface PurchaseOrderItemListView extends PurchaseOrderItem {
-  product: Pick<
-    Product,
-    | "id"
-    | "name"
-    | "stock_type"
-    | "measuring_unit"
-    | "product_images"
-    | "sequence_number"
-  > | null;
-}
+export type PurchaseOrderListView = QueryData<
+  ReturnType<typeof buildPurchaseOrdersQuery>
+>[number];
 
 /**
- * Purchase order with minimal details for list views
- * Used in: purchase order list page, partner detail page
+ * Purchase order item for list views
+ * Extracted from PurchaseOrderListView nested array
  */
-export interface PurchaseOrderListView extends PurchaseOrder {
-  supplier: Pick<
-    Partner,
-    "id" | "first_name" | "last_name" | "company_name" | "display_name"
-  > | null;
-  agent: Pick<
-    Partner,
-    "id" | "first_name" | "last_name" | "company_name" | "display_name"
-  > | null;
-  purchase_order_items: PurchaseOrderItemListView[];
-}
+export type PurchaseOrderItemListView =
+  PurchaseOrderListView["purchase_order_items"][number];
 
 // =====================================================
 // DETAIL VIEW TYPES (for purchase order detail page)
 // =====================================================
 
 /**
- * Purchase order item with full product details (for order detail page)
- * Uses ProductListView for consistency across the app
+ * Purchase order with complete details
+ * Type inferred from buildPurchaseOrderByNumberQuery
+ * Used in: purchase order detail page
  */
-export interface PurchaseOrderItemDetailView extends PurchaseOrderItem {
-  product: ProductListView | null;
-}
+export type PurchaseOrderDetailView = QueryData<
+  ReturnType<typeof buildPurchaseOrderByNumberQuery>
+>;
 
 /**
- * Purchase order with complete details (for order detail page)
- * Includes supplier address, agent (minimal fields), warehouse, and full product details
+ * Purchase order item with full product details
+ * Extracted from PurchaseOrderDetailView nested array
  */
-export interface PurchaseOrderDetailView extends PurchaseOrder {
-  supplier:
-    | (Partner & {
-        ledger: Pick<Tables<"ledgers">, "id" | "name">[];
-      })
-    | null;
-  agent: Pick<
-    Partner,
-    "id" | "first_name" | "last_name" | "company_name" | "display_name"
-  > | null;
-  warehouse: Warehouse | null;
-  purchase_order_items: PurchaseOrderItemDetailView[];
-}
+export type PurchaseOrderItemDetailView =
+  PurchaseOrderDetailView["purchase_order_items"][number];
 
 // =====================================================
 // CREATE/UPDATE TYPES (for mutations)

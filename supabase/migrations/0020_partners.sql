@@ -32,14 +32,23 @@ CREATE TABLE partners (
         gst_number ~ '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$'
     ),
     pan_number VARCHAR(10),
-    
-    -- Address
-    address_line1 VARCHAR(255),
-    address_line2 VARCHAR(255),
-    city VARCHAR(100),
-    state VARCHAR(100),
-    country VARCHAR(100) DEFAULT 'India',
-    pin_code VARCHAR(10),
+
+    -- Billing Address
+    billing_address_line1 VARCHAR(255),
+    billing_address_line2 VARCHAR(255),
+    billing_city VARCHAR(100),
+    billing_state VARCHAR(100),
+    billing_country VARCHAR(100) DEFAULT 'India',
+    billing_pin_code VARCHAR(10),
+
+    -- Shipping Address
+    shipping_same_as_billing BOOLEAN NOT NULL DEFAULT TRUE,
+    shipping_address_line1 VARCHAR(255),
+    shipping_address_line2 VARCHAR(255),
+    shipping_city VARCHAR(100),
+    shipping_state VARCHAR(100),
+    shipping_country VARCHAR(100) DEFAULT 'India',
+    shipping_pin_code VARCHAR(10),
 
     -- Image
     image_url TEXT,
@@ -98,8 +107,8 @@ CREATE INDEX idx_partners_email ON partners(company_id, email);
 -- GST number lookup
 CREATE INDEX idx_partners_gst ON partners(company_id, gst_number) WHERE gst_number IS NOT NULL;
 
--- Location-based queries
-CREATE INDEX idx_partners_city ON partners(company_id, city);
+-- Location-based queries (billing address)
+CREATE INDEX idx_partners_billing_city ON partners(company_id, billing_city);
 
 -- Last interaction sorting (for dashboard recent partners)
 CREATE INDEX idx_partners_last_interaction ON partners(company_id, last_interaction_at DESC NULLS LAST) WHERE deleted_at IS NULL;
@@ -214,6 +223,7 @@ COMMENT ON COLUMN partners.last_name IS 'Contact person last name (optional)';
 COMMENT ON COLUMN partners.display_name IS 'Computed display name (defaults to company_name)';
 COMMENT ON COLUMN partners.credit_limit_enabled IS 'Whether credit limit tracking is enabled for this partner';
 COMMENT ON COLUMN partners.credit_limit IS 'Maximum credit limit allowed for this partner';
+COMMENT ON COLUMN partners.shipping_same_as_billing IS 'When TRUE, shipping address fields are ignored and billing address is used for shipping. When FALSE, separate shipping address is used.';
 
 -- =====================================================
 -- GRANT PERMISSIONS

@@ -157,14 +157,14 @@ export default function AccountingPage() {
           size="sm"
           onClick={() => router.push(`/warehouse/${warehouse.slug}/invoices`)}
         >
-          View all invoices
+          All invoices
         </Button>
         <Button
           variant="outline"
           size="sm"
           onClick={() => router.push(`/warehouse/${warehouse.slug}/payments`)}
         >
-          View all payments
+          All payments
         </Button>
         <Button
           variant="outline"
@@ -173,7 +173,7 @@ export default function AccountingPage() {
             router.push(`/warehouse/${warehouse.slug}/adjustment-notes`)
           }
         >
-          View all adjustments
+          All adjustments
         </Button>
       </div>
 

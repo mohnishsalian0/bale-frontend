@@ -322,13 +322,17 @@ BEGIN
         END IF;
     END IF;
 
-    -- Rule 4: Cannot edit critical fields if has goods outward
+    -- Rule 4: Cannot change customer after approval
+    IF NEW.customer_id IS DISTINCT FROM OLD.customer_id AND OLD.status != 'approval_pending' THEN
+        RAISE EXCEPTION 'Cannot change customer after order approval';
+    END IF;
+
+    -- Rule 5: Cannot edit warehouse/date if has goods outward
     IF OLD.has_outward = TRUE AND (
-        NEW.customer_id IS DISTINCT FROM OLD.customer_id OR
         NEW.warehouse_id IS DISTINCT FROM OLD.warehouse_id OR
         NEW.order_date IS DISTINCT FROM OLD.order_date
     ) THEN
-        RAISE EXCEPTION 'Cannot edit sales order - goods outward exists. Delete outward records first';
+        RAISE EXCEPTION 'Cannot edit warehouse or order date - goods outward exists. Delete outward records first';
     END IF;
 
     RETURN NEW;
@@ -340,7 +344,7 @@ CREATE TRIGGER trigger_prevent_sales_order_edit
     FOR EACH ROW
     EXECUTE FUNCTION prevent_sales_order_edit();
 
-COMMENT ON FUNCTION prevent_sales_order_edit() IS 'Prevents editing sales orders that are cancelled, completed, or have linked goods outward records. Consolidates all edit validation rules including cancellation prevention.';
+COMMENT ON FUNCTION prevent_sales_order_edit() IS 'Prevents editing sales orders that are cancelled or completed. Prevents changing customer after approval. Prevents changing warehouse/date if goods outward exists. Allows editing line items even after approval.';
 
 -- Prevent sales order deletion in invalid states
 CREATE OR REPLACE FUNCTION prevent_sales_order_delete()

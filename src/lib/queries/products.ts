@@ -1,118 +1,430 @@
 import { createClient } from "@/lib/supabase/browser";
-import type { Tables } from "@/types/database/supabase";
+import type { Database, TablesInsert } from "@/types/database/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   ProductAttribute,
-  ProductInventory,
   ProductListView,
   ProductDetailView,
   ProductWithInventoryListView,
   ProductWithInventoryDetailView,
+  ProductInventoryView,
+  ProductInventoryDetailView,
   ProductUpsertData,
-  ProductAttributeAssignmentsRaw,
   ProductFilters,
+  ProductListViewRaw,
+  ProductDetailViewRaw,
+  ProductWithInventoryListViewRaw,
+  ProductWithInventoryDetailViewRaw,
+  ProductInventoryViewRaw,
+  ProductInventoryDetailViewRaw,
 } from "@/types/products.types";
 import type { AttributeGroup } from "@/types/database/enums";
 import { uploadProductImage, deleteProductImagesByUrls } from "@/lib/storage";
 
-// ============================================================================
-// NEW SELECT QUERIES - For View types
-// ============================================================================
-
-// Select query for ProductListView (minimal fields)
-export const PRODUCT_LIST_VIEW_SELECT = `
-	id,
-	sequence_number,
-	product_code,
-	name,
-	show_on_catalog,
-	is_active,
-	stock_type,
-	measuring_unit,
-	cost_price_per_unit,
-	selling_price_per_unit,
-	product_images,
-  min_stock_alert,
-  min_stock_threshold,
-	tax_type,
-	gst_rate,
-	attributes:product_attributes!inner(id, name, group_name, color_hex)
-`;
-
-// Select query for ProductDetailView (all fields)
-export const PRODUCT_DETAIL_VIEW_SELECT = `
-	*,
-	attributes:product_attributes!inner(id, name, group_name, color_hex)
-`;
-
-// Select query for ProductWithInventoryListView
-export const PRODUCT_WITH_INVENTORY_LIST_VIEW_SELECT = `
-	${PRODUCT_LIST_VIEW_SELECT},
-	product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value, pending_qr_units)
-`;
-
-// Select query for ProductWithInventoryDetailView
-export const PRODUCT_WITH_INVENTORY_DETAIL_VIEW_SELECT = `
-	*,
-	attributes:product_attributes!inner(id, name, group_name, color_hex),
-	product_inventory_aggregates!inner(*)
-`;
+// Re-export raw types for other modules
+export type {
+  ProductListViewRaw,
+  ProductDetailViewRaw,
+  ProductWithInventoryListViewRaw,
+  ProductWithInventoryDetailViewRaw,
+  ProductInventoryViewRaw,
+  ProductInventoryDetailViewRaw,
+} from "@/types/products.types";
 
 // ============================================================================
-// RAW TYPES - For Supabase responses
+// QUERY BUILDERS
 // ============================================================================
 
-// Raw type for ProductListView query response
-export type ProductListViewRaw = Pick<
-  Tables<"products">,
-  | "id"
-  | "sequence_number"
-  | "product_code"
-  | "name"
-  | "show_on_catalog"
-  | "is_active"
-  | "stock_type"
-  | "measuring_unit"
-  | "cost_price_per_unit"
-  | "selling_price_per_unit"
-  | "product_images"
-  | "min_stock_alert"
-  | "min_stock_threshold"
-  | "tax_type"
-  | "gst_rate"
-> &
-  ProductAttributeAssignmentsRaw;
+/**
+ * Query builder for fetching products with minimal fields
+ */
+export const buildProductsQuery = (
+  supabase: SupabaseClient<Database>,
+  filters?: ProductFilters,
+  page: number = 1,
+  pageSize: number = 30,
+) => {
+  const offset = (page - 1) * pageSize;
 
-// Raw type for ProductDetailView query response
-export type ProductDetailViewRaw = Tables<"products"> &
-  ProductAttributeAssignmentsRaw;
+  let query = supabase
+    .from("products")
+    .select(
+      `
+      id,
+      sequence_number,
+      product_code,
+      name,
+      show_on_catalog,
+      is_active,
+      stock_type,
+      measuring_unit,
+      cost_price_per_unit,
+      selling_price_per_unit,
+      product_images,
+      min_stock_alert,
+      min_stock_threshold,
+      tax_type,
+      gst_rate,
+      attributes:product_attributes!inner(id, name, group_name, color_hex)
+    `,
+      { count: "exact" },
+    )
+    .is("deleted_at", null)
+    .range(offset, offset + pageSize - 1);
 
-// Raw type for ProductWithInventoryListView query response
-type ProductWithInventoryListViewRaw = ProductListViewRaw & {
-  product_inventory_aggregates: Array<
-    Pick<
-      ProductInventory,
-      | "in_stock_units"
-      | "in_stock_quantity"
-      | "in_stock_value"
-      | "pending_qr_units"
-    >
-  >;
+  if (filters?.is_active) {
+    query = query.is("is_active", filters.is_active);
+  }
+
+  if (filters?.attributes && filters.attributes.length > 0) {
+    filters.attributes.forEach((filter) => {
+      query = query.filter("attributes.id", "eq", filter.id);
+    });
+  }
+
+  const orderBy = filters?.order_by || "name";
+  const ascending = filters?.order_direction !== "desc";
+  query = query.order(orderBy, { ascending });
+
+  return query;
 };
 
-// Raw type for ProductWithInventoryDetailView query response
-type ProductWithInventoryDetailViewRaw = ProductDetailViewRaw & {
-  product_inventory_aggregates: Array<ProductInventory>;
+/**
+ * Query builder for fetching a single product by ID
+ */
+export const buildProductByIdQuery = (
+  supabase: SupabaseClient<Database>,
+  productId: string,
+) => {
+  return supabase
+    .from("products")
+    .select(
+      `
+      *,
+      attributes:product_attributes!inner(id, name, group_name, color_hex)
+    `,
+    )
+    .eq("id", productId)
+    .is("deleted_at", null)
+    .single();
+};
+
+/**
+ * Query builder for fetching a single product by sequence number
+ */
+export const buildProductByNumberQuery = (
+  supabase: SupabaseClient<Database>,
+  sequenceNumber: number,
+) => {
+  return supabase
+    .from("products")
+    .select(
+      `
+      *,
+      attributes:product_attributes!inner(id, name, group_name, color_hex)
+    `,
+    )
+    .eq("sequence_number", sequenceNumber)
+    .is("deleted_at", null)
+    .single();
+};
+
+/**
+ * Query builder for fetching a single product by product code
+ */
+export const buildProductByCodeQuery = (
+  supabase: SupabaseClient<Database>,
+  productCode: string,
+) => {
+  return supabase
+    .from("products")
+    .select(
+      `
+      *,
+      attributes:product_attributes!inner(id, name, group_name, color_hex)
+    `,
+    )
+    .eq("product_code", productCode)
+    .is("deleted_at", null)
+    .single();
+};
+
+/**
+ * Query builder for fetching products with inventory
+ */
+export const buildProductsWithInventoryQuery = (
+  supabase: SupabaseClient<Database>,
+  warehouseId: string,
+  filters?: ProductFilters,
+  page: number = 1,
+  pageSize: number = 25,
+) => {
+  const offset = (page - 1) * pageSize;
+
+  let query = supabase
+    .from("products")
+    .select(
+      `
+      id,
+      sequence_number,
+      product_code,
+      name,
+      show_on_catalog,
+      is_active,
+      stock_type,
+      measuring_unit,
+      cost_price_per_unit,
+      selling_price_per_unit,
+      product_images,
+      min_stock_alert,
+      min_stock_threshold,
+      tax_type,
+      gst_rate,
+      attributes:product_attributes!inner(id, name, group_name, color_hex),
+      product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value, pending_qr_units, warehouse_id)
+    `,
+      { count: "exact" },
+    )
+    .eq("product_inventory_aggregates.warehouse_id", warehouseId)
+    .is("deleted_at", null)
+    .range(offset, offset + pageSize - 1);
+
+  if (filters?.is_active !== undefined) {
+    query = query.eq("is_active", filters.is_active);
+  }
+
+  if (filters?.search_term && filters.search_term.trim() !== "") {
+    query = query.textSearch("search_vector", filters.search_term.trim(), {
+      type: "websearch",
+      config: "english",
+    });
+  }
+
+  if (filters?.attributes && filters.attributes.length > 0) {
+    filters.attributes.forEach((filter) => {
+      query = query.filter("attributes.id", "eq", filter.id);
+    });
+  }
+
+  const orderBy = filters?.order_by || "name";
+  const ascending = filters?.order_direction !== "desc";
+  query = query.order(orderBy, { ascending });
+
+  return query;
+};
+
+/**
+ * Query builder for fetching a single product with inventory by ID
+ */
+export const buildProductWithInventoryByIdQuery = (
+  supabase: SupabaseClient<Database>,
+  productId: string,
+  warehouseId: string,
+) => {
+  return supabase
+    .from("products")
+    .select(
+      `
+      *,
+      attributes:product_attributes!inner(id, name, group_name, color_hex),
+      product_inventory_aggregates!inner(*)
+    `,
+    )
+    .eq("id", productId)
+    .eq("product_inventory_aggregates.warehouse_id", warehouseId)
+    .is("deleted_at", null)
+    .single();
+};
+
+/**
+ * Query builder for fetching a single product with inventory and orders by sequence number
+ */
+export const buildProductWithInventoryAndOrdersByNumberQuery = (
+  supabase: SupabaseClient<Database>,
+  sequenceNumber: number,
+  warehouseId: string,
+) => {
+  return supabase
+    .from("products")
+    .select(
+      `
+      *,
+      attributes:product_attributes!inner(id, name, group_name, color_hex),
+      product_inventory_aggregates!inner(*),
+      product_sales_order_aggregates(*),
+      product_purchase_order_aggregates(*)
+    `,
+    )
+    .eq("sequence_number", sequenceNumber)
+    .eq("product_inventory_aggregates.warehouse_id", warehouseId)
+    .is("deleted_at", null)
+    .single();
+};
+
+/**
+ * Query builder for fetching multiple products by IDs
+ */
+export const buildProductsByIdsQuery = (
+  supabase: SupabaseClient<Database>,
+  productIds: string[],
+) => {
+  return supabase
+    .from("products")
+    .select(
+      `
+      id,
+      sequence_number,
+      product_code,
+      name,
+      show_on_catalog,
+      is_active,
+      stock_type,
+      measuring_unit,
+      cost_price_per_unit,
+      selling_price_per_unit,
+      product_images,
+      min_stock_alert,
+      min_stock_threshold,
+      tax_type,
+      gst_rate,
+      attributes:product_attributes!inner(id, name, group_name, color_hex)
+    `,
+    )
+    .in("id", productIds)
+    .is("deleted_at", null);
+};
+
+/**
+ * Query builder for fetching multiple products with inventory by IDs
+ */
+export const buildProductsWithInventoryByIdsQuery = (
+  supabase: SupabaseClient<Database>,
+  productIds: string[],
+  warehouseId: string,
+) => {
+  return supabase
+    .from("products")
+    .select(
+      `
+      id,
+      sequence_number,
+      product_code,
+      name,
+      show_on_catalog,
+      is_active,
+      stock_type,
+      measuring_unit,
+      cost_price_per_unit,
+      selling_price_per_unit,
+      product_images,
+      min_stock_alert,
+      min_stock_threshold,
+      tax_type,
+      gst_rate,
+      attributes:product_attributes!inner(id, name, group_name, color_hex),
+      product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value, pending_qr_units, warehouse_id)
+    `,
+    )
+    .in("id", productIds)
+    .eq("product_inventory_aggregates.warehouse_id", warehouseId)
+    .is("deleted_at", null);
+};
+
+/**
+ * Query builder for fetching products with inventory and order aggregates (unified query)
+ * Used in both products and inventory pages
+ * - Products page: shows all products with order data (set has_inventory=false)
+ * - Inventory page: shows products with stock > 0 (set has_inventory=true)
+ */
+export const buildProductsWithInventoryAndOrdersQuery = (
+  supabase: SupabaseClient<Database>,
+  warehouseId: string,
+  filters?: ProductFilters,
+  page: number = 1,
+  pageSize: number = 25,
+) => {
+  const offset = (page - 1) * pageSize;
+
+  let query = supabase
+    .from("products")
+    .select(
+      `
+      id,
+      sequence_number,
+      product_code,
+      name,
+      show_on_catalog,
+      is_active,
+      stock_type,
+      measuring_unit,
+      cost_price_per_unit,
+      selling_price_per_unit,
+      product_images,
+      min_stock_alert,
+      min_stock_threshold,
+      tax_type,
+      gst_rate,
+      attributes:product_attributes!inner(id, name, group_name, color_hex),
+      product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value, pending_qr_units, warehouse_id),
+      product_sales_order_aggregates(active_pending_quantity, active_required_quantity, active_pending_value, active_required_value),
+      product_purchase_order_aggregates(active_pending_quantity, active_required_quantity, active_pending_value, active_required_value)
+    `,
+      { count: "exact" },
+    )
+    .eq("product_inventory_aggregates.warehouse_id", warehouseId)
+    .is("deleted_at", null)
+    .range(offset, offset + pageSize - 1);
+
+  // Filter to products with stock > 0 for inventory page
+  if (filters?.has_inventory) {
+    query = query.gt("product_inventory_aggregates.in_stock_quantity", 0);
+  }
+
+  // Filter to products with pending QR codes
+  if (filters?.has_pending_qr) {
+    query = query.gt("product_inventory_aggregates.pending_qr_units", 0);
+  }
+
+  // Filter to low stock products
+  if (filters?.is_low_stock) {
+    query = query.eq("product_inventory_aggregates.is_low_stock", true);
+  }
+
+  if (filters?.is_active !== undefined) {
+    query = query.eq("is_active", filters.is_active);
+  }
+
+  if (filters?.search_term && filters.search_term.trim() !== "") {
+    query = query.textSearch("search_vector", filters.search_term.trim(), {
+      type: "websearch",
+      config: "english",
+    });
+  }
+
+  if (filters?.attributes && filters.attributes.length > 0) {
+    filters.attributes.forEach((filter) => {
+      query = query.filter("attributes.id", "eq", filter.id);
+    });
+  }
+
+  const orderBy = filters?.order_by || "name";
+  const ascending = filters?.order_direction !== "desc";
+  query = query.order(orderBy, { ascending });
+
+  return query;
 };
 
 // ============================================================================
-// NEW TRANSFORM FUNCTIONS - For View types
+// TRANSFORM FUNCTIONS
 // ============================================================================
 
 /**
  * Helper to transform attributes from nested assignments
  * Groups attributes by group_name into materials, colors, and tags arrays
  */
-export function transformAttributes(product: ProductAttributeAssignmentsRaw) {
+export function transformAttributes(product: {
+  attributes: ProductAttribute[] | null;
+}) {
   const allAttributes = (product.attributes || []).filter(
     (attr): attr is ProductAttribute => attr !== null,
   );
@@ -210,8 +522,70 @@ export function transformProductWithInventoryDetailView(
   };
 }
 
+/**
+ * Transform raw product data to ProductInventoryView (unified transform for list)
+ */
+export function transformProductInventoryView(
+  product: ProductInventoryViewRaw,
+): ProductInventoryView {
+  const { materials, colors, tags } = transformAttributes(product);
+  const inventory = product.product_inventory_aggregates?.[0];
+  const sales_orders = product.product_sales_order_aggregates?.[0] || null;
+  const purchase_orders =
+    product.product_purchase_order_aggregates?.[0] || null;
+
+  const {
+    attributes: _attributes,
+    product_inventory_aggregates: _inventory,
+    product_sales_order_aggregates: _sales,
+    product_purchase_order_aggregates: _purchase,
+    ...rest
+  } = product;
+
+  return {
+    ...rest,
+    materials,
+    colors,
+    tags,
+    inventory,
+    sales_orders,
+    purchase_orders,
+  };
+}
+
+/**
+ * Transform raw product data to ProductInventoryDetailView (unified transform for detail)
+ */
+export function transformProductInventoryDetailView(
+  product: ProductInventoryDetailViewRaw,
+): ProductInventoryDetailView {
+  const { materials, colors, tags } = transformAttributes(product);
+  const inventory = product.product_inventory_aggregates?.[0];
+  const sales_orders = product.product_sales_order_aggregates?.[0] || null;
+  const purchase_orders =
+    product.product_purchase_order_aggregates?.[0] || null;
+
+  const {
+    attributes: _attributes,
+    product_inventory_aggregates: _inventory,
+    product_sales_order_aggregates: _sales,
+    product_purchase_order_aggregates: _purchase,
+    ...rest
+  } = product;
+
+  return {
+    ...rest,
+    materials,
+    colors,
+    tags,
+    inventory,
+    sales_orders,
+    purchase_orders,
+  };
+}
+
 // ============================================================================
-// NEW QUERY FUNCTIONS - Using View types
+// QUERY FUNCTIONS
 // ============================================================================
 
 /**
@@ -223,42 +597,16 @@ export async function getProducts(
   pageSize: number = 30,
 ): Promise<{ data: ProductListView[]; totalCount: number }> {
   const supabase = createClient();
-
-  // Calculate pagination range
-  const offset = (page - 1) * pageSize;
-  const limit = pageSize;
-
-  let query = supabase
-    .from("products")
-    .select(PRODUCT_LIST_VIEW_SELECT, { count: "exact" })
-    .is("deleted_at", null)
-    .range(offset, offset + limit - 1);
-
-  // Apply is active
-  if (filters?.is_active) {
-    query = query.is("is_active", filters.is_active);
-  }
-
-  // Apply attribute filters
-  if (filters?.attributes && filters.attributes.length > 0) {
-    // For each attribute filter, ensure product has that specific attribute
-    filters.attributes.forEach((filter) => {
-      query = query.filter("attributes.id", "eq", filter.id);
-    });
-  }
-
-  // Apply ordering (defaults to name ascending)
-  const orderBy = filters?.order_by || "name";
-  const ascending = filters?.order_direction !== "desc";
-  query = query.order(orderBy, { ascending });
-
-  const { data, error, count } = await query;
+  const { data, error, count } = await buildProductsQuery(
+    supabase,
+    filters,
+    page,
+    pageSize,
+  );
 
   if (error) throw error;
 
-  const transformedData = ((data as unknown as ProductListViewRaw[]) || []).map(
-    transformProductListView,
-  );
+  const transformedData = (data || []).map(transformProductListView);
 
   return {
     data: transformedData,
@@ -273,13 +621,7 @@ export async function getProductById(
   productId: string,
 ): Promise<ProductDetailView> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_DETAIL_VIEW_SELECT)
-    .eq("id", productId)
-    .is("deleted_at", null)
-    .single<ProductDetailViewRaw>();
+  const { data, error } = await buildProductByIdQuery(supabase, productId);
 
   if (error) throw error;
   if (!data) throw new Error("Product not found");
@@ -294,13 +636,10 @@ export async function getProductByNumber(
   sequenceNumber: number,
 ): Promise<ProductDetailView> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_DETAIL_VIEW_SELECT)
-    .eq("sequence_number", sequenceNumber)
-    .is("deleted_at", null)
-    .single<ProductDetailViewRaw>();
+  const { data, error } = await buildProductByNumberQuery(
+    supabase,
+    sequenceNumber,
+  );
 
   if (error) throw error;
   if (!data) throw new Error("Product not found");
@@ -315,13 +654,7 @@ export async function getProductByCode(
   productCode: string,
 ): Promise<ProductDetailView> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_DETAIL_VIEW_SELECT)
-    .eq("product_code", productCode)
-    .is("deleted_at", null)
-    .single<ProductDetailViewRaw>();
+  const { data, error } = await buildProductByCodeQuery(supabase, productCode);
 
   if (error) throw error;
   if (!data) throw new Error("Product not found");
@@ -339,51 +672,19 @@ export async function getProductsWithInventory(
   pageSize: number = 25,
 ): Promise<{ data: ProductWithInventoryListView[]; totalCount: number }> {
   const supabase = createClient();
-
-  // Calculate pagination range
-  const offset = (page - 1) * pageSize;
-  const limit = pageSize;
-
-  let query = supabase
-    .from("products")
-    .select(PRODUCT_WITH_INVENTORY_LIST_VIEW_SELECT, { count: "exact" })
-    .eq("product_inventory_aggregates.warehouse_id", warehouseId)
-    .is("deleted_at", null)
-    .range(offset, offset + limit - 1);
-
-  // Apply is active filter
-  if (filters?.is_active !== undefined) {
-    query = query.eq("is_active", filters.is_active);
-  }
-
-  // Apply full-text search filter
-  if (filters?.search_term && filters.search_term.trim() !== "") {
-    query = query.textSearch("search_vector", filters.search_term.trim(), {
-      type: "websearch",
-      config: "english",
-    });
-  }
-
-  // Apply attribute filters
-  if (filters?.attributes && filters.attributes.length > 0) {
-    // For each attribute filter, ensure product has that specific attribute
-    filters.attributes.forEach((filter) => {
-      query = query.filter("attributes.id", "eq", filter.id);
-    });
-  }
-
-  // Apply ordering (defaults to name ascending)
-  const orderBy = filters?.order_by || "name";
-  const ascending = filters?.order_direction !== "desc";
-  query = query.order(orderBy, { ascending });
-
-  const { data, error, count } = await query;
+  const { data, error, count } = await buildProductsWithInventoryQuery(
+    supabase,
+    warehouseId,
+    filters,
+    page,
+    pageSize,
+  );
 
   if (error) throw error;
 
-  const transformedData = (
-    (data as unknown as ProductWithInventoryListViewRaw[]) || []
-  ).map(transformProductWithInventoryListView);
+  const transformedData = (data || []).map(
+    transformProductWithInventoryListView,
+  );
 
   return {
     data: transformedData,
@@ -399,14 +700,11 @@ export async function getProductWithInventoryById(
   warehouseId: string,
 ): Promise<ProductWithInventoryDetailView> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_WITH_INVENTORY_DETAIL_VIEW_SELECT)
-    .eq("id", productId)
-    .eq("product_inventory_aggregates.warehouse_id", warehouseId)
-    .is("deleted_at", null)
-    .single<ProductWithInventoryDetailViewRaw>();
+  const { data, error } = await buildProductWithInventoryByIdQuery(
+    supabase,
+    productId,
+    warehouseId,
+  );
 
   if (error) throw error;
   if (!data) throw new Error("Product not found");
@@ -423,18 +721,11 @@ export async function getProductsByIds(
   if (productIds.length === 0) return [];
 
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_LIST_VIEW_SELECT)
-    .in("id", productIds)
-    .is("deleted_at", null);
+  const { data, error } = await buildProductsByIdsQuery(supabase, productIds);
 
   if (error) throw error;
 
-  const transformedData = ((data as unknown as ProductListViewRaw[]) || []).map(
-    transformProductListView,
-  );
+  const transformedData = (data || []).map(transformProductListView);
 
   return transformedData;
 }
@@ -449,44 +740,68 @@ export async function getProductsWithInventoryByIds(
   if (productIds.length === 0) return [];
 
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_WITH_INVENTORY_LIST_VIEW_SELECT)
-    .in("id", productIds)
-    .eq("product_inventory_aggregates.warehouse_id", warehouseId)
-    .is("deleted_at", null);
+  const { data, error } = await buildProductsWithInventoryByIdsQuery(
+    supabase,
+    productIds,
+    warehouseId,
+  );
 
   if (error) throw error;
 
-  const transformedData = (
-    (data as unknown as ProductWithInventoryListViewRaw[]) || []
-  ).map(transformProductWithInventoryListView);
+  const transformedData = (data || []).map(
+    transformProductWithInventoryListView,
+  );
 
   return transformedData;
 }
 
 /**
- * Get a single product with inventory (detail view) by sequence number
+ * Get a single product with inventory and orders (detail view) by sequence number
  */
-export async function getProductWithInventoryByNumber(
+export async function getProductWithInventoryAndOrdersByNumber(
   sequenceNumber: number,
   warehouseId: string,
-): Promise<ProductWithInventoryDetailView> {
+): Promise<ProductInventoryDetailView> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_WITH_INVENTORY_DETAIL_VIEW_SELECT)
-    .eq("sequence_number", sequenceNumber)
-    .eq("product_inventory_aggregates.warehouse_id", warehouseId)
-    .is("deleted_at", null)
-    .single<ProductWithInventoryDetailViewRaw>();
+  const { data, error } = await buildProductWithInventoryAndOrdersByNumberQuery(
+    supabase,
+    sequenceNumber,
+    warehouseId,
+  );
 
   if (error) throw error;
   if (!data) throw new Error("Product not found");
 
-  return transformProductWithInventoryDetailView(data);
+  return transformProductInventoryDetailView(data);
+}
+
+/**
+ * Get products with inventory and order aggregates for inventory page
+ * Only includes products with in_stock_quantity > 0
+ */
+export async function getProductsWithInventoryAndOrders(
+  warehouseId: string,
+  filters?: ProductFilters,
+  page: number = 1,
+  pageSize: number = 25,
+): Promise<{ data: ProductInventoryView[]; totalCount: number }> {
+  const supabase = createClient();
+  const { data, error, count } = await buildProductsWithInventoryAndOrdersQuery(
+    supabase,
+    warehouseId,
+    filters,
+    page,
+    pageSize,
+  );
+
+  if (error) throw error;
+
+  const transformedData = (data || []).map(transformProductInventoryView);
+
+  return {
+    data: transformedData,
+    totalCount: count || 0,
+  };
 }
 
 /**
@@ -579,10 +894,10 @@ export async function createProduct(
 ): Promise<string> {
   const supabase = createClient();
 
-  // Insert product
+  // Insert product (sequence_number auto-generated by trigger)
   const { data: product, error: productError } = await supabase
     .from("products")
-    .insert(productData)
+    .insert(productData as TablesInsert<"products">)
     .select("id")
     .single<{ id: string }>();
 
@@ -879,7 +1194,6 @@ export async function getLowStockProducts(
   const supabase = createClient();
 
   // RPC function returns complete product data with materials, colors, tags, and inventory
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data, error } = await supabase.rpc("get_low_stock_products", {
     p_warehouse_id: warehouseId,
     p_limit: limit,

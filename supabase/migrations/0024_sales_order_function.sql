@@ -227,14 +227,6 @@ BEGIN
     END IF;
 
     -- Business rule validations
-    IF v_current_status != 'approval_pending' THEN
-        RAISE EXCEPTION 'Cannot update sales order - only orders in approval_pending status can be edited';
-    END IF;
-
-    IF v_has_outward = TRUE THEN
-        RAISE EXCEPTION 'Cannot update sales order - order has goods outward records';
-    END IF;
-
     -- Validate line items
     IF array_length(p_line_items, 1) IS NULL OR array_length(p_line_items, 1) = 0 THEN
         RAISE EXCEPTION 'At least one product is required';
@@ -289,7 +281,7 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION update_sales_order_with_items IS 'Atomically update sales order with line items. Validates that order can be edited (approval_pending status, no outward records). Deletes old items and inserts new ones.';
+COMMENT ON FUNCTION update_sales_order_with_items IS 'Atomically update sales order with line items. Deletes old items and inserts new ones. Partner changes prevented by trigger if order is approved.';
 
 -- =====================================================
 -- SALES ORDER SEARCH VECTOR UPDATE FUNCTION

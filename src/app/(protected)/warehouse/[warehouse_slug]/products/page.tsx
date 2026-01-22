@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { IconSearch, IconAlertTriangle, IconQrcode } from "@tabler/icons-react";
+import { IconSearch } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Fab } from "@/components/ui/fab";
@@ -20,20 +20,17 @@ import { ErrorState } from "@/components/layouts/error-state";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { ProductFormSheet } from "./ProductFormSheet";
 import {
-  useProductsWithInventory,
+  useProductsWithInventoryAndOrders,
   useProductAttributes,
 } from "@/lib/query/hooks/products";
 import { useSession } from "@/contexts/session-context";
-import type { StockType } from "@/types/database/enums";
-import {
-  getAvailableStockText,
-  getProductIcon,
-  getProductInfo,
-} from "@/lib/utils/product";
-import { Toggle } from "@/components/ui/toggle";
+import type { MeasuringUnit, StockType } from "@/types/database/enums";
+import { getProductIcon, getProductInfo } from "@/lib/utils/product";
+import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { GlowIndicator } from "@/components/ui/glow-indicator";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useDebounce } from "@/hooks/use-debounce";
+import { Badge } from "@/components/ui/badge";
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -42,12 +39,6 @@ export default function ProductsPage() {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
-  const [lowStockFilter, setLowStockFilter] = useState<boolean>(
-    searchParams.get("low_stock") === "true",
-  );
-  const [pendingQrFilter, setPendingQrFilter] = useState<boolean>(
-    searchParams.get("pending_qr") === "true",
-  );
   const [sortOption, setSortOption] = useState<string>("newest");
 
   // Determine order_by and order_direction for server-side sorting
@@ -87,13 +78,13 @@ export default function ProductsPage() {
     attributeFilters.push({ group: "tag" as const, id: tagFilter });
   }
 
-  // Fetch products with inventory using TanStack Query with pagination and debounced search
+  // Fetch products with inventory and orders using TanStack Query with pagination and debounced search
   const {
     data: productsResponse,
     isLoading: productsLoading,
     isError: productsError,
     refetch: refetchProducts,
-  } = useProductsWithInventory(
+  } = useProductsWithInventoryAndOrders(
     warehouse.id,
     {
       is_active: true,
@@ -129,33 +120,14 @@ export default function ProductsPage() {
     }
   }, [
     debouncedSearchQuery,
-    lowStockFilter,
-    pendingQrFilter,
     materialFilter,
     colorFilter,
     tagFilter,
     sortOption,
   ]);
 
-  // Client-side filtering for low stock and pending QR
-  const filteredProducts = productsData.filter((product) => {
-    // Low stock filter
-    if (
-      lowStockFilter &&
-      (!product.min_stock_alert ||
-        (product.min_stock_threshold ?? 0) <
-          (product.inventory.in_stock_quantity ?? 0))
-    ) {
-      return false;
-    }
-
-    // Pending QR filter
-    if (pendingQrFilter && (product.inventory.pending_qr_units ?? 0) <= 0) {
-      return false;
-    }
-
-    return true;
-  });
+  // No client-side filtering needed - all products are shown
+  const filteredProducts = productsData;
 
   // Calculate stats from current page filtered products
   const stats = useMemo(() => {
@@ -244,24 +216,6 @@ export default function ProductsPage() {
 
       {/* Filters */}
       <div className="flex gap-3 px-4 py-4 overflow-x-auto scrollbar-hide shrink-0">
-        <Toggle
-          aria-label="Low stock filter"
-          variant="outline"
-          pressed={lowStockFilter}
-          onPressedChange={setLowStockFilter}
-          title="Low stock"
-        >
-          <IconAlertTriangle className="size-5" />
-        </Toggle>
-        <Toggle
-          aria-label="Pending QR filter"
-          variant="outline"
-          pressed={pendingQrFilter}
-          onPressedChange={setPendingQrFilter}
-          title="Pending QR"
-        >
-          <IconQrcode className="size-5" />
-        </Toggle>
         <Select value={sortOption} onValueChange={setSortOption}>
           <SelectTrigger className="max-w-34 h-10 shrink-0">
             <SelectValue placeholder="Sort by" />
@@ -327,10 +281,17 @@ export default function ProductsPage() {
           filteredProducts.map((product) => {
             const imageUrl = product.product_images?.[0];
             const productInfoText = getProductInfo(product);
-            const lowStock =
-              product.min_stock_alert &&
-              (product.min_stock_threshold ?? 0) >=
-                (product.inventory.in_stock_quantity ?? 0);
+
+            // Calculate order metrics
+            const orderRequest =
+              product.sales_orders?.active_pending_quantity || 0;
+            const purchasePending =
+              product.purchase_orders?.active_pending_quantity || 0;
+            const unitAbbr = product.measuring_unit
+              ? getMeasuringUnitAbbreviation(
+                  product.measuring_unit as MeasuringUnit,
+                )
+              : "";
 
             return (
               <Card
@@ -362,18 +323,21 @@ export default function ProductsPage() {
                     <p className="text-sm text-gray-500 mt-0.5">
                       {productInfoText}
                     </p>
-                  </div>
-
-                  {/* Quantity */}
-                  <div className="flex gap-1 items-center h-fit">
-                    {lowStock && (
-                      <IconAlertTriangle className="size-4 text-yellow-700" />
+                    {/* Order Info */}
+                    {(orderRequest > 0 || purchasePending > 0) && (
+                      <div className="text-sm text-gray-500 space-x-2 mt-1">
+                        {orderRequest > 0 && (
+                          <Badge color="blue">
+                            Order {orderRequest} {unitAbbr}
+                          </Badge>
+                        )}
+                        {purchasePending > 0 && (
+                          <Badge color="green">
+                            Purchase {purchasePending} {unitAbbr}
+                          </Badge>
+                        )}
+                      </div>
                     )}
-                    <p
-                      className={`text-sm font-semibold ${lowStock ? "text-yellow-700" : "text-gray-700"}`}
-                    >
-                      {getAvailableStockText(product)}
-                    </p>
                   </div>
 
                   <div className="absolute top-2 left-2">

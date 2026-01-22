@@ -158,11 +158,47 @@ npm run build
 
 ### TypeScript Type Safety
 
+#### Query Builder Pattern with Type Inference
+
+**Always use the query builder pattern to automatically infer types from queries:**
+
+```typescript
+// In src/lib/queries/warehouses.ts
+export const buildWarehousesQuery = (supabase: SupabaseClient<Database>) => {
+  return supabase
+    .from("warehouses")
+    .select("*")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+};
+
+// In src/types/warehouses.types.ts
+import type { QueryData } from "@supabase/supabase-js";
+import type { buildWarehousesQuery } from "@/lib/queries/warehouses";
+
+export type Warehouse = QueryData<
+  ReturnType<typeof buildWarehousesQuery>
+>[number];
+```
+
+**Benefits:**
+
+- ✅ Types automatically match queries (zero manual sync effort)
+- ✅ TypeScript catches field access errors at compile time
+- ✅ Refactoring queries automatically updates types
+- ✅ Self-documenting - query is the single source of truth
+
+**Pattern:**
+
+1. Create `buildXQuery()` function in `/src/lib/queries/`
+2. Export and use `QueryData<ReturnType<typeof buildXQuery>>` in `/src/types/`
+3. Import the inferred type back into queries file for function signatures
+
 #### Shared Type Files
 
 - **Shared types** for complex data structures go in `/src/types/` (e.g., `sales-orders.types.ts`, `stock-flow.types.ts`)
 - **Domain-specific files** - Each domain gets its own type file (e.g., `partners.types.ts`, `products.types.ts`)
-- **Import base types** - Always import base types from `database/supabase` at the top of type files
+- **Type inference from queries** - Use `QueryData<ReturnType<typeof buildQuery>>` pattern for automatic type inference
 
 #### Type Structure Rules
 

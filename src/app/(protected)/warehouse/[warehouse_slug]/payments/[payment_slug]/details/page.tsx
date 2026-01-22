@@ -306,7 +306,7 @@ export default function PaymentDetailsPage({ params }: PageParams) {
               <div className="flex justify-between text-sm">
                 <span className="text-gray-700">Payment Mode</span>
                 <span className="font-semibold text-gray-700 capitalize">
-                  {payment.payment_mode}
+                  {payment.payment_mode.replace("_", " ")}
                 </span>
               </div>
 
@@ -317,20 +317,76 @@ export default function PaymentDetailsPage({ params }: PageParams) {
                 </span>
               </div>
 
-              {payment.reference_number && (
+              {/* Instrument fields (cheque, demand_draft) */}
+              {payment.instrument_number && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-700">Reference Number</span>
+                  <span className="text-gray-700">Instrument Number</span>
                   <span className="font-semibold text-gray-700">
-                    {payment.reference_number}
+                    {payment.instrument_number}
                   </span>
                 </div>
               )}
 
-              {payment.reference_date && (
+              {payment.instrument_date && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-700">Reference Date</span>
+                  <span className="text-gray-700">Instrument Date</span>
                   <span className="font-semibold text-gray-700">
-                    {formatAbsoluteDate(payment.reference_date)}
+                    {formatAbsoluteDate(payment.instrument_date)}
+                  </span>
+                </div>
+              )}
+
+              {payment.instrument_bank && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-700">Bank Name</span>
+                  <span className="font-semibold text-gray-700">
+                    {payment.instrument_bank}
+                  </span>
+                </div>
+              )}
+
+              {payment.instrument_branch && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-700">Branch</span>
+                  <span className="font-semibold text-gray-700">
+                    {payment.instrument_branch}
+                  </span>
+                </div>
+              )}
+
+              {payment.instrument_ifsc && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-700">IFSC Code</span>
+                  <span className="font-semibold text-gray-700">
+                    {payment.instrument_ifsc}
+                  </span>
+                </div>
+              )}
+
+              {/* Digital payment fields */}
+              {payment.transaction_id && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-700">Transaction ID</span>
+                  <span className="font-semibold text-gray-700">
+                    {payment.transaction_id}
+                  </span>
+                </div>
+              )}
+
+              {payment.vpa && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-700">UPI ID / VPA</span>
+                  <span className="font-semibold text-gray-700">
+                    {payment.vpa}
+                  </span>
+                </div>
+              )}
+
+              {payment.card_last_four && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-700">Card Last 4 Digits</span>
+                  <span className="font-semibold text-gray-700">
+                    •••• {payment.card_last_four}
                   </span>
                 </div>
               )}

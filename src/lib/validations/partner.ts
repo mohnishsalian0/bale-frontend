@@ -34,13 +34,22 @@ export const partnerSchema = z
     creditLimitEnabled: z.boolean().default(false),
     creditLimit: z.coerce.number().min(0).default(0),
 
-    // Optional address fields
-    addressLine1: optionalString,
-    addressLine2: optionalString,
-    city: optionalString,
-    state: optionalString,
-    country: optionalString,
-    pinCode: optionalPinCodeSchema,
+    // Billing address fields
+    billingAddressLine1: optionalString,
+    billingAddressLine2: optionalString,
+    billingCity: optionalString,
+    billingState: optionalString,
+    billingCountry: optionalString,
+    billingPinCode: optionalPinCodeSchema,
+
+    // Shipping address toggle and fields
+    shippingSameAsBilling: z.boolean().default(true),
+    shippingAddressLine1: optionalString,
+    shippingAddressLine2: optionalString,
+    shippingCity: optionalString,
+    shippingState: optionalString,
+    shippingCountry: optionalString,
+    shippingPinCode: optionalPinCodeSchema,
 
     // Optional tax details (with format validation)
     gstNumber: optionalGstSchema,

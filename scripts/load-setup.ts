@@ -141,6 +141,116 @@ function roundTo2(num: number): number {
 }
 
 /**
+ * Generate realistic payment instrument/transaction details based on payment mode
+ */
+function generatePaymentModeDetails(paymentMode: string, paymentDate: Date) {
+  const details: {
+    instrument_number?: string;
+    instrument_date?: string;
+    instrument_bank?: string;
+    instrument_branch?: string;
+    instrument_ifsc?: string;
+    transaction_id?: string;
+    vpa?: string;
+    card_last_four?: string;
+  } = {};
+
+  const banks = [
+    "State Bank of India",
+    "HDFC Bank",
+    "ICICI Bank",
+    "Axis Bank",
+    "Kotak Mahindra Bank",
+    "Punjab National Bank",
+    "Bank of Baroda",
+    "Canara Bank",
+    "Union Bank of India",
+    "IDFC First Bank",
+  ];
+
+  const branches = [
+    "MG Road Branch",
+    "Jayanagar Branch",
+    "Indiranagar Branch",
+    "Koramangala Branch",
+    "Whitefield Branch",
+    "Electronic City Branch",
+    "HSR Layout Branch",
+    "Malleshwaram Branch",
+  ];
+
+  const ifscPrefixes = [
+    "SBIN",
+    "HDFC",
+    "ICIC",
+    "UTIB",
+    "KKBK",
+    "PUNB",
+    "BARB",
+    "CNRB",
+    "UBIN",
+    "IDFB",
+  ];
+
+  switch (paymentMode) {
+    case "cheque":
+    case "demand_draft":
+      // Cheque/DD details - 80% filled, 20% only number
+      if (Math.random() < 0.8) {
+        details.instrument_number = `${randomInt(100000, 999999)}`;
+        // Instrument date is 1-3 days before payment date
+        const instrumentDate = new Date(paymentDate);
+        instrumentDate.setDate(instrumentDate.getDate() - randomInt(1, 3));
+        details.instrument_date = instrumentDate.toISOString().split("T")[0];
+        details.instrument_bank = banks[randomInt(0, banks.length - 1)];
+        details.instrument_branch = branches[randomInt(0, branches.length - 1)];
+        details.instrument_ifsc = `${ifscPrefixes[randomInt(0, ifscPrefixes.length - 1)]}0${String(randomInt(100000, 999999)).substring(0, 6)}`;
+      } else {
+        details.instrument_number = `${randomInt(100000, 999999)}`;
+      }
+      break;
+
+    case "neft":
+    case "rtgs":
+    case "imps":
+      // Bank transfer details - 90% have transaction ID
+      if (Math.random() < 0.9) {
+        const prefix = paymentMode.toUpperCase();
+        details.transaction_id = `${prefix}${randomInt(10000000000, 99999999999)}`;
+      }
+      break;
+
+    case "upi":
+      // UPI details - 70% have VPA, 60% have transaction ID
+      if (Math.random() < 0.7) {
+        const handles = ["@paytm", "@phonepe", "@googlepay", "@ybl", "@axl"];
+        const userName = `user${randomInt(1000, 9999)}`;
+        details.vpa = `${userName}${handles[randomInt(0, handles.length - 1)]}`;
+      }
+      if (Math.random() < 0.6) {
+        details.transaction_id = `${randomInt(100000000000, 999999999999)}`;
+      }
+      break;
+
+    case "card":
+      // Card details - 80% have last 4 digits, 50% have transaction ID
+      if (Math.random() < 0.8) {
+        details.card_last_four = `${randomInt(1000, 9999)}`;
+      }
+      if (Math.random() < 0.5) {
+        details.transaction_id = `TXN${randomInt(10000000000, 99999999999)}`;
+      }
+      break;
+
+    case "cash":
+      // Cash has no additional fields
+      break;
+  }
+
+  return details;
+}
+
+/**
  * Select goods movements that belong to a specific order
  * For sales: filter goods_outwards by sales_order_id
  * For purchase: filter goods_inwards by purchase_order_id
@@ -1188,7 +1298,9 @@ async function generateGoodsOutwards(
 
   const { data: availableStockUnits } = await supabase
     .from("stock_units")
-    .select("id, product_id, remaining_quantity")
+    .select(
+      "id, remaining_quantity, initial_quantity, product:products(id, name, stock_type)",
+    )
     .eq("company_id", companyId)
     .eq("warehouse_id", warehouseId)
     .in("status", ["full", "partial"])
@@ -2161,22 +2273,11 @@ async function generatePaymentsAndReceipts(
     paymentDate.setDate(paymentDate.getDate() - randomInt(1, 60));
     const formattedDate = paymentDate.toISOString().split("T")[0];
 
-    // Reference number/date for non-cash modes
-    const referenceNumber =
-      paymentMode === "cash"
-        ? ""
-        : paymentMode === "cheque"
-          ? `CHQ-${randomInt(100000, 999999)}`
-          : `${paymentMode.toUpperCase()}/${randomInt(100000, 999999)}`;
-
-    const referenceDate =
-      paymentMode === "cheque"
-        ? new Date(
-            paymentDate.getTime() - randomInt(1, 3) * 24 * 60 * 60 * 1000,
-          )
-            .toISOString()
-            .split("T")[0]
-        : formattedDate;
+    // Generate payment mode-specific details
+    const paymentModeDetails = generatePaymentModeDetails(
+      paymentMode,
+      paymentDate,
+    );
 
     // Allocation: single invoice (against_ref)
     const allocations = [
@@ -2196,8 +2297,6 @@ async function generatePaymentsAndReceipts(
         p_counter_ledger_id: counterLedgerId,
         p_payment_date: formattedDate,
         p_payment_mode: paymentMode,
-        p_reference_number: referenceNumber,
-        p_reference_date: referenceDate,
         p_total_amount: totalAmount,
         p_tds_applicable: false,
         p_tds_rate: 0,
@@ -2205,6 +2304,15 @@ async function generatePaymentsAndReceipts(
         p_notes: "Auto-generated test data",
         p_attachments: [],
         p_allocations: allocations,
+        // Payment mode-specific fields
+        p_instrument_number: paymentModeDetails.instrument_number,
+        p_instrument_date: paymentModeDetails.instrument_date,
+        p_instrument_bank: paymentModeDetails.instrument_bank,
+        p_instrument_branch: paymentModeDetails.instrument_branch,
+        p_instrument_ifsc: paymentModeDetails.instrument_ifsc,
+        p_transaction_id: paymentModeDetails.transaction_id,
+        p_vpa: paymentModeDetails.vpa,
+        p_card_last_four: paymentModeDetails.card_last_four,
         p_company_id: companyId,
       },
     );
@@ -2275,22 +2383,11 @@ async function generatePaymentsAndReceipts(
     paymentDate.setDate(paymentDate.getDate() - randomInt(1, 60));
     const formattedDate = paymentDate.toISOString().split("T")[0];
 
-    // Reference number/date for non-cash modes
-    const referenceNumber =
-      paymentMode === "cash"
-        ? ""
-        : paymentMode === "cheque"
-          ? `CHQ-${randomInt(100000, 999999)}`
-          : `${paymentMode.toUpperCase()}/${randomInt(100000, 999999)}`;
-
-    const referenceDate =
-      paymentMode === "cheque"
-        ? new Date(
-            paymentDate.getTime() - randomInt(1, 3) * 24 * 60 * 60 * 1000,
-          )
-            .toISOString()
-            .split("T")[0]
-        : formattedDate;
+    // Generate payment mode-specific details
+    const paymentModeDetails = generatePaymentModeDetails(
+      paymentMode,
+      paymentDate,
+    );
 
     // Allocation: single invoice (against_ref)
     const allocations = [
@@ -2310,8 +2407,6 @@ async function generatePaymentsAndReceipts(
         p_counter_ledger_id: counterLedgerId,
         p_payment_date: formattedDate,
         p_payment_mode: paymentMode,
-        p_reference_number: referenceNumber,
-        p_reference_date: referenceDate,
         p_total_amount: totalAmount,
         p_tds_applicable: tdsApplicable,
         p_tds_rate: tdsRate,
@@ -2319,6 +2414,15 @@ async function generatePaymentsAndReceipts(
         p_notes: "Auto-generated test data",
         p_attachments: [],
         p_allocations: allocations,
+        // Payment mode-specific fields
+        p_instrument_number: paymentModeDetails.instrument_number,
+        p_instrument_date: paymentModeDetails.instrument_date,
+        p_instrument_bank: paymentModeDetails.instrument_bank,
+        p_instrument_branch: paymentModeDetails.instrument_branch,
+        p_instrument_ifsc: paymentModeDetails.instrument_ifsc,
+        p_transaction_id: paymentModeDetails.transaction_id,
+        p_vpa: paymentModeDetails.vpa,
+        p_card_last_four: paymentModeDetails.card_last_four,
         p_company_id: companyId,
       },
     );
@@ -2493,22 +2597,11 @@ async function generatePaymentsAndReceipts(
     paymentDate.setDate(paymentDate.getDate() - randomInt(1, 60));
     const formattedDate = paymentDate.toISOString().split("T")[0];
 
-    // Reference
-    const referenceNumber =
-      paymentMode === "cash"
-        ? ""
-        : paymentMode === "cheque"
-          ? `CHQ-${randomInt(100000, 999999)}`
-          : `${paymentMode.toUpperCase()}/${randomInt(100000, 999999)}`;
-
-    const referenceDate =
-      paymentMode === "cheque"
-        ? new Date(
-            paymentDate.getTime() - randomInt(1, 3) * 24 * 60 * 60 * 1000,
-          )
-            .toISOString()
-            .split("T")[0]
-        : formattedDate;
+    // Generate payment mode-specific details
+    const paymentModeDetails = generatePaymentModeDetails(
+      paymentMode,
+      paymentDate,
+    );
 
     // Create payment using RPC
     const { data: paymentSlug, error } = await supabase.rpc(
@@ -2519,8 +2612,6 @@ async function generatePaymentsAndReceipts(
         p_counter_ledger_id: counterLedgerId,
         p_payment_date: formattedDate,
         p_payment_mode: paymentMode,
-        p_reference_number: referenceNumber,
-        p_reference_date: referenceDate,
         p_total_amount: totalAmount,
         p_tds_applicable: tdsApplicable,
         p_tds_rate: tdsRate,
@@ -2528,6 +2619,15 @@ async function generatePaymentsAndReceipts(
         p_notes: "Auto-generated test data",
         p_attachments: [],
         p_allocations: allocations,
+        // Payment mode-specific fields
+        p_instrument_number: paymentModeDetails.instrument_number,
+        p_instrument_date: paymentModeDetails.instrument_date,
+        p_instrument_bank: paymentModeDetails.instrument_bank,
+        p_instrument_branch: paymentModeDetails.instrument_branch,
+        p_instrument_ifsc: paymentModeDetails.instrument_ifsc,
+        p_transaction_id: paymentModeDetails.transaction_id,
+        p_vpa: paymentModeDetails.vpa,
+        p_card_last_four: paymentModeDetails.card_last_four,
         p_company_id: companyId,
       },
     );

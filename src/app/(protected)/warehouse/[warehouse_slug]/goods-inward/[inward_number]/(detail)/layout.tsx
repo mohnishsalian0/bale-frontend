@@ -63,6 +63,13 @@ export default function GoodsInwardDetailLayout({
     router.push(`${basePath}/edit`);
   };
 
+  const handleGenerateQR = () => {
+    if (!inward) return;
+    router.push(
+      `/warehouse/${warehouse.slug}/qr-codes/create?inward_number=${inward.sequence_number}`,
+    );
+  };
+
   const handleDelete = () => {
     if (!inward) return;
 
@@ -151,6 +158,7 @@ export default function GoodsInwardDetailLayout({
               onEdit: handleEdit,
               onDelete: () => setShowDeleteDialog(true),
               onCancel: () => setShowCancelDialog(true),
+              onGenerateQR: handleGenerateQR,
             },
           )}
         />

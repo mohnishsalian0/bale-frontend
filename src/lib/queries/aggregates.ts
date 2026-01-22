@@ -31,7 +31,6 @@ export async function getInvoiceAggregates(
     throw new Error("invoice_type is required for invoice aggregates");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data, error } = await supabase.rpc("get_invoice_aggregates", {
     p_warehouse_id: filters.warehouse_id,
     p_invoice_type: filters.invoice_type,
@@ -67,7 +66,6 @@ export async function getSalesOrderAggregates(
     throw new Error("warehouse_id is required for sales order aggregates");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data, error } = await supabase.rpc("get_sales_order_aggregates", {
     p_warehouse_id: filters.warehouse_id,
   });
@@ -113,7 +111,6 @@ export async function getPurchaseOrderAggregates(
     throw new Error("warehouse_id is required for purchase order aggregates");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data, error } = await supabase.rpc("get_purchase_order_aggregates", {
     p_warehouse_id: filters.warehouse_id,
   });
@@ -159,7 +156,6 @@ export async function getInventoryAggregates(
     throw new Error("warehouse_id is required for inventory aggregates");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data, error } = await supabase.rpc("get_inventory_aggregates", {
     p_warehouse_id: filters.warehouse_id,
   });

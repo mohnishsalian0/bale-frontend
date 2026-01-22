@@ -231,14 +231,6 @@ BEGIN
     END IF;
 
     -- Business rule validations
-    IF v_current_status != 'approval_pending' THEN
-        RAISE EXCEPTION 'Cannot update purchase order - only orders in approval_pending status can be edited';
-    END IF;
-
-    IF v_has_inward = TRUE THEN
-        RAISE EXCEPTION 'Cannot update purchase order - order has goods inward records';
-    END IF;
-
     -- Validate line items
     IF array_length(p_line_items, 1) IS NULL OR array_length(p_line_items, 1) = 0 THEN
         RAISE EXCEPTION 'At least one product is required';
@@ -295,7 +287,7 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION update_purchase_order_with_items IS 'Atomically update purchase order with line items. Validates that order can be edited (approval_pending status, no inward records). Deletes old items and inserts new ones.';
+COMMENT ON FUNCTION update_purchase_order_with_items IS 'Atomically update purchase order with line items. Deletes old items and inserts new ones. Partner changes prevented by trigger if order is approved.';
 
 -- =====================================================
 -- PURCHASE ORDER SEARCH VECTOR UPDATE FUNCTION

@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Sheet,
   SheetContent,
@@ -78,12 +79,19 @@ export function PartnerFormSheet({
       companyName: partnerToEdit?.company_name || "",
       creditLimitEnabled: partnerToEdit?.credit_limit_enabled || false,
       creditLimit: partnerToEdit?.credit_limit || "",
-      addressLine1: partnerToEdit?.address_line1 || "",
-      addressLine2: partnerToEdit?.address_line2 || "",
-      city: partnerToEdit?.city || "",
-      state: partnerToEdit?.state || "",
-      country: partnerToEdit?.country || "India",
-      pinCode: partnerToEdit?.pin_code || "",
+      billingAddressLine1: partnerToEdit?.billing_address_line1 || "",
+      billingAddressLine2: partnerToEdit?.billing_address_line2 || "",
+      billingCity: partnerToEdit?.billing_city || "",
+      billingState: partnerToEdit?.billing_state || "",
+      billingCountry: partnerToEdit?.billing_country || "India",
+      billingPinCode: partnerToEdit?.billing_pin_code || "",
+      shippingSameAsBilling: partnerToEdit?.shipping_same_as_billing ?? true,
+      shippingAddressLine1: partnerToEdit?.shipping_address_line1 || "",
+      shippingAddressLine2: partnerToEdit?.shipping_address_line2 || "",
+      shippingCity: partnerToEdit?.shipping_city || "",
+      shippingState: partnerToEdit?.shipping_state || "",
+      shippingCountry: partnerToEdit?.shipping_country || "India",
+      shippingPinCode: partnerToEdit?.shipping_pin_code || "",
       gstNumber: partnerToEdit?.gst_number || "",
       panNumber: partnerToEdit?.pan_number || "",
       notes: partnerToEdit?.notes || "",
@@ -94,6 +102,12 @@ export function PartnerFormSheet({
   const creditLimitEnabled = useWatch({
     control,
     name: "creditLimitEnabled",
+  });
+
+  // Watch shipping same as billing to conditionally show shipping address fields
+  const shippingSameAsBilling = useWatch({
+    control,
+    name: "shippingSameAsBilling",
   });
 
   // Keep image handling separate from form state
@@ -174,12 +188,32 @@ export function PartnerFormSheet({
         company_name: data.companyName,
         credit_limit_enabled: data.creditLimitEnabled,
         credit_limit: data.creditLimitEnabled ? data.creditLimit : 0,
-        address_line1: data.addressLine1 || null,
-        address_line2: data.addressLine2 || null,
-        city: data.city || null,
-        state: data.state || null,
-        country: data.country || null,
-        pin_code: data.pinCode || null,
+        billing_address_line1: data.billingAddressLine1 || null,
+        billing_address_line2: data.billingAddressLine2 || null,
+        billing_city: data.billingCity || null,
+        billing_state: data.billingState || null,
+        billing_country: data.billingCountry || null,
+        billing_pin_code: data.billingPinCode || null,
+        shipping_same_as_billing: data.shippingSameAsBilling,
+        // If shipping same as billing, store NULL. Otherwise store shipping fields.
+        shipping_address_line1: data.shippingSameAsBilling
+          ? null
+          : data.shippingAddressLine1 || null,
+        shipping_address_line2: data.shippingSameAsBilling
+          ? null
+          : data.shippingAddressLine2 || null,
+        shipping_city: data.shippingSameAsBilling
+          ? null
+          : data.shippingCity || null,
+        shipping_state: data.shippingSameAsBilling
+          ? null
+          : data.shippingState || null,
+        shipping_country: data.shippingSameAsBilling
+          ? null
+          : data.shippingCountry || null,
+        shipping_pin_code: data.shippingSameAsBilling
+          ? null
+          : data.shippingPinCode || null,
         gst_number: data.gstNumber || null,
         pan_number: data.panNumber || null,
         notes: data.notes || null,
@@ -205,12 +239,32 @@ export function PartnerFormSheet({
         company_name: data.companyName,
         credit_limit_enabled: data.creditLimitEnabled,
         credit_limit: data.creditLimitEnabled ? data.creditLimit : 0,
-        address_line1: data.addressLine1 || null,
-        address_line2: data.addressLine2 || null,
-        city: data.city || null,
-        state: data.state || null,
-        country: data.country || null,
-        pin_code: data.pinCode || null,
+        billing_address_line1: data.billingAddressLine1 || null,
+        billing_address_line2: data.billingAddressLine2 || null,
+        billing_city: data.billingCity || null,
+        billing_state: data.billingState || null,
+        billing_country: data.billingCountry || null,
+        billing_pin_code: data.billingPinCode || null,
+        shipping_same_as_billing: data.shippingSameAsBilling,
+        // If shipping same as billing, store NULL. Otherwise store shipping fields.
+        shipping_address_line1: data.shippingSameAsBilling
+          ? null
+          : data.shippingAddressLine1 || null,
+        shipping_address_line2: data.shippingSameAsBilling
+          ? null
+          : data.shippingAddressLine2 || null,
+        shipping_city: data.shippingSameAsBilling
+          ? null
+          : data.shippingCity || null,
+        shipping_state: data.shippingSameAsBilling
+          ? null
+          : data.shippingState || null,
+        shipping_country: data.shippingSameAsBilling
+          ? null
+          : data.shippingCountry || null,
+        shipping_pin_code: data.shippingSameAsBilling
+          ? null
+          : data.shippingPinCode || null,
         gst_number: data.gstNumber || null,
         pan_number: data.panNumber || null,
         notes: data.notes || null,
@@ -333,6 +387,7 @@ export function PartnerFormSheet({
                 placeholder="Enter partner name"
                 {...register("companyName")}
                 required
+                helpText="Ensure this name matches exactly as it appears in Tally"
                 isError={!!errors.companyName}
                 errorText={errors.companyName?.message}
               />
@@ -360,7 +415,6 @@ export function PartnerFormSheet({
                   {/* Name Fields */}
                   <div className="flex gap-4">
                     <InputWrapper
-                      label="First name"
                       placeholder="Enter first name"
                       {...register("firstName")}
                       className="flex-1"
@@ -368,7 +422,6 @@ export function PartnerFormSheet({
                       errorText={errors.firstName?.message}
                     />
                     <InputWrapper
-                      label="Last name"
                       placeholder="Enter last name"
                       {...register("lastName")}
                       className="flex-1"
@@ -400,7 +453,7 @@ export function PartnerFormSheet({
               </CollapsibleContent>
             </Collapsible>
 
-            {/* Address Section */}
+            {/* Addresses Section */}
             <Collapsible
               open={showAddress}
               onOpenChange={setShowAddress}
@@ -409,7 +462,7 @@ export function PartnerFormSheet({
               <CollapsibleTrigger
                 className={`flex items-center justify-between w-full ${showAddress ? "mb-5" : "mb-0"}`}
               >
-                <h3 className="text-lg font-medium text-gray-900">Address</h3>
+                <h3 className="text-lg font-medium text-gray-900">Addresses</h3>
                 <IconChevronDown
                   className={`size-6 text-gray-500 transition-transform ${showAddress ? "rotate-180" : "rotate-0"}`}
                 />
@@ -417,40 +470,114 @@ export function PartnerFormSheet({
 
               <CollapsibleContent>
                 <div className="flex flex-col gap-6">
-                  <InputWrapper
-                    placeholder="Address line 1"
-                    {...register("addressLine1")}
-                  />
-                  <InputWrapper
-                    placeholder="Address line 2"
-                    {...register("addressLine2")}
-                  />
-                  <div className="flex gap-4">
-                    <InputWrapper
-                      placeholder="City"
-                      {...register("city")}
-                      className="flex-1"
-                    />
-                    <InputWrapper
-                      placeholder="State"
-                      {...register("state")}
-                      className="flex-1"
-                    />
+                  {/* Billing Address */}
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                      Billing address
+                    </Label>
+                    <div className="flex flex-col gap-4">
+                      <InputWrapper
+                        placeholder="Address line 1"
+                        {...register("billingAddressLine1")}
+                      />
+                      <InputWrapper
+                        placeholder="Address line 2"
+                        {...register("billingAddressLine2")}
+                      />
+                      <div className="flex gap-4">
+                        <InputWrapper
+                          placeholder="City"
+                          {...register("billingCity")}
+                          className="flex-1"
+                        />
+                        <InputWrapper
+                          placeholder="State"
+                          {...register("billingState")}
+                          className="flex-1"
+                        />
+                      </div>
+                      <div className="flex gap-4">
+                        <InputWrapper
+                          placeholder="Country"
+                          {...register("billingCountry")}
+                          className="flex-1"
+                        />
+                        <InputWrapper
+                          placeholder="Pin code"
+                          {...register("billingPinCode")}
+                          isError={!!errors.billingPinCode}
+                          errorText={errors.billingPinCode?.message}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex gap-4">
-                    <InputWrapper
-                      placeholder="Country"
-                      {...register("country")}
-                      className="flex-1"
+
+                  {/* Shipping Same as Billing Checkbox */}
+                  <div className="flex items-center space-x-2">
+                    <Controller
+                      name="shippingSameAsBilling"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="shipping-same-checkbox"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      )}
                     />
-                    <InputWrapper
-                      placeholder="Pin code"
-                      {...register("pinCode")}
-                      isError={!!errors.pinCode}
-                      errorText={errors.pinCode?.message}
-                      className="flex-1"
-                    />
+                    <Label
+                      htmlFor="shipping-same-checkbox"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Shipping same as billing
+                    </Label>
                   </div>
+
+                  {/* Shipping Address (shown when toggle is unchecked) */}
+                  {!shippingSameAsBilling && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                        Shipping address
+                      </Label>
+                      <div className="flex flex-col gap-4">
+                        <InputWrapper
+                          placeholder="Address line 1"
+                          {...register("shippingAddressLine1")}
+                        />
+                        <InputWrapper
+                          placeholder="Address line 2"
+                          {...register("shippingAddressLine2")}
+                        />
+                        <div className="flex gap-4">
+                          <InputWrapper
+                            placeholder="City"
+                            {...register("shippingCity")}
+                            className="flex-1"
+                          />
+                          <InputWrapper
+                            placeholder="State"
+                            {...register("shippingState")}
+                            className="flex-1"
+                          />
+                        </div>
+                        <div className="flex gap-4">
+                          <InputWrapper
+                            placeholder="Country"
+                            {...register("shippingCountry")}
+                            className="flex-1"
+                          />
+                          <InputWrapper
+                            placeholder="Pin code"
+                            {...register("shippingPinCode")}
+                            isError={!!errors.shippingPinCode}
+                            errorText={errors.shippingPinCode?.message}
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CollapsibleContent>
             </Collapsible>

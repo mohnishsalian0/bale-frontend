@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/browser";
 import { QRProductSelectionStep } from "../QRProductSelectionStep";
@@ -19,21 +19,34 @@ import { useQRBatchMutations } from "@/lib/query/hooks/qr-batches";
 import { getQRBatchById } from "@/lib/queries/qr-batches";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
+import { useGoodsInwardBySequenceNumber } from "@/lib/query/hooks/stock-flow";
 
 type FormStep = "products" | "stockUnits" | "template";
 
 export default function CreateQRBatchPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
+
+  // Get inward_number from query params
+  const preSelectedInwardNumber = searchParams.get("inward_number");
+
   const [currentStep, setCurrentStep] = useState<FormStep>("products");
-  const [selectedProduct, setSelectedProduct] =
-    useState<ProductListView | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Pick<
+    ProductListView,
+    "id" | "name"
+  > | null>(null);
   const [selectedStockUnitIds, setSelectedStockUnitIds] = useState<string[]>(
     [],
   );
   const [selectedFields, setSelectedFields] = useState<QRTemplateField[]>([]);
   const [saving, setSaving] = useState(false);
+
+  // Fetch goods inward by sequence number if inward_number is provided
+  const { data: inwardData } = useGoodsInwardBySequenceNumber(
+    preSelectedInwardNumber,
+  );
 
   // Load cached or default fields on mount
   useEffect(() => {
@@ -42,6 +55,31 @@ export default function CreateQRBatchPage() {
 
   // QR batch mutations
   const { create: createBatch } = useQRBatchMutations(warehouse.id);
+
+  // Pre-select stock units and skip to template step when coming from inward
+  useEffect(() => {
+    if (preSelectedInwardNumber && inwardData) {
+      const stockUnits = inwardData.stock_units || [];
+
+      if (stockUnits.length === 0) {
+        toast.error("No stock units found in this goods inward");
+        router.push(`/warehouse/${warehouse.slug}/qr-codes`);
+        return;
+      }
+
+      // Auto-select all stock unit IDs
+      const unitIds = stockUnits.map((unit) => unit.id);
+      setSelectedStockUnitIds(unitIds);
+
+      // Set the product from the first stock unit
+      if (stockUnits[0].product) {
+        setSelectedProduct(stockUnits[0].product);
+      }
+
+      // Jump directly to template step
+      setCurrentStep("template");
+    }
+  }, [preSelectedInwardNumber, inwardData, router, warehouse.slug]);
 
   // Hide chrome for immersive flow experience
   useEffect(() => {
@@ -61,6 +99,14 @@ export default function CreateQRBatchPage() {
   };
 
   const handleBack = () => {
+    // If coming from goods inward and on template step, go back to inward detail
+    if (preSelectedInwardNumber && currentStep === "template") {
+      router.push(
+        `/warehouse/${warehouse.slug}/goods-inward/${preSelectedInwardNumber}/details`,
+      );
+      return;
+    }
+
     if (currentStep === "template") {
       setCurrentStep("stockUnits");
     } else if (currentStep === "stockUnits") {
@@ -73,7 +119,13 @@ export default function CreateQRBatchPage() {
   };
 
   const handleCancel = () => {
-    router.push(`/warehouse/${warehouse.slug}/qr-codes`);
+    if (preSelectedInwardNumber) {
+      router.push(
+        `/warehouse/${warehouse.slug}/goods-inward/${preSelectedInwardNumber}/details`,
+      );
+    } else {
+      router.push(`/warehouse/${warehouse.slug}/qr-codes`);
+    }
   };
 
   const handleSubmit = async () => {
@@ -85,7 +137,14 @@ export default function CreateQRBatchPage() {
     setSaving(true);
     try {
       // Generate batch name
-      const batchName = `${selectedProduct.name} QRs - ${new Date().toLocaleDateString()}`;
+      let batchName: string;
+
+      // If coming from goods inward, use inward details in batch name
+      if (preSelectedInwardNumber && inwardData) {
+        batchName = `GI-${inwardData.sequence_number} QRs - ${new Date(inwardData.inward_date).toLocaleDateString()}`;
+      } else {
+        batchName = `${selectedProduct.name} QRs - ${new Date().toLocaleDateString()}`;
+      }
 
       // Prepare batch data
       const batchData = {
@@ -95,9 +154,6 @@ export default function CreateQRBatchPage() {
         fields_selected: selectedFields,
         pdf_url: null,
       };
-
-      console.log(JSON.stringify(batchData));
-      console.log(selectedStockUnitIds);
 
       // Create batch using mutation hook
       const batchId = await createBatch.mutateAsync({

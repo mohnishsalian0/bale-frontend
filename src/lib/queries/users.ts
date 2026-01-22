@@ -1,17 +1,63 @@
 import { createClient } from "@/lib/supabase/browser";
-import { Tables } from "@/types/database/supabase";
+import type { Database } from "@/types/database/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { StaffListView, StaffDetailView } from "@/types/staff.types";
-import { Permission, User, UserUpdate } from "@/types/users.types";
-import { Warehouse } from "@/types/warehouses.types";
+import { User, UserUpdate } from "@/types/users.types";
 
 // ============================================================================
-// RAW TYPES - For Supabase responses
+// QUERY BUILDERS
 // ============================================================================
 
-type StaffListViewRaw = Omit<StaffListView, "warehouse_names">;
+/**
+ * Query builder for fetching user by auth ID
+ */
+export const buildUserByAuthIdQuery = (
+  supabase: SupabaseClient<Database>,
+  authUserId: string,
+) => {
+  return supabase
+    .from("users")
+    .select("*")
+    .eq("auth_user_id", authUserId)
+    .single();
+};
 
-type StaffWarehousesListViewRaw = Pick<Tables<"user_warehouses">, "user_id"> & {
-  warehouse: Pick<Warehouse, "name">;
+/**
+ * Query builder for fetching staff members list with warehouse assignments
+ */
+export const buildStaffMembersQuery = (supabase: SupabaseClient<Database>) => {
+  return supabase
+    .from("users")
+    .select(
+      `
+      id,
+      first_name,
+      last_name,
+      phone_number,
+      email,
+      profile_image_url,
+      role,
+      all_warehouses_access,
+      user_warehouses(warehouses(id, name))
+    `,
+    )
+    .is("deleted_at", null)
+    .order("first_name", { ascending: true });
+};
+
+/**
+ * Query builder for fetching a single staff member by ID with warehouse assignments
+ */
+export const buildStaffMemberByIdQuery = (
+  supabase: SupabaseClient<Database>,
+  userId: string,
+) => {
+  return supabase
+    .from("users")
+    .select("*, user_warehouses(warehouses(id, name))")
+    .eq("id", userId)
+    .is("deleted_at", null)
+    .single();
 };
 
 /**
@@ -29,11 +75,7 @@ export async function getUser(): Promise<User> {
     throw new Error("Not authenticated");
   }
 
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("auth_user_id", authUser.id)
-    .single<User>();
+  const { data, error } = await buildUserByAuthIdQuery(supabase, authUser.id);
 
   if (error) {
     console.error("Error fetching user by auth ID:", error);
@@ -91,7 +133,7 @@ export async function getUserPermissions(roleName: string): Promise<string[]> {
     .single();
 
   if (roleError || !roleData) {
-    console.log(`Error fetching role: ${roleError}`);
+    console.error(`Error fetching role: ${roleError}`);
     throw new Error(`Error fetching role: ${roleError}`);
   }
 
@@ -105,14 +147,8 @@ export async function getUserPermissions(roleName: string): Promise<string[]> {
     console.error("Error fetching permissions:", permError);
     throw new Error(`Error fetching permissions: ${permError}`);
   }
-
   return (
-    (permData?.map(
-      (p: { permissions: Pick<Permission, "permission_path">[] }) =>
-        // @ts-expect-error permission is actually a single object
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        p.permissions.permission_path,
-    ) as string[]) ?? []
+    (permData?.map((p) => p.permissions.permission_path) as string[]) ?? []
   );
 }
 
@@ -141,80 +177,93 @@ export async function updateUser(
 }
 
 /**
- * SELECT constant for staff list view
+ * Update staff member role and warehouse assignments
  */
-export const STAFF_LIST_VIEW_SELECT = `
-  id,
-  first_name,
-  last_name,
-  phone_number,
-  email,
-  profile_image_url,
-  role,
-  all_warehouses_access
-`;
+export async function updateStaffMember(params: {
+  userId: string;
+  companyId: string;
+  role: string;
+  allWarehousesAccess: boolean;
+  warehouseIds: string[];
+}): Promise<void> {
+  const supabase = createClient();
+
+  // Update user role and warehouse access flag
+  const { error: userError } = await supabase
+    .from("users")
+    .update({
+      role: params.role,
+      all_warehouses_access: params.allWarehousesAccess,
+    })
+    .eq("id", params.userId);
+
+  if (userError) {
+    console.error("Error updating user:", userError);
+    throw userError;
+  }
+
+  // Delete all existing warehouse assignments
+  const { error: deleteError } = await supabase
+    .from("user_warehouses")
+    .delete()
+    .eq("user_id", params.userId);
+
+  if (deleteError) {
+    console.error("Error deleting warehouse assignments:", deleteError);
+    throw deleteError;
+  }
+
+  // If specific warehouses selected, insert new assignments
+  if (!params.allWarehousesAccess && params.warehouseIds.length > 0) {
+    const { error: insertError } = await supabase
+      .from("user_warehouses")
+      .insert(
+        params.warehouseIds.map((warehouseId) => ({
+          user_id: params.userId,
+          warehouse_id: warehouseId,
+          company_id: params.companyId,
+        })),
+      );
+
+    if (insertError) {
+      console.error("Error adding warehouse assignments:", insertError);
+      throw insertError;
+    }
+  }
+}
 
 /**
  * Fetch all staff members with their warehouse assignments
- * Users with all_warehouses_access will have empty warehouse_names array
+ * Users with all_warehouses_access will have empty warehouses array
  */
 export async function getStaffMembers(): Promise<StaffListView[]> {
   const supabase = createClient();
 
-  // Fetch all users (excluding deleted)
-  const { data: users, error: usersError } = await supabase
-    .from("users")
-    .select(STAFF_LIST_VIEW_SELECT)
-    .is("deleted_at", null)
-    .order("first_name", { ascending: true });
+  const { data: users, error } = await buildStaffMembersQuery(supabase);
 
-  if (usersError) throw usersError;
+  if (error) throw error;
   if (!users || users.length === 0) return [];
 
-  // Filter users who need warehouse data (not all_warehouses_access)
-  const usersNeedingWarehouses = users.filter(
-    (u: StaffListViewRaw) => !u.all_warehouses_access,
-  );
+  // Transform the raw data to StaffListView format
+  return users.map((user) => {
+    // Extract warehouses from user_warehouses join
+    const warehouses =
+      user.user_warehouses
+        ?.map((uw) => uw.warehouses)
+        .filter((w): w is { id: string; name: string } => w !== null) || [];
 
-  if (usersNeedingWarehouses.length === 0) {
-    // All users have all_warehouses_access, return with empty arrays
-    return users.map((user: StaffListViewRaw) => ({
-      ...user,
-      warehouse_names: [],
-    })) as StaffListView[];
-  }
-
-  const userIds = usersNeedingWarehouses.map((u: StaffListViewRaw) => u.id);
-
-  // Fetch warehouse assignments
-  const { data: userWarehouses, error: warehousesError } = await supabase
-    .from("user_warehouses")
-    .select("user_id, warehouses(name)")
-    .in("user_id", userIds);
-
-  if (warehousesError) throw warehousesError;
-
-  // Build warehouse map
-  const warehouseMap = new Map<string, string[]>();
-  ((userWarehouses as unknown as StaffWarehousesListViewRaw[]) || []).forEach(
-    (uw) => {
-      const warehouseName = uw.warehouse?.name;
-      if (!warehouseName) return;
-
-      if (!warehouseMap.has(uw.user_id)) {
-        warehouseMap.set(uw.user_id, []);
-      }
-      warehouseMap.get(uw.user_id)!.push(warehouseName);
-    },
-  );
-
-  // Combine data
-  return users.map((user: StaffListViewRaw) => ({
-    ...user,
-    warehouse_names: user.all_warehouses_access
-      ? []
-      : warehouseMap.get(user.id) || [],
-  })) as StaffListView[];
+    return {
+      id: user.id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      phone_number: user.phone_number,
+      email: user.email,
+      profile_image_url: user.profile_image_url,
+      role: user.role,
+      all_warehouses_access: user.all_warehouses_access,
+      warehouses: user.all_warehouses_access ? [] : warehouses,
+    } as StaffListView;
+  });
 }
 
 /**
@@ -226,39 +275,26 @@ export async function getStaffMemberById(
 ): Promise<StaffDetailView | null> {
   const supabase = createClient();
 
-  const { data: user, error: userError } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", userId)
-    .is("deleted_at", null)
-    .single<User>();
+  const { data: user, error } = await buildStaffMemberByIdQuery(
+    supabase,
+    userId,
+  );
 
-  if (userError) {
-    console.error("Error fetching staff member:", userError);
+  if (error) {
+    console.error("Error fetching staff member:", error);
     return null;
   }
 
   if (!user) return null;
 
-  // If user has all_warehouses_access, return with empty array
-  if (user.all_warehouses_access) {
-    return { ...user, warehouse_names: [] } as StaffDetailView;
-  }
-
-  // Fetch warehouse assignments
-  const { data: userWarehouses, error: warehousesError } = await supabase
-    .from("user_warehouses")
-    .select("warehouses(name)")
-    .eq("user_id", userId);
-
-  if (warehousesError) throw warehousesError;
-
-  const warehouseNames = (userWarehouses || []).map(
-    (uw) => (uw.warehouses as unknown as { name: string } | null)?.name || "",
-  );
+  // Extract warehouses from user_warehouses join
+  const warehouses =
+    user.user_warehouses
+      ?.map((uw) => uw.warehouses)
+      .filter((w): w is { id: string; name: string } => w !== null) || [];
 
   return {
     ...user,
-    warehouse_names: warehouseNames,
+    warehouses: user.all_warehouses_access ? [] : warehouses,
   } as StaffDetailView;
 }

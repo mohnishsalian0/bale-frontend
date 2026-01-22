@@ -1,4 +1,7 @@
 import type { Tables } from "./database/supabase";
+import type { QueryData } from "@supabase/supabase-js";
+import { buildPublicProductsQuery } from "@/lib/queries/catalog";
+import { buildPublicSalesOrderByIdQuery } from "@/lib/queries/catalog-orders";
 import type { ProductStockStatus } from "./database/enums";
 import { Product, ProductAttribute } from "./products.types";
 
@@ -7,6 +10,26 @@ type Partner = Tables<"partners">;
 type SalesOrder = Tables<"sales_orders">;
 type SalesOrderItem = Tables<"sales_order_items">;
 export type CatalogConfiguration = Tables<"catalog_configurations">;
+
+// ============================================================================
+// RAW TYPES (QueryData inferred from query builders)
+// ============================================================================
+
+/**
+ * Raw type inferred from buildPublicProductsQuery
+ * Used as bridge between Supabase response and PublicProduct
+ */
+export type PublicProductListViewRaw = QueryData<
+  ReturnType<typeof buildPublicProductsQuery>
+>[number];
+
+/**
+ * Raw type inferred from buildPublicSalesOrderByIdQuery
+ * Used as bridge between Supabase response and PublicSalesOrder
+ */
+export type PublicSalesOrderRaw = QueryData<
+  ReturnType<typeof buildPublicSalesOrderByIdQuery>
+>;
 
 // ============================================================================
 // PUBLIC  TYPES
@@ -65,6 +88,13 @@ export interface CheckoutFormData {
   country: string;
   pinCode: string;
   gstin: string;
+  shippingSameAsBilling: boolean;
+  shippingAddressLine1: string;
+  shippingAddressLine2: string;
+  shippingCity: string;
+  shippingState: string;
+  shippingCountry: string;
+  shippingPinCode: string;
   specialInstructions: string;
   termsAccepted: boolean;
 }
@@ -98,12 +128,12 @@ export interface PublicSalesOrder extends SalesOrder {
     | "last_name"
     | "email"
     | "phone_number"
-    | "address_line1"
-    | "address_line2"
-    | "city"
-    | "state"
-    | "country"
-    | "pin_code"
+    | "billing_address_line1"
+    | "billing_address_line2"
+    | "billing_city"
+    | "billing_state"
+    | "billing_country"
+    | "billing_pin_code"
     | "company_name"
     | "gst_number"
     | "display_name"

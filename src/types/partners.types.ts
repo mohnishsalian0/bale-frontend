@@ -1,4 +1,10 @@
 import type { Tables, TablesInsert, TablesUpdate } from "./database/supabase";
+import type { QueryData } from "@supabase/supabase-js";
+import {
+  buildPartnersQuery,
+  buildPartnersWithStatsQuery,
+  buildPartnerWithOrderStatsByIdQuery,
+} from "@/lib/queries/partners";
 
 export type Partner = Tables<"partners">;
 type PartnerSalesAggregate = Tables<"partner_sales_aggregates">;
@@ -23,6 +29,34 @@ export interface PartnerFilters extends Record<string, unknown> {
 }
 
 // ============================================================================
+// RAW TYPES (QueryData inferred from query builders)
+// ============================================================================
+
+/**
+ * Raw type inferred from buildPartnersQuery
+ * Used as bridge between Supabase response and PartnerListView
+ */
+export type PartnerListViewRaw = QueryData<
+  ReturnType<typeof buildPartnersQuery>
+>[number];
+
+/**
+ * Raw type inferred from buildPartnersWithStatsQuery
+ * Used as bridge between Supabase response and PartnerWithStatsListView
+ */
+export type PartnerWithStatsListViewRaw = QueryData<
+  ReturnType<typeof buildPartnersWithStatsQuery>
+>[number];
+
+/**
+ * Raw type inferred from buildPartnerWithOrderStatsByIdQuery
+ * Used as bridge between Supabase response and PartnerWithOrderStatsDetailView
+ */
+export type PartnerWithOrderStatsDetailViewRaw = QueryData<
+  ReturnType<typeof buildPartnerWithOrderStatsByIdQuery>
+>;
+
+// ============================================================================
 // PARTNER VIEW TYPES
 // ============================================================================
 
@@ -41,8 +75,8 @@ export interface PartnerListView extends Pick<
   | "is_active"
   | "phone_number"
   | "email"
-  | "city"
-  | "state"
+  | "billing_city"
+  | "billing_state"
   | "image_url"
   | "credit_limit_enabled"
   | "credit_limit"

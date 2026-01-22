@@ -7,14 +7,19 @@ import { TabPills } from "@/components/ui/tab-pills";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { InviteFormSheet } from "./InviteFormSheet";
+import { EditStaffSheet } from "./EditStaffSheet";
 import { StaffMembersTab } from "./StaffMembersTab";
 import { ActiveInvitesTab } from "./ActiveInvitesTab";
 import { useStaffMembers } from "@/lib/query/hooks/users";
 import { useActiveInvites } from "@/lib/query/hooks/invites";
+import { useSession } from "@/contexts/session-context";
+import type { StaffListView } from "@/types/staff.types";
 
 export default function StaffPage() {
+  const { user } = useSession();
   const [activeTab, setActiveTab] = useState<"staff" | "invites">("staff");
   const [showCreateInvite, setShowCreateInvite] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<StaffListView | null>(null);
 
   // Fetch data using hooks
   const {
@@ -97,7 +102,13 @@ export default function StaffPage() {
       </div>
 
       {/* Staff Cards Grid */}
-      {activeTab === "staff" && <StaffMembersTab staff={staff} />}
+      {activeTab === "staff" && (
+        <StaffMembersTab
+          staff={staff}
+          currentUserId={user.id}
+          onEdit={(member) => setEditingStaff(member)}
+        />
+      )}
 
       {/* Active Invites Grid */}
       {activeTab === "invites" && <ActiveInvitesTab invites={invites} />}
@@ -113,6 +124,15 @@ export default function StaffPage() {
         <InviteFormSheet
           open={showCreateInvite}
           onOpenChange={setShowCreateInvite}
+        />
+      )}
+
+      {/* Edit Staff Sheet */}
+      {editingStaff && (
+        <EditStaffSheet
+          open={!!editingStaff}
+          onOpenChange={(open) => !open && setEditingStaff(null)}
+          staffMember={editingStaff}
         />
       )}
     </div>

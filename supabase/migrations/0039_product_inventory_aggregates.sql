@@ -29,6 +29,9 @@ CREATE TABLE product_inventory_aggregates (
     -- QR Code metrics
     pending_qr_units INTEGER DEFAULT 0, -- Count of in_stock units without QR codes
 
+    -- Alert flags
+    is_low_stock BOOLEAN DEFAULT FALSE, -- TRUE when in_stock_quantity <= min_stock_threshold (if min_stock_alert enabled)
+
     -- Metadata
     last_updated_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -42,6 +45,7 @@ CREATE INDEX idx_product_inventory_agg_product ON product_inventory_aggregates(p
 CREATE INDEX idx_product_inventory_agg_warehouse ON product_inventory_aggregates(warehouse_id);
 CREATE INDEX idx_product_inventory_agg_company ON product_inventory_aggregates(company_id);
 CREATE INDEX idx_product_inventory_agg_pending_qr ON product_inventory_aggregates(warehouse_id, pending_qr_units DESC) WHERE pending_qr_units > 0;
+CREATE INDEX idx_product_inventory_agg_low_stock ON product_inventory_aggregates(warehouse_id, is_low_stock) WHERE is_low_stock = TRUE;
 
 
 -- =====================================================
@@ -67,6 +71,8 @@ RETURNS VOID AS $$
 DECLARE
     v_company_id UUID;
     v_cost_price NUMERIC(15,2);
+    v_min_stock_alert BOOLEAN;
+    v_min_stock_threshold NUMERIC(15,3);
     v_in_stock_units INTEGER;
     v_in_stock_quantity NUMERIC(15,3);
     v_in_stock_value NUMERIC(15,2);
@@ -79,10 +85,19 @@ DECLARE
     v_total_units INTEGER;
     v_total_quantity NUMERIC(15,3);
     v_pending_qr_units INTEGER;
+    v_is_low_stock BOOLEAN;
 BEGIN
-    -- Get product company_id and cost_price
-    SELECT company_id, COALESCE(cost_price_per_unit, 0)
-    INTO v_company_id, v_cost_price
+    -- Get product details (company_id, cost_price, min_stock settings)
+    SELECT
+        company_id,
+        COALESCE(cost_price_per_unit, 0),
+        COALESCE(min_stock_alert, FALSE),
+        COALESCE(min_stock_threshold, 0)
+    INTO
+        v_company_id,
+        v_cost_price,
+        v_min_stock_alert,
+        v_min_stock_threshold
     FROM products
     WHERE id = p_product_id;
 
@@ -149,6 +164,10 @@ BEGIN
         AND qr_generated_at IS NULL
         AND deleted_at IS NULL;
 
+    -- Calculate low stock flag
+    -- TRUE when min_stock_alert is enabled AND in_stock_quantity <= threshold
+    v_is_low_stock := v_min_stock_alert AND (v_in_stock_quantity <= v_min_stock_threshold);
+
     -- Upsert into aggregates table
     INSERT INTO product_inventory_aggregates (
         product_id,
@@ -166,6 +185,7 @@ BEGIN
         total_units_received,
         total_quantity_received,
         pending_qr_units,
+        is_low_stock,
         last_updated_at
     ) VALUES (
         p_product_id,
@@ -183,6 +203,7 @@ BEGIN
         v_total_units,
         v_total_quantity,
         v_pending_qr_units,
+        v_is_low_stock,
         NOW()
     )
     ON CONFLICT (product_id, warehouse_id)
@@ -199,6 +220,7 @@ BEGIN
         total_units_received = EXCLUDED.total_units_received,
         total_quantity_received = EXCLUDED.total_quantity_received,
         pending_qr_units = EXCLUDED.pending_qr_units,
+        is_low_stock = EXCLUDED.is_low_stock,
         last_updated_at = NOW();
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -387,6 +409,32 @@ CREATE TRIGGER trg_soft_delete_product_inventory_aggregates
 BEFORE UPDATE OF deleted_at ON products
 FOR EACH ROW
 EXECUTE FUNCTION trigger_soft_delete_product_inventory_aggregates();
+
+-- Trigger function to update is_low_stock when product min_stock settings change
+CREATE OR REPLACE FUNCTION trigger_update_product_min_stock_aggregates()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Only proceed if min_stock_alert or min_stock_threshold changed
+    IF (NEW.min_stock_alert != OLD.min_stock_alert) OR
+       (NEW.min_stock_threshold != OLD.min_stock_threshold) THEN
+        -- Update only the is_low_stock flag for this product across all warehouses
+        UPDATE product_inventory_aggregates
+        SET
+            is_low_stock = NEW.min_stock_alert AND (in_stock_quantity <= NEW.min_stock_threshold),
+            last_updated_at = NOW()
+        WHERE product_id = NEW.id
+        AND deleted_at IS NULL;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger on products table to handle min_stock settings changes
+CREATE TRIGGER trg_update_product_min_stock_aggregates
+AFTER UPDATE OF min_stock_alert, min_stock_threshold ON products
+FOR EACH ROW
+EXECUTE FUNCTION trigger_update_product_min_stock_aggregates();
 
 -- Add comment
 COMMENT ON TABLE product_inventory_aggregates IS 'Aggregated inventory metrics per product per warehouse, segregated by stock unit status. Updated automatically via triggers.';

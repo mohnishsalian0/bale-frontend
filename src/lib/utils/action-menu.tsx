@@ -13,6 +13,7 @@ import {
   IconReceiptRupee,
   IconCurrencyRupee,
   IconFileText,
+  IconQrcode,
 } from "@tabler/icons-react";
 import type { SalesOrderStatus, PartnerType } from "@/types/database/enums";
 import type { Invoice } from "@/types/invoices.types";
@@ -269,7 +270,7 @@ export function getSalesOrderActions(
     label: "Edit order",
     icon: IconEdit,
     onClick: callbacks.onEdit,
-    hidden: displayStatus !== "approval_pending",
+    hidden: displayStatus === "completed" || displayStatus === "cancelled",
   });
 
   items.push({
@@ -379,7 +380,7 @@ export function getPurchaseOrderActions(
     label: "Edit order",
     icon: IconEdit,
     onClick: callbacks.onEdit,
-    hidden: displayStatus !== "approval_pending",
+    hidden: displayStatus === "completed" || displayStatus === "cancelled",
   });
 
   items.push({
@@ -760,6 +761,7 @@ export interface GoodsInwardActionsCallbacks {
   onEdit: () => void;
   onDelete: () => void;
   onCancel: () => void;
+  onGenerateQR: () => void;
 }
 
 /**
@@ -773,7 +775,15 @@ export function getGoodsInwardActions(
 ): ContextMenuItem[] {
   const items: ContextMenuItem[] = [];
 
-  // Primary CTA: Edit button - hidden if invoiced or cancelled
+  // Primary CTA: Generate QR Codes button - always visible
+  items.push({
+    label: "Generate QR Codes",
+    icon: IconQrcode,
+    onClick: callbacks.onGenerateQR,
+    variant: "outline",
+  });
+
+  // Secondary CTA: Edit button - hidden if invoiced or cancelled
   items.push({
     label: "Edit inward",
     icon: IconEdit,

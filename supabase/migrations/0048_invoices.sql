@@ -102,12 +102,23 @@ CREATE TABLE invoices (
     party_display_name VARCHAR(200),
     party_email VARCHAR(100),
     party_phone VARCHAR(20),
-    party_address_line1 VARCHAR(200),
-    party_address_line2 VARCHAR(200),
-    party_city VARCHAR(100),
-    party_state VARCHAR(50),
-    party_country VARCHAR(100),
-    party_pincode VARCHAR(10),
+
+    -- Party billing address snapshot
+    party_billing_address_line1 VARCHAR(200),
+    party_billing_address_line2 VARCHAR(200),
+    party_billing_city VARCHAR(100),
+    party_billing_state VARCHAR(50),
+    party_billing_country VARCHAR(100),
+    party_billing_pincode VARCHAR(10),
+
+    -- Party shipping address snapshot
+    party_shipping_address_line1 VARCHAR(200),
+    party_shipping_address_line2 VARCHAR(200),
+    party_shipping_city VARCHAR(100),
+    party_shipping_state VARCHAR(50),
+    party_shipping_country VARCHAR(100),
+    party_shipping_pincode VARCHAR(10),
+
     party_gst_number VARCHAR(15),
     party_pan_number VARCHAR(10),
 

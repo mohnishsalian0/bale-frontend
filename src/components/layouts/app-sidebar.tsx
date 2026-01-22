@@ -14,6 +14,7 @@ import {
   IconTruckLoading,
   IconShirt,
   IconBuilding,
+  IconListDetails,
 } from "@tabler/icons-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -113,6 +114,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           label: "Adjustment Notes",
           path: `/warehouse/${warehouse.slug}/adjustment-notes`,
           icon: IconReceiptRefund,
+          permission: "invoices.read",
+        },
+        {
+          label: "Chart of Accounts",
+          path: `/warehouse/${warehouse.slug}/accounting/ledgers`,
+          icon: IconListDetails,
           permission: "invoices.read",
         },
       ],

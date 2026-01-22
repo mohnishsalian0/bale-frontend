@@ -1,7 +1,23 @@
 import { createClient } from "@/lib/supabase/browser";
+import type { Database } from "@/types/database/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Company, type CompanyUpdate } from "@/types/companies.types";
 import { type Warehouse } from "@/types/warehouses.types";
 import { uploadCompanyLogo } from "@/lib/storage";
+
+// ============================================================================
+// QUERY BUILDERS
+// ============================================================================
+
+/**
+ * Query builder for fetching company by ID
+ */
+export const buildCompanyByIdQuery = (
+  supabase: SupabaseClient<Database>,
+  companyId: string,
+) => {
+  return supabase.from("companies").select("*").eq("id", companyId).single();
+};
 
 /**
  * Fetch company details for the current authenticated user
@@ -30,11 +46,10 @@ export async function getCompany(): Promise<Company> {
   }
 
   // Fetch the company details
-  const { data, error } = await supabase
-    .from("companies")
-    .select("*")
-    .eq("id", userData.company_id)
-    .single<Company>();
+  const { data, error } = await buildCompanyByIdQuery(
+    supabase,
+    userData.company_id,
+  );
 
   if (error) {
     console.error("Error fetching company details:", error);

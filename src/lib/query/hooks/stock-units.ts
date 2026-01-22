@@ -44,6 +44,7 @@ export function useStockUnitsWithInward(
   filters?: StockUnitFilters,
   page: number = 1,
   pageSize: number = 20,
+  enabled: boolean = true,
 ) {
   return useQuery({
     queryKey: queryKeys.stockUnits.all(warehouseId, filters, page),
@@ -51,6 +52,7 @@ export function useStockUnitsWithInward(
       getStockUnitsWithInward(warehouseId, filters, page, pageSize),
     ...getQueryOptions(STALE_TIME.STOCK_UNITS, GC_TIME.TRANSACTIONAL),
     placeholderData: keepPreviousData,
+    enabled,
   });
 }
 

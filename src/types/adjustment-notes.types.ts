@@ -1,13 +1,15 @@
 import type { Tables } from "./database/supabase";
+import type { QueryData } from "@supabase/supabase-js";
 import type { AdjustmentType } from "./database/enums";
+import {
+  buildAdjustmentNotesQuery,
+  buildAdjustmentNoteBySlugQuery,
+  buildInvoiceForAdjustmentQuery,
+} from "@/lib/queries/adjustment-notes";
 
-// Base types from database
+// Base types from database (still needed for non-query uses)
 export type AdjustmentNote = Tables<"adjustment_notes">;
 export type AdjustmentNoteItem = Tables<"adjustment_note_items">;
-type Invoice = Tables<"invoices">;
-type Ledger = Tables<"ledgers">;
-type Warehouse = Tables<"warehouses">;
-type Product = Tables<"products">;
 
 // ============================================================================
 // FILTERS
@@ -30,81 +32,61 @@ export interface AdjustmentNoteFilters extends Record<string, unknown> {
 // ============================================================================
 
 /**
- * Adjustment note item with minimal details for list views
- */
-export interface AdjustmentNoteItemListView {
-  id: string;
-  product_id: string;
-  quantity: number;
-  rate: number;
-  product: Pick<
-    Product,
-    | "id"
-    | "name"
-    | "stock_type"
-    | "measuring_unit"
-    | "product_images"
-    | "sequence_number"
-  > | null;
-}
-
-/**
  * Adjustment note with minimal details for list views
+ * Type inferred from buildAdjustmentNotesQuery
  * Used in: adjustment notes list page, invoice adjustments tab
  */
-export interface AdjustmentNoteListView extends AdjustmentNote {
-  invoice: Pick<
-    Invoice,
-    | "id"
-    | "invoice_number"
-    | "invoice_type"
-    | "total_amount"
-    | "outstanding_amount"
-  > | null;
-  warehouse: Pick<Warehouse, "id" | "name"> | null;
-  adjustment_note_items: AdjustmentNoteItemListView[];
-}
+export type AdjustmentNoteListView = QueryData<
+  ReturnType<typeof buildAdjustmentNotesQuery>
+>[number];
+
+/**
+ * Adjustment note item with minimal details for list views
+ * Extracted from AdjustmentNoteListView nested array
+ */
+export type AdjustmentNoteItemListView =
+  AdjustmentNoteListView["adjustment_note_items"][number];
 
 // ============================================================================
 // DETAIL VIEW
 // ============================================================================
 
 /**
- * Adjustment note item with product details for detail view
+ * Complete adjustment note with all nested relations
+ * Type inferred from buildAdjustmentNoteBySlugQuery
  * Used in: adjustment note detail page
  */
-export interface AdjustmentNoteItemDetailView extends AdjustmentNoteItem {
-  product: Pick<
-    Product,
-    | "id"
-    | "name"
-    | "stock_type"
-    | "measuring_unit"
-    | "product_images"
-    | "sequence_number"
-  > | null;
-}
+export type AdjustmentNoteDetailView = QueryData<
+  ReturnType<typeof buildAdjustmentNoteBySlugQuery>
+>;
 
 /**
- * Complete adjustment note with all nested relations
- * Used in: adjustment note detail page
+ * Adjustment note item with product details for detail view
+ * Extracted from AdjustmentNoteDetailView nested array
  */
-export interface AdjustmentNoteDetailView extends AdjustmentNote {
-  invoice: Pick<
-    Invoice,
-    | "id"
-    | "invoice_number"
-    | "slug"
-    | "invoice_type"
-    | "invoice_date"
-    | "tax_type"
-    | "total_amount"
-    | "outstanding_amount"
-  > | null;
-  warehouse: Pick<Warehouse, "id" | "name"> | null;
-  party_ledger: Pick<Ledger, "id" | "name" | "partner_id"> | null;
-  adjustment_note_items: AdjustmentNoteItemDetailView[];
-}
+export type AdjustmentNoteItemDetailView =
+  AdjustmentNoteDetailView["adjustment_note_items"][number];
+
+// ============================================================================
+// INVOICE FOR ADJUSTMENT
+// ============================================================================
+
+/**
+ * Invoice data needed for adjustment note creation
+ * Type inferred from buildInvoiceForAdjustmentQuery
+ * Includes items with original tax rates
+ */
+export type InvoiceForAdjustment = QueryData<
+  ReturnType<typeof buildInvoiceForAdjustmentQuery>
+>;
+
+/**
+ * Invoice item with original tax rate for adjustment note creation
+ * Extracted from InvoiceForAdjustment nested array
+ * Used in: product selection step to enforce quantity limits and preserve tax rates
+ */
+export type InvoiceItemForAdjustment =
+  InvoiceForAdjustment["invoice_items"][number];
 
 // ============================================================================
 // CREATE/UPDATE TYPES
@@ -132,55 +114,7 @@ export interface CreateAdjustmentNoteData {
   adjustment_type: AdjustmentType;
   adjustment_date: string; // ISO date string
   reason: string; // Mandatory for audit trail
-  notes: string | null;
-  attachments: string[] | null;
+  notes?: string;
+  attachments?: string[];
   items: CreateAdjustmentNoteItem[];
-}
-
-/**
- * Invoice item with original tax rate for adjustment note creation
- * Used in: product selection step to enforce quantity limits and preserve tax rates
- */
-export interface InvoiceItemForAdjustment extends Pick<
-  Tables<"invoice_items">,
-  | "id"
-  | "product_id"
-  | "quantity"
-  | "rate"
-  | "taxable_amount"
-  | "gst_rate"
-  | "product_name"
-  | "product_hsn_code"
-> {
-  product: Pick<
-    Product,
-    | "id"
-    | "name"
-    | "stock_type"
-    | "measuring_unit"
-    | "product_images"
-    | "sequence_number"
-  > | null;
-}
-
-/**
- * Invoice data needed for adjustment note creation
- * Includes items with original tax rates
- */
-export interface InvoiceForAdjustment extends Pick<
-  Invoice,
-  | "id"
-  | "invoice_number"
-  | "invoice_type"
-  | "invoice_date"
-  | "tax_type"
-  | "total_amount"
-  | "outstanding_amount"
-  | "party_ledger_id"
-  | "warehouse_id"
-  | "party_name"
-  | "party_display_name"
-> {
-  invoice_items: InvoiceItemForAdjustment[];
-  warehouse: Pick<Warehouse, "id" | "name"> | null;
 }

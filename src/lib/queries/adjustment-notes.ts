@@ -1,35 +1,36 @@
 import { createClient } from "@/lib/supabase/browser";
+import type { Database, Json } from "@/types/database/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  AdjustmentNoteFilters,
   AdjustmentNoteListView,
   AdjustmentNoteDetailView,
-  AdjustmentNoteFilters,
-  CreateAdjustmentNoteData,
   InvoiceForAdjustment,
+  CreateAdjustmentNoteData,
 } from "@/types/adjustment-notes.types";
 
 // Re-export types for convenience
 export type {
+  AdjustmentNoteFilters,
   AdjustmentNoteListView,
   AdjustmentNoteDetailView,
-  AdjustmentNoteFilters,
+  InvoiceForAdjustment,
   CreateAdjustmentNoteData,
 };
 
 // ============================================================================
-// QUERIES
+// QUERY BUILDERS
 // ============================================================================
 
 /**
- * Fetch adjustment notes with optional filters and pagination
- * Used in: adjustment notes list page
+ * Query builder for fetching adjustment notes with optional filters and pagination
  */
-export async function getAdjustmentNotes(
+export const buildAdjustmentNotesQuery = (
+  supabase: SupabaseClient<Database>,
   filters?: AdjustmentNoteFilters,
   page: number = 1,
   pageSize: number = 25,
-): Promise<{ data: AdjustmentNoteListView[]; totalCount: number }> {
-  const supabase = createClient();
-
+) => {
   const offset = (page - 1) * pageSize;
 
   let query = supabase
@@ -37,14 +38,14 @@ export async function getAdjustmentNotes(
     .select(
       `
         *,
-        invoice:invoice_id(
+        invoice:invoices!invoice_id(
           id,
           invoice_number,
           invoice_type,
           total_amount,
           outstanding_amount
         ),
-        warehouse:warehouse_id(
+        warehouse:warehouses!warehouse_id(
           id,
           name
         ),
@@ -53,7 +54,7 @@ export async function getAdjustmentNotes(
           product_id,
           quantity,
           rate,
-          product:product_id(
+          product:products!product_id(
             id,
             name,
             stock_type,
@@ -127,31 +128,22 @@ export async function getAdjustmentNotes(
   // Apply pagination
   query = query.range(offset, offset + pageSize - 1);
 
-  const { data, error, count } = await query;
-
-  if (error) throw error;
-
-  return {
-    data: (data as AdjustmentNoteListView[]) || [],
-    totalCount: count || 0,
-  };
-}
+  return query;
+};
 
 /**
- * Fetch a single adjustment note by adjustment slug
- * Used in: adjustment note detail page
+ * Query builder for fetching a single adjustment note by slug
  */
-export async function getAdjustmentNoteBySlug(
+export const buildAdjustmentNoteBySlugQuery = (
+  supabase: SupabaseClient<Database>,
   adjustmentSlug: string,
-): Promise<AdjustmentNoteDetailView> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
+) => {
+  return supabase
     .from("adjustment_notes")
     .select(
       `
         *,
-        invoice:invoice_id(
+        invoice:invoices!invoice_id(
           id,
           invoice_number,
 					slug,
@@ -161,18 +153,18 @@ export async function getAdjustmentNoteBySlug(
           total_amount,
           outstanding_amount
         ),
-        warehouse:warehouse_id(
+        warehouse:warehouses!warehouse_id(
           id,
           name
         ),
-        party_ledger:party_ledger_id(
+        party_ledger:ledgers!party_ledger_id(
           id,
           name,
           partner_id
         ),
         adjustment_note_items!inner(
 					*,
-          product:product_id(
+          product:products!product_id(
             id,
             name,
             stock_type,
@@ -185,7 +177,101 @@ export async function getAdjustmentNoteBySlug(
     )
     .eq("slug", adjustmentSlug)
     .is("deleted_at", null)
-    .single<AdjustmentNoteDetailView>();
+    .single();
+};
+
+/**
+ * Query builder for fetching invoice with items for adjustment note creation
+ */
+export const buildInvoiceForAdjustmentQuery = (
+  supabase: SupabaseClient<Database>,
+  invoiceNumber: string,
+) => {
+  return supabase
+    .from("invoices")
+    .select(
+      `
+        id,
+        invoice_number,
+        invoice_type,
+        invoice_date,
+        tax_type,
+        total_amount,
+        outstanding_amount,
+        party_ledger_id,
+        warehouse_id,
+        party_name,
+        party_display_name,
+        warehouse:warehouses!warehouse_id(
+          id,
+          name
+        ),
+        invoice_items!inner(
+          id,
+          product_id,
+          quantity,
+          rate,
+          taxable_amount,
+          gst_rate,
+          product_name,
+          product_hsn_code,
+          product:products!product_id(
+            id,
+            name,
+            stock_type,
+            measuring_unit,
+            product_images,
+            sequence_number
+          )
+        )
+      `,
+    )
+    .eq("invoice_number", invoiceNumber)
+    .is("deleted_at", null)
+    .single();
+};
+
+// ============================================================================
+// QUERIES
+// ============================================================================
+
+/**
+ * Fetch adjustment notes with optional filters and pagination
+ * Used in: adjustment notes list page
+ */
+export async function getAdjustmentNotes(
+  filters?: AdjustmentNoteFilters,
+  page: number = 1,
+  pageSize: number = 25,
+): Promise<{ data: AdjustmentNoteListView[]; totalCount: number }> {
+  const supabase = createClient();
+  const { data, error, count } = await buildAdjustmentNotesQuery(
+    supabase,
+    filters,
+    page,
+    pageSize,
+  );
+
+  if (error) throw error;
+
+  return {
+    data: data || [],
+    totalCount: count || 0,
+  };
+}
+
+/**
+ * Fetch a single adjustment note by adjustment slug
+ * Used in: adjustment note detail page
+ */
+export async function getAdjustmentNoteBySlug(
+  adjustmentSlug: string,
+): Promise<AdjustmentNoteDetailView> {
+  const supabase = createClient();
+  const { data, error } = await buildAdjustmentNoteBySlugQuery(
+    supabase,
+    adjustmentSlug,
+  );
 
   if (error) throw error;
   if (!data) throw new Error("Adjustment note not found");
@@ -214,49 +300,10 @@ export async function getInvoiceForAdjustment(
   invoiceNumber: string,
 ): Promise<InvoiceForAdjustment> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("invoices")
-    .select(
-      `
-        id,
-        invoice_number,
-        invoice_type,
-        invoice_date,
-        tax_type,
-        total_amount,
-        outstanding_amount,
-        party_ledger_id,
-        warehouse_id,
-        party_name,
-        party_display_name,
-        warehouse:warehouse_id(
-          id,
-          name
-        ),
-        invoice_items!inner(
-          id,
-          product_id,
-          quantity,
-          rate,
-          taxable_amount,
-          gst_rate,
-          product_name,
-          product_hsn_code,
-          product:product_id(
-            id,
-            name,
-            stock_type,
-            measuring_unit,
-            product_images,
-            sequence_number
-          )
-        )
-      `,
-    )
-    .eq("invoice_number", invoiceNumber)
-    .is("deleted_at", null)
-    .single<InvoiceForAdjustment>();
+  const { data, error } = await buildInvoiceForAdjustmentQuery(
+    supabase,
+    invoiceNumber,
+  );
 
   if (error) throw error;
   if (!data) throw new Error("Invoice not found");
@@ -273,7 +320,6 @@ export async function createAdjustmentNote(
 ): Promise<string> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data: adjustmentNumber, error } = await supabase.rpc(
     "create_adjustment_note_with_items",
     {
@@ -285,8 +331,7 @@ export async function createAdjustmentNote(
       p_reason: data.reason,
       p_notes: data.notes,
       p_attachments: data.attachments,
-      p_items: data.items,
-      p_company_id: undefined, // Set by RPC from JWT
+      p_items: data.items as unknown as Json,
     },
   );
 
@@ -304,8 +349,8 @@ export async function updateAdjustmentNote(
   id: string,
   data: Partial<{
     reason: string;
-    notes: string | null;
-    attachments: string[] | null;
+    notes?: string;
+    attachments?: string[];
   }>,
 ): Promise<void> {
   const supabase = createClient();
@@ -337,8 +382,8 @@ export async function updateAdjustmentNoteWithItems(
     p_adjustment_date: data.adjustment_date,
     p_reason: data.reason,
     p_notes: data.notes,
-    p_attachments: data.attachments,
-    p_items: data.items,
+    p_attachments: data.attachments || undefined,
+    p_items: data.items as unknown as Json,
   });
 
   if (error) throw error;

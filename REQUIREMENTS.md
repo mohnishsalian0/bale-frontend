@@ -871,14 +871,24 @@ Permissions are organized hierarchically with the following top-level categories
 - GST Number (optional, tax identification)
 - PAN Number (optional, tax identification)
 
-**Address Information**
+**Billing Address**
 
-- Address Line 1 (optional, warehouse number, street)
-- Address Line 2 (optional, locality, area)
-- City (optional)
-- State (optional)
-- Country (optional)
-- Pin Code (optional)
+- Billing Address Line 1 (optional, warehouse number, street)
+- Billing Address Line 2 (optional, locality, area)
+- Billing City (optional)
+- Billing State (optional)
+- Billing Country (optional, default: India)
+- Billing Pin Code (optional)
+
+**Shipping Address**
+
+- Shipping Same as Billing (boolean, default: true - when TRUE, shipping address fields are ignored and billing address is used)
+- Shipping Address Line 1 (optional, warehouse number, street)
+- Shipping Address Line 2 (optional, locality, area)
+- Shipping City (optional)
+- Shipping State (optional)
+- Shipping Country (optional, default: India)
+- Shipping Pin Code (optional)
 
 **Additional Information**
 

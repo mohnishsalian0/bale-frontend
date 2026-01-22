@@ -1,19 +1,18 @@
 import { createClient } from "@/lib/supabase/browser";
-import type { Tables } from "@/types/database/supabase";
+import type { Database, Tables } from "@/types/database/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   QRBatchListView,
   QRBatchDetailView,
   QRBatchFilters,
   CreateQRBatchParams,
   QRBatchProductSummary,
+  QRBatchListViewRaw,
+  QRBatchDetailViewRaw,
 } from "@/types/qr-batches.types";
 import {
-  PRODUCT_LIST_VIEW_SELECT,
-  PRODUCT_DETAIL_VIEW_SELECT,
   transformProductListView,
   transformProductDetailView,
-  type ProductListViewRaw,
-  type ProductDetailViewRaw,
 } from "@/lib/queries/products";
 
 // Local type aliases
@@ -23,30 +22,89 @@ type QRBatchItem = Tables<"qr_batch_items">;
 export type { QRBatchFilters, CreateQRBatchParams };
 
 // ============================================================================
-// RAW TYPES - For Supabase responses
+// QUERY BUILDERS
 // ============================================================================
 
-type QRBatchListViewRaw = Omit<
-  QRBatchListView,
-  "item_count" | "distinct_products"
-> & {
-  qr_batch_items: Array<{
-    stock_unit: {
-      product: ProductListViewRaw;
-    };
-  }>;
+/**
+ * Query builder for fetching QR batches with product summaries
+ */
+export const buildQRBatchesQuery = (
+  supabase: SupabaseClient<Database>,
+  warehouseId: string,
+  filters?: QRBatchFilters,
+) => {
+  let query = supabase
+    .from("qr_batches")
+    .select(
+      `
+      id,
+      batch_name,
+      image_url,
+      created_at,
+      qr_batch_items!inner (
+        stock_unit:stock_units!inner (
+          product:products(
+            id,
+            sequence_number,
+            product_code,
+            name,
+            show_on_catalog,
+            is_active,
+            stock_type,
+            measuring_unit,
+            cost_price_per_unit,
+            selling_price_per_unit,
+            product_images,
+            min_stock_alert,
+            min_stock_threshold,
+            tax_type,
+            gst_rate,
+            attributes:product_attributes!inner(id, name, group_name, color_hex)
+          )
+        )
+      )
+    `,
+    )
+    .eq("warehouse_id", warehouseId)
+    .order("created_at", { ascending: false });
+
+  // Apply product filter at database level
+  if (filters?.product_id) {
+    query = query.eq(
+      "qr_batch_items.stock_unit.product_id",
+      filters.product_id,
+    );
+  }
+
+  return query;
 };
 
-type QRBatchDetailViewRaw = Omit<QRBatchDetailView, "qr_batch_items"> & {
-  qr_batch_items: Array<
-    Tables<"qr_batch_items"> & {
-      stock_unit:
-        | (Tables<"stock_units"> & {
-            product: ProductDetailViewRaw | null;
-          })
-        | null;
-    }
-  >;
+/**
+ * Query builder for fetching a single QR batch with full details
+ */
+export const buildQRBatchByIdQuery = (
+  supabase: SupabaseClient<Database>,
+  batchId: string,
+) => {
+  return supabase
+    .from("qr_batches")
+    .select(
+      `
+      *,
+      qr_batch_items (
+        *,
+        stock_unit:stock_units (
+          *,
+          product:products(
+            *,
+            attributes:product_attributes!inner(id, name, group_name, color_hex)
+          )
+        )
+      )
+    `,
+    )
+    .eq("id", batchId)
+    .single();
 };
 
 // ============================================================================
@@ -115,44 +173,18 @@ export async function getQRBatches(
   filters?: QRBatchFilters,
 ): Promise<QRBatchListView[]> {
   const supabase = createClient();
-
-  let query = supabase
-    .from("qr_batches")
-    .select(
-      `
-      id,
-      batch_name,
-      image_url,
-      created_at,
-      qr_batch_items!inner (
-        stock_unit:stock_units!inner (
-          product:products(${PRODUCT_LIST_VIEW_SELECT})
-        )
-      )
-    `,
-    )
-    .eq("warehouse_id", warehouseId)
-    .order("created_at", { ascending: false });
-
-  // Apply product filter at database level
-  if (filters?.product_id) {
-    query = query.eq(
-      "qr_batch_items.stock_unit.product_id",
-      filters.product_id,
-    );
-  }
-
-  const { data, error } = await query;
+  const { data, error } = await buildQRBatchesQuery(
+    supabase,
+    warehouseId,
+    filters,
+  );
 
   if (error) {
     console.error("Error fetching QR batches:", error);
     throw error;
   }
 
-  return (
-    (data as unknown as QRBatchListViewRaw[])?.map(transformQRBatchListView) ||
-    []
-  );
+  return data?.map(transformQRBatchListView) || [];
 }
 
 /**
@@ -163,23 +195,7 @@ export async function getQRBatchById(
   batchId: string,
 ): Promise<QRBatchDetailView> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("qr_batches")
-    .select(
-      `
-      *,
-      qr_batch_items (
-        *,
-        stock_unit:stock_units (
-          *,
-          product:products(${PRODUCT_DETAIL_VIEW_SELECT})
-        )
-      )
-    `,
-    )
-    .eq("id", batchId)
-    .single<QRBatchDetailViewRaw>();
+  const { data, error } = await buildQRBatchByIdQuery(supabase, batchId);
 
   if (error) throw error;
   if (!data) throw new Error("No batch returned");
@@ -218,7 +234,6 @@ export async function createQRBatch({
 }: CreateQRBatchParams): Promise<string> {
   const supabase = createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data: batchId, error } = await supabase.rpc(
     "create_qr_batch_with_items",
     {

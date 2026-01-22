@@ -11,7 +11,7 @@ CREATE TYPE voucher_type_enum AS ENUM ('payment', 'receipt');
 -- PAYMENT MODE ENUM
 -- =====================================================
 
-CREATE TYPE payment_mode_enum AS ENUM ('cash', 'cheque', 'neft', 'rtgs', 'upi', 'card', 'other');
+CREATE TYPE payment_mode_enum AS ENUM ('cash', 'cheque', 'demand_draft', 'neft', 'rtgs', 'imps', 'upi', 'card');
 
 -- =====================================================
 -- PAYMENTS TABLE
@@ -34,8 +34,18 @@ CREATE TABLE payments (
     -- Payment details
     payment_date DATE NOT NULL DEFAULT CURRENT_DATE,
     payment_mode payment_mode_enum NOT NULL DEFAULT 'cash',
-    reference_number VARCHAR(50), -- UTR, Transaction ID, Cheque number, etc.
-    reference_date DATE, -- Instrument date (e.g., cheque date)
+
+    -- Instrument details (cheque, demand_draft)
+    instrument_number VARCHAR(20), -- Cheque/DD number
+    instrument_date DATE, -- Cheque/DD date
+    instrument_bank VARCHAR(100), -- Issuing bank
+    instrument_branch VARCHAR(100), -- Bank branch
+    instrument_ifsc VARCHAR(11), -- IFSC code
+
+    -- Digital payment details (NEFT/RTGS/IMPS/UPI/Card)
+    transaction_id VARCHAR(50), -- UTR/RRN/Transaction ID
+    vpa VARCHAR(100), -- For UPI (Virtual Payment Address)
+    card_last_four VARCHAR(4), -- For card payments
 
     -- Amounts
     total_amount DECIMAL(15,2) NOT NULL,
@@ -272,7 +282,8 @@ BEGIN
         setweight(to_tsvector('english', COALESCE(NEW.party_name, '')), 'B') ||
         setweight(to_tsvector('english', COALESCE(NEW.party_display_name, '')), 'B') ||
         setweight(to_tsvector('english', COALESCE(NEW.counter_ledger_name, '')), 'B') ||
-        setweight(to_tsvector('simple', COALESCE(NEW.reference_number, '')), 'B') ||
+        setweight(to_tsvector('simple', COALESCE(NEW.instrument_number, '')), 'B') ||
+        setweight(to_tsvector('simple', COALESCE(NEW.transaction_id, '')), 'B') ||
         setweight(to_tsvector('english', COALESCE(NEW.notes, '')), 'C');
     RETURN NEW;
 END;

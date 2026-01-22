@@ -188,7 +188,7 @@ export default function QuickCreateOrderPage() {
 
       toast.success("Quick sale created successfully");
       router.push(
-        `/warehouse/${warehouse.slug}/sales-orders/${sequenceNumber}`,
+        `/warehouse/${warehouse.slug}/sales-orders/${sequenceNumber}/details`,
       );
     } catch (error) {
       console.error("Error creating quick sale:", error);

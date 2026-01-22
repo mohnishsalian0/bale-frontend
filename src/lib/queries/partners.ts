@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/browser";
+import type { Database } from "@/types/database/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { uploadPartnerImage } from "@/lib/storage";
 import type {
   PartnerFilters,
@@ -8,89 +10,236 @@ import type {
   PartnerWithOrderStatsDetailView,
   PartnerInsert,
   PartnerUpdate,
+  PartnerListViewRaw,
+  PartnerWithStatsListViewRaw,
+  PartnerWithOrderStatsDetailViewRaw,
 } from "@/types/partners.types";
 
 // Re-export for convenience
 export type { PartnerInsert, PartnerUpdate };
 
 // ============================================================================
-// SELECT CONSTANTS
+// QUERY BUILDERS
 // ============================================================================
 
-// Select query for PartnerListView
-export const PARTNER_LIST_VIEW_SELECT = `
-  id,
-  first_name,
-  last_name,
-  company_name,
-  display_name,
-  partner_type,
-  is_active,
-  phone_number,
-  email,
-  city,
-  state,
-  image_url,
-  credit_limit_enabled,
-  credit_limit,
-  ledger:ledgers!partner_id(id, name)
-`;
+/**
+ * Query builder for fetching partners with minimal fields
+ */
+export const buildPartnersQuery = (
+  supabase: SupabaseClient<Database>,
+  filters?: PartnerFilters,
+) => {
+  let query = supabase
+    .from("partners")
+    .select(
+      `
+      id,
+      first_name,
+      last_name,
+      company_name,
+      display_name,
+      partner_type,
+      is_active,
+      phone_number,
+      email,
+      billing_city,
+      billing_state,
+      image_url,
+      credit_limit_enabled,
+      credit_limit,
+      ledger:ledgers!partner_id(id, name)
+    `,
+    )
+    .is("deleted_at", null);
 
-// Select query for PartnerWithOrderStatsDetailView
-export const PARTNER_WITH_ORDER_STATS_DETAIL_VIEW_SELECT = `
-  *,
-  sales_aggregates:partner_sales_aggregates(*),
-  purchase_aggregates:partner_purchase_aggregates(*),
-  receivables_aggregates:partner_receivables_aggregates(*),
-  payables_aggregates:partner_payables_aggregates(*)
-`;
+  if (filters?.partner_type) {
+    if (Array.isArray(filters.partner_type)) {
+      query = query.in("partner_type", filters.partner_type);
+    } else {
+      query = query.eq("partner_type", filters.partner_type);
+    }
+  }
 
-// Select query for PartnerWithStatsListView
-export const PARTNER_WITH_ORDER_STATS_LIST_VIEW_SELECT = `
-  id,
-  first_name,
-  last_name,
-  company_name,
-  display_name,
-  partner_type,
-  is_active,
-  phone_number,
-  email,
-  city,
-  state,
-  image_url,
-  credit_limit_enabled,
-  credit_limit,
-  ledger:ledgers!partner_id(id, name),
-  sales_aggregates:partner_sales_aggregates(
-    approval_pending_count,
-    approval_pending_value,
-    in_progress_count,
-    in_progress_value,
-    total_orders,
-    lifetime_order_value
-  ),
-  purchase_aggregates:partner_purchase_aggregates(
-    approval_pending_count,
-    approval_pending_value,
-    in_progress_count,
-    in_progress_value,
-    total_orders,
-    lifetime_order_value
-  ),
-  receivables_aggregates:partner_receivables_aggregates(
-    total_invoice_amount,
-    total_outstanding_amount,
-    total_paid_amount,
-    invoice_count
-  ),
-  payables_aggregates:partner_payables_aggregates(
-    total_invoice_amount,
-    total_outstanding_amount,
-    total_paid_amount,
-    invoice_count
-  )
-`;
+  const orderBy = filters?.order_by || "first_name";
+  const ascending = filters?.order_direction !== "desc";
+  query = query.order(orderBy, { ascending });
+
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+
+  return query;
+};
+
+/**
+ * Query builder for fetching partners with stats
+ */
+export const buildPartnersWithStatsQuery = (
+  supabase: SupabaseClient<Database>,
+  filters?: PartnerFilters,
+) => {
+  let query = supabase
+    .from("partners")
+    .select(
+      `
+      id,
+      first_name,
+      last_name,
+      company_name,
+      display_name,
+      partner_type,
+      is_active,
+      phone_number,
+      email,
+      billing_city,
+      billing_state,
+      image_url,
+      credit_limit_enabled,
+      credit_limit,
+      ledger:ledgers!partner_id(id, name),
+      sales_aggregates:partner_sales_aggregates(
+        approval_pending_count,
+        approval_pending_value,
+        in_progress_count,
+        in_progress_value,
+        total_orders,
+        lifetime_order_value
+      ),
+      purchase_aggregates:partner_purchase_aggregates(
+        approval_pending_count,
+        approval_pending_value,
+        in_progress_count,
+        in_progress_value,
+        total_orders,
+        lifetime_order_value
+      ),
+      receivables_aggregates:partner_receivables_aggregates(
+        total_invoice_amount,
+        total_outstanding_amount,
+        total_paid_amount,
+        invoice_count
+      ),
+      payables_aggregates:partner_payables_aggregates(
+        total_invoice_amount,
+        total_outstanding_amount,
+        total_paid_amount,
+        invoice_count
+      )
+    `,
+    )
+    .is("deleted_at", null);
+
+  if (filters?.partner_type) {
+    if (Array.isArray(filters.partner_type)) {
+      query = query.in("partner_type", filters.partner_type);
+    } else {
+      query = query.eq("partner_type", filters.partner_type);
+    }
+  }
+
+  const orderBy = filters?.order_by || "first_name";
+  const ascending = filters?.order_direction !== "desc";
+
+  if (orderBy.includes(".")) {
+    const [foreignTable, field] = orderBy.split(".");
+    query = query.order(field, { ascending, foreignTable });
+  } else {
+    query = query.order(orderBy, { ascending });
+  }
+
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+
+  return query;
+};
+
+/**
+ * Query builder for fetching a single partner with order stats by ID
+ */
+export const buildPartnerWithOrderStatsByIdQuery = (
+  supabase: SupabaseClient<Database>,
+  partnerId: string,
+) => {
+  return supabase
+    .from("partners")
+    .select(
+      `
+      *,
+      sales_aggregates:partner_sales_aggregates(*),
+      purchase_aggregates:partner_purchase_aggregates(*),
+      receivables_aggregates:partner_receivables_aggregates(*),
+      payables_aggregates:partner_payables_aggregates(*)
+    `,
+    )
+    .eq("id", partnerId)
+    .is("deleted_at", null)
+    .single();
+};
+
+// ============================================================================
+// TRANSFORM FUNCTIONS
+// ============================================================================
+
+/**
+ * Transform raw partner data to PartnerListView
+ * Flattens ledger array to single object
+ */
+function transformPartnerListView(raw: PartnerListViewRaw): PartnerListView {
+  return {
+    ...raw,
+    ledger: Array.isArray(raw.ledger) ? raw.ledger[0] : raw.ledger,
+  };
+}
+
+/**
+ * Transform raw partner data with stats to PartnerWithStatsListView
+ * Flattens all aggregate arrays to single objects
+ */
+function transformPartnerWithStatsListView(
+  raw: PartnerWithStatsListViewRaw,
+): PartnerWithStatsListView {
+  return {
+    ...raw,
+    ledger: Array.isArray(raw.ledger) ? raw.ledger[0] : raw.ledger,
+    //   sales_aggregates: Array.isArray(raw.sales_aggregates)
+    //     ? raw.sales_aggregates[0]
+    //     : raw.sales_aggregates,
+    //   purchase_aggregates: Array.isArray(raw.purchase_aggregates)
+    //     ? raw.purchase_aggregates[0]
+    //     : raw.purchase_aggregates,
+    //   receivables_aggregates: Array.isArray(raw.receivables_aggregates)
+    //     ? raw.receivables_aggregates[0]
+    //     : raw.receivables_aggregates,
+    //   payables_aggregates: Array.isArray(raw.payables_aggregates)
+    //     ? raw.payables_aggregates[0]
+    //     : raw.payables_aggregates,
+  };
+}
+
+/**
+ * Transform raw partner data with order stats to PartnerWithOrderStatsDetailView
+ * Flattens all aggregate arrays to single objects
+ */
+function transformPartnerWithOrderStatsDetailView(
+  raw: PartnerWithOrderStatsDetailViewRaw,
+): PartnerWithOrderStatsDetailView {
+  return {
+    ...raw,
+    // sales_aggregates: Array.isArray(raw.sales_aggregates)
+    //   ? raw.sales_aggregates[0]
+    //   : raw.sales_aggregates,
+    // purchase_aggregates: Array.isArray(raw.purchase_aggregates)
+    //   ? raw.purchase_aggregates[0]
+    //   : raw.purchase_aggregates,
+    // receivables_aggregates: Array.isArray(raw.receivables_aggregates)
+    //   ? raw.receivables_aggregates[0]
+    //   : raw.receivables_aggregates,
+    // payables_aggregates: Array.isArray(raw.payables_aggregates)
+    //   ? raw.payables_aggregates[0]
+    //   : raw.payables_aggregates,
+  };
+}
 
 // ============================================================================
 // QUERY FUNCTIONS
@@ -110,41 +259,11 @@ export async function getPartners(
   filters?: PartnerFilters,
 ): Promise<PartnerListView[]> {
   const supabase = createClient();
-
-  let query = supabase
-    .from("partners")
-    .select(PARTNER_LIST_VIEW_SELECT)
-    .is("deleted_at", null);
-
-  // Apply partner_type filter (supports single value or array)
-  if (filters?.partner_type) {
-    if (Array.isArray(filters.partner_type)) {
-      query = query.in("partner_type", filters.partner_type);
-    } else {
-      query = query.eq("partner_type", filters.partner_type);
-    }
-  }
-
-  // Apply ordering (defaults to first_name ascending)
-  const orderBy = filters?.order_by || "first_name";
-  const ascending = filters?.order_direction !== "desc";
-  query = query.order(orderBy, { ascending });
-
-  // Apply limit
-  if (filters?.limit) {
-    query = query.limit(filters.limit);
-  }
-
-  const { data, error } = await query;
+  const { data, error } = await buildPartnersQuery(supabase, filters);
 
   if (error) throw error;
 
-  // Transform the data to match PartnerListView type
-  // Supabase returns ledger as array, but we want single object
-  const transformedData = (data || []).map((partner) => ({
-    ...partner,
-    ledger: Array.isArray(partner.ledger) ? partner.ledger[0] : partner.ledger,
-  })) as PartnerListView[];
+  const transformedData = (data || []).map(transformPartnerListView);
 
   return transformedData;
 }
@@ -161,60 +280,11 @@ export async function getPartnersWithStats(
   filters?: PartnerFilters,
 ): Promise<PartnerWithStatsListView[]> {
   const supabase = createClient();
-
-  let query = supabase
-    .from("partners")
-    .select(PARTNER_WITH_ORDER_STATS_LIST_VIEW_SELECT)
-    .is("deleted_at", null);
-
-  // Apply partner_type filter (supports single value or array)
-  if (filters?.partner_type) {
-    if (Array.isArray(filters.partner_type)) {
-      query = query.in("partner_type", filters.partner_type);
-    } else {
-      query = query.eq("partner_type", filters.partner_type);
-    }
-  }
-
-  // Apply ordering (defaults to first_name ascending)
-  const orderBy = filters?.order_by || "first_name";
-  const ascending = filters?.order_direction !== "desc";
-
-  // Handle nested field ordering from joined tables (e.g., "credit_aggregates.total_outstanding_amount")
-  if (orderBy.includes(".")) {
-    const [foreignTable, field] = orderBy.split(".");
-    query = query.order(field, { ascending, foreignTable });
-  } else {
-    query = query.order(orderBy, { ascending });
-  }
-
-  // Apply limit
-  if (filters?.limit) {
-    query = query.limit(filters.limit);
-  }
-
-  const { data, error } = await query;
+  const { data, error } = await buildPartnersWithStatsQuery(supabase, filters);
 
   if (error) throw error;
 
-  // Transform the data to match PartnerWithStatsListView type
-  // Supabase returns aggregates as arrays, but we want single objects
-  const transformedData = (data || []).map((partner) => ({
-    ...partner,
-    ledger: Array.isArray(partner.ledger) ? partner.ledger[0] : partner.ledger,
-    sales_aggregates: Array.isArray(partner.sales_aggregates)
-      ? partner.sales_aggregates[0]
-      : partner.sales_aggregates,
-    purchase_aggregates: Array.isArray(partner.purchase_aggregates)
-      ? partner.purchase_aggregates[0]
-      : partner.purchase_aggregates,
-    receivables_aggregates: Array.isArray(partner.receivables_aggregates)
-      ? partner.receivables_aggregates[0]
-      : partner.receivables_aggregates,
-    payables_aggregates: Array.isArray(partner.payables_aggregates)
-      ? partner.payables_aggregates[0]
-      : partner.payables_aggregates,
-  })) as PartnerWithStatsListView[];
+  const transformedData = (data || []).map(transformPartnerWithStatsListView);
 
   return transformedData;
 }
@@ -249,18 +319,15 @@ export async function getPartnerWithOrderStatsById(
   partnerId: string,
 ): Promise<PartnerWithOrderStatsDetailView | null> {
   const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("partners")
-    .select(PARTNER_WITH_ORDER_STATS_DETAIL_VIEW_SELECT)
-    .eq("id", partnerId)
-    .is("deleted_at", null)
-    .single<PartnerWithOrderStatsDetailView>();
+  const { data, error } = await buildPartnerWithOrderStatsByIdQuery(
+    supabase,
+    partnerId,
+  );
 
   if (error) throw error;
   if (!data) throw new Error("No partner found");
 
-  return data;
+  return transformPartnerWithOrderStatsDetailView(data);
 }
 
 /**

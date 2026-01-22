@@ -301,13 +301,17 @@ BEGIN
         END IF;
     END IF;
 
-    -- Rule 4: Cannot edit critical fields if has goods inward
+    -- Rule 4: Cannot change supplier after approval
+    IF NEW.supplier_id IS DISTINCT FROM OLD.supplier_id AND OLD.status != 'approval_pending' THEN
+        RAISE EXCEPTION 'Cannot change supplier after order approval';
+    END IF;
+
+    -- Rule 5: Cannot edit warehouse/date if has goods inward
     IF OLD.has_inward = TRUE AND (
-        NEW.supplier_id IS DISTINCT FROM OLD.supplier_id OR
         NEW.warehouse_id IS DISTINCT FROM OLD.warehouse_id OR
         NEW.order_date IS DISTINCT FROM OLD.order_date
     ) THEN
-        RAISE EXCEPTION 'Cannot edit purchase order - goods inward exists. Delete inward records first';
+        RAISE EXCEPTION 'Cannot edit warehouse or order date - goods inward exists. Delete inward records first';
     END IF;
 
     RETURN NEW;
@@ -319,7 +323,7 @@ CREATE TRIGGER trigger_prevent_purchase_order_edit
     FOR EACH ROW
     EXECUTE FUNCTION prevent_purchase_order_edit();
 
-COMMENT ON FUNCTION prevent_purchase_order_edit() IS 'Prevents editing purchase orders that are cancelled, completed, or have linked goods inward records. Consolidates all edit validation rules including cancellation prevention.';
+COMMENT ON FUNCTION prevent_purchase_order_edit() IS 'Prevents editing purchase orders that are cancelled or completed. Prevents changing supplier after approval. Prevents changing warehouse/date if goods inward exists. Allows editing line items even after approval.';
 
 -- Prevent purchase order deletion in invalid states
 CREATE OR REPLACE FUNCTION prevent_purchase_order_delete()

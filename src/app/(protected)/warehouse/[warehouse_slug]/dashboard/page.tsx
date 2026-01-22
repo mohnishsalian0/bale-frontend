@@ -22,9 +22,6 @@ import { Fab } from "@/components/ui/fab";
 import { DashboardScannerModal } from "./DashboardScannerModal";
 import { useDashboardData } from "@/lib/query/hooks/dashboard";
 import { PartnersSection } from "./PartnersSection";
-import { ActiveSalesOrdersSection } from "./ActiveSalesOrdersSection";
-import { LowStockProductsSection } from "./LowStockProductsSection";
-import { PendingQRCodesSection } from "./PendingQRCodesSection";
 import { ProductFormSheet } from "../products/ProductFormSheet";
 
 export default function DashboardPage() {
@@ -39,7 +36,6 @@ export default function DashboardPage() {
     refetch,
   } = useDashboardData(warehouse.id);
 
-  const salesOrders = data.salesOrders;
   const recentCustomers = data.recentCustomers;
   const recentSuppliers = data.recentSuppliers;
 
@@ -152,25 +148,6 @@ export default function DashboardPage() {
           partners={recentSuppliers}
         />
       </div>
-
-      {/* Sales Orders Section */}
-      <ActiveSalesOrdersSection
-        orders={salesOrders}
-        warehouseSlug={warehouse.slug}
-        onNavigate={(path) => router.push(path)}
-      />
-
-      {/* Low Stock Products Section */}
-      <LowStockProductsSection
-        warehouseSlug={warehouse.slug}
-        onNavigate={(path) => router.push(path)}
-      />
-
-      {/* Pending QR Codes Section */}
-      <PendingQRCodesSection
-        warehouseSlug={warehouse.slug}
-        onNavigate={(path) => router.push(path)}
-      />
 
       {/* Add Product Sheet */}
       {showCreateProduct && (

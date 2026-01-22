@@ -34,9 +34,17 @@ interface PaymentFormData {
   counterLedgerId: string;
   paymentDate: string;
   paymentMode: PaymentMode | "";
-  referenceNumber: string;
-  referenceDate: string;
   notes: string;
+  // Instrument fields (cheque, demand_draft)
+  instrumentNumber: string;
+  instrumentDate: string;
+  instrumentBank: string;
+  instrumentBranch: string;
+  instrumentIfsc: string;
+  // Digital payment fields
+  transactionId: string;
+  vpa: string;
+  cardLastFour: string;
 }
 
 type FormStep = "partner" | "allocation" | "details" | "review";
@@ -98,9 +106,17 @@ export default function EditPaymentPage() {
     counterLedgerId: "",
     paymentDate: "",
     paymentMode: "",
-    referenceNumber: "",
-    referenceDate: "",
     notes: "",
+    // Instrument fields
+    instrumentNumber: "",
+    instrumentDate: "",
+    instrumentBank: "",
+    instrumentBranch: "",
+    instrumentIfsc: "",
+    // Digital payment fields
+    transactionId: "",
+    vpa: "",
+    cardLastFour: "",
   });
 
   // Fetch invoices for the allocations to show in review
@@ -163,9 +179,17 @@ export default function EditPaymentPage() {
       counterLedgerId: payment.counter_ledger_id,
       paymentDate: payment.payment_date,
       paymentMode: payment.payment_mode,
-      referenceNumber: payment.reference_number || "",
-      referenceDate: payment.reference_date || "",
       notes: payment.notes || "",
+      // Instrument fields
+      instrumentNumber: payment.instrument_number || "",
+      instrumentDate: payment.instrument_date || "",
+      instrumentBank: payment.instrument_bank || "",
+      instrumentBranch: payment.instrument_branch || "",
+      instrumentIfsc: payment.instrument_ifsc || "",
+      // Digital payment fields
+      transactionId: payment.transaction_id || "",
+      vpa: payment.vpa || "",
+      cardLastFour: payment.card_last_four || "",
     });
   }, [payment, payment_slug, router, warehouse.slug]);
 
@@ -268,9 +292,9 @@ export default function EditPaymentPage() {
     // Auto-select TDS ledger based on voucher type
     const tdsLedgerId = formData.tdsApplicable
       ? payment_type === "receipt"
-        ? tdsLedgers.find((l) => l.name === "TCS Receivable")?.id || null
-        : tdsLedgers.find((l) => l.name === "TDS Payable")?.id || null
-      : null;
+        ? tdsLedgers.find((l) => l.name === "TCS Receivable")?.id
+        : tdsLedgers.find((l) => l.name === "TDS Payable")?.id
+      : undefined;
 
     // Calculate total amount
     const totalAmount =
@@ -301,15 +325,25 @@ export default function EditPaymentPage() {
       counter_ledger_id: formData.counterLedgerId,
       payment_date: formData.paymentDate,
       payment_mode: formData.paymentMode as PaymentMode,
-      reference_number: formData.referenceNumber || null,
-      reference_date: formData.referenceDate || null,
       total_amount: totalAmount,
       tds_applicable: formData.tdsApplicable,
-      tds_rate: formData.tdsApplicable ? parseFloat(formData.tdsRate) : null,
+      tds_rate: formData.tdsApplicable
+        ? parseFloat(formData.tdsRate)
+        : undefined,
       tds_ledger_id: tdsLedgerId,
-      notes: formData.notes || null,
-      attachments: null,
+      notes: formData.notes || undefined,
+      attachments: undefined,
       allocations,
+      // Instrument fields
+      instrument_number: formData.instrumentNumber || undefined,
+      instrument_date: formData.instrumentDate || undefined,
+      instrument_bank: formData.instrumentBank || undefined,
+      instrument_branch: formData.instrumentBranch || undefined,
+      instrument_ifsc: formData.instrumentIfsc || undefined,
+      // Digital payment fields
+      transaction_id: formData.transactionId || undefined,
+      vpa: formData.vpa || undefined,
+      card_last_four: formData.cardLastFour || undefined,
     };
 
     // Update payment using mutation
@@ -441,11 +475,19 @@ export default function EditPaymentPage() {
                 counterLedgerId: formData.counterLedgerId,
                 paymentDate: formData.paymentDate,
                 paymentMode: formData.paymentMode,
-                referenceNumber: formData.referenceNumber,
-                referenceDate: formData.referenceDate,
                 notes: formData.notes,
                 tdsApplicable: formData.tdsApplicable,
                 tdsRate: formData.tdsRate,
+                // Instrument fields
+                instrumentNumber: formData.instrumentNumber,
+                instrumentDate: formData.instrumentDate,
+                instrumentBank: formData.instrumentBank,
+                instrumentBranch: formData.instrumentBranch,
+                instrumentIfsc: formData.instrumentIfsc,
+                // Digital payment fields
+                transactionId: formData.transactionId,
+                vpa: formData.vpa,
+                cardLastFour: formData.cardLastFour,
               }}
               setFormData={(updates) =>
                 setFormData((prev) => ({ ...prev, ...updates }))

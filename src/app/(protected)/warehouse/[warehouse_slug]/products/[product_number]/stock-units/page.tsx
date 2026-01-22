@@ -20,7 +20,7 @@ import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { formatStockUnitNumber, getStockUnitInfo } from "@/lib/utils/product";
 import { useSession } from "@/contexts/session-context";
-import { useProductWithInventoryByNumber } from "@/lib/query/hooks/products";
+import { useProductWithInventoryAndOrdersByNumber } from "@/lib/query/hooks/products";
 import {
   useStockUnitsWithInward,
   useStockUnitWithProductDetail,
@@ -62,7 +62,7 @@ export default function StockUnitsPage({ params }: PageParams) {
 
   // Fetch product (will use cached data from layout)
   const { data: product, isLoading: productLoading } =
-    useProductWithInventoryByNumber(product_number, warehouse.id);
+    useProductWithInventoryAndOrdersByNumber(product_number, warehouse.id);
 
   // Fetch stock units with pagination
   const {

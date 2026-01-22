@@ -123,8 +123,8 @@ export function useAdjustmentNoteMutations() {
       id: string;
       data: Partial<{
         reason: string;
-        notes: string | null;
-        attachments: string[] | null;
+        notes?: string;
+        attachments?: string[];
       }>;
     }) => updateAdjustmentNote(id, data),
     onSuccess: () => {

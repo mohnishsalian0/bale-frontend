@@ -232,11 +232,12 @@ export type PaymentMode = Database["public"]["Enums"]["payment_mode_enum"];
 export const PAYMENT_MODES: readonly PaymentMode[] = [
   "cash",
   "cheque",
+  "demand_draft",
   "neft",
   "rtgs",
+  "imps",
   "upi",
   "card",
-  "other",
 ] as const;
 
 /**
@@ -254,3 +255,26 @@ export const ALLOCATION_TYPES: readonly AllocationType[] = [
  */
 export type InvoiceStatus = "open" | "partially_paid" | "settled" | "cancelled";
 export const INVOICE_STATUSES = ["open", "partially_paid", "settled"] as const;
+
+/**
+ * Ledger type
+ */
+export type LedgerTypeEnum = Database["public"]["Enums"]["ledger_type_enum"];
+export const LEDGER_TYPES: readonly LedgerTypeEnum[] = [
+  "party",
+  "sales",
+  "purchase",
+  "tax",
+  "bank",
+  "cash",
+  "asset",
+  "liability",
+  "income",
+  "expense",
+] as const;
+
+/**
+ * Debit/Credit enum
+ */
+export type DrCrEnum = Database["public"]["Enums"]["dr_cr_enum"];
+export const DR_CR_TYPES: readonly DrCrEnum[] = ["debit", "credit"] as const;

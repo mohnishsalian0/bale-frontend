@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/browser";
+import type { Database } from "@/types/database/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   PublicProduct,
   PublicCompany,
@@ -6,34 +8,46 @@ import type {
 } from "@/types/catalog.types";
 import { calculateStockStatus } from "@/lib/utils/product";
 import { transformAttributes } from "./products";
-import {
-  Product,
-  ProductAttributeAssignmentsRaw,
-  ProductInventory,
-} from "@/types/products.types";
 
 // Re-export types for convenience
 export type { PublicProduct, PublicCompany } from "@/types/catalog.types";
 
-// Raw type for ProductListView query response
-export type ProductListViewRaw = Pick<
-  Product,
-  | "id"
-  | "sequence_number"
-  | "product_code"
-  | "name"
-  | "stock_type"
-  | "measuring_unit"
-  | "product_images"
-  | "min_stock_threshold"
-> & {
-  inventory: Array<
-    Pick<
-      ProductInventory,
-      "in_stock_units" | "in_stock_quantity" | "warehouse_id"
-    >
-  >;
-} & ProductAttributeAssignmentsRaw;
+// ============================================================================
+// QUERY BUILDERS
+// ============================================================================
+
+/**
+ * Query builder for fetching public products with stock status
+ */
+export const buildPublicProductsQuery = (
+  supabase: SupabaseClient<Database>,
+  companyId: string,
+) => {
+  return supabase
+    .from("products")
+    .select(
+      `
+      id,
+      sequence_number,
+      product_code,
+      name,
+      stock_type,
+      measuring_unit,
+      product_images,
+      min_stock_threshold,
+      inventory:product_inventory_aggregates!product_id(
+        in_stock_units,
+        in_stock_quantity,
+        warehouse_id
+      ),
+      attributes:product_attributes!inner(id, name, group_name, color_hex)
+    `,
+    )
+    .eq("company_id", companyId)
+    .eq("show_on_catalog", true)
+    .is("deleted_at", null)
+    .order("name", { ascending: true });
+};
 
 /**
  * Get company by slug (public access)
@@ -86,31 +100,8 @@ export async function getPublicProducts(
 
   console.log("Fetching products for company:", companyId);
 
-  // Fetch products that are visible on catalog with materials, colors, and tags
-  const { data: products, error: productsError } = await supabase
-    .from("products")
-    .select(
-      `
-			id,
-			sequence_number,
-			product_code,
-			name,
-			stock_type,
-			measuring_unit,
-			product_images,
-			min_stock_threshold,
-			inventory:product_inventory_aggregates!product_id(
-				in_stock_units,
-				in_stock_quantity,
-				warehouse_id
-			),
-			attributes:product_attributes!inner(id, name, group_name, color_hex)
-		`,
-    )
-    .eq("company_id", companyId)
-    .eq("show_on_catalog", true)
-    .is("deleted_at", null)
-    .order("name", { ascending: true });
+  const { data: products, error: productsError } =
+    await buildPublicProductsQuery(supabase, companyId);
 
   console.log("Products query result:", { products, productsError });
 
@@ -120,9 +111,7 @@ export async function getPublicProducts(
   }
 
   // Transform products with stock status and flatten attributes
-  const publicProducts: PublicProduct[] = (
-    (products as unknown as ProductListViewRaw[]) || []
-  ).map((product) => {
+  const publicProducts: PublicProduct[] = products.map((product) => {
     // Find inventory for the specified warehouse, or sum across all warehouses
     let totalStock = 0;
     if (product.inventory && Array.isArray(product.inventory)) {
