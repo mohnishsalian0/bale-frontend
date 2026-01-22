@@ -504,12 +504,7 @@ BEGIN
     END IF;
 
     -- =====================================================
-    -- 3. Delete Existing Items
-    -- =====================================================
-    DELETE FROM invoice_items WHERE invoice_id = p_invoice_id;
-
-    -- =====================================================
-    -- 4. Process Items (Same logic as create)
+    -- 3. Process Items (Same logic as create)
     -- =====================================================
     CREATE TEMPORARY TABLE temp_invoice_calculations ON COMMIT DROP AS
     WITH
@@ -685,40 +680,48 @@ BEGIN
     WHERE id = p_invoice_id;
 
     -- =====================================================
-    -- 8. Insert New Items
+    -- 8. Insert New Items and Delete Old Ones Atomically
     -- =====================================================
-    INSERT INTO invoice_items (
-        company_id, warehouse_id, invoice_id, product_id, quantity, rate, discount_amount, taxable_amount,
-        product_name, product_hsn_code, tax_type, gst_rate,
-        cgst_rate, cgst_amount, sgst_rate, sgst_amount, igst_rate, igst_amount, total_tax_amount
+    -- Use WITH to capture new item IDs, then delete old items
+    WITH new_items AS (
+        INSERT INTO invoice_items (
+            company_id, warehouse_id, invoice_id, product_id, quantity, rate, discount_amount, taxable_amount,
+            product_name, product_hsn_code, tax_type, gst_rate,
+            cgst_rate, cgst_amount, sgst_rate, sgst_amount, igst_rate, igst_amount, total_tax_amount
+        )
+        SELECT
+            v_company_id,
+            p_warehouse_id,
+            p_invoice_id,
+            product_id,
+            qty,
+            rate,
+            line_discount_amount,
+            line_taxable_value,
+            product_name,
+            hsn_code,
+            tax_type::product_tax_applicability_enum,
+            gst_rate,
+            -- CGST rate and amount
+            CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN gst_rate / 2 ELSE 0 END,
+            ROUND(CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 2 / 100) ELSE 0 END, 2),
+            -- SGST rate and amount
+            CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN gst_rate / 2 ELSE 0 END,
+            ROUND(CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 2 / 100) ELSE 0 END, 2),
+            -- IGST rate and amount
+            CASE WHEN p_tax_type = 'igst' AND tax_type = 'gst' THEN gst_rate ELSE 0 END,
+            ROUND(CASE WHEN p_tax_type = 'igst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 100) ELSE 0 END, 2),
+            -- Total Tax
+            ROUND(CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 100)
+                       WHEN p_tax_type = 'igst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 100)
+                       ELSE 0 END, 2)
+        FROM temp_invoice_calculations
+        RETURNING id
     )
-    SELECT
-        v_company_id,
-        p_warehouse_id,
-        p_invoice_id,
-        product_id,
-        qty,
-        rate,
-        line_discount_amount,
-        line_taxable_value,
-        product_name,
-        hsn_code,
-        tax_type::product_tax_applicability_enum,
-        gst_rate,
-        -- CGST rate and amount
-        CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN gst_rate / 2 ELSE 0 END,
-        ROUND(CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 2 / 100) ELSE 0 END, 2),
-        -- SGST rate and amount
-        CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN gst_rate / 2 ELSE 0 END,
-        ROUND(CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 2 / 100) ELSE 0 END, 2),
-        -- IGST rate and amount
-        CASE WHEN p_tax_type = 'igst' AND tax_type = 'gst' THEN gst_rate ELSE 0 END,
-        ROUND(CASE WHEN p_tax_type = 'igst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 100) ELSE 0 END, 2),
-        -- Total Tax
-        ROUND(CASE WHEN p_tax_type = 'gst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 100)
-                   WHEN p_tax_type = 'igst' AND tax_type = 'gst' THEN line_taxable_value * (gst_rate / 100)
-                   ELSE 0 END, 2)
-    FROM temp_invoice_calculations;
+    -- Delete old items (those not in the new_items CTE)
+    DELETE FROM invoice_items
+    WHERE invoice_id = p_invoice_id
+      AND id NOT IN (SELECT id FROM new_items);
 END;
 $$;
 

@@ -259,10 +259,10 @@ export async function createInvoice(
       p_notes: invoiceData.notes,
       p_attachments: undefined, // Attachments not implemented yet
       p_items: invoiceData.items as unknown as Json,
-      p_goods_movement_ids: undefined, // Goods movements not linked yet
       p_source_sales_order_id: invoiceData.source_sales_order_id || undefined,
       p_source_purchase_order_id:
         invoiceData.source_purchase_order_id || undefined,
+      p_goods_movement_ids: invoiceData.goods_movement_ids || undefined,
       p_company_id: undefined, // Set by RPC from JWT
     },
   );

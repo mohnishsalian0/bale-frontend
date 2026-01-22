@@ -348,6 +348,23 @@ export default function QuickCreateInvoicePage({ params }: PageParams) {
         rate: selection.rate,
       }));
 
+    // Validate and filter movement IDs (intersection with order's movements)
+    let validatedMovementIds: string[] | undefined;
+    if (movementIds && movementIds.length > 0) {
+      const movements = isSales ? outwardsData?.data : inwardsData?.data;
+      const orderMovementIds = new Set(movements?.map((m) => m.id) || []);
+
+      // Take intersection: only include IDs that exist in the order
+      validatedMovementIds = movementIds.filter((id) =>
+        orderMovementIds.has(id),
+      );
+
+      // If no valid IDs remain after filtering, pass undefined
+      if (validatedMovementIds.length === 0) {
+        validatedMovementIds = undefined;
+      }
+    }
+
     // Prepare invoice data
     const invoiceData: CreateInvoiceData = {
       invoice_type: invoice_type as InvoiceType,
@@ -364,6 +381,7 @@ export default function QuickCreateInvoicePage({ params }: PageParams) {
       items: selectedProducts,
       source_sales_order_id: salesOrder?.id,
       source_purchase_order_id: purchaseOrder?.id,
+      goods_movement_ids: validatedMovementIds,
     };
 
     // Create invoice using mutation

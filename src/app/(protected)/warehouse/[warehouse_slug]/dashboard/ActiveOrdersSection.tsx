@@ -42,7 +42,7 @@ import type {
   PurchaseOrderStatus,
 } from "@/types/database/enums";
 import { CompleteOrderDialog as CompleteSalesOrderDialog } from "../sales-orders/[sale_number]/CompleteOrderDialog";
-import { CompleteOrderDialog as CompletePurchaseOrderDialog } from "../purchase-orders/[purchase_number]/(detail)/CompleteOrderDialog";
+import { CompleteOrderDialog as CompletePurchaseOrderDialog } from "../purchase-orders/[purchase_number]/CompleteOrderDialog";
 import { GoodsOutwardSelectionDialog } from "../sales-orders/[sale_number]/GoodsOutwardSelectionDialog";
 import { GoodsInwardSelectionDialog } from "../purchase-orders/[purchase_number]/GoodsInwardSelectionDialog";
 import { OrderConfirmationPDF } from "@/components/pdf/OrderConfirmationPDF";

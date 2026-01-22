@@ -104,4 +104,5 @@ export interface CreateInvoiceData {
   notes?: string;
   source_sales_order_id?: string;
   source_purchase_order_id?: string;
+  goods_movement_ids?: string[];
 }
