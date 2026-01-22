@@ -118,7 +118,10 @@ export const buildInvoicesQuery = (
 
   // Apply source purchase order filter
   if (filters?.source_purchase_order_id) {
-    query = query.eq("source_purchase_order_id", filters.source_purchase_order_id);
+    query = query.eq(
+      "source_purchase_order_id",
+      filters.source_purchase_order_id,
+    );
   }
 
   // Default ordering: most recent first
@@ -257,6 +260,9 @@ export async function createInvoice(
       p_attachments: undefined, // Attachments not implemented yet
       p_items: invoiceData.items as unknown as Json,
       p_goods_movement_ids: undefined, // Goods movements not linked yet
+      p_source_sales_order_id: invoiceData.source_sales_order_id || undefined,
+      p_source_purchase_order_id:
+        invoiceData.source_purchase_order_id || undefined,
       p_company_id: undefined, // Set by RPC from JWT
     },
   );

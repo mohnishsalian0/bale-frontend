@@ -21,9 +21,9 @@ export function Section({
     <section className="px-4 py-3 space-y-4 rounded-lg border border-border">
       {/* Header Row */}
       <div className="flex items-center justify-between gap-3">
-        <div className="size-12 rounded-xl bg-gray-100 border-2 border-border flex items-center justify-center shrink-0">
+        <div className="min-h-12 p-2.5 rounded-xl bg-gray-100 border-2 border-border flex items-center justify-center shrink-0">
           <span className="text-lg font-semibold text-gray-700">
-            <Icon />
+            <Icon className="h-6" />
           </span>
         </div>
         <div className="flex-1 min-w-0">

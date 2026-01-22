@@ -102,4 +102,6 @@ export interface CreateInvoiceData {
   supplier_invoice_number?: string; // Purchase only
   supplier_invoice_date?: string; // Purchase only
   notes?: string;
+  source_sales_order_id?: string;
+  source_purchase_order_id?: string;
 }

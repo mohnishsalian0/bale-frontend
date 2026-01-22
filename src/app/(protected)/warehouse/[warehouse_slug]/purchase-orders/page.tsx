@@ -418,7 +418,7 @@ export default function PurchaseOrdersPage() {
                     key={order.id}
                     onClick={() =>
                       router.push(
-                        `/warehouse/${warehouse.slug}/purchase-orders/${order.orderNumber}`,
+                        `/warehouse/${warehouse.slug}/purchase-orders/${order.orderNumber}/details`,
                       )
                     }
                     className="flex flex-col gap-2 p-4 border-t border-dashed border-gray-300 hover:bg-gray-100 transition-colors"

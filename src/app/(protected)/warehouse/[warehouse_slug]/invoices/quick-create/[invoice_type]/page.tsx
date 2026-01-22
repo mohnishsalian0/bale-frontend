@@ -89,26 +89,24 @@ export default function QuickCreateInvoicePage({ params }: PageParams) {
     Record<string, { selected: boolean; quantity: number; rate: number }>
   >({});
 
-  const [partner, setPartner] = useState<
-    Pick<
-      Partner,
-      | "display_name"
-      | "gst_number"
-      | "billing_address_line1"
-      | "billing_address_line2"
-      | "billing_city"
-      | "billing_state"
-      | "billing_country"
-      | "billing_pin_code"
-      | "shipping_same_as_billing"
-      | "shipping_address_line1"
-      | "shipping_address_line2"
-      | "shipping_city"
-      | "shipping_state"
-      | "shipping_country"
-      | "shipping_pin_code"
-    > | null
-  >(null);
+  const [partner, setPartner] = useState<Pick<
+    Partner,
+    | "display_name"
+    | "gst_number"
+    | "billing_address_line1"
+    | "billing_address_line2"
+    | "billing_city"
+    | "billing_state"
+    | "billing_country"
+    | "billing_pin_code"
+    | "shipping_same_as_billing"
+    | "shipping_address_line1"
+    | "shipping_address_line2"
+    | "shipping_city"
+    | "shipping_state"
+    | "shipping_country"
+    | "shipping_pin_code"
+  > | null>(null);
 
   // Hide chrome for immersive flow experience
   useEffect(() => {
@@ -364,6 +362,8 @@ export default function QuickCreateInvoicePage({ params }: PageParams) {
           ? parseFloat(formData.discount)
           : undefined,
       items: selectedProducts,
+      source_sales_order_id: salesOrder?.id,
+      source_purchase_order_id: purchaseOrder?.id,
     };
 
     // Create invoice using mutation
