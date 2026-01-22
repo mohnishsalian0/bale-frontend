@@ -176,16 +176,20 @@ export const buildWarehousesQuery = (supabase: SupabaseClient<Database>) => {
 import type { QueryData } from "@supabase/supabase-js";
 import type { buildWarehousesQuery } from "@/lib/queries/warehouses";
 
-export type Warehouse = QueryData<ReturnType<typeof buildWarehousesQuery>>[number];
+export type Warehouse = QueryData<
+  ReturnType<typeof buildWarehousesQuery>
+>[number];
 ```
 
 **Benefits:**
+
 - ✅ Types automatically match queries (zero manual sync effort)
 - ✅ TypeScript catches field access errors at compile time
 - ✅ Refactoring queries automatically updates types
 - ✅ Self-documenting - query is the single source of truth
 
 **Pattern:**
+
 1. Create `buildXQuery()` function in `/src/lib/queries/`
 2. Export and use `QueryData<ReturnType<typeof buildXQuery>>` in `/src/types/`
 3. Import the inferred type back into queries file for function signatures

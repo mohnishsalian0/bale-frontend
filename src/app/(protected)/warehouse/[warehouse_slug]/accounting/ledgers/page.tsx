@@ -36,10 +36,9 @@ export default function LedgersPage() {
   const filters = {
     search_term: debouncedSearch || undefined,
     ledger_type:
-      ledgerTypeFilter !== "all"
-        ? (ledgerTypeFilter as LedgerType)
-        : undefined,
-    parent_group_id: parentGroupFilter !== "all" ? parentGroupFilter : undefined,
+      ledgerTypeFilter !== "all" ? (ledgerTypeFilter as LedgerType) : undefined,
+    parent_group_id:
+      parentGroupFilter !== "all" ? parentGroupFilter : undefined,
   };
 
   const { data: ledgers, isLoading, isError, refetch } = useLedgers(filters);
@@ -111,10 +110,7 @@ export default function LedgersPage() {
           </SelectContent>
         </Select>
 
-        <Select
-          value={parentGroupFilter}
-          onValueChange={setParentGroupFilter}
-        >
+        <Select value={parentGroupFilter} onValueChange={setParentGroupFilter}>
           <SelectTrigger className="max-w-48 h-10 shrink-0">
             <SelectValue placeholder="Parent Group" />
           </SelectTrigger>
@@ -135,7 +131,9 @@ export default function LedgersPage() {
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-gray-600 mb-2">No ledgers found</p>
             <p className="text-sm text-gray-500">
-              {searchQuery ? "Try adjusting your search" : "Add your first ledger"}
+              {searchQuery
+                ? "Try adjusting your search"
+                : "Add your first ledger"}
             </p>
           </div>
         ) : (

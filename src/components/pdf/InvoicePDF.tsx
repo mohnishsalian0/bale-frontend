@@ -437,10 +437,14 @@ export function InvoicePDF({ invoice }: InvoicePDFProps) {
               {invoice.party_name || invoice.party_display_name}
             </Text>
             {invoice.party_billing_address_line1 && (
-              <Text style={styles.textLine}>{invoice.party_billing_address_line1}</Text>
+              <Text style={styles.textLine}>
+                {invoice.party_billing_address_line1}
+              </Text>
             )}
             {invoice.party_billing_address_line2 && (
-              <Text style={styles.textLine}>{invoice.party_billing_address_line2}</Text>
+              <Text style={styles.textLine}>
+                {invoice.party_billing_address_line2}
+              </Text>
             )}
             {(invoice.party_billing_city || invoice.party_billing_pincode) && (
               <Text style={styles.textLine}>
@@ -450,7 +454,9 @@ export function InvoicePDF({ invoice }: InvoicePDFProps) {
               </Text>
             )}
             {invoice.party_billing_state && (
-              <Text style={styles.textLine}>State: {invoice.party_billing_state}</Text>
+              <Text style={styles.textLine}>
+                State: {invoice.party_billing_state}
+              </Text>
             )}
             {invoice.party_gst_number && (
               <Text style={styles.textLine}>
@@ -506,14 +512,22 @@ export function InvoicePDF({ invoice }: InvoicePDFProps) {
                   {invoice.party_name || invoice.party_display_name}
                 </Text>
                 {invoice.party_shipping_address_line1 && (
-                  <Text style={styles.textLine}>{invoice.party_shipping_address_line1}</Text>
+                  <Text style={styles.textLine}>
+                    {invoice.party_shipping_address_line1}
+                  </Text>
                 )}
                 {invoice.party_shipping_address_line2 && (
-                  <Text style={styles.textLine}>{invoice.party_shipping_address_line2}</Text>
-                )}
-                {(invoice.party_shipping_city || invoice.party_shipping_pincode) && (
                   <Text style={styles.textLine}>
-                    {[invoice.party_shipping_city, invoice.party_shipping_pincode]
+                    {invoice.party_shipping_address_line2}
+                  </Text>
+                )}
+                {(invoice.party_shipping_city ||
+                  invoice.party_shipping_pincode) && (
+                  <Text style={styles.textLine}>
+                    {[
+                      invoice.party_shipping_city,
+                      invoice.party_shipping_pincode,
+                    ]
                       .filter(Boolean)
                       .join(" - ")}
                   </Text>

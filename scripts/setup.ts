@@ -2976,11 +2976,16 @@ async function createTestPartners() {
                       p_tds_applicable: false,
                       p_tds_rate: 0,
                       // Mode-specific fields
-                      p_instrument_number: (receipt as any).instrument_number || null,
-                      p_instrument_date: (receipt as any).instrument_date || null,
-                      p_instrument_bank: (receipt as any).instrument_bank || null,
-                      p_instrument_branch: (receipt as any).instrument_branch || null,
-                      p_instrument_ifsc: (receipt as any).instrument_ifsc || null,
+                      p_instrument_number:
+                        (receipt as any).instrument_number || null,
+                      p_instrument_date:
+                        (receipt as any).instrument_date || null,
+                      p_instrument_bank:
+                        (receipt as any).instrument_bank || null,
+                      p_instrument_branch:
+                        (receipt as any).instrument_branch || null,
+                      p_instrument_ifsc:
+                        (receipt as any).instrument_ifsc || null,
                       p_transaction_id: (receipt as any).transaction_id || null,
                       p_vpa: (receipt as any).vpa || null,
                       p_card_last_four: (receipt as any).card_last_four || null,
@@ -3141,11 +3146,16 @@ async function createTestPartners() {
                       p_tds_applicable: payment.tds || false,
                       p_tds_rate: payment.tds_rate || 0,
                       // Mode-specific fields
-                      p_instrument_number: (payment as any).instrument_number || null,
-                      p_instrument_date: (payment as any).instrument_date || null,
-                      p_instrument_bank: (payment as any).instrument_bank || null,
-                      p_instrument_branch: (payment as any).instrument_branch || null,
-                      p_instrument_ifsc: (payment as any).instrument_ifsc || null,
+                      p_instrument_number:
+                        (payment as any).instrument_number || null,
+                      p_instrument_date:
+                        (payment as any).instrument_date || null,
+                      p_instrument_bank:
+                        (payment as any).instrument_bank || null,
+                      p_instrument_branch:
+                        (payment as any).instrument_branch || null,
+                      p_instrument_ifsc:
+                        (payment as any).instrument_ifsc || null,
                       p_transaction_id: (payment as any).transaction_id || null,
                       p_vpa: (payment as any).vpa || null,
                       p_card_last_four: (payment as any).card_last_four || null,

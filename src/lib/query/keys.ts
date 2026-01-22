@@ -34,8 +34,17 @@ export const queryKeys = {
       filters?: ProductFilters,
       page?: number,
     ) => ["products", "inventory-orders", warehouseId, filters, page] as const,
-    withInventoryAndOrdersByNumber: (sequenceNumber: string, warehouseId: string) =>
-      ["products", "inventory-orders", "number", sequenceNumber, warehouseId] as const,
+    withInventoryAndOrdersByNumber: (
+      sequenceNumber: string,
+      warehouseId: string,
+    ) =>
+      [
+        "products",
+        "inventory-orders",
+        "number",
+        sequenceNumber,
+        warehouseId,
+      ] as const,
     materials: () => ["products", "materials"] as const,
     colors: () => ["products", "colors"] as const,
     tags: () => ["products", "tags"] as const,

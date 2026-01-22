@@ -18,8 +18,10 @@ export type Product = Tables<"products">;
 type ProductAttributeRaw = Tables<"product_attributes">;
 
 export type ProductInventory = Tables<"product_inventory_aggregates">;
-export type ProductSalesOrderAggregate = Tables<"product_sales_order_aggregates">;
-export type ProductPurchaseOrderAggregate = Tables<"product_purchase_order_aggregates">;
+export type ProductSalesOrderAggregate =
+  Tables<"product_sales_order_aggregates">;
+export type ProductPurchaseOrderAggregate =
+  Tables<"product_purchase_order_aggregates">;
 
 // Mutation types
 export type ProductInsert = TablesInsert<"products">;
@@ -180,11 +182,17 @@ export interface ProductInventoryDetailView extends ProductDetailView {
   inventory: ProductInventory;
   sales_orders: Pick<
     ProductSalesOrderAggregate,
-    "active_pending_quantity" | "active_required_quantity" | "active_pending_value" | "active_required_value"
+    | "active_pending_quantity"
+    | "active_required_quantity"
+    | "active_pending_value"
+    | "active_required_value"
   > | null;
   purchase_orders: Pick<
     ProductPurchaseOrderAggregate,
-    "active_pending_quantity" | "active_required_quantity" | "active_pending_value" | "active_required_value"
+    | "active_pending_quantity"
+    | "active_required_quantity"
+    | "active_pending_value"
+    | "active_required_value"
   > | null;
 }
 
@@ -204,10 +212,16 @@ export interface ProductInventoryView extends ProductListView {
   >;
   sales_orders: Pick<
     ProductSalesOrderAggregate,
-    "active_pending_quantity" | "active_required_quantity" | "active_pending_value" | "active_required_value"
+    | "active_pending_quantity"
+    | "active_required_quantity"
+    | "active_pending_value"
+    | "active_required_value"
   > | null;
   purchase_orders: Pick<
     ProductPurchaseOrderAggregate,
-    "active_pending_quantity" | "active_required_quantity" | "active_pending_value" | "active_required_value"
+    | "active_pending_quantity"
+    | "active_required_quantity"
+    | "active_pending_value"
+    | "active_required_value"
   > | null;
 }

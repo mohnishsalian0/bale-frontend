@@ -13,7 +13,10 @@ import type { Company } from "@/types/companies.types";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import type { MeasuringUnit } from "@/types/database/enums";
-import { getPartnerShippingAddress, getFormattedAddress } from "@/lib/utils/partner";
+import {
+  getPartnerShippingAddress,
+  getFormattedAddress,
+} from "@/lib/utils/partner";
 
 // Register Poppins font which has proper Unicode support
 Font.register({

@@ -375,10 +375,13 @@ export default function PaymentsPage() {
                       </p>
 
                       {/* Payment Mode Details */}
-                      {(payment.instrument_number || payment.transaction_id) && (
+                      {(payment.instrument_number ||
+                        payment.transaction_id) && (
                         <p className="text-xs text-gray-500 text-left">
-                          {payment.instrument_number && `Inst: ${payment.instrument_number}`}
-                          {payment.transaction_id && `TXN: ${payment.transaction_id}`}
+                          {payment.instrument_number &&
+                            `Inst: ${payment.instrument_number}`}
+                          {payment.transaction_id &&
+                            `TXN: ${payment.transaction_id}`}
                           {payment.instrument_date &&
                             ` • Date: ${formatAbsoluteDate(payment.instrument_date)}`}
                         </p>

@@ -373,10 +373,13 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
                           {` • ${formatAbsoluteDate(payment.payment_date)}`}
                         </p>
 
-                        {(payment.instrument_number || payment.transaction_id) && (
+                        {(payment.instrument_number ||
+                          payment.transaction_id) && (
                           <p className="text-xs text-gray-500 mt-1 text-left">
-                            {payment.instrument_number && `Inst: ${payment.instrument_number}`}
-                            {payment.transaction_id && `TXN: ${payment.transaction_id}`}
+                            {payment.instrument_number &&
+                              `Inst: ${payment.instrument_number}`}
+                            {payment.transaction_id &&
+                              `TXN: ${payment.transaction_id}`}
                             {payment.instrument_date &&
                               ` • Date: ${formatAbsoluteDate(payment.instrument_date)}`}
                           </p>
@@ -568,7 +571,8 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
           >
             <div className="space-y-3">
               {/* Billing Address */}
-              {(invoice.party_billing_address_line1 || invoice.party_billing_address_line2) && (
+              {(invoice.party_billing_address_line1 ||
+                invoice.party_billing_address_line2) && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-700 flex items-center gap-1.5">
                     <IconMapPin className="size-4 text-gray-700" />
@@ -585,7 +589,8 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
                       invoice.party_billing_state &&
                       invoice.party_billing_pincode && (
                         <p>
-                          {invoice.party_billing_city}, {invoice.party_billing_state} -{" "}
+                          {invoice.party_billing_city},{" "}
+                          {invoice.party_billing_state} -{" "}
                           {invoice.party_billing_pincode}
                         </p>
                       )}
@@ -594,7 +599,8 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
               )}
 
               {/* Shipping Address */}
-              {(invoice.party_shipping_address_line1 || invoice.party_shipping_address_line2) && (
+              {(invoice.party_shipping_address_line1 ||
+                invoice.party_shipping_address_line2) && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-700 flex items-center gap-1.5">
                     <IconMapPin className="size-4 text-gray-700" />
@@ -611,7 +617,8 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
                       invoice.party_shipping_state &&
                       invoice.party_shipping_pincode && (
                         <p>
-                          {invoice.party_shipping_city}, {invoice.party_shipping_state} -{" "}
+                          {invoice.party_shipping_city},{" "}
+                          {invoice.party_shipping_state} -{" "}
                           {invoice.party_shipping_pincode}
                         </p>
                       )}

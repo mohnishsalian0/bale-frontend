@@ -234,9 +234,9 @@ export default function OrderConfirmationPage() {
         >
           <div className="text-sm text-gray-700">
             {order.customer &&
-              getFormattedAddress(mapPartnerBillingAddress(order.customer)).map((addrLine, index) => (
-                <p key={index}>{addrLine}</p>
-              ))}
+              getFormattedAddress(mapPartnerBillingAddress(order.customer)).map(
+                (addrLine, index) => <p key={index}>{addrLine}</p>,
+              )}
           </div>
         </Section>
 

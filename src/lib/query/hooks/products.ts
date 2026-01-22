@@ -87,7 +87,12 @@ export function useInfiniteProductsWithInventoryAndOrders(
       "infinite",
     ],
     queryFn: ({ pageParam = 1 }) =>
-      getProductsWithInventoryAndOrders(warehouseId!, filters, pageParam, pageSize),
+      getProductsWithInventoryAndOrders(
+        warehouseId!,
+        filters,
+        pageParam,
+        pageSize,
+      ),
     getNextPageParam: (lastPage, allPages) => {
       const currentPage = allPages.length;
       const totalPages = Math.ceil(lastPage.totalCount / pageSize);
@@ -239,7 +244,10 @@ export function useProductWithInventoryAndOrdersByNumber(
       warehouseId || "",
     ),
     queryFn: () =>
-      getProductWithInventoryAndOrdersByNumber(Number(sequenceNumber), warehouseId!),
+      getProductWithInventoryAndOrdersByNumber(
+        Number(sequenceNumber),
+        warehouseId!,
+      ),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
     enabled: !!sequenceNumber && !!warehouseId,
   });
@@ -404,7 +412,11 @@ export function useProductImageMutations() {
  */
 export function useLowStockProducts(warehouseId: string, limit?: number) {
   return useQuery({
-    queryKey: [...queryKeys.products.withInventoryAndOrders(warehouseId), "low-stock", limit],
+    queryKey: [
+      ...queryKeys.products.withInventoryAndOrders(warehouseId),
+      "low-stock",
+      limit,
+    ],
     queryFn: () => getLowStockProducts(warehouseId, limit),
     ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.REALTIME),
   });

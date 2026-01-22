@@ -24,7 +24,9 @@ export type LedgerListView = QueryData<
  * Used in: ledger form sheet
  * Inferred from: buildLedgerByIdQuery
  */
-export type LedgerDetailView = QueryData<ReturnType<typeof buildLedgerByIdQuery>>;
+export type LedgerDetailView = QueryData<
+  ReturnType<typeof buildLedgerByIdQuery>
+>;
 
 /**
  * Parent group details for dropdowns

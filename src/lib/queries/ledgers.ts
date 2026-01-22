@@ -163,10 +163,7 @@ export async function updateLedger(
 ): Promise<void> {
   const supabase = createClient();
 
-  const { error } = await supabase
-    .from("ledgers")
-    .update(updates)
-    .eq("id", id);
+  const { error } = await supabase.from("ledgers").update(updates).eq("id", id);
 
   if (error) throw error;
 }

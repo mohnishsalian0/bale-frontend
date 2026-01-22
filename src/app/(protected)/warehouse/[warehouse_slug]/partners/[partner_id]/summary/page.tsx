@@ -106,11 +106,7 @@ export default function PartnerSummaryPage({ params }: PageParams) {
       </Section>
 
       {/* Addresses Section */}
-      <Section
-        title="Addresses"
-        subtitle=""
-        icon={() => <IconMapPin />}
-      >
+      <Section title="Addresses" subtitle="" icon={() => <IconMapPin />}>
         <div className="space-y-3">
           {/* Billing Address */}
           <div className="flex justify-between text-sm">
