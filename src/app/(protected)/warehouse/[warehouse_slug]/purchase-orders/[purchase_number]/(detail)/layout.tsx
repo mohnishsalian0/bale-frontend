@@ -202,7 +202,7 @@ export default function PurchaseOrderDetailLayout({
     });
 
     router.push(
-      `/warehouse/${warehouse.slug}/invoices/create/purchase?${params.toString()}`,
+      `/warehouse/${warehouse.slug}/invoices/quick-create/purchase?${params.toString()}`,
     );
   };
 
@@ -211,11 +211,10 @@ export default function PurchaseOrderDetailLayout({
 
     const params = new URLSearchParams({
       order: order.sequence_number.toString(),
-      full_order: "true",
     });
 
     router.push(
-      `/warehouse/${warehouse.slug}/invoices/create/purchase?${params.toString()}`,
+      `/warehouse/${warehouse.slug}/invoices/quick-create/purchase?${params.toString()}`,
     );
   };
 

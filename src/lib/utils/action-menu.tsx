@@ -270,7 +270,7 @@ export function getSalesOrderActions(
     label: "Edit order",
     icon: IconEdit,
     onClick: callbacks.onEdit,
-    hidden: displayStatus !== "approval_pending",
+    hidden: displayStatus === "completed" || displayStatus === "cancelled",
   });
 
   items.push({
@@ -380,7 +380,7 @@ export function getPurchaseOrderActions(
     label: "Edit order",
     icon: IconEdit,
     onClick: callbacks.onEdit,
-    hidden: displayStatus !== "approval_pending",
+    hidden: displayStatus === "completed" || displayStatus === "cancelled",
   });
 
   items.push({

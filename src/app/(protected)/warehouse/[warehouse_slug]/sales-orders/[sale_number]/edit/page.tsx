@@ -96,15 +96,6 @@ export default function EditSalesOrderPage({ params }: PageParams) {
   useEffect(() => {
     if (!existingOrder) return;
 
-    // Check if order can be edited
-    if (existingOrder.status !== "approval_pending") {
-      toast.error("Only orders in approval pending status can be edited");
-      router.push(
-        `/warehouse/${warehouse.slug}/sales-orders/${sale_number}/details`,
-      );
-      return;
-    }
-
     // Initialize product selections from order items
     const initialProductSelections = existingOrder.sales_order_items.reduce(
       (acc, item) => ({
@@ -312,6 +303,7 @@ export default function EditSalesOrderPage({ params }: PageParams) {
               partnerType="customer"
               selectedPartnerId={selectedCustomerId}
               onSelectPartner={handleSelectCustomer}
+              disablePartnerChange={existingOrder.status !== "approval_pending"}
             />
           ) : currentStep === "products" ? (
             <ProductSelectionStep

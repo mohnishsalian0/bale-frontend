@@ -239,7 +239,7 @@ export default function SalesOrderDetailLayout({
     });
 
     router.push(
-      `/warehouse/${warehouse.slug}/invoices/create/sales?${params.toString()}`,
+      `/warehouse/${warehouse.slug}/invoices/quick-create/sales?${params.toString()}`,
     );
   };
 
@@ -248,11 +248,10 @@ export default function SalesOrderDetailLayout({
 
     const params = new URLSearchParams({
       order: order.sequence_number.toString(),
-      full_order: "true",
     });
 
     router.push(
-      `/warehouse/${warehouse.slug}/invoices/create/sales?${params.toString()}`,
+      `/warehouse/${warehouse.slug}/invoices/quick-create/sales?${params.toString()}`,
     );
   };
 

@@ -387,6 +387,7 @@ export function PartnerFormSheet({
                 placeholder="Enter partner name"
                 {...register("companyName")}
                 required
+                helpText="Ensure this name matches exactly as it appears in Tally"
                 isError={!!errors.companyName}
                 errorText={errors.companyName?.message}
               />

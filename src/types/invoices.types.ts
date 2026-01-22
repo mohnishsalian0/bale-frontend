@@ -24,6 +24,8 @@ export interface InvoiceFilters extends Record<string, unknown> {
   date_to?: string; // Date range end (YYYY-MM-DD)
   search?: string; // Search term for search_vector
   exported_to_tally?: boolean; // Filter by export status
+  source_sales_order_id?: string; // Filter by source sales order
+  source_purchase_order_id?: string; // Filter by source purchase order
 }
 
 // =====================================================

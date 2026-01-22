@@ -111,6 +111,16 @@ export const buildInvoicesQuery = (
     });
   }
 
+  // Apply source sales order filter
+  if (filters?.source_sales_order_id) {
+    query = query.eq("source_sales_order_id", filters.source_sales_order_id);
+  }
+
+  // Apply source purchase order filter
+  if (filters?.source_purchase_order_id) {
+    query = query.eq("source_purchase_order_id", filters.source_purchase_order_id);
+  }
+
   // Default ordering: most recent first
   query = query
     .order("invoice_date", { ascending: false })
