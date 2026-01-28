@@ -13,6 +13,7 @@ CREATE TABLE qr_batches (
     batch_name VARCHAR(100) NOT NULL,
     image_url TEXT,
     fields_selected TEXT[], -- Fields to display on QR code
+    page_size VARCHAR(20) NOT NULL DEFAULT 'A4', -- Page size for PDF generation (A4, LABEL_4X6)
     pdf_url TEXT, -- Generated PDF location
 
     -- Audit fields

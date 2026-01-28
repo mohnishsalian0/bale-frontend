@@ -12,11 +12,15 @@ import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import { useInvoiceMutations } from "@/lib/query/hooks/invoices";
 import { useLedgers } from "@/lib/query/hooks/ledgers";
-import { CreateInvoiceData } from "@/types/invoices.types";
+import {
+  CreateInvoiceData,
+  CreateInvoiceCharge,
+} from "@/types/invoices.types";
 import type {
   DiscountType,
   InvoiceTaxType,
   InvoiceType,
+  ChargeType,
 } from "@/types/database/enums";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
@@ -76,6 +80,11 @@ export default function CreateInvoicePage() {
     null,
   );
 
+  // Track additional charges
+  const [additionalCharges, setAdditionalCharges] = useState<
+    CreateInvoiceCharge[]
+  >([]);
+
   // Hide chrome for immersive flow experience
   useEffect(() => {
     hideChrome();
@@ -113,6 +122,28 @@ export default function CreateInvoicePage() {
       ...prev,
       [productId]: { selected: false, quantity: 0, rate: 0 },
     }));
+  };
+
+  // Additional charges handlers
+  const handleAddCharge = () => {
+    setAdditionalCharges((prev) => [
+      ...prev,
+      {
+        ledger_id: "",
+        charge_type: "flat_amount" as ChargeType,
+        charge_value: 0,
+      },
+    ]);
+  };
+
+  const handleUpdateCharge = (index: number, charge: CreateInvoiceCharge) => {
+    setAdditionalCharges((prev) =>
+      prev.map((c, i) => (i === index ? charge : c)),
+    );
+  };
+
+  const handleRemoveCharge = (index: number) => {
+    setAdditionalCharges((prev) => prev.filter((_, i) => i !== index));
   };
 
   const canProceedFromProducts = useMemo(
@@ -192,6 +223,11 @@ export default function CreateInvoicePage() {
         rate: selection.rate,
       }));
 
+    // Filter valid charges (must have ledger selected and value > 0)
+    const validCharges = additionalCharges.filter(
+      (charge) => charge.ledger_id && charge.charge_value > 0,
+    );
+
     // Prepare invoice data
     const invoiceData: CreateInvoiceData = {
       invoice_type: invoice_type,
@@ -211,6 +247,7 @@ export default function CreateInvoicePage() {
       supplier_invoice_date: formData.supplierInvoiceDate || undefined,
       notes: formData.notes || undefined,
       items: selectedProducts,
+      additional_charges: validCharges.length > 0 ? validCharges : undefined,
     };
 
     // Create invoice using mutation
@@ -279,6 +316,10 @@ export default function CreateInvoicePage() {
               }
               invoiceType={invoice_type}
               subtotal={subtotal}
+              additionalCharges={additionalCharges}
+              onAddCharge={handleAddCharge}
+              onUpdateCharge={handleUpdateCharge}
+              onRemoveCharge={handleRemoveCharge}
             />
           ) : (
             <InvoiceReviewStep
@@ -289,6 +330,7 @@ export default function CreateInvoicePage() {
               discountValue={
                 formData.discount ? parseFloat(formData.discount) : 0
               }
+              additionalCharges={additionalCharges}
             />
           )}
         </div>

@@ -512,6 +512,28 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
                     </div>
                   )}
 
+                  {/* Additional Charges */}
+                  {invoice.additional_charges &&
+                    invoice.additional_charges.length > 0 && (
+                      <>
+                        {invoice.additional_charges.map((charge, index) => (
+                          <div
+                            key={index}
+                            className="flex justify-between text-sm text-gray-700"
+                          >
+                            <span>
+                              {charge.charge_name}
+                              {charge.charge_type === "percentage" &&
+                                ` (${charge.charge_value}%)`}
+                            </span>
+                            <span className="font-semibold">
+                              ₹{formatCurrency((charge.charge_amount || 0) + (charge.total_tax_amount || 0))}
+                            </span>
+                          </div>
+                        ))}
+                      </>
+                    )}
+
                   <div className="flex justify-between text-sm text-gray-700">
                     <span>Taxable Amount</span>
                     <span className="font-semibold">

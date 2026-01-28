@@ -23,6 +23,7 @@ import { useSession } from "@/contexts/session-context";
 import { useQRBatches } from "@/lib/query/hooks/qr-batches";
 import type { QRBatchListView } from "@/types/qr-batches.types";
 import { useInfiniteProducts } from "@/lib/query/hooks/products";
+import { getPageSizeShortDisplay, PageSize } from "@/lib/utils/qr-batches";
 
 export default function QRCodesPage() {
   const router = useRouter();
@@ -217,6 +218,8 @@ export default function QRCodesPage() {
                     {batch.item_count === 1 ? "code" : "codes"}
                     <span>{" • "}</span>
                     {formatCreatedAt(batch.created_at)}
+                    <span>{" • "}</span>
+                    {getPageSizeShortDisplay(batch.page_size as PageSize)}
                   </p>
                 </div>
 

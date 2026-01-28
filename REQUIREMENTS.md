@@ -1358,11 +1358,24 @@ Permissions are organized hierarchically with the following top-level categories
 
 **Print Format**
 
+**Page Size Selection:**
+
+- **A4 Paper (210×297 mm)**: Best for printing multiple labels on office printer
+  - 2 labels per row in grid layout
+  - Dynamic rows based on number of stock units
+  - Professional formatting with borders for cutting
+- **Label (4×6 inch)**: Best for thermal/label printers
+  - 1 label per page (288×432 points)
+  - Optimized for direct label printer output
+  - No cutting required
+- Page size preference saved in localStorage for next session
+- Page size stored in database for batch regeneration
+
 **Print Layout:**
 
-- Fixed format with 10-20 barcodes per A4 sheet
-- Dashed reference lines for cutting guidance
-- Optimized for sticky paper printing
+- QR code (100×100 points) with selected fields
+- Company logo (40×40 points) positioned bottom-right
+- Border lines for A4 sheet cutting guidance
 - Professional formatting for easy application
 
 **Output Options:**
@@ -1370,6 +1383,7 @@ Permissions are organized hierarchically with the following top-level categories
 - Save as PDF for printing
 - Email PDF directly to specified address
 - WhatsApp sharing capability
+- Regenerate PDF from batch history with original page size
 
 **Post-Generation Workflow**
 

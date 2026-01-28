@@ -32,6 +32,7 @@ BEGIN
         batch_name,
         image_url,
         fields_selected,
+        page_size,
         pdf_url,
         created_by
     )
@@ -41,6 +42,7 @@ BEGIN
         p_batch_data->>'batch_name',
         p_batch_data->>'image_url',
         (SELECT ARRAY(SELECT jsonb_array_elements_text(p_batch_data->'fields_selected'))),
+        COALESCE(p_batch_data->>'page_size', 'A4'),
         p_batch_data->>'pdf_url',
         COALESCE((p_batch_data->>'created_by')::UUID, auth.uid())
     )

@@ -99,6 +99,9 @@ export type PurchaseOrderStatus =
 export type DiscountType = "none" | "percentage" | "flat_amount";
 export const DISCOUNT_TYPES = ["none", "percentage", "flat_amount"] as const;
 
+export type ChargeType = "percentage" | "flat_amount";
+export const CHARGE_TYPES = ["percentage", "flat_amount"] as const;
+
 export const PAYMENT_TERMS = [
   "Due on receipt",
   "NET 7",

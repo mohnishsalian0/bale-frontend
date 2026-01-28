@@ -78,21 +78,30 @@ BEGIN
         (NEW.id, 'Sales Discount', 'sales_discount', v_indirect_expenses_id, 'expense'),
         (NEW.id, 'Purchase Discount', 'purchase_discount', v_indirect_income_id, 'income');
 
-    -- Create freight ledgers
-    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type)
+    -- Create freight ledgers (5% GST for goods transport)
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, gst_applicable, gst_rate)
     VALUES
-        (NEW.id, 'Freight Outward', 'freight_outward', v_indirect_expenses_id, 'expense'),
-        (NEW.id, 'Freight Inward', 'freight_inward', v_direct_expenses_id, 'expense');
+        (NEW.id, 'Freight Outward', 'freight_outward', v_indirect_expenses_id, 'expense', true, 5.00),
+        (NEW.id, 'Freight Inward', 'freight_inward', v_direct_expenses_id, 'expense', true, 5.00);
 
-    -- Create round-off ledger
+    -- Create round-off ledger (no GST on round-off)
     INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type)
     VALUES (NEW.id, 'Round Off', 'round_off', v_indirect_expenses_id, 'expense');
+
+    -- Create additional charge ledgers (18% GST for services)
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, gst_applicable, gst_rate)
+    VALUES
+        (NEW.id, 'Packaging Charges', 'packaging_charges', v_indirect_expenses_id, 'expense', true, 18.00),
+        (NEW.id, 'Agent Commission', 'agent_commission', v_indirect_expenses_id, 'expense', true, 18.00),
+        (NEW.id, 'Handling Charges', 'handling_charges', v_indirect_expenses_id, 'expense', true, 18.00),
+        (NEW.id, 'Loading/Unloading Charges', 'loading_unloading_charges', v_indirect_expenses_id, 'expense', true, 18.00),
+        (NEW.id, 'Labour Charges', 'labour_charges', v_direct_expenses_id, 'expense', true, 18.00);
 
     RETURN NEW;
 END;
 $$;
 
-COMMENT ON FUNCTION seed_company_ledgers IS 'Trigger function: Seeds default ledgers for a new company (Sales, Sales Return, Purchase, Purchase Return, GST, TDS/TCS, Cash, Bank, Discount, Freight, Round Off)';
+COMMENT ON FUNCTION seed_company_ledgers IS 'Trigger function: Seeds default ledgers for a new company (Sales, Sales Return, Purchase, Purchase Return, GST, TDS/TCS, Cash, Bank, Discount, Freight, Round Off, and Additional Charges)';
 
 -- Create trigger on companies table
 CREATE TRIGGER auto_seed_company_ledgers

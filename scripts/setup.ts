@@ -2634,6 +2634,147 @@ async function createTestPartners() {
             );
 
             // ================================================
+            // INVOICE ADDITIONAL CHARGES
+            // ================================================
+            console.log("💵 Adding additional charges to invoices...\n");
+
+            // Fetch charge ledgers
+            const { data: chargeLedgers } = await supabase
+              .from("ledgers")
+              .select("id, name, system_name")
+              .eq("company_id", companyId)
+              .in("system_name", [
+                "freight_outward",
+                "freight_inward",
+                "packaging_charges",
+                "agent_commission",
+                "handling_charges",
+                "loading_unloading_charges",
+                "labour_charges",
+              ]);
+
+            if (!chargeLedgers || chargeLedgers.length === 0) {
+              console.error(
+                "❌ No charge ledgers found. Additional charges cannot be created.",
+              );
+            } else {
+              const freightOutwardLedger = chargeLedgers.find(
+                (l) => l.system_name === "freight_outward",
+              );
+              const freightInwardLedger = chargeLedgers.find(
+                (l) => l.system_name === "freight_inward",
+              );
+              const agentCommissionLedger = chargeLedgers.find(
+                (l) => l.system_name === "agent_commission",
+              );
+              const labourLedger = chargeLedgers.find(
+                (l) => l.system_name === "labour_charges",
+              );
+
+              let chargesCreated = 0;
+
+              // Add charges to sales invoices (75% of them)
+              for (const invoiceId of salesInvoiceIds) {
+                if (Math.random() > 0.75) continue; // 75% get charges
+
+                const charges = [];
+
+                // Freight Outward (50% chance, flat amount)
+                if (freightOutwardLedger && Math.random() < 0.5) {
+                  charges.push({
+                    company_id: companyId,
+                    invoice_id: invoiceId,
+                    ledger_id: freightOutwardLedger.id,
+                    charge_type: "flat_amount",
+                    charge_value: 500 + Math.floor(Math.random() * 1500), // ₹500-2000
+                    sequence_order: charges.length,
+                  });
+                }
+
+                // Agent Commission (50% chance, percentage)
+                if (agentCommissionLedger && Math.random() < 0.5) {
+                  charges.push({
+                    company_id: companyId,
+                    invoice_id: invoiceId,
+                    ledger_id: agentCommissionLedger.id,
+                    charge_type: "percentage",
+                    charge_value: 2 + Math.random() * 3, // 2-5%
+                    sequence_order: charges.length,
+                  });
+                }
+
+                if (charges.length > 0) {
+                  const { error: chargeError } = await supabase
+                    .from("invoice_additional_charges")
+                    .insert(charges);
+
+                  if (chargeError) {
+                    console.error(
+                      `   ❌ Failed to add charges to sales invoice: ${chargeError.message}`,
+                    );
+                  } else {
+                    chargesCreated += charges.length;
+                  }
+                }
+              }
+
+              console.log(
+                `   ✅ Added ${chargesCreated} charges to sales invoices`,
+              );
+
+              chargesCreated = 0;
+
+              // Add charges to purchase invoices (65% of them)
+              for (const invoiceId of purchaseInvoiceIds) {
+                if (Math.random() > 0.65) continue; // 65% get charges
+
+                const charges = [];
+
+                // Freight Inward (60% chance, flat amount)
+                if (freightInwardLedger && Math.random() < 0.6) {
+                  charges.push({
+                    company_id: companyId,
+                    invoice_id: invoiceId,
+                    ledger_id: freightInwardLedger.id,
+                    charge_type: "flat_amount",
+                    charge_value: 800 + Math.floor(Math.random() * 2200), // ₹800-3000
+                    sequence_order: charges.length,
+                  });
+                }
+
+                // Labour Charges (35% chance, flat amount)
+                if (labourLedger && Math.random() < 0.35) {
+                  charges.push({
+                    company_id: companyId,
+                    invoice_id: invoiceId,
+                    ledger_id: labourLedger.id,
+                    charge_type: "flat_amount",
+                    charge_value: 500 + Math.floor(Math.random() * 1000), // ₹500-1500
+                    sequence_order: charges.length,
+                  });
+                }
+
+                if (charges.length > 0) {
+                  const { error: chargeError } = await supabase
+                    .from("invoice_additional_charges")
+                    .insert(charges);
+
+                  if (chargeError) {
+                    console.error(
+                      `   ❌ Failed to add charges to purchase invoice: ${chargeError.message}`,
+                    );
+                  } else {
+                    chargesCreated += charges.length;
+                  }
+                }
+              }
+
+              console.log(
+                `   ✅ Added ${chargesCreated} charges to purchase invoices\n`,
+              );
+            }
+
+            // ================================================
             // ADJUSTMENT NOTES
             // ================================================
             console.log("📝 Creating adjustment notes...\n");

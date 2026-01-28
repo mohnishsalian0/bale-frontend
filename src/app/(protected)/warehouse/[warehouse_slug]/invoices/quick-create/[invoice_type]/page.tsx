@@ -447,6 +447,7 @@ export default function QuickCreateInvoicePage({ params }: PageParams) {
             productSelections={productSelections}
             taxType={formData.taxType}
             discountType={formData.discountType}
+            additionalCharges={[]}
             discountValue={
               formData.discount ? parseFloat(formData.discount) : 0
             }

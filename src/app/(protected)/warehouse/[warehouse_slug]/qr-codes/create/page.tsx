@@ -7,8 +7,11 @@ import { createClient } from "@/lib/supabase/browser";
 import { QRProductSelectionStep } from "../QRProductSelectionStep";
 import { QRStockUnitSelectionStep } from "../QRStockUnitSelectionStep";
 import { QRTemplateSelectionStep } from "../QRTemplateCustomisationStep";
-import type { QRTemplateField } from "@/lib/utils/qr-batches";
-import { getCachedOrDefaultTemplateFields } from "@/lib/utils/qr-batches";
+import type { QRTemplateField, PageSize } from "@/lib/utils/qr-batches";
+import {
+  getCachedOrDefaultTemplateFields,
+  getCachedOrDefaultPageSize,
+} from "@/lib/utils/qr-batches";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
@@ -40,18 +43,18 @@ export default function CreateQRBatchPage() {
   const [selectedStockUnitIds, setSelectedStockUnitIds] = useState<string[]>(
     [],
   );
-  const [selectedFields, setSelectedFields] = useState<QRTemplateField[]>([]);
+  const [selectedFields, setSelectedFields] = useState<QRTemplateField[]>(
+    getCachedOrDefaultTemplateFields(),
+  );
+  const [selectedPageSize, setSelectedPageSize] = useState<PageSize>(
+    getCachedOrDefaultPageSize(),
+  );
   const [saving, setSaving] = useState(false);
 
   // Fetch goods inward by sequence number if inward_number is provided
   const { data: inwardData } = useGoodsInwardBySequenceNumber(
     preSelectedInwardNumber,
   );
-
-  // Load cached or default fields on mount
-  useEffect(() => {
-    setSelectedFields(getCachedOrDefaultTemplateFields());
-  }, []);
 
   // QR batch mutations
   const { create: createBatch } = useQRBatchMutations(warehouse.id);
@@ -152,6 +155,7 @@ export default function CreateQRBatchPage() {
         batch_name: batchName,
         image_url: null,
         fields_selected: selectedFields,
+        page_size: selectedPageSize,
         pdf_url: null,
       };
 
@@ -209,6 +213,7 @@ export default function CreateQRBatchPage() {
         stockUnits,
         selectedFields,
         companyData?.logo_url || null,
+        selectedPageSize,
       );
       downloadPDF(blob, `${batchName}.pdf`);
 
@@ -262,6 +267,8 @@ export default function CreateQRBatchPage() {
             <QRTemplateSelectionStep
               selectedFields={selectedFields}
               onSelectionChange={setSelectedFields}
+              selectedPageSize={selectedPageSize}
+              onPageSizeChange={setSelectedPageSize}
             />
           )}
         </div>

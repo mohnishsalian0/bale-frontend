@@ -40,6 +40,7 @@ export const buildQRBatchesQuery = (
       id,
       batch_name,
       image_url,
+      page_size,
       created_at,
       qr_batch_items!inner (
         stock_unit:stock_units!inner (

@@ -5,7 +5,7 @@ import {
   generateQRCodeDataUrl,
   type LabelData,
 } from "./qr-label-generator";
-import type { QRTemplateField } from "@/lib/utils/qr-batches";
+import type { QRTemplateField, PageSize } from "@/lib/utils/qr-batches";
 import { getQRBatchById } from "@/lib/queries/qr-batches";
 
 /**
@@ -15,6 +15,7 @@ export async function generatePDFBlob(
   stockUnits: LabelData[],
   selectedFields: QRTemplateField[],
   companyLogoUrl: string | null,
+  pageSize: PageSize = "A4",
 ): Promise<Blob> {
   const { pdf } = await import("@react-pdf/renderer");
 
@@ -32,6 +33,7 @@ export async function generatePDFBlob(
       stockUnits={unitsWithQR}
       selectedFields={selectedFields}
       companyLogoUrl={companyLogoUrl}
+      pageSize={pageSize}
     />,
   ).toBlob();
 
@@ -105,6 +107,7 @@ export async function generateBatchPDF(
   });
 
   const selectedFields = (batch.fields_selected || []) as QRTemplateField[];
+  const pageSize = (batch.page_size || "A4") as PageSize;
   const companyLogoUrl = companyData?.logo_url || null;
 
   // Generate PDF blob
@@ -112,6 +115,7 @@ export async function generateBatchPDF(
     stockUnits,
     selectedFields,
     companyLogoUrl,
+    pageSize,
   );
 
   return { blob, batchName: batch.batch_name };

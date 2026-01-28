@@ -162,10 +162,11 @@ export function LedgerFormSheet({
 
               <div className="flex flex-col gap-2">
                 <Label
+                  required
                   htmlFor="parent_group_id"
                   className="text-sm font-medium text-gray-700"
                 >
-                  Parent Group <span className="text-red-500">*</span>
+                  Parent Group
                 </Label>
                 <Controller
                   control={control}
@@ -198,10 +199,11 @@ export function LedgerFormSheet({
 
               <div className="flex flex-col gap-2">
                 <Label
+                  required
                   htmlFor="ledger_type"
                   className="text-sm font-medium text-gray-700"
                 >
-                  Ledger Type <span className="text-red-500">*</span>
+                  Ledger Type
                 </Label>
                 <Controller
                   control={control}

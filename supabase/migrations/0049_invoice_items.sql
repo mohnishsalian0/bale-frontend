@@ -104,27 +104,37 @@ CREATE TRIGGER trigger_calculate_invoice_item_discount
     BEFORE INSERT OR UPDATE ON invoice_items
     FOR EACH ROW EXECUTE FUNCTION calculate_invoice_item_discount();
 
--- Update invoice totals when items change
+-- Update invoice totals when items or charges change
 CREATE OR REPLACE FUNCTION update_invoice_totals()
 RETURNS TRIGGER AS $$
 DECLARE
     v_invoice_id UUID;
     v_subtotal DECIMAL(10,2);
+    v_items_cgst DECIMAL(10,2);
+    v_items_sgst DECIMAL(10,2);
+    v_items_igst DECIMAL(10,2);
+    v_items_tax DECIMAL(10,2);
+    v_invoice_discount_type discount_type_enum;
+    v_invoice_discount_value DECIMAL(10,2);
+    v_invoice_discount_amount DECIMAL(10,2);
+    v_amount_after_discount DECIMAL(10,2);
+    v_charges_amount DECIMAL(10,2);
+    v_charges_cgst DECIMAL(10,2);
+    v_charges_sgst DECIMAL(10,2);
+    v_charges_igst DECIMAL(10,2);
+    v_charges_tax DECIMAL(10,2);
+    v_taxable_amount DECIMAL(10,2);
     v_total_cgst DECIMAL(10,2);
     v_total_sgst DECIMAL(10,2);
     v_total_igst DECIMAL(10,2);
     v_total_tax DECIMAL(10,2);
-    v_invoice_discount_type discount_type_enum;
-    v_invoice_discount_value DECIMAL(10,2);
-    v_invoice_discount_amount DECIMAL(10,2);
-    v_taxable_amount DECIMAL(10,2);
     v_round_off DECIMAL(10,2);
     v_total DECIMAL(10,2);
 BEGIN
     -- Get invoice ID
     v_invoice_id := COALESCE(NEW.invoice_id, OLD.invoice_id);
 
-    -- Calculate subtotal (sum of all item amounts before item discounts)
+    -- Calculate subtotal and GST from invoice items
     SELECT
         COALESCE(SUM(quantity * rate), 0),
         COALESCE(SUM(cgst_amount), 0),
@@ -133,10 +143,10 @@ BEGIN
         COALESCE(SUM(total_tax_amount), 0)
     INTO
         v_subtotal,
-        v_total_cgst,
-        v_total_sgst,
-        v_total_igst,
-        v_total_tax
+        v_items_cgst,
+        v_items_sgst,
+        v_items_igst,
+        v_items_tax
     FROM invoice_items
     WHERE invoice_id = v_invoice_id;
 
@@ -146,7 +156,7 @@ BEGIN
     FROM invoices
     WHERE id = v_invoice_id;
 
-    -- Calculate invoice-level discount (applied to subtotal before tax)
+    -- Calculate invoice-level discount (applied to subtotal)
     IF v_invoice_discount_type = 'none' THEN
         v_invoice_discount_amount := 0;
     ELSIF v_invoice_discount_type = 'percentage' THEN
@@ -157,8 +167,33 @@ BEGIN
         v_invoice_discount_amount := 0;
     END IF;
 
-    -- Taxable amount = subtotal - invoice discount
-    v_taxable_amount := v_subtotal - v_invoice_discount_amount;
+    -- Amount after discount (base for percentage charges)
+    v_amount_after_discount := v_subtotal - v_invoice_discount_amount;
+
+    -- Calculate additional charges and their GST
+    SELECT
+        COALESCE(SUM(charge_amount), 0),
+        COALESCE(SUM(cgst_amount), 0),
+        COALESCE(SUM(sgst_amount), 0),
+        COALESCE(SUM(igst_amount), 0),
+        COALESCE(SUM(total_tax_amount), 0)
+    INTO
+        v_charges_amount,
+        v_charges_cgst,
+        v_charges_sgst,
+        v_charges_igst,
+        v_charges_tax
+    FROM invoice_additional_charges
+    WHERE invoice_id = v_invoice_id;
+
+    -- Taxable amount = (subtotal - discount) + charges_amount
+    v_taxable_amount := v_amount_after_discount + v_charges_amount;
+
+    -- Aggregate GST from items and charges
+    v_total_cgst := v_items_cgst + v_charges_cgst;
+    v_total_sgst := v_items_sgst + v_charges_sgst;
+    v_total_igst := v_items_igst + v_charges_igst;
+    v_total_tax := v_items_tax + v_charges_tax;
 
     -- Total before round-off = taxable + tax
     v_total := v_taxable_amount + v_total_tax;

@@ -3,6 +3,7 @@ import {
   INVOICE_TYPES,
   INVOICE_TAX_TYPES,
   DISCOUNT_TYPES,
+  CHARGE_TYPES,
 } from "@/types/database/enums";
 import { positiveNumberSchema, optionalString } from "./common";
 
@@ -18,6 +19,21 @@ export const invoiceItemSchema = z.object({
 });
 
 export type InvoiceItemFormData = z.infer<typeof invoiceItemSchema>;
+
+/**
+ * Invoice charge validation schema
+ * Additional charges like freight, packaging, commission, etc.
+ * GST rate is automatically fetched from ledger (not user-editable)
+ */
+export const invoiceChargeSchema = z.object({
+  ledger_id: z.string().uuid({ message: "Charge ledger is required" }),
+  charge_type: z.enum(CHARGE_TYPES, {
+    message: "Charge type is required",
+  }),
+  charge_value: positiveNumberSchema,
+});
+
+export type InvoiceChargeFormData = z.infer<typeof invoiceChargeSchema>;
 
 /**
  * Base invoice validation schema
@@ -43,6 +59,7 @@ export const baseInvoiceSchema = z.object({
   discount_value: z.number().min(0).nullable(),
   notes: optionalString,
   items: z.array(invoiceItemSchema).min(1, "At least one item is required"),
+  additional_charges: z.array(invoiceChargeSchema).optional(),
 });
 
 /**

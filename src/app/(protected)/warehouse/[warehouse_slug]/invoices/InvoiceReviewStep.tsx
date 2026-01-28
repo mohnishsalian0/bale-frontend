@@ -21,6 +21,8 @@ import {
   getFormattedAddress,
 } from "@/lib/utils/partner";
 import { getInitials } from "@/lib/utils/initials";
+import { useLedgers } from "@/lib/query/hooks/ledgers";
+import type { CreateInvoiceCharge } from "@/types/invoices.types";
 
 interface InvoiceReviewStepProps {
   warehouseId: string;
@@ -31,6 +33,7 @@ interface InvoiceReviewStepProps {
   taxType: InvoiceTaxType;
   discountType: "none" | "percentage" | "flat_amount";
   discountValue: number;
+  additionalCharges: CreateInvoiceCharge[];
   partner?: Pick<
     Partner,
     | "display_name"
@@ -57,10 +60,14 @@ export function InvoiceReviewStep({
   taxType,
   discountType,
   discountValue,
+  additionalCharges,
   partner,
 }: InvoiceReviewStepProps) {
   const [products, setProducts] = useState<ProductWithInventoryListView[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Fetch ledgers for charge details
+  const { data: allLedgers = [] } = useLedgers();
 
   // Fetch selected products
   useEffect(() => {
@@ -88,7 +95,7 @@ export function InvoiceReviewStep({
       });
   }, [productSelections, warehouseId]);
 
-  // Calculate totals - matches backend logic from 0056_invoice_functions.sql
+  // Calculate totals - matches backend logic from 0049_invoice_items.sql (update_invoice_totals trigger)
   const calculations = useMemo(() => {
     // Step 1: Calculate line gross amounts and build line items
     let subtotal = 0;
@@ -138,7 +145,84 @@ export function InvoiceReviewStep({
       globalDiscountAmount = roundCurrency(discountValue);
     }
 
-    // Step 3: Distribute discount proportionally across line items (matches with_proportional_discount CTE)
+    // Calculate amount after discount (matches backend logic)
+    const amountAfterDiscount = roundCurrency(subtotal - globalDiscountAmount);
+
+    // Step 3: Calculate additional charges and their GST (matches backend trigger logic)
+    const chargeLineItems: Array<{
+      ledgerName: string;
+      chargeType: "percentage" | "flat_amount";
+      chargeValue: number;
+      chargeAmount: number;
+      gstRate: number;
+      chargeCGST: number;
+      chargeSGST: number;
+      chargeIGST: number;
+      chargeTotalTax: number;
+    }> = [];
+
+    let totalChargesAmount = 0;
+    let totalChargesCGST = 0;
+    let totalChargesSGST = 0;
+    let totalChargesIGST = 0;
+
+    additionalCharges.forEach((charge) => {
+      if (!charge.ledger_id || charge.charge_value <= 0) return;
+
+      const ledger = allLedgers.find((l) => l.id === charge.ledger_id);
+      if (!ledger) return;
+
+      // Calculate charge amount based on type (matches backend trigger logic)
+      let chargeAmount = 0;
+      if (charge.charge_type === "percentage") {
+        chargeAmount = roundCurrency(
+          (amountAfterDiscount * charge.charge_value) / 100,
+        );
+      } else {
+        chargeAmount = roundCurrency(charge.charge_value);
+      }
+
+      // Calculate GST on charge amount (matches backend trigger logic)
+      const gstRate = ledger.gst_rate || 0;
+      let chargeCGST = 0;
+      let chargeSGST = 0;
+      let chargeIGST = 0;
+
+      if (gstRate > 0) {
+        if (taxType === "gst") {
+          chargeCGST = roundCurrency((chargeAmount * (gstRate / 2)) / 100);
+          chargeSGST = roundCurrency((chargeAmount * (gstRate / 2)) / 100);
+        } else if (taxType === "igst") {
+          chargeIGST = roundCurrency((chargeAmount * gstRate) / 100);
+        }
+      }
+
+      const chargeTotalTax = roundCurrency(chargeCGST + chargeSGST + chargeIGST);
+
+      chargeLineItems.push({
+        ledgerName: ledger.name,
+        chargeType: charge.charge_type,
+        chargeValue: charge.charge_value,
+        chargeAmount,
+        gstRate,
+        chargeCGST,
+        chargeSGST,
+        chargeIGST,
+        chargeTotalTax,
+      });
+
+      totalChargesAmount += chargeAmount;
+      totalChargesCGST += chargeCGST;
+      totalChargesSGST += chargeSGST;
+      totalChargesIGST += chargeIGST;
+    });
+
+    totalChargesAmount = roundCurrency(totalChargesAmount);
+    totalChargesCGST = roundCurrency(totalChargesCGST);
+    totalChargesSGST = roundCurrency(totalChargesSGST);
+    totalChargesIGST = roundCurrency(totalChargesIGST);
+
+    // Step 4: Distribute discount proportionally across line items (matches with_proportional_discount CTE)
     lineItems.forEach((item) => {
       // Calculate proportional discount for this line (lines 174-178)
       const proportionalDiscount =
@@ -156,10 +240,10 @@ export function InvoiceReviewStep({
       );
     });
 
-    // Step 4: Calculate taxes per line (matches lines 222-224)
-    let totalCGST = 0;
-    let totalSGST = 0;
-    let totalIGST = 0;
+    // Step 5: Calculate taxes per line (matches lines 222-224)
+    let totalItemsCGST = 0;
+    let totalItemsSGST = 0;
+    let totalItemsIGST = 0;
 
     lineItems.forEach((item) => {
       const hasTax = item.product.tax_type === "gst" && taxType !== "no_tax";
@@ -175,12 +259,12 @@ export function InvoiceReviewStep({
         item.lineSGST = roundCurrency(
           (item.lineTaxableValue * (gstRate / 2)) / 100,
         );
-        totalCGST += item.lineCGST;
-        totalSGST += item.lineSGST;
+        totalItemsCGST += item.lineCGST;
+        totalItemsSGST += item.lineSGST;
       } else if (taxType === "igst") {
         // IGST is full GST rate (line 224)
         item.lineIGST = roundCurrency((item.lineTaxableValue * gstRate) / 100);
-        totalIGST += item.lineIGST;
+        totalItemsIGST += item.lineIGST;
       }
 
       item.lineTotalTax = roundCurrency(
@@ -188,26 +272,34 @@ export function InvoiceReviewStep({
       );
     });
 
-    // Step 5: Calculate totals (matches lines 215-232)
+    // Step 6: Calculate totals (matches backend trigger logic from 0049_invoice_items.sql)
     const totalGrossAmount = roundCurrency(subtotal);
     const totalDiscountAmount = roundCurrency(globalDiscountAmount);
-    const totalTaxableAmount = roundCurrency(
-      lineItems.reduce((sum, item) => sum + item.lineTaxableValue, 0),
-    );
-    totalCGST = roundCurrency(totalCGST);
-    totalSGST = roundCurrency(totalSGST);
-    totalIGST = roundCurrency(totalIGST);
+
+    // Taxable amount = amount_after_discount + charges_amount (matches backend)
+    const totalTaxableAmount = roundCurrency(amountAfterDiscount + totalChargesAmount);
+
+    // Total tax = items tax + charges tax (matches backend)
+    totalItemsCGST = roundCurrency(totalItemsCGST);
+    totalItemsSGST = roundCurrency(totalItemsSGST);
+    totalItemsIGST = roundCurrency(totalItemsIGST);
+
+    const totalCGST = roundCurrency(totalItemsCGST + totalChargesCGST);
+    const totalSGST = roundCurrency(totalItemsSGST + totalChargesSGST);
+    const totalIGST = roundCurrency(totalItemsIGST + totalChargesIGST);
     const totalTax = roundCurrency(totalCGST + totalSGST + totalIGST);
 
-    // Step 6: Calculate grand total and round-off (matches lines 245-246)
+    // Step 7: Calculate grand total and round-off (matches backend)
     const grandTotalBeforeRounding = totalTaxableAmount + totalTax;
     const grandTotal = Math.round(grandTotalBeforeRounding); // Round to nearest integer
     const roundOff = roundCurrency(grandTotal - grandTotalBeforeRounding);
 
     return {
       lineItems,
+      chargeLineItems,
       subtotal: totalGrossAmount,
       discountAmount: totalDiscountAmount,
+      chargesAmount: totalChargesAmount,
       taxableAmount: totalTaxableAmount,
       totalCGST,
       totalSGST,
@@ -216,7 +308,15 @@ export function InvoiceReviewStep({
       roundOff,
       grandTotal,
     };
-  }, [products, productSelections, taxType, discountType, discountValue]);
+  }, [
+    products,
+    productSelections,
+    taxType,
+    discountType,
+    discountValue,
+    additionalCharges,
+    allLedgers,
+  ]);
 
   if (loading) {
     return (
@@ -381,6 +481,31 @@ export function InvoiceReviewStep({
               - {formatCurrency(calculations.discountAmount)}
             </span>
           </div>
+        )}
+
+        {/* Additional Charges */}
+        {calculations.chargeLineItems.length > 0 && (
+          <>
+            <Separator className="my-2" />
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-gray-500 uppercase">
+                Additional Charges
+              </p>
+              {calculations.chargeLineItems.map((charge, index) => (
+                <div key={index} className="flex justify-between text-sm">
+                  <span className="text-gray-700">
+                    {charge.ledgerName}
+                    {charge.chargeType === "percentage" &&
+                      ` (${charge.chargeValue}%)`}
+                  </span>
+                  <span className="font-semibold">
+                    {formatCurrency(charge.chargeAmount + charge.chargeTotalTax)}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <Separator className="my-2" />
+          </>
         )}
 
         <div className="flex justify-between text-sm">

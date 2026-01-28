@@ -6,8 +6,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { IconQrcode } from "@tabler/icons-react";
 import { createClient } from "@/lib/supabase/browser";
 import { useSession } from "@/contexts/session-context";
-import type { QRTemplateField } from "@/lib/utils/qr-batches";
-import { cacheTemplateFields } from "@/lib/utils/qr-batches";
+import type { QRTemplateField, PageSize } from "@/lib/utils/qr-batches";
+import { cacheTemplateFields, cachePageSize } from "@/lib/utils/qr-batches";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-cards";
 
 interface FieldOption {
   id: QRTemplateField;
@@ -19,6 +20,8 @@ interface FieldOption {
 interface QRTemplateSelectionStepProps {
   selectedFields: QRTemplateField[];
   onSelectionChange: (fields: QRTemplateField[]) => void;
+  selectedPageSize: PageSize;
+  onPageSizeChange: (pageSize: PageSize) => void;
 }
 
 const PRODUCT_INFO_FIELDS: FieldOption[] = [
@@ -103,6 +106,8 @@ const FIELD_PREVIEW_LABELS: Record<QRTemplateField, string> = {
 export function QRTemplateSelectionStep({
   selectedFields,
   onSelectionChange,
+  selectedPageSize,
+  onPageSizeChange,
 }: QRTemplateSelectionStepProps) {
   const { user } = useSession();
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
@@ -134,6 +139,13 @@ export function QRTemplateSelectionStep({
     onSelectionChange(newFields);
     // Cache the updated selection
     cacheTemplateFields(newFields);
+  };
+
+  const handlePageSizeChange = (pageSize: string) => {
+    const newPageSize = pageSize as PageSize;
+    onPageSizeChange(newPageSize);
+    // Cache the updated selection
+    cachePageSize(newPageSize);
   };
 
   // Get all available fields in order
@@ -182,6 +194,27 @@ export function QRTemplateSelectionStep({
                 />
               </div>
             )}
+          </div>
+
+          {/* Page Size Selection */}
+          <div className="flex flex-col gap-3">
+            <h4 className="text-sm font-normal text-gray-500">Page size</h4>
+            <RadioGroup
+              value={selectedPageSize}
+              onValueChange={handlePageSizeChange}
+              name="page-size"
+            >
+              <RadioGroupItem
+                value="A4"
+                title="A4 paper (210×297 mm)"
+                subtitle="Best for printing multiple labels on office printer"
+              />
+              <RadioGroupItem
+                value="LABEL_4X6"
+                title="Label (4×6 inch)"
+                subtitle="Best for thermal/label printers"
+              />
+            </RadioGroup>
           </div>
 
           {/* Product Information */}

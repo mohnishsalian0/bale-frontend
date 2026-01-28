@@ -12,8 +12,11 @@ export type QRTemplateField =
   | "quality_grade"
   | "warehouse_location";
 
-// Local storage key for caching template selections
+export type PageSize = "A4" | "LABEL_4X6";
+
+// Local storage keys for caching
 const QR_TEMPLATE_CACHE_KEY = "qr_template_selected_fields";
+const QR_PAGE_SIZE_CACHE_KEY = "qr_template_page_size";
 
 /**
  * Get default template fields based on field definitions
@@ -88,4 +91,56 @@ export function cacheTemplateFields(fields: QRTemplateField[]): void {
   } catch (error) {
     console.error("Error caching template fields:", error);
   }
+}
+
+/**
+ * Get default page size
+ */
+export function getDefaultPageSize(): PageSize {
+  return "A4";
+}
+
+/**
+ * Get cached page size from local storage
+ */
+export function getCachedPageSize(): PageSize | null {
+  try {
+    const cached = localStorage.getItem(QR_PAGE_SIZE_CACHE_KEY);
+    if (cached && (cached === "A4" || cached === "LABEL_4X6")) {
+      return cached as PageSize;
+    }
+  } catch (error) {
+    console.error("Error reading cached page size:", error);
+  }
+  return null;
+}
+
+/**
+ * Get cached page size from local storage, or fallback to default
+ */
+export function getCachedOrDefaultPageSize(): PageSize {
+  return getCachedPageSize() ?? getDefaultPageSize();
+}
+
+/**
+ * Save page size to local storage
+ */
+export function cachePageSize(pageSize: PageSize): void {
+  try {
+    localStorage.setItem(QR_PAGE_SIZE_CACHE_KEY, pageSize);
+  } catch (error) {
+    console.error("Error caching page size:", error);
+  }
+}
+
+/**
+ * Map page size code to short display format
+ */
+export function getPageSizeShortDisplay(pageSize: PageSize): string {
+  const pageSizeMap: Record<PageSize, string> = {
+    A4: "A4",
+    LABEL_4X6: "Label 4×6",
+  };
+
+  return pageSizeMap[pageSize] || pageSize;
 }

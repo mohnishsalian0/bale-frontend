@@ -9,10 +9,13 @@ import {
 } from "@react-pdf/renderer";
 import QRCode from "qrcode";
 import { formatStockUnitNumber } from "@/lib/utils/product";
-import type { QRTemplateField } from "@/lib/utils/qr-batches";
+import type { QRTemplateField, PageSize } from "@/lib/utils/qr-batches";
 import type { Tables } from "@/types/database/supabase";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import { getMeasuringUnitAbbreviation } from "../utils/measuring-units";
+
+// Page size dimensions in points (1 inch = 72 points)
+const LABEL_4X6_SIZE = { width: 288, height: 432 }; // 4" × 6"
 
 // Type for product attributes in label data
 interface LabelProductAttribute {
@@ -57,7 +60,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
   },
-  label: {
+  // A4 label styles (2 columns)
+  labelA4: {
     width: "50%",
     padding: 16,
     position: "relative",
@@ -65,9 +69,18 @@ const styles = StyleSheet.create({
     borderBottom: "2px solid #000000",
     borderRight: "2px solid #000000",
   },
-  labelRight: {
+  labelA4Right: {
     // Labels in right column - no right border
     borderRight: "none",
+  },
+  // Label 4x6 styles (single label per page)
+  label4x6: {
+    width: "100%",
+    height: "100%",
+    padding: 16,
+    position: "relative",
+    display: "flex",
+    flexDirection: "column",
   },
   labelContent: {
     flexDirection: "row",
@@ -99,6 +112,7 @@ interface QRLabelDocumentProps {
   stockUnits: LabelData[];
   selectedFields: QRTemplateField[];
   companyLogoUrl: string | null;
+  pageSize: PageSize;
 }
 
 // Map field IDs to their display labels
@@ -197,6 +211,7 @@ interface LabelProps {
   qrCodeDataUrl: string;
   selectedFields: QRTemplateField[];
   companyLogoUrl: string | null;
+  pageSize: PageSize;
   isRightColumn: boolean;
 }
 
@@ -205,51 +220,82 @@ const Label: React.FC<LabelProps> = ({
   qrCodeDataUrl,
   selectedFields,
   companyLogoUrl,
+  pageSize,
   isRightColumn,
-}) => (
-  <View
-    style={[styles.label, isRightColumn ? styles.labelRight : {}]}
-    wrap={false}
-  >
-    <View style={styles.labelContent}>
-      <View style={styles.fieldsList}>
-        {selectedFields.map((field) => {
-          const value = getFieldValue(unit, field);
-          if (!value) return null;
+}) => {
+  // Determine label style based on page size
+  const labelStyle =
+    pageSize === "A4"
+      ? [styles.labelA4, isRightColumn ? styles.labelA4Right : {}]
+      : styles.label4x6;
 
-          return (
-            <Text key={field} style={styles.fieldRow}>
-              {FIELD_LABELS[field]} {value}
-            </Text>
-          );
-        })}
+  return (
+    <View style={labelStyle} wrap={false}>
+      <View style={styles.labelContent}>
+        <View style={styles.fieldsList}>
+          {selectedFields.map((field) => {
+            const value = getFieldValue(unit, field);
+            if (!value) return null;
+
+            return (
+              <Text key={field} style={styles.fieldRow}>
+                {FIELD_LABELS[field]} {value}
+              </Text>
+            );
+          })}
+        </View>
+        <Image src={qrCodeDataUrl} style={styles.qrCode} />
       </View>
-      <Image src={qrCodeDataUrl} style={styles.qrCode} />
+      {companyLogoUrl && <Image src={companyLogoUrl} style={styles.logo} />}
     </View>
-    {companyLogoUrl && <Image src={companyLogoUrl} style={styles.logo} />}
-  </View>
-);
+  );
+};
 
 // Main PDF document component
 export const QRLabelDocument: React.FC<QRLabelDocumentProps> = ({
   stockUnits,
   selectedFields,
   companyLogoUrl,
-}) => (
-  <Document>
-    <Page size="A4" style={styles.page}>
-      <View style={styles.labelsGrid}>
-        {stockUnits.map((unit, index) => (
-          <Label
-            key={unit.id}
-            unit={unit}
-            qrCodeDataUrl={unit.qrCodeDataUrl || ""} // Will be injected before rendering
-            selectedFields={selectedFields}
-            companyLogoUrl={companyLogoUrl}
-            isRightColumn={index % 2 === 1} // Even indices = left column, odd = right column
-          />
+  pageSize,
+}) => {
+  // For LABEL_4X6, render each label on a separate page
+  if (pageSize === "LABEL_4X6") {
+    return (
+      <Document>
+        {stockUnits.map((unit) => (
+          <Page key={unit.id} size={LABEL_4X6_SIZE} style={styles.page}>
+            <Label
+              unit={unit}
+              qrCodeDataUrl={unit.qrCodeDataUrl || ""}
+              selectedFields={selectedFields}
+              companyLogoUrl={companyLogoUrl}
+              pageSize={pageSize}
+              isRightColumn={false}
+            />
+          </Page>
         ))}
-      </View>
-    </Page>
-  </Document>
-);
+      </Document>
+    );
+  }
+
+  // For A4, render multiple labels in a 2-column grid on same page
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.labelsGrid}>
+          {stockUnits.map((unit, index) => (
+            <Label
+              key={unit.id}
+              unit={unit}
+              qrCodeDataUrl={unit.qrCodeDataUrl || ""}
+              selectedFields={selectedFields}
+              companyLogoUrl={companyLogoUrl}
+              pageSize={pageSize}
+              isRightColumn={index % 2 === 1} // Even indices = left column, odd = right column
+            />
+          ))}
+        </View>
+      </Page>
+    </Document>
+  );
+};

@@ -25,6 +25,7 @@ CREATE OR REPLACE FUNCTION create_invoice_with_items(
     p_source_sales_order_id UUID DEFAULT NULL, -- Source sales order reference
     p_source_purchase_order_id UUID DEFAULT NULL, -- Source purchase order reference
     p_goods_movement_ids UUID[] DEFAULT NULL, -- Array of goods_outward IDs (sales) or goods_inward IDs (purchase)
+    p_additional_charges JSONB DEFAULT NULL, -- Array of {ledger_id, charge_type, charge_value}
     p_company_id UUID DEFAULT NULL
 )
 RETURNS VARCHAR(50)
@@ -360,7 +361,25 @@ BEGIN
     FROM temp_invoice_calculations;
 
     -- =====================================================
-    -- 9. Link Goods Movements (Bulk Insert)
+    -- 9. Insert Additional Charges (if provided)
+    -- =====================================================
+    IF p_additional_charges IS NOT NULL AND jsonb_array_length(p_additional_charges) > 0 THEN
+        INSERT INTO invoice_additional_charges (
+            company_id, invoice_id, ledger_id, charge_type, charge_value, sequence_order
+        )
+        SELECT
+            v_company_id,
+            v_invoice_id,
+            (elem->>'ledger_id')::UUID,
+            (elem->>'charge_type')::charge_type_enum,
+            (elem->>'charge_value')::DECIMAL(10,2),
+            (ROW_NUMBER() OVER ())::INTEGER
+        FROM jsonb_array_elements(p_additional_charges) as elem;
+        -- Note: charge_name, gst_rate, and all GST calculations are auto-populated by trigger
+    END IF;
+
+    -- =====================================================
+    -- 10. Link Goods Movements (Bulk Insert)
     -- =====================================================
     IF p_goods_movement_ids IS NOT NULL AND array_length(p_goods_movement_ids, 1) > 0 THEN
         IF p_invoice_type = 'sales' THEN
@@ -378,7 +397,7 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION create_invoice_with_items IS 'Creates a sales or purchase invoice with items atomically. Invoice type determines number prefix (INV/PINV) and goods movement linkage (outwards/inwards). Requires counter_ledger_id (Sales/Purchase account) for double-entry accounting. GST type and item GST rates come from frontend. Accepts optional source_sales_order_id or source_purchase_order_id to link invoice to originating order. Accepts optional goods_movement_ids array to link invoice to specific outwards/inwards. Uses CTE-based calculation for optimal performance. Calculates discount and round-off automatically. Snapshots party and counter ledger names for immutability.';
+COMMENT ON FUNCTION create_invoice_with_items IS 'Creates a sales or purchase invoice with items and optional additional charges atomically. Invoice type determines number prefix (INV/PINV) and goods movement linkage (outwards/inwards). Requires counter_ledger_id (Sales/Purchase account) for double-entry accounting. GST type and item GST rates come from frontend. Accepts optional source_sales_order_id or source_purchase_order_id to link invoice to originating order. Accepts optional goods_movement_ids array to link invoice to specific outwards/inwards. Accepts optional additional_charges array for charges like freight, packaging, commission, etc. - GST rates auto-fetched from ledgers. Uses CTE-based calculation for optimal performance. Calculates discount and round-off automatically. Snapshots party and counter ledger names for immutability.';
 
 -- =====================================================
 -- UPDATE INVOICE WITH ITEMS FUNCTION
@@ -401,7 +420,8 @@ CREATE OR REPLACE FUNCTION update_invoice_with_items(
     p_supplier_invoice_number VARCHAR(50) DEFAULT NULL,
     p_supplier_invoice_date DATE DEFAULT NULL,
     p_notes TEXT DEFAULT NULL,
-    p_attachments TEXT[] DEFAULT NULL
+    p_attachments TEXT[] DEFAULT NULL,
+    p_additional_charges JSONB DEFAULT NULL -- Array of {ledger_id, charge_type, charge_value}
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -722,7 +742,29 @@ BEGIN
     DELETE FROM invoice_items
     WHERE invoice_id = p_invoice_id
       AND id NOT IN (SELECT id FROM new_items);
+
+    -- =====================================================
+    -- 9. Update Additional Charges
+    -- =====================================================
+    -- Delete all existing charges first (simpler than upsert)
+    DELETE FROM invoice_additional_charges WHERE invoice_id = p_invoice_id;
+
+    -- Insert new charges if provided
+    IF p_additional_charges IS NOT NULL AND jsonb_array_length(p_additional_charges) > 0 THEN
+        INSERT INTO invoice_additional_charges (
+            company_id, invoice_id, ledger_id, charge_type, charge_value, sequence_order
+        )
+        SELECT
+            v_company_id,
+            p_invoice_id,
+            (elem->>'ledger_id')::UUID,
+            (elem->>'charge_type')::charge_type_enum,
+            (elem->>'charge_value')::DECIMAL(10,2),
+            (ROW_NUMBER() OVER ())::INTEGER
+        FROM jsonb_array_elements(p_additional_charges) as elem;
+        -- Note: charge_name, gst_rate, and all GST calculations are auto-populated by trigger
+    END IF;
 END;
 $$;
 
-COMMENT ON FUNCTION update_invoice_with_items IS 'Updates an existing invoice with new items atomically. Validates that invoice can be edited (not cancelled, not exported, no payments, no adjustments). Deletes old items and recalculates all totals. Updates all snapshots (party, warehouse, company) to latest values.';
+COMMENT ON FUNCTION update_invoice_with_items IS 'Updates an existing invoice with new items and additional charges atomically. Validates that invoice can be edited (not cancelled, not exported, no payments, no adjustments). Deletes old items and charges, recalculates all totals. Updates all snapshots (party, warehouse, company) to latest values.';

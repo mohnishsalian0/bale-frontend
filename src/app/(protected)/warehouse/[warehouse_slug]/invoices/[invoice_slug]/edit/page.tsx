@@ -15,11 +15,15 @@ import {
   useInvoiceBySlug,
 } from "@/lib/query/hooks/invoices";
 import { useLedgers } from "@/lib/query/hooks/ledgers";
-import { CreateInvoiceData } from "@/types/invoices.types";
+import {
+  CreateInvoiceData,
+  CreateInvoiceCharge,
+} from "@/types/invoices.types";
 import type {
   DiscountType,
   InvoiceTaxType,
   InvoiceType,
+  ChargeType,
 } from "@/types/database/enums";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
@@ -73,6 +77,11 @@ export default function EditInvoicePage() {
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(
     null,
   );
+
+  // Track additional charges
+  const [additionalCharges, setAdditionalCharges] = useState<
+    CreateInvoiceCharge[]
+  >([]);
 
   const [formData, setFormData] = useState<InvoiceFormData>({
     warehouseId: "",
@@ -149,6 +158,17 @@ export default function EditInvoicePage() {
     // Initialize selected partner
     setSelectedPartnerId(existingInvoice.party_ledger?.partner_id || null);
 
+    // Initialize additional charges from invoice
+    if (existingInvoice.additional_charges) {
+      setAdditionalCharges(
+        existingInvoice.additional_charges.map((charge) => ({
+          ledger_id: charge.ledger_id,
+          charge_type: charge.charge_type as ChargeType,
+          charge_value: charge.charge_value,
+        })),
+      );
+    }
+
     // Initialize form data
     setFormData({
       warehouseId: existingInvoice.warehouse_id,
@@ -196,6 +216,28 @@ export default function EditInvoicePage() {
       ...prev,
       [productId]: { selected: false, quantity: 0, rate: 0 },
     }));
+  };
+
+  // Additional charges handlers
+  const handleAddCharge = () => {
+    setAdditionalCharges((prev) => [
+      ...prev,
+      {
+        ledger_id: "",
+        charge_type: "flat_amount" as ChargeType,
+        charge_value: 0,
+      },
+    ]);
+  };
+
+  const handleUpdateCharge = (index: number, charge: CreateInvoiceCharge) => {
+    setAdditionalCharges((prev) =>
+      prev.map((c, i) => (i === index ? charge : c)),
+    );
+  };
+
+  const handleRemoveCharge = (index: number) => {
+    setAdditionalCharges((prev) => prev.filter((_, i) => i !== index));
   };
 
   const canProceedFromProducts = useMemo(
@@ -277,6 +319,11 @@ export default function EditInvoicePage() {
         rate: selection.rate,
       }));
 
+    // Filter valid charges (must have ledger selected and value > 0)
+    const validCharges = additionalCharges.filter(
+      (charge) => charge.ledger_id && charge.charge_value > 0,
+    );
+
     // Prepare invoice data (same structure as create)
     const invoiceData: CreateInvoiceData = {
       invoice_type: invoice_type,
@@ -296,6 +343,7 @@ export default function EditInvoicePage() {
       supplier_invoice_date: formData.supplierInvoiceDate || undefined,
       notes: formData.notes || undefined,
       items: selectedProducts,
+      additional_charges: validCharges.length > 0 ? validCharges : undefined,
     };
 
     // Update invoice using mutation
@@ -387,6 +435,10 @@ export default function EditInvoicePage() {
               }
               invoiceType={invoice_type}
               subtotal={subtotal}
+              additionalCharges={additionalCharges}
+              onAddCharge={handleAddCharge}
+              onUpdateCharge={handleUpdateCharge}
+              onRemoveCharge={handleRemoveCharge}
             />
           ) : (
             <InvoiceReviewStep
@@ -397,6 +449,7 @@ export default function EditInvoicePage() {
               discountValue={
                 formData.discount ? parseFloat(formData.discount) : 0
               }
+              additionalCharges={additionalCharges}
             />
           )}
         </div>

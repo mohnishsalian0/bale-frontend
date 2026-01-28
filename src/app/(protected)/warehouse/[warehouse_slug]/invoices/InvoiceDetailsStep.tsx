@@ -5,11 +5,13 @@ import {
   IconChevronDown,
   IconCurrencyRupee,
   IconPercentage,
+  IconX,
 } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
 import { InputWrapper } from "@/components/ui/input-wrapper";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -26,7 +28,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
 import { DatePicker } from "@/components/ui/date-picker";
 import { dateToISOString } from "@/lib/utils/date";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
-import type { DiscountType, InvoiceTaxType } from "@/types/database/enums";
+import { useLedgers } from "@/lib/query/hooks/ledgers";
+import type {
+  DiscountType,
+  InvoiceTaxType,
+  ChargeType,
+} from "@/types/database/enums";
+import type { CreateInvoiceCharge } from "@/types/invoices.types";
 
 interface InvoiceFormData {
   warehouseId: string;
@@ -48,6 +56,10 @@ interface InvoiceDetailsStepProps {
   setFormData: (data: InvoiceFormData) => void;
   invoiceType: "sales" | "purchase";
   subtotal: number;
+  additionalCharges: CreateInvoiceCharge[];
+  onAddCharge: () => void;
+  onUpdateCharge: (index: number, charge: CreateInvoiceCharge) => void;
+  onRemoveCharge: (index: number) => void;
 }
 
 export function InvoiceDetailsStep({
@@ -55,9 +67,23 @@ export function InvoiceDetailsStep({
   setFormData,
   invoiceType,
   subtotal,
+  additionalCharges,
+  onAddCharge,
+  onUpdateCharge,
+  onRemoveCharge,
 }: InvoiceDetailsStepProps) {
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
   const { data: warehouses = [] } = useWarehouses();
+  const { data: allLedgers = [] } = useLedgers();
+
+  // Filter ledgers for additional charges (exclude already selected ones)
+  const selectedLedgerIds = additionalCharges.map((c) => c.ledger_id);
+  const availableChargesLedgers = allLedgers.filter(
+    (ledger) =>
+      !selectedLedgerIds.includes(ledger.id) &&
+      ledger.ledger_type === "expense" &&
+      ledger.gst_applicable === true,
+  );
 
   // const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
   //   const files = Array.from(e.target.files || []);
@@ -180,64 +206,234 @@ export function InvoiceDetailsStep({
           </div>
         )}
 
-        {/* Discount Type */}
+        {/* Discount Type and Value */}
         <div className="space-y-2">
-          <Label>Discount Type</Label>
-          <RadioGroup
-            value={formData.discountType}
-            onValueChange={(value) =>
-              setFormData({
-                ...formData,
-                discountType: value as DiscountType,
-              })
-            }
-            name="discount-type"
-          >
-            <RadioGroupItem value="none">None</RadioGroupItem>
-            <RadioGroupItem value="percentage">Percentage</RadioGroupItem>
-            <RadioGroupItem value="flat_amount">Flat Amount</RadioGroupItem>
-          </RadioGroup>
+          <Label>Discount</Label>
+          <div className="flex gap-4">
+            <RadioGroup
+              value={formData.discountType}
+              onValueChange={(value) =>
+                setFormData({
+                  ...formData,
+                  discountType: value as DiscountType,
+                  discount: value === "none" ? "" : formData.discount,
+                })
+              }
+              name="discount-type"
+            >
+              <RadioGroupItem value="none">None</RadioGroupItem>
+              <RadioGroupItem value="percentage">Percentage</RadioGroupItem>
+              <RadioGroupItem value="flat_amount">Flat Amount</RadioGroupItem>
+            </RadioGroup>
+
+            {/* Discount Value */}
+            {formData.discountType !== "none" && (
+              <InputWrapper
+                type="number"
+                placeholder={
+                  formData.discountType === "percentage"
+                    ? "Discount percent"
+                    : "Discount amount"
+                }
+                value={formData.discount}
+                onChange={(e) => {
+                  const inputValue = e.target.value;
+                  if (inputValue === "") {
+                    setFormData({ ...formData, discount: "" });
+                    return;
+                  }
+
+                  let value = parseFloat(inputValue);
+                  if (isNaN(value)) {
+                    setFormData({ ...formData, discount: "" });
+                    return;
+                  }
+
+                  if (formData.discountType === "percentage") {
+                    value = Math.max(0, Math.min(100, value));
+                  } else if (formData.discountType === "flat_amount") {
+                    value = Math.max(0, Math.min(subtotal, value));
+                  }
+                  setFormData({ ...formData, discount: value.toString() });
+                }}
+                onFocus={(e) => e.target.select()}
+                icon={
+                  formData.discountType === "percentage" ? (
+                    <IconPercentage />
+                  ) : (
+                    <IconCurrencyRupee />
+                  )
+                }
+                min="0"
+                max={
+                  formData.discountType === "percentage"
+                    ? "100"
+                    : subtotal.toString()
+                }
+                step={formData.discountType === "percentage" ? "1" : "0.01"}
+                className="flex-1"
+              />
+            )}
+          </div>
         </div>
 
-        {/* Discount Value */}
-        {formData.discountType !== "none" && (
-          <InputWrapper
-            type="number"
-            placeholder={
-              formData.discountType === "percentage"
-                ? "Discount percent"
-                : "Discount amount"
-            }
-            value={formData.discount}
-            onChange={(e) => {
-              let value = parseFloat(e.target.value);
-              if (isNaN(value)) {
-                value = 0;
-              }
+        {/* Additional Charges Section */}
+        <div className="space-y-3">
+          {/* List of added charges */}
+          {additionalCharges.map((charge, index) => {
+            const chargeLedger = allLedgers.find(
+              (l) => l.id === charge.ledger_id,
+            );
+            return (
+              <div
+                key={index}
+                className="relative border border-gray-200 rounded-lg px-4 py-6"
+              >
+                {/* Ledger Dropdown with Remove Button */}
+                <div className="flex items-start gap-2">
+                  <div className="space-y-2 flex-1">
+                    <Label>Additional charge</Label>
+                    <Select
+                      value={charge.ledger_id}
+                      onValueChange={(value) => {
+                        onUpdateCharge(index, { ...charge, ledger_id: value });
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select charge" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* Show current selection even if not in available list */}
+                        {chargeLedger && (
+                          <SelectItem value={chargeLedger.id}>
+                            {chargeLedger.name} ({chargeLedger.gst_rate}% GST)
+                          </SelectItem>
+                        )}
+                        {/* Show available ledgers */}
+                        {availableChargesLedgers.map((ledger) => (
+                          <SelectItem key={ledger.id} value={ledger.id}>
+                            {ledger.name} ({ledger.gst_rate}% GST)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
-              if (formData.discountType === "percentage") {
-                value = Math.max(0, Math.min(100, value));
-              } else if (formData.discountType === "flat_amount") {
-                value = Math.max(0, Math.min(subtotal, value));
-              }
-              setFormData({ ...formData, discount: value.toString() });
-            }}
-            icon={
-              formData.discountType === "percentage" ? (
-                <IconPercentage />
-              ) : (
-                <IconCurrencyRupee />
-              )
-            }
-            min="0"
-            max={
-              formData.discountType === "percentage"
-                ? "100"
-                : subtotal.toString()
-            }
-            step={formData.discountType === "percentage" ? "1" : "0.01"}
-          />
-        )}
+                {/* Amount Type and Value */}
+                <div className="space-y-2 mt-6">
+                  <Label>Amount</Label>
+                  <div className="flex gap-4">
+                    <RadioGroup
+                      value={charge.charge_type}
+                      onValueChange={(value) => {
+                        onUpdateCharge(index, {
+                          ...charge,
+                          charge_type: value as ChargeType,
+                          charge_value: 0,
+                        });
+                      }}
+                      name={`charge-type-${index}`}
+                    >
+                      <RadioGroupItem value="percentage">
+                        Percentage
+                      </RadioGroupItem>
+                      <RadioGroupItem value="flat_amount">
+                        Flat Amount
+                      </RadioGroupItem>
+                    </RadioGroup>
+
+                    {/* Value Input */}
+                    <InputWrapper
+                      type="number"
+                      placeholder={
+                        charge.charge_type === "percentage"
+                          ? "Percent"
+                          : "Amount"
+                      }
+                      value={
+                        charge.charge_value === 0 ? "" : charge.charge_value
+                      }
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        if (inputValue === "") {
+                          onUpdateCharge(index, {
+                            ...charge,
+                            charge_value: 0,
+                          });
+                          return;
+                        }
+
+                        let value = parseFloat(inputValue);
+                        if (isNaN(value)) {
+                          onUpdateCharge(index, {
+                            ...charge,
+                            charge_value: 0,
+                          });
+                          return;
+                        }
+
+                        if (charge.charge_type === "percentage") {
+                          value = Math.max(0, Math.min(100, value));
+                        } else {
+                          value = Math.max(0, value);
+                        }
+
+                        onUpdateCharge(index, {
+                          ...charge,
+                          charge_value: value,
+                        });
+                      }}
+                      onFocus={(e) => e.target.select()}
+                      icon={
+                        charge.charge_type === "percentage" ? (
+                          <IconPercentage />
+                        ) : (
+                          <IconCurrencyRupee />
+                        )
+                      }
+                      min="0"
+                      max={
+                        charge.charge_type === "percentage" ? "100" : undefined
+                      }
+                      step={charge.charge_type === "percentage" ? "1" : "0.01"}
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+
+                {/* Remove Button (Icon Only) */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onRemoveCharge(index)}
+                  className="absolute top-2 right-2 text-red-600 hover:text-red-700 hover:bg-red-50 shrink-0"
+                >
+                  <IconX className="size-4" />
+                </Button>
+              </div>
+            );
+          })}
+
+          {/* Add Charge Button */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="lg"
+            onClick={onAddCharge}
+            disabled={availableChargesLedgers.length === 0}
+            className="w-full border-2 border-dashed border-gray-300"
+          >
+            + Add charge
+          </Button>
+          {availableChargesLedgers.length === 0 &&
+            additionalCharges.length > 0 && (
+              <p className="text-sm text-gray-500 text-center">
+                All available charge ledgers have been added
+              </p>
+            )}
+        </div>
       </div>
 
       {/* Additional Details Section */}

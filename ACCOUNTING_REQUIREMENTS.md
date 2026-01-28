@@ -73,9 +73,14 @@ Company-specific account ledgers with:
 11. **Bank Account** (Bank Accounts) - is_default
 12. **Sales Discount** (Indirect Expenses)
 13. **Purchase Discount** (Indirect Income)
-14. **Freight Outward** (Indirect Expenses)
-15. **Freight Inward** (Direct Expenses)
+14. **Freight Outward** (Indirect Expenses) - 5% GST
+15. **Freight Inward** (Direct Expenses) - 5% GST
 16. **Round Off** (Indirect Expenses)
+17. **Packaging Charges** (Indirect Expenses) - 18% GST
+18. **Agent Commission** (Indirect Expenses) - 18% GST
+19. **Handling Charges** (Indirect Expenses) - 18% GST
+20. **Loading/Unloading Charges** (Indirect Expenses) - 18% GST
+21. **Labour Charges** (Direct Expenses) - 18% GST
 
 #### Party Ledgers (Auto-created on Partner Creation):
 
@@ -107,17 +112,24 @@ Company-specific account ledgers with:
    - Type: `none`, `percentage`, `fixed`
    - Value: Percentage or fixed amount
    - **Discount Amount = calculated** based on type and value
-3. **Taxable Amount** = Subtotal - Discount Amount
-4. **GST Breakdown (per item):**
+3. **Amount After Discount** = Subtotal - Discount Amount
+4. **Additional Charges** (see Section 2.3):
+   - Calculated on Amount After Discount
+   - Can be percentage or flat amount
+   - Each charge has its own GST
+   - **Total Additional Charges** = Sum of all charge amounts
+   - **Total Charge Tax** = Sum of GST on all charges
+5. **Taxable Amount** = Amount After Discount + Total Additional Charges
+6. **GST Breakdown (per item):**
    - **Item GST rate** comes from **frontend** (user confirms if product.gst_rate is null)
    - Proportional discount applied to each item
    - If GST Type = `GST`: **CGST** + **SGST** (split equally, e.g., 18% → 9% + 9%)
    - If GST Type = `IGST`: **IGST** (full rate, e.g., 18%)
-5. **Total Tax** = Sum of CGST + SGST + IGST
-6. **Pre-Roundoff Total** = Taxable Amount + Total Tax
-7. **Round-off Amount** = ROUND(Pre-Roundoff Total) - Pre-Roundoff Total (auto-calculated)
-8. **Total Amount** = ROUND(Pre-Roundoff Total)
-9. **Outstanding Amount** = Total Amount (initially, reduced by payments)
+7. **Total Tax** = Sum of (Item CGST + Item SGST + Item IGST + Total Charge Tax)
+8. **Pre-Roundoff Total** = Taxable Amount + Total Tax
+9. **Round-off Amount** = ROUND(Pre-Roundoff Total) - Pre-Roundoff Total (auto-calculated)
+10. **Total Amount** = ROUND(Pre-Roundoff Total)
+11. **Outstanding Amount** = Total Amount (initially, reduced by payments)
 
 **Status Tracking:**
 
@@ -159,6 +171,125 @@ Company-specific account ledgers with:
 
 - **Supplier Invoice Number** (vendor's bill number)
 - **Supplier Invoice Date** (vendor's bill date)
+
+---
+
+### 2.3 Invoice Additional Charges
+
+**Purpose:** Add freight, packaging, handling, labour, and commission charges to invoices
+
+**Charge Types:**
+
+- **Percentage:** Calculated as % of (Subtotal - Discount)
+- **Flat Amount:** Fixed amount in rupees
+
+**Common Use Cases:**
+
+**Sales Invoices:**
+- Freight Outward (transport to customer)
+- Packaging Charges
+- Agent Commission
+- Handling Charges
+
+**Purchase Invoices:**
+- Freight Inward (transport from supplier)
+- Loading/Unloading Charges
+- Labour Charges
+- Handling Charges
+- Special Packaging Charges
+
+**Fields:**
+
+- **Ledger** (references charge ledger like "Freight Outward")
+- **Charge Name** (snapshot from ledger, e.g., "Freight Outward")
+- **Charge Type:** `percentage` or `flat_amount`
+- **Charge Value:** Input value (e.g., 2.00 for 2% or 500.00 for ₹500)
+- **Charge Amount:** Calculated amount in rupees
+- **GST Rate:** Inherited from ledger (e.g., 5% for freight, 18% for services)
+- **GST Breakdown:** CGST/SGST or IGST (based on invoice tax_type)
+- **Sequence Order:** Display order of charges
+
+**Calculation Logic:**
+
+1. **Base Amount** = Subtotal - Discount Amount
+2. **Charge Amount:**
+   - If `percentage`: `ROUND(Base Amount × (Charge Value / 100), 2)`
+   - If `flat_amount`: `ROUND(Charge Value, 2)`
+3. **GST Calculation:**
+   - Uses invoice's `tax_type` (GST or IGST)
+   - If GST: Split into CGST + SGST (equal halves)
+   - If IGST: Full rate as IGST
+   - CGST Amount = `ROUND(Charge Amount × (CGST Rate / 100), 2)`
+   - SGST Amount = `ROUND(Charge Amount × (SGST Rate / 100), 2)`
+   - IGST Amount = `ROUND(Charge Amount × (IGST Rate / 100), 2)`
+4. **Total Tax** = CGST Amount + SGST Amount + IGST Amount
+
+**Example:**
+
+```
+Invoice Details:
+- Subtotal: ₹100,000
+- Discount: ₹5,000 (5%)
+- Amount After Discount: ₹95,000
+
+Additional Charges:
+1. Freight Outward (flat_amount, ₹1,500, 5% GST, tax_type=GST)
+   - Charge Amount: ₹1,500
+   - CGST @ 2.5%: ₹37.50
+   - SGST @ 2.5%: ₹37.50
+   - Total: ₹1,575
+
+2. Packaging Charges (percentage, 2%, 18% GST, tax_type=GST)
+   - Charge Amount: ₹95,000 × 2% = ₹1,900
+   - CGST @ 9%: ₹171
+   - SGST @ 9%: ₹171
+   - Total: ₹2,242
+
+Total Additional Charges: ₹3,400
+Total Charge Tax: ₹417
+Invoice Total: ₹100,000 - ₹5,000 + ₹3,400 + (Item Tax) + ₹417 = Final Total
+```
+
+**Business Rules:**
+
+1. **Unique Constraint:** Cannot add same ledger twice on same invoice
+2. **Automatic Calculation:** Charge amounts and GST auto-calculated by database triggers
+3. **Invoice Recalculation:** Invoice totals auto-update when charges added/modified
+4. **Sequence Control:** Multiple charges shown in order (sequence_order field)
+5. **GST Inheritance:** Charges follow invoice's tax_type (GST/IGST)
+6. **Ledger Snapshot:** Charge name and GST rate captured from ledger at creation
+
+**Database Triggers:**
+
+1. **`calculate_additional_charge_amounts()`** (BEFORE INSERT/UPDATE):
+   - Snapshots ledger name and GST rate
+   - Calculates charge_amount based on type
+   - Calculates GST breakdown based on invoice tax_type
+   - Rounds all amounts to 2 decimal places
+
+2. **`update_invoice_totals()`** (AFTER INSERT/UPDATE/DELETE):
+   - Recalculates invoice subtotal, tax, and total
+   - Updates outstanding_amount accordingly
+
+**Default Charge Ledgers:**
+
+Created automatically for each company:
+
+| Ledger Name               | Parent Group       | GST Rate | Common Use Case      |
+| ------------------------- | ------------------ | -------- | -------------------- |
+| Freight Outward           | Indirect Expenses  | 5%       | Sales transport      |
+| Freight Inward            | Direct Expenses    | 5%       | Purchase transport   |
+| Packaging Charges         | Indirect Expenses  | 18%      | Packing materials    |
+| Agent Commission          | Indirect Expenses  | 18%      | Sales commission     |
+| Handling Charges          | Indirect Expenses  | 18%      | Material handling    |
+| Loading/Unloading Charges | Indirect Expenses  | 18%      | Labour at warehouse  |
+| Labour Charges            | Direct Expenses    | 18%      | Processing labour    |
+
+**Immutability:**
+
+- Charges follow same rules as invoice items
+- Cannot modify if invoice has payments or exported to Tally
+- Create adjustment notes for corrections
 
 ---
 
@@ -682,8 +813,14 @@ Export all accounting transactions to **TallyPrime** for:
 - TDS/TCS ledgers - default rate 0.1%
 - Cash, Bank ledgers
 - Discount ledgers (Sales Discount, Purchase Discount)
-- Freight ledgers (Freight Outward - Indirect Expense, Freight Inward - Direct Expense)
+- Freight ledgers (Freight Outward - 5% GST, Freight Inward - 5% GST)
 - Round Off ledger
+- Additional Charge ledgers:
+  - Packaging Charges (18% GST)
+  - Agent Commission (18% GST)
+  - Handling Charges (18% GST)
+  - Loading/Unloading Charges (18% GST)
+  - Labour Charges (18% GST)
 
 ---
 
@@ -746,6 +883,8 @@ Export all accounting transactions to **TallyPrime** for:
     - Sales: `invoice_outwards` → `goods_outwards`
     - Purchase: `invoice_inwards` → `goods_inwards`
 13. Return invoice_id
+
+**Note:** Additional charges are added separately after invoice creation using direct INSERT to `invoice_additional_charges` table. Triggers automatically calculate amounts and update invoice totals.
 
 **Returns:** Invoice UUID
 
@@ -977,6 +1116,7 @@ Export all accounting transactions to **TallyPrime** for:
 - [x] Invoices migration with gst_type field
 - [x] Invoice items migration
 - [x] Invoice outwards/inwards junction tables
+- [x] Invoice additional charges migration
 - [x] Adjustment notes migration
 - [x] Adjustment note items migration
 - [x] Payments migration
@@ -986,9 +1126,11 @@ Export all accounting transactions to **TallyPrime** for:
 
 ### Phase 2: RPC Functions ✅
 
-- [x] seed_company_ledgers()
+- [x] seed_company_ledgers() - Including additional charge ledgers
 - [x] create_party_ledger()
 - [x] create_invoice_with_items() - Unified function for sales and purchase invoices
+- [x] calculate_additional_charge_amounts() - Trigger for auto-calculating charges
+- [x] update_invoice_totals() - Trigger for recalculating invoice when charges change
 - [x] create_adjustment_note_with_items()
 - [x] create_payment_with_allocations()
 
@@ -1004,11 +1146,15 @@ Export all accounting transactions to **TallyPrime** for:
 - [ ] Create Supabase query functions (queries/invoices.ts, queries/payments.ts)
 - [ ] Create TanStack Query hooks (hooks/useInvoices.ts, hooks/usePayments.ts)
 - [ ] Add query keys to keys.ts
+- [ ] Add additional charges to invoice queries and mutations
 
 ### Phase 5: UI Components
 
 - [ ] Ledger list/create/edit forms
 - [ ] Invoice creation wizard
+  - [ ] Invoice items section
+  - [ ] Additional charges section (add/edit/remove charges)
+  - [ ] Live calculation preview with charges
 - [ ] Payment allocation UI
 - [ ] Adjustment note forms
 - [ ] Outstanding reports
@@ -1079,6 +1225,6 @@ Export all accounting transactions to **TallyPrime** for:
 
 ---
 
-**Document Version:** 2.0
-**Last Updated:** 2025-12-18
-**Status:** Database schema and RPC functions complete. Ready for frontend implementation and Tally integration.
+**Document Version:** 2.1
+**Last Updated:** 2025-01-28
+**Status:** Database schema and RPC functions complete (including invoice additional charges). Test data generation updated. Ready for frontend implementation and Tally integration.
