@@ -207,7 +207,7 @@ export default function CreateSalesOrderPage() {
         />
 
         {/* Main Content - Scrollable */}
-        <div className="flex-1 flex-col overflow-y-auto flex">
+        <div className="flex-1 flex flex-col overflow-y-auto">
           {currentStep === "customer" ? (
             <PartnerSelectionStep
               partnerType="customer"

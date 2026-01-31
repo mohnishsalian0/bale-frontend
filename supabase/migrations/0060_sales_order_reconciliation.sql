@@ -249,9 +249,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_reconcile_items_on_outward_change
-    AFTER INSERT OR UPDATE OR DELETE ON goods_outward_items
-    FOR EACH ROW EXECUTE FUNCTION trigger_sales_order_items_reconciliation();
+-- Trigger for INSERT and DELETE to reconcile sales order items
+CREATE TRIGGER trigger_reconcile_items_on_outward_change_insert_delete
+    AFTER INSERT OR DELETE ON goods_outward_items
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_sales_order_items_reconciliation();
+
+-- Trigger for UPDATE to reconcile sales order items, only when dispatched quantity changes
+CREATE TRIGGER trigger_reconcile_items_on_outward_change_update
+    AFTER UPDATE ON goods_outward_items
+    FOR EACH ROW
+    WHEN (OLD.quantity_dispatched IS DISTINCT FROM NEW.quantity_dispatched)
+    EXECUTE FUNCTION trigger_sales_order_items_reconciliation();
 
 COMMENT ON FUNCTION trigger_sales_order_items_reconciliation() IS 'Triggers sales_order_items reconciliation when goods_outward_items are created, updated, or deleted';
 

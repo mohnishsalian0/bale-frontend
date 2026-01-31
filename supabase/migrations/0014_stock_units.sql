@@ -9,7 +9,7 @@ CREATE TABLE stock_units (
     id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE DEFAULT get_jwt_company_id(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
+    current_warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
     
     -- Identity
     sequence_number INTEGER NOT NULL,
@@ -57,8 +57,8 @@ CREATE TABLE stock_units (
 CREATE INDEX idx_stock_units_company_id ON stock_units(company_id);
 
 -- Warehouse-specific indexes (most common queries)
-CREATE INDEX idx_stock_units_warehouse_id ON stock_units(warehouse_id);
-CREATE INDEX idx_stock_units_status ON stock_units(warehouse_id, status);
+CREATE INDEX idx_stock_units_current_warehouse_id ON stock_units(current_warehouse_id);
+CREATE INDEX idx_stock_units_status ON stock_units(current_warehouse_id, status);
 
 -- Product relationship
 CREATE INDEX idx_stock_units_product_id ON stock_units(product_id);
@@ -121,7 +121,7 @@ FOR SELECT
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
+    has_warehouse_access(current_warehouse_id) AND
     authorize('stock_units.read')
 );
 
@@ -132,7 +132,7 @@ FOR INSERT
 TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
+    has_warehouse_access(current_warehouse_id) AND
     authorize('stock_units.create')
 );
 
@@ -143,12 +143,12 @@ FOR UPDATE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
+    has_warehouse_access(current_warehouse_id) AND
     authorize('stock_units.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
+    has_warehouse_access(current_warehouse_id) AND
     authorize('stock_units.update')
 );
 
@@ -159,7 +159,7 @@ FOR DELETE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
+    has_warehouse_access(current_warehouse_id) AND
     authorize('stock_units.delete')
 );
 

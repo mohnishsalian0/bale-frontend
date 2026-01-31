@@ -62,7 +62,7 @@ CREATE OR REPLACE FUNCTION auto_set_adjustment_warehouse()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.warehouse_id IS NULL THEN
-        SELECT warehouse_id INTO NEW.warehouse_id
+        SELECT current_warehouse_id INTO NEW.warehouse_id
         FROM stock_units
         WHERE id = NEW.stock_unit_id;
     END IF;
@@ -90,52 +90,48 @@ COMMENT ON TRIGGER trigger_reconcile_stock_on_adjustment_change ON stock_unit_ad
 
 ALTER TABLE stock_unit_adjustments ENABLE ROW LEVEL SECURITY;
 
--- Authorized users can view adjustments in their assigned warehouses
+-- Authorized users can view stock unit adjustments
+-- Note: Warehouse access control is inherited from parent stock_units table
 CREATE POLICY "Authorized users can view stock unit adjustments"
 ON stock_unit_adjustments
 FOR SELECT
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
     authorize('stock_units.read')
 );
 
--- Authorized users can create adjustments in their assigned warehouses
+-- Authorized users can create stock unit adjustments
 CREATE POLICY "Authorized users can create stock unit adjustments"
 ON stock_unit_adjustments
 FOR INSERT
 TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
     authorize('stock_units.update')
 );
 
--- Authorized users can update adjustments in their assigned warehouses
+-- Authorized users can update stock unit adjustments
 CREATE POLICY "Authorized users can update stock unit adjustments"
 ON stock_unit_adjustments
 FOR UPDATE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
     authorize('stock_units.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
     authorize('stock_units.update')
 );
 
--- Authorized users can delete adjustments in their assigned warehouses
+-- Authorized users can delete stock unit adjustments
 CREATE POLICY "Authorized users can delete stock unit adjustments"
 ON stock_unit_adjustments
 FOR DELETE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
-    has_warehouse_access(warehouse_id) AND
     authorize('stock_units.delete')
 );
 

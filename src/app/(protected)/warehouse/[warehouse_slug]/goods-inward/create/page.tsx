@@ -7,7 +7,7 @@ import { ProductSelectionStep, StockUnitSpec } from "../ProductSelectionStep";
 import { StockUnitFormSheet } from "../StockUnitFormSheet";
 import { AllSpecificationsSheet } from "../AllSpecificationsSheet";
 import { PieceQuantitySheet } from "../PieceQuantitySheet";
-import { PartnerSelectionStep } from "@/app/(protected)/warehouse/[warehouse_slug]/stock-flow/PartnerSelectionStep";
+import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
 import { InwardLinkToStep, InwardLinkToData } from "../InwardLinkToStep";
 import { InwardDetailsStep } from "../InwardDetailsStep";
 import { ProductFormSheet } from "../../products/ProductFormSheet";
@@ -75,14 +75,8 @@ export default function CreateGoodsInwardPage() {
   const [selectedProduct, setSelectedProduct] =
     useState<ProductListView | null>(null);
 
-  // Partner/Warehouse selection state
-  const [receivedFromType, setReceivedFromType] = useState<
-    "partner" | "warehouse"
-  >("partner");
+  // Partner selection state
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(
-    null,
-  );
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string | null>(
     null,
   );
 
@@ -135,7 +129,6 @@ export default function CreateGoodsInwardPage() {
     if (!purchaseOrderId || !purchaseOrder || selectedPartnerId) return;
 
     setSelectedPartnerId(purchaseOrder.supplier_id);
-    setReceivedFromType("partner");
   }, [purchaseOrderId, purchaseOrder, selectedPartnerId]);
 
   // Compute orderProducts with pending quantities for ProductSelectionStep
@@ -265,28 +258,12 @@ export default function CreateGoodsInwardPage() {
   };
 
   // Partner selection handlers
-  const handleSelectPartner = (partnerId: string) => {
+  const handleSelectPartner = (partnerId: string, _ledgerId: string) => {
     setSelectedPartnerId(partnerId);
-    setSelectedWarehouseId(null);
     // Auto-advance to next step after selection
     setTimeout(() => {
       setCurrentStep("linkTo");
     }, 300);
-  };
-
-  const handleSelectWarehouse = (warehouseId: string) => {
-    setSelectedWarehouseId(warehouseId);
-    setSelectedPartnerId(null);
-    // Auto-advance to next step after selection
-    setTimeout(() => {
-      setCurrentStep("linkTo");
-    }, 300);
-  };
-
-  const handlePartnerTypeChange = (type: "partner" | "warehouse") => {
-    setReceivedFromType(type);
-    setSelectedPartnerId(null);
-    setSelectedWarehouseId(null);
   };
 
   // Validation for each step
@@ -296,10 +273,8 @@ export default function CreateGoodsInwardPage() {
   );
 
   const canProceedFromPartner = useMemo(
-    () =>
-      (receivedFromType === "partner" && selectedPartnerId !== null) ||
-      (receivedFromType === "warehouse" && selectedWarehouseId !== null),
-    [receivedFromType, selectedPartnerId, selectedWarehouseId],
+    () => selectedPartnerId !== null,
+    [selectedPartnerId],
   );
 
   const canProceedFromLinkTo = useMemo(() => {
@@ -346,7 +321,7 @@ export default function CreateGoodsInwardPage() {
   };
 
   const handleSubmit = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || !selectedPartnerId) return;
     setSaving(true);
 
     // Prepare inward data - direct field mapping with aligned enums
@@ -364,14 +339,7 @@ export default function CreateGoodsInwardPage() {
       transport_type: detailsFormData.transportType || undefined,
       transport_reference_number:
         detailsFormData.transportReferenceNumber || undefined,
-      partner_id:
-        receivedFromType === "partner"
-          ? selectedPartnerId || undefined
-          : undefined,
-      from_warehouse_id:
-        receivedFromType === "warehouse"
-          ? selectedWarehouseId || undefined
-          : undefined,
+      partner_id: selectedPartnerId,
       sales_order_id: linkToData.sales_order_id || undefined,
       purchase_order_id: linkToData.purchase_order_id || undefined,
       other_reason: linkToData.other_reason || undefined,
@@ -395,7 +363,7 @@ export default function CreateGoodsInwardPage() {
 
         for (let i = 0; i < unitCount; i++) {
           stockUnits.push({
-            warehouse_id: warehouse.id,
+            current_warehouse_id: warehouse.id,
             product_id: productId,
             initial_quantity: unit.quantity,
             remaining_quantity: unit.quantity,
@@ -455,17 +423,9 @@ export default function CreateGoodsInwardPage() {
         <div className="flex-1 flex-col overflow-y-auto flex">
           {currentStep === "partner" && (
             <PartnerSelectionStep
-              partnerTypes={["supplier", "vendor", "customer"]} // Customer for sales return
-              selectedType={receivedFromType}
+              partnerType="supplier"
               selectedPartnerId={selectedPartnerId}
-              selectedWarehouseId={selectedWarehouseId}
-              currentWarehouseId={warehouse.id}
-              onTypeChange={handlePartnerTypeChange}
               onSelectPartner={handleSelectPartner}
-              onSelectWarehouse={handleSelectWarehouse}
-              onAddNewPartner={() => setShowCreatePartner(true)}
-              title="Received from"
-              buttonLabel="New supplier"
             />
           )}
 
@@ -474,7 +434,6 @@ export default function CreateGoodsInwardPage() {
               partnerId={selectedPartnerId}
               linkToData={linkToData}
               onLinkToChange={setLinkToData}
-              isWarehouseTransfer={receivedFromType === "warehouse"}
             />
           )}
 

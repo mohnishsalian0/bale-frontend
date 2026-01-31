@@ -14,7 +14,7 @@ import { getProductIcon } from "@/lib/utils/product";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
 import { StockUnitDetailsModal } from "@/components/layouts/stock-unit-modal";
 import { useStockUnitWithProductDetail } from "@/lib/query/hooks/stock-units";
-import { Separator } from "@/components/ui/separator";
+import { Warehouse } from "@/types/warehouses.types";
 
 type Product = Tables<"products">;
 type StockUnit = Tables<"stock_units">;
@@ -23,6 +23,7 @@ type GoodsOutwardItem = Tables<"goods_outward_items">;
 interface OutwardItem extends GoodsOutwardItem {
   stock_unit:
     | (StockUnit & {
+        warehouse: Pick<Warehouse, "id" | "name">;
         product: Product | null;
       })
     | null;
@@ -116,7 +117,7 @@ export default function StockUnitsPage({ params }: PageParams) {
             <li key={item.id}>
               <div
                 onClick={() => stockUnit && handleStockUnitClick(stockUnit.id)}
-                className="flex gap-3 p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                className="flex gap-3 p-4 hover:bg-gray-50 transition-colors cursor-pointer border-b border-border"
               >
                 {/* Product Image */}
                 <ImageWrapper
@@ -143,10 +144,12 @@ export default function StockUnitsPage({ params }: PageParams) {
                           stockType,
                         )
                       : "No unit number"}
+                    {" • "}
+                    {stockUnit?.warehouse.name}
                   </p>
 
                   {/* Additional Details */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
+                  <div className="text-xs text-gray-500">
                     {getStockUnitInfo(stockUnit)}
                   </div>
                 </div>
@@ -160,7 +163,6 @@ export default function StockUnitsPage({ params }: PageParams) {
                   <p className="text-sm text-gray-500">Dispatched</p>
                 </div>
               </div>
-              <Separator />
             </li>
           );
         })}

@@ -13,6 +13,7 @@ import {
   IconQrcode,
   IconSearch,
   IconAlertTriangle,
+  IconTruckDelivery,
 } from "@tabler/icons-react";
 import IconGoodsInward from "@/components/icons/IconGoodsInward";
 import IconGoodsOutward from "@/components/icons/IconGoodsOutward";
@@ -190,6 +191,11 @@ export default function InventoryPage() {
       icon: IconGoodsOutward,
       label: "Goods outward",
       href: `/warehouse/${warehouse.slug}/goods-outward/create`,
+    },
+    {
+      icon: IconTruckDelivery,
+      label: "Goods transfer",
+      href: `/warehouse/${warehouse.slug}/goods-transfer/create`,
     },
     {
       icon: IconQrcode,

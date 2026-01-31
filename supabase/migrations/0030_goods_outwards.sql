@@ -24,8 +24,7 @@ CREATE TABLE goods_outwards (
     other_reason TEXT, -- When outward_type = 'other'
 
     -- Recipients
-    partner_id UUID REFERENCES partners(id),
-    to_warehouse_id UUID REFERENCES warehouses(id), -- For warehouse_transfer
+    partner_id UUID NOT NULL REFERENCES partners(id),
     agent_id UUID REFERENCES partners(id), -- Optional agent for sales
 
     -- Details
@@ -57,11 +56,6 @@ CREATE TABLE goods_outwards (
     search_vector tsvector,
 
     -- Business logic constraints
-    CONSTRAINT check_outward_source
-        CHECK (
-            (partner_id IS NOT NULL AND to_warehouse_id IS NULL) OR
-            (partner_id IS NULL AND to_warehouse_id IS NOT NULL AND to_warehouse_id != warehouse_id)
-        ),
     CONSTRAINT check_outward_type_requirement
         CHECK (
 						(outward_type = 'sales_order' AND sales_order_id IS NOT NULL) OR

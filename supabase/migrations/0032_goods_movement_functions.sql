@@ -44,7 +44,6 @@ BEGIN
         transport_reference_number,
         transport_type,
         partner_id,
-        from_warehouse_id,
         job_work_id,
         sales_order_id,
         purchase_order_id,
@@ -61,7 +60,6 @@ BEGIN
         p_inward_data->>'transport_reference_number',
         p_inward_data->>'transport_type',
         (p_inward_data->>'partner_id')::UUID,
-        (p_inward_data->>'from_warehouse_id')::UUID,
         (p_inward_data->>'job_work_id')::UUID,
         (p_inward_data->>'sales_order_id')::UUID,
         (p_inward_data->>'purchase_order_id')::UUID,
@@ -89,7 +87,7 @@ BEGIN
             INTO v_existing_unit_id, v_existing_initial_qty, v_existing_remaining_qty
             FROM stock_units
             WHERE product_id = v_product_id
-              AND warehouse_id = v_warehouse_id
+              AND current_warehouse_id = v_warehouse_id
               AND deleted_at IS NULL
             LIMIT 1;
 
@@ -105,7 +103,7 @@ BEGIN
                 -- Create new singleton for piece type
                 INSERT INTO stock_units (
                     company_id,
-                    warehouse_id,
+                    current_warehouse_id,
                     product_id,
                     created_from_inward_id,
                     remaining_quantity,
@@ -128,7 +126,7 @@ BEGIN
             -- Handle non-piece type products (create new stock units as usual)
             INSERT INTO stock_units (
                 company_id,
-                warehouse_id,
+                current_warehouse_id,
                 product_id,
                 created_from_inward_id,
                 remaining_quantity,
@@ -194,7 +192,6 @@ BEGIN
         warehouse_id,
         outward_type,
         partner_id,
-        to_warehouse_id,
         sales_order_id,
         job_work_id,
         purchase_order_id,
@@ -211,7 +208,6 @@ BEGIN
         (p_outward_data->>'warehouse_id')::UUID,
         p_outward_data->>'outward_type',
         (p_outward_data->>'partner_id')::UUID,
-        (p_outward_data->>'to_warehouse_id')::UUID,
         (p_outward_data->>'sales_order_id')::UUID,
         (p_outward_data->>'job_work_id')::UUID,
         (p_outward_data->>'purchase_order_id')::UUID,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { IconBox } from "@tabler/icons-react";
+import { IconBox, IconPlus, IconTrash } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { StockStatusBadge } from "@/components/ui/stock-status-badge";
 import { formatAbsoluteDate } from "@/lib/utils/date";
@@ -26,6 +26,8 @@ interface StockUnitListStepProps {
   warehouseId: string;
   scannedUnits: ScannedStockUnit[];
   onStockUnitSelect: (stockUnitId: string) => void;
+  onRemoveUnit: (stockUnitId: string) => void;
+  fullQuantity?: boolean;
 }
 
 export function StockUnitListStep({
@@ -33,6 +35,8 @@ export function StockUnitListStep({
   warehouseId,
   scannedUnits,
   onStockUnitSelect,
+  onRemoveUnit,
+  fullQuantity = false,
 }: StockUnitListStepProps) {
   // Fetch stock units for this product (no status filter)
   const { data: stockUnitsResponse, isLoading } = useStockUnitsWithInward(
@@ -153,8 +157,7 @@ export function StockUnitListStep({
                 return (
                   <div
                     key={unit.id}
-                    onClick={() => onStockUnitSelect(unit.id)}
-                    className="flex items-start justify-between gap-4 px-4 py-4 border-t border-dashed border-gray-200 hover:bg-gray-50 transition-colors w-full cursor-pointer"
+                    className="flex items-start justify-between gap-4 px-4 py-4 border-t border-dashed border-gray-200"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 text-base font-medium text-gray-700">
@@ -169,29 +172,51 @@ export function StockUnitListStep({
                         />
                       </div>
 
-                      {/* Additional Details */}
+                      {/* Current Warehouse */}
                       <p className="text-sm text-gray-500 mt-1">
+                        {unit.warehouse.name}
+                      </p>
+
+                      {/* Additional Details */}
+                      <p className="text-xs text-gray-500">
                         {getStockUnitInfo(unit)}
                       </p>
                     </div>
 
-                    <div className="shrink-0">
+                    <div className="shrink-0 flex flex-col items-end gap-2">
                       {selectedQuantity !== null ? (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => onStockUnitSelect(unit.id)}
+                            disabled={fullQuantity}
+                          >
+                            {selectedQuantity} / {maxQuantity} {pluralizedUnit}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon-sm"
+                            onClick={() => onRemoveUnit(unit.id)}
+                          >
+                            <IconTrash />
+                          </Button>
+                        </div>
+                      ) : (
                         <Button
                           type="button"
+                          variant="outline"
                           size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onStockUnitSelect(unit.id);
-                          }}
+                          onClick={() => onStockUnitSelect(unit.id)}
                         >
-                          {selectedQuantity} / {maxQuantity} {pluralizedUnit}
+                          <IconPlus />
+                          Add
                         </Button>
-                      ) : (
-                        <span className="text-sm font-semibold text-gray-700">
-                          {maxQuantity} {unitAbbr}
-                        </span>
                       )}
+                      <span className="text-sm text-gray-500">
+                        {maxQuantity} {unitAbbr}
+                      </span>
                     </div>
                   </div>
                 );

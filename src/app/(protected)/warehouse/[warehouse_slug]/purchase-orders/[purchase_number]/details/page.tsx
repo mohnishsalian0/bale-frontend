@@ -25,7 +25,6 @@ import ImageWrapper from "@/components/ui/image-wrapper";
 import { Section } from "@/components/layouts/section";
 import { ActionsFooter } from "@/components/layouts/actions-footer";
 import { CancelDialog } from "@/components/layouts/cancel-dialog";
-import { CompleteOrderDialog } from "../CompleteOrderDialog";
 import { ApprovalDialog } from "@/components/layouts/approval-dialog";
 import { DeleteDialog } from "@/components/layouts/delete-dialog";
 import { GoodsInwardSelectionDialog } from "../GoodsInwardSelectionDialog";
@@ -72,6 +71,7 @@ import type {
   InvoiceStatus,
 } from "@/types/database/enums";
 import IconGoodsInward from "@/components/icons/IconGoodsInward";
+import { CompleteDialog } from "@/components/layouts/complete-dialog";
 
 interface PageParams {
   params: Promise<{
@@ -754,10 +754,13 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
             loading={cancelOrder.isPending}
           />
 
-          <CompleteOrderDialog
+          <CompleteDialog
             open={showCompleteDialog}
+            title="Mark order as complete"
+            description="This will mark the purchase order as completed. You can optionally add completion notes."
             onOpenChange={setShowCompleteDialog}
-            onConfirm={handleComplete}
+            onComplete={handleComplete}
+            hasNotes={true}
             loading={completeOrder.isPending}
           />
 

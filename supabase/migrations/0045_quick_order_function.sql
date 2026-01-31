@@ -162,7 +162,7 @@ BEGIN
             SELECT 1
             FROM stock_units
             WHERE id = v_stock_unit_id
-            AND warehouse_id = v_warehouse_id
+            AND current_warehouse_id = v_warehouse_id
         ) THEN
             RAISE EXCEPTION 'Stock unit % does not belong to warehouse %', v_stock_unit_id, v_warehouse_id;
         END IF;

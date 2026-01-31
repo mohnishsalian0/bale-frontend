@@ -72,7 +72,7 @@ export function getOrderDisplayStatus(
 
 /**
  * Summarizes the list of products within a sales order
- * Example: Designer Silk Fabric x22, Cotton Denim x11, 3 more
+ * Example: Designer Silk Fabric (22 m), Cotton Denim (11 units), 3 more
  */
 export function getProductSummary(
   orderItems: SalesOrderItemListView[],
@@ -92,13 +92,24 @@ export function getProductSummary(
 }
 
 /**
- * Comma separated products along with their quantities
- * Example: Designer Silk Fabric x22, Cotton Denim x11
+ * Summarizes the list of products within a sales order with pending quantity
+ * Example: Designer Silk Fabric (22 m), Cotton Denim (11 units), 3 more
  */
-export function getFullProductInfo(items: SalesOrderItemListView[]): string {
-  return items
-    .map((item) => `${item.product?.name} x${item.required_quantity}`)
-    .join(", ");
+export function getPendingProductSummary(
+  orderItems: SalesOrderItemListView[],
+): string {
+  if (orderItems.length === 0) return "No products";
+  let productsSummary: string[] = [];
+  orderItems.map((oi) => {
+    const productInfo = oi.product;
+    const unit = oi.product?.measuring_unit as MeasuringUnit;
+    const unitAbbreviation = getMeasuringUnitAbbreviation(unit);
+    productsSummary.push(
+      `${productInfo?.name || "Unknown product"} (${oi.pending_quantity} ${unitAbbreviation})`,
+    );
+  });
+
+  return productsSummary.join(", ");
 }
 
 /**

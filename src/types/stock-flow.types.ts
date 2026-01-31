@@ -141,7 +141,6 @@ export interface InwardWithPartnerListView extends Pick<
     Tables<"partners">,
     "id" | "first_name" | "last_name" | "company_name" | "display_name"
   > | null;
-  from_warehouse: Pick<Tables<"warehouses">, "id" | "name"> | null;
 }
 
 /**
@@ -157,8 +156,7 @@ export interface OutwardItemWithOutwardDetailView extends Tables<"goods_outward_
         partner: Pick<
           Tables<"partners">,
           "id" | "first_name" | "last_name" | "company_name" | "display_name"
-        > | null;
-        to_warehouse: Pick<Tables<"warehouses">, "id" | "name"> | null;
+        >;
       })
     | null;
 }

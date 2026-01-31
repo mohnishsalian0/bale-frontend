@@ -23,6 +23,7 @@ import {
   useProductsWithInventoryAndOrders,
   useProductAttributes,
 } from "@/lib/query/hooks/products";
+import { useProductAggregates } from "@/lib/query/hooks/aggregates";
 import { useSession } from "@/contexts/session-context";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import { getProductIcon, getProductInfo } from "@/lib/utils/product";
@@ -101,9 +102,14 @@ export default function ProductsPage() {
     isLoading: attributesLoading,
     isError: attributesError,
   } = useProductAttributes();
+  const {
+    data: aggregates,
+    isLoading: aggregatesLoading,
+    isError: aggregatesError,
+  } = useProductAggregates();
 
-  const loading = productsLoading || attributesLoading;
-  const error = productsError || attributesError;
+  const loading = productsLoading || attributesLoading || aggregatesLoading;
+  const error = productsError || attributesError || aggregatesError;
 
   const materials = attributeLists?.materials || [];
   const colors = attributeLists?.colors || [];
@@ -128,22 +134,6 @@ export default function ProductsPage() {
 
   // No client-side filtering needed - all products are shown
   const filteredProducts = productsData;
-
-  // Calculate stats from current page filtered products
-  const stats = useMemo(() => {
-    const availableProducts = filteredProducts.filter(
-      (p) => (p.inventory?.in_stock_quantity ?? 0) > 0,
-    ).length;
-
-    const liveProducts = filteredProducts.filter(
-      (p) => p.show_on_catalog,
-    ).length;
-
-    return {
-      availableProducts,
-      liveProducts,
-    };
-  }, [filteredProducts]);
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -181,11 +171,22 @@ export default function ProductsPage() {
           <div className="mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Products</h1>
             <p className="text-sm font-medium text-gray-500 mt-2">
-              <span>{stats.availableProducts} products available</span>
-              <span> &nbsp;•&nbsp; </span>
               <span className="text-teal-700">
-                {stats.liveProducts} live products
+                {aggregates?.live_products || 0} live on catalog
               </span>
+              <span> &nbsp;•&nbsp; </span>
+              <span>{aggregates?.active_products || 0} active products</span>
+              {aggregates?.stock_type_breakdown &&
+                aggregates.stock_type_breakdown.length > 0 && (
+                  <>
+                    <span> &nbsp;•&nbsp; </span>
+                    <span>
+                      {aggregates.stock_type_breakdown
+                        .map((item) => `${item.count} ${item.type}`)
+                        .join(" • ")}
+                    </span>
+                  </>
+                )}
             </p>
           </div>
 

@@ -280,26 +280,28 @@ export default function StockUnitsPage({ params }: PageParams) {
                         </span>
                       </div>
 
-                      {/* QR Status */}
-                      <p
-                        className={`text-sm mt-1 ${
-                          unit.qr_generated_at
-                            ? "text-gray-500"
-                            : "text-green-700"
-                        }`}
-                        title={
-                          unit.qr_generated_at
-                            ? formatAbsoluteDate(unit.qr_generated_at)
-                            : ""
-                        }
-                      >
-                        {unit.qr_generated_at
-                          ? `QR generated ${formatRelativeDate(unit.qr_generated_at)}`
-                          : "QR pending"}
+                      {/* Current Warehouse & QR Status */}
+                      <p className="text-sm mt-1 text-gray-500">
+                        {unit.warehouse.name}
+                        {" • "}
+                        <span
+                          className={`${
+                            !unit.qr_generated_at && "text-green-700"
+                          }`}
+                          title={
+                            unit.qr_generated_at
+                              ? formatAbsoluteDate(unit.qr_generated_at)
+                              : ""
+                          }
+                        >
+                          {unit.qr_generated_at
+                            ? `QR on ${formatRelativeDate(unit.qr_generated_at)}`
+                            : "QR pending"}
+                        </span>
                       </p>
 
                       {/* Additional Details */}
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-gray-500">
                         {getStockUnitInfo(unit)}
                       </p>
                     </div>

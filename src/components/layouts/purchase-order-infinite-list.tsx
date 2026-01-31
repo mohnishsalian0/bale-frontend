@@ -7,8 +7,8 @@ import { formatAbsoluteDate } from "@/lib/utils/date";
 import { getPartnerName } from "@/lib/utils/partner";
 import { PurchaseStatusBadge } from "@/components/ui/purchase-status-badge";
 import {
-  getFullProductInfo,
   getOrderDisplayStatus,
+  getPendingProductSummary,
 } from "@/lib/utils/purchase-order";
 import type { PurchaseOrderStatus } from "@/types/database/enums";
 
@@ -111,7 +111,7 @@ export function PurchaseOrderInfiniteList({
                         />
                       </div>
                       <p className="text-sm text-gray-500 mt-1">
-                        {getFullProductInfo(order.purchase_order_items)}
+                        {getPendingProductSummary(order.purchase_order_items)}
                       </p>
                       <p className="text-xs text-gray-500 truncate mt-1">
                         {supplierName} · {formatAbsoluteDate(order.created_at)}

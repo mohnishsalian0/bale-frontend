@@ -105,29 +105,116 @@ async function createTestPartners() {
     companySlug = newCompany.slug;
     console.log(`✅ Created company: ${companyId}\n`);
 
-    // Create a test warehouse
-    console.log("🏭 Creating test warehouse...");
-    const { data: warehouse, error: warehouseError } = await supabase
-      .from("warehouses")
-      .insert({
+    // Create test warehouses (1 main, 4 regional, 5 factories)
+    console.log("🏭 Creating test warehouses...");
+    const warehousesData = [
+      // Main warehouse
+      {
         company_id: companyId,
         name: "Main Warehouse",
-        address_line1: "123 Test Street",
+        address_line1: "123 MG Road",
         city: "Mumbai",
         state: "Maharashtra",
         country: "India",
         pin_code: "400001",
-      })
-      .select()
-      .single();
+      },
+      // Regional warehouses
+      {
+        company_id: companyId,
+        name: "North Regional Warehouse",
+        address_line1: "45 Connaught Place",
+        city: "Delhi",
+        state: "Delhi",
+        country: "India",
+        pin_code: "110001",
+      },
+      {
+        company_id: companyId,
+        name: "South Regional Warehouse",
+        address_line1: "78 MG Road",
+        city: "Bangalore",
+        state: "Karnataka",
+        country: "India",
+        pin_code: "560001",
+      },
+      {
+        company_id: companyId,
+        name: "East Regional Warehouse",
+        address_line1: "12 Park Street",
+        city: "Kolkata",
+        state: "West Bengal",
+        country: "India",
+        pin_code: "700016",
+      },
+      {
+        company_id: companyId,
+        name: "Central Regional Warehouse",
+        address_line1: "34 Anna Salai",
+        city: "Chennai",
+        state: "Tamil Nadu",
+        country: "India",
+        pin_code: "600002",
+      },
+      // Factories for job work
+      {
+        company_id: companyId,
+        name: "Surat Dyeing Factory",
+        address_line1: "56 Ring Road",
+        city: "Surat",
+        state: "Gujarat",
+        country: "India",
+        pin_code: "395002",
+      },
+      {
+        company_id: companyId,
+        name: "Tirupur Knitting Factory",
+        address_line1: "89 Textile Park",
+        city: "Tirupur",
+        state: "Tamil Nadu",
+        country: "India",
+        pin_code: "641604",
+      },
+      {
+        company_id: companyId,
+        name: "Ludhiana Woolen Factory",
+        address_line1: "23 Industrial Area",
+        city: "Ludhiana",
+        state: "Punjab",
+        country: "India",
+        pin_code: "141003",
+      },
+      {
+        company_id: companyId,
+        name: "Coimbatore Processing Factory",
+        address_line1: "67 SIDCO Estate",
+        city: "Coimbatore",
+        state: "Tamil Nadu",
+        country: "India",
+        pin_code: "641021",
+      },
+      {
+        company_id: companyId,
+        name: "Panipat Weaving Factory",
+        address_line1: "91 Textile Hub",
+        city: "Panipat",
+        state: "Haryana",
+        country: "India",
+        pin_code: "132103",
+      },
+    ];
 
-    if (warehouseError || !warehouse) {
-      console.error("❌ Failed to create warehouse:", warehouseError);
+    const { data: warehouses, error: warehouseError } = await supabase
+      .from("warehouses")
+      .insert(warehousesData)
+      .select();
+
+    if (warehouseError || !warehouses || warehouses.length === 0) {
+      console.error("❌ Failed to create warehouses:", warehouseError);
       return;
     }
 
-    warehouseId = warehouse.id;
-    console.log(`✅ Created warehouse: ${warehouseId}\n`);
+    warehouseId = warehouses[0].id; // Use main warehouse for default assignments
+    console.log(`✅ Created ${warehouses.length} warehouses\n`);
 
     // Create catalog configuration
     console.log("🏪 Creating catalog configuration...");
@@ -171,7 +258,7 @@ async function createTestPartners() {
         .insert({
           auth_user_id: authUser.user.id,
           company_id: companyId,
-          warehouse_id: warehouse.id,
+          warehouse_id: warehouseId,
           first_name: "Admin",
           last_name: "User",
           email: "admin@baletest.com",
@@ -924,7 +1011,7 @@ async function createTestPartners() {
               .from("stock_units")
               .insert({
                 company_id: companyId,
-                warehouse_id: warehouseId,
+                current_warehouse_id: warehouseId,
                 product_id: productsList[i].id,
                 created_from_inward_id: inwardId,
                 initial_quantity: quantity,
@@ -1065,6 +1152,234 @@ async function createTestPartners() {
       }
 
       console.log("\n✨ Test goods inwards and outwards created successfully!");
+    }
+  }
+
+  // Create goods transfers
+  console.log("\n🔄 Creating test goods transfers...\n");
+
+  // Get all warehouses
+  const { data: allWarehouses, error: warehousesError } = await supabase
+    .from("warehouses")
+    .select("id, name")
+    .eq("company_id", companyId);
+
+  if (warehousesError || !allWarehouses || allWarehouses.length === 0) {
+    console.error("❌ No warehouses found for creating goods transfers");
+  } else {
+    const mainWarehouse = allWarehouses.find(
+      (w) => w.name === "Main Warehouse",
+    );
+    const regionalWarehouses = allWarehouses.filter(
+      (w) => w.name.includes("Regional") && w.name !== "Main Warehouse",
+    );
+    const factories = allWarehouses.filter((w) => w.name.includes("Factory"));
+
+    if (!mainWarehouse) {
+      console.error("❌ Main warehouse not found");
+    } else {
+      // Get stock units that can be transferred (from main warehouse)
+      const { data: transferableStockUnits, error: stockUnitsError } =
+        await supabase
+          .from("stock_units")
+          .select("id, product_id, remaining_quantity, current_warehouse_id")
+          .eq("company_id", companyId)
+          .eq("current_warehouse_id", mainWarehouse.id)
+          .in("status", ["full", "partial"])
+          .limit(30);
+
+      if (
+        stockUnitsError ||
+        !transferableStockUnits ||
+        transferableStockUnits.length === 0
+      ) {
+        console.error("❌ No stock units available for transfers");
+      } else {
+        const now = new Date();
+        const month1 = new Date(now.getFullYear(), now.getMonth(), 10);
+        const month2 = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+        const month3 = new Date(now.getFullYear(), now.getMonth() - 2, 20);
+
+        // Create 8 goods transfers with various patterns
+        const transferPatterns = [
+          // Pattern 1: Main → Factory (completed)
+          {
+            from: mainWarehouse.id,
+            to: factories[0]?.id,
+            date: month3,
+            status: "completed",
+            stockUnits: [0, 1], // First 2 stock units
+            notes: "Sending fabric for dyeing",
+          },
+          // Pattern 2: Factory → Main (completed) - continuing chain
+          {
+            from: factories[0]?.id,
+            to: mainWarehouse.id,
+            date: new Date(month3.getTime() + 10 * 24 * 60 * 60 * 1000),
+            status: "completed",
+            stockUnits: [0, 1], // Same stock units coming back
+            notes: "Dyed fabric return",
+          },
+          // Pattern 3: Main → Regional (completed)
+          {
+            from: mainWarehouse.id,
+            to: regionalWarehouses[0]?.id,
+            date: month2,
+            status: "completed",
+            stockUnits: [2, 3, 4], // Next 3 stock units
+            notes: "Stock distribution to regional warehouse",
+          },
+          // Pattern 4: Main → Factory (in_transit)
+          {
+            from: mainWarehouse.id,
+            to: factories[1]?.id,
+            date: month1,
+            status: "in_transit",
+            stockUnits: [5, 6],
+            notes: "Fabric for knitting process",
+          },
+          // Pattern 5: Main → Regional (completed)
+          {
+            from: mainWarehouse.id,
+            to: regionalWarehouses[1]?.id,
+            date: month2,
+            status: "completed",
+            stockUnits: [7, 8],
+            notes: "Regional stock replenishment",
+          },
+          // Pattern 6: Regional → Factory (completed)
+          {
+            from: regionalWarehouses[1]?.id,
+            to: factories[2]?.id,
+            date: new Date(month2.getTime() + 5 * 24 * 60 * 60 * 1000),
+            status: "completed",
+            stockUnits: [7], // Continuing chain for stock unit 7
+            notes: "Sending to weaving factory",
+          },
+          // Pattern 7: Factory → Regional (completed) - longer chain
+          {
+            from: factories[2]?.id,
+            to: regionalWarehouses[2]?.id,
+            date: new Date(month2.getTime() + 12 * 24 * 60 * 60 * 1000),
+            status: "completed",
+            stockUnits: [7], // Stock unit 7 continues its journey
+            notes: "Finished fabric to regional warehouse",
+          },
+          // Pattern 8: Main → Regional (cancelled)
+          {
+            from: mainWarehouse.id,
+            to: regionalWarehouses[3]?.id,
+            date: month1,
+            status: "cancelled",
+            stockUnits: [9, 10],
+            notes: "Transfer cancelled due to warehouse capacity",
+            cancellationReason: "Destination warehouse at full capacity",
+          },
+        ];
+
+        let transfersCreated = 0;
+
+        for (const pattern of transferPatterns) {
+          if (!pattern.from || !pattern.to) {
+            console.log("   ⏭️  Skipping transfer (warehouse not available)");
+            continue;
+          }
+
+          const selectedStockUnits = pattern.stockUnits
+            .map((idx) => transferableStockUnits[idx])
+            .filter(Boolean);
+
+          if (selectedStockUnits.length === 0) {
+            console.log("   ⏭️  Skipping transfer (no stock units available)");
+            continue;
+          }
+
+          // Create transfer items
+          const stockUnitItems = selectedStockUnits.map((su) => su.id);
+
+          // Create transfer using RPC
+          const { error: transferError } = await supabase.rpc(
+            "create_goods_transfer_with_items",
+            {
+              p_transfer_data: {
+                company_id: companyId,
+                from_warehouse_id: pattern.from,
+                to_warehouse_id: pattern.to,
+                transfer_date: pattern.date.toISOString().split("T")[0],
+                expected_delivery_date: new Date(
+                  pattern.date.getTime() + 7 * 24 * 60 * 60 * 1000,
+                )
+                  .toISOString()
+                  .split("T")[0],
+                transport_type: ["road", "rail"][Math.floor(Math.random() * 2)],
+                notes: pattern.notes,
+                created_by: userId,
+              },
+              p_stock_unit_ids: stockUnitItems,
+            },
+          );
+
+          if (transferError) {
+            console.error(
+              `   ❌ Failed to create transfer: ${transferError.message}`,
+            );
+            continue;
+          }
+
+          // Get the created transfer to update its status if needed
+          const { data: createdTransfer } = await supabase
+            .from("goods_transfers")
+            .select("id, sequence_number")
+            .eq("company_id", companyId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+
+          if (createdTransfer) {
+            // Update status and handle completion/cancellation
+            if (pattern.status === "completed") {
+              await supabase
+                .from("goods_transfers")
+                .update({
+                  status: "completed",
+                  completed_at: new Date(
+                    pattern.date.getTime() + 7 * 24 * 60 * 60 * 1000,
+                  ).toISOString(),
+                  completed_by: userId,
+                })
+                .eq("id", createdTransfer.id);
+
+              // Update stock unit locations for completed transfers
+              for (const item of stockUnitItems) {
+                await supabase
+                  .from("stock_units")
+                  .update({ warehouse_id: pattern.to })
+                  .eq("id", item.stock_unit_id);
+              }
+            } else if (pattern.status === "cancelled") {
+              await supabase
+                .from("goods_transfers")
+                .update({
+                  status: "cancelled",
+                  cancellation_reason: pattern.cancellationReason,
+                })
+                .eq("id", createdTransfer.id);
+            }
+            // in_transit stays as default status
+
+            transfersCreated++;
+            console.log(
+              `✅ Created transfer GT-${createdTransfer.sequence_number} (${pattern.status}): ${allWarehouses.find((w) => w.id === pattern.from)?.name} → ${allWarehouses.find((w) => w.id === pattern.to)?.name} [${stockUnitItems.length} units]`,
+            );
+          }
+        }
+
+        console.log(`\n✨ Created ${transfersCreated} goods transfers!`);
+        console.log(
+          "   • Includes multi-hop transfer chains (e.g., Main → Factory → Main → Regional → Factory → Regional)",
+        );
+        console.log("   • Mix of statuses: completed, in_transit, cancelled\n");
+      }
     }
   }
 
@@ -1717,7 +2032,7 @@ async function createTestPartners() {
     .from("stock_units")
     .select("id")
     .eq("company_id", companyId)
-    .eq("warehouse_id", warehouseId)
+    .eq("current_warehouse_id", warehouseId)
     .in("status", ["full", "partial"])
     .limit(20);
 

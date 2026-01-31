@@ -112,7 +112,7 @@ BEGIN
     INTO v_in_stock_units, v_in_stock_quantity
     FROM stock_units
     WHERE product_id = p_product_id
-        AND warehouse_id = p_warehouse_id
+        AND current_warehouse_id = p_warehouse_id
         AND status in ('full', 'partial')
         AND deleted_at IS NULL;
 
@@ -125,7 +125,7 @@ BEGIN
     INTO v_dispatched_units, v_dispatched_quantity
     FROM stock_units
     WHERE product_id = p_product_id
-        AND warehouse_id = p_warehouse_id
+        AND current_warehouse_id = p_warehouse_id
         AND status = 'empty'
         AND deleted_at IS NULL;
 
@@ -138,7 +138,7 @@ BEGIN
     INTO v_removed_units, v_removed_quantity
     FROM stock_units
     WHERE product_id = p_product_id
-        AND warehouse_id = p_warehouse_id
+        AND current_warehouse_id = p_warehouse_id
         AND status = 'removed'
         AND deleted_at IS NULL;
 
@@ -151,7 +151,7 @@ BEGIN
     INTO v_total_units, v_total_quantity
     FROM stock_units
     WHERE product_id = p_product_id
-        AND warehouse_id = p_warehouse_id
+        AND current_warehouse_id = p_warehouse_id
         AND deleted_at IS NULL;
 
     -- Calculate pending QR units (in_stock units without QR code)
@@ -159,7 +159,7 @@ BEGIN
     INTO v_pending_qr_units
     FROM stock_units
     WHERE product_id = p_product_id
-        AND warehouse_id = p_warehouse_id
+        AND current_warehouse_id = p_warehouse_id
         AND status in ('full', 'partial')
         AND qr_generated_at IS NULL
         AND deleted_at IS NULL;
@@ -231,17 +231,17 @@ RETURNS TRIGGER AS $$
 BEGIN
     -- Handle INSERT and UPDATE
     IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
-        PERFORM recalculate_product_inventory_aggregates(NEW.product_id, NEW.warehouse_id);
+        PERFORM recalculate_product_inventory_aggregates(NEW.product_id, NEW.current_warehouse_id);
     END IF;
 
     -- Handle DELETE (use OLD record)
     IF TG_OP = 'DELETE' THEN
-        PERFORM recalculate_product_inventory_aggregates(OLD.product_id, OLD.warehouse_id);
+        PERFORM recalculate_product_inventory_aggregates(OLD.product_id, OLD.current_warehouse_id);
     END IF;
 
     -- Handle UPDATE where warehouse changed (recalculate both old and new warehouse)
-    IF TG_OP = 'UPDATE' AND OLD.warehouse_id != NEW.warehouse_id THEN
-        PERFORM recalculate_product_inventory_aggregates(OLD.product_id, OLD.warehouse_id);
+    IF TG_OP = 'UPDATE' AND OLD.current_warehouse_id != NEW.current_warehouse_id THEN
+        PERFORM recalculate_product_inventory_aggregates(OLD.product_id, OLD.current_warehouse_id);
     END IF;
 
     RETURN COALESCE(NEW, OLD);

@@ -4,14 +4,15 @@ import {
   buildStockUnitsQuery,
   buildStockUnitsWithInwardQuery,
   buildStockUnitWithProductDetailQuery,
+  buildStockUnitActivityQuery,
 } from "@/lib/queries/stock-units";
 import { ProductDetailView, ProductListView } from "./products.types";
 import { StockUnitStatus } from "./database/enums";
+import { Warehouse } from "./warehouses.types";
 
 export type StockUnit = Tables<"stock_units">;
 type GoodsInward = Tables<"goods_inwards">;
 type Partner = Tables<"partners">;
-type Warehouse = Tables<"warehouses">;
 
 // ============================================================================
 // FILTERS
@@ -73,8 +74,7 @@ export interface InwardWithPartnerListView extends InwardListView {
   partner: Pick<
     Partner,
     "id" | "first_name" | "last_name" | "company_name" | "display_name"
-  > | null;
-  from_warehouse: Pick<Warehouse, "id" | "name"> | null;
+  >;
 }
 
 /**
@@ -108,6 +108,7 @@ export type StockUnitDetailView = StockUnit;
  * Used in: inventory list page with product info
  */
 export interface StockUnitWithProductListView extends StockUnitListView {
+  warehouse: Pick<Warehouse, "id" | "name">;
   product: ProductListView | null;
 }
 
@@ -116,6 +117,7 @@ export interface StockUnitWithProductListView extends StockUnitListView {
  * Used in: stock unit detail page with complete product info
  */
 export interface StockUnitWithProductDetailView extends StockUnitDetailView {
+  warehouse: Pick<Warehouse, "id" | "name">;
   product: ProductDetailView | null;
 }
 
@@ -124,6 +126,20 @@ export interface StockUnitWithProductDetailView extends StockUnitDetailView {
  * Used in: product detail page showing stock flow history
  */
 export interface StockUnitWithInwardListView extends StockUnitListView {
+  warehouse: Pick<Warehouse, "id" | "name">;
   product: ProductListView | null;
   goods_inward: InwardWithPartnerListView | null;
 }
+
+// ============================================================================
+// STOCK UNIT ACTIVITY TYPES
+// ============================================================================
+
+/**
+ * Single activity event in a stock unit's history
+ * Type is automatically inferred from the get_stock_unit_activity RPC function
+ * Used in: stock unit activity timeline/list
+ */
+export type StockUnitActivity = QueryData<
+  ReturnType<typeof buildStockUnitActivityQuery>
+>[number];

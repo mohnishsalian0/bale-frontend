@@ -58,7 +58,7 @@ INSERT INTO permissions (permission_path, display_name, description, category) V
 ('inventory.qr_batches.update', 'Update QR Batches', 'Edit QR batch information', 'inventory'),
 ('inventory.qr_batches.delete', 'Delete QR Batches', 'Remove QR batches', 'inventory');
 
--- Movement Module (Inward, Outward)
+-- Movement Module (Inward, Outward, Transfers)
 INSERT INTO permissions (permission_path, display_name, description, category) VALUES
 -- Goods Inward
 ('movement.inward.read', 'View Inward', 'View inward movement records', 'movement'),
@@ -70,7 +70,13 @@ INSERT INTO permissions (permission_path, display_name, description, category) V
 ('movement.outward.read', 'View Outward', 'View outward movement records', 'movement'),
 ('movement.outward.create', 'Create Outward', 'Create outward movements', 'movement'),
 ('movement.outward.update', 'Update Outward', 'Edit outward records', 'movement'),
-('movement.outward.delete', 'Delete Outward', 'Remove outward records', 'movement');
+('movement.outward.delete', 'Delete Outward', 'Remove outward records', 'movement'),
+
+-- Goods Transfers
+('movement.transfers.read', 'View Transfers', 'View warehouse transfer records', 'movement'),
+('movement.transfers.create', 'Create Transfers', 'Create warehouse transfers', 'movement'),
+('movement.transfers.update', 'Update Transfers', 'Edit transfer records (includes complete/cancel)', 'movement'),
+('movement.transfers.delete', 'Delete Transfers', 'Remove transfer records', 'movement');
 
 -- Partners (Top Level)
 INSERT INTO permissions (permission_path, display_name, description, category) VALUES
@@ -203,6 +209,11 @@ AND p.permission_path IN (
     'movement.outward.create',
     'movement.outward.update',
     'movement.outward.delete',
+
+    -- Warehouse transfers (can create transfers from assigned warehouse)
+    'movement.transfers.read',
+    'movement.transfers.create',
+    'movement.transfers.update',
 
     -- Storage access
     'storage.upload',

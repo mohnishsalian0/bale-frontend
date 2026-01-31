@@ -228,9 +228,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_reconcile_items_on_inward_change
-    AFTER INSERT OR UPDATE OR DELETE ON stock_units
-    FOR EACH ROW EXECUTE FUNCTION trigger_purchase_order_items_reconciliation();
+-- Trigger for INSERT and DELETE to reconcile purchase order items
+CREATE TRIGGER trigger_reconcile_items_on_inward_change_insert_delete
+    AFTER INSERT OR DELETE ON stock_units
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_purchase_order_items_reconciliation();
+
+-- Trigger for UPDATE to reconcile purchase order items, only when initial_quantity changes
+CREATE TRIGGER trigger_reconcile_items_on_inward_change_update
+    AFTER UPDATE ON stock_units
+    FOR EACH ROW
+    WHEN (OLD.initial_quantity IS DISTINCT FROM NEW.initial_quantity)
+    EXECUTE FUNCTION trigger_purchase_order_items_reconciliation();
 
 COMMENT ON FUNCTION trigger_purchase_order_items_reconciliation() IS 'Triggers purchase_order_items reconciliation when stock_units from goods_inward are created, updated, or deleted';
 

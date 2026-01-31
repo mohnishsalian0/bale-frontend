@@ -179,7 +179,10 @@ export function ProductSelectionStep({
   }, [products]);
 
   return (
-    <>
+    <div
+      className="flex-1 flex flex-col overflow-y-auto"
+      onScroll={handleScroll}
+    >
       {/* Filters Section */}
       <div className="flex flex-col gap-3 px-4 py-4 shrink-0">
         <div className="flex items-center justify-between">
@@ -254,7 +257,7 @@ export function ProductSelectionStep({
       </div>
 
       {/* Product List - Scrollable */}
-      <div className="flex-1" onScroll={handleScroll}>
+      <div className="flex-1">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-gray-500">Loading products...</p>
@@ -375,6 +378,6 @@ export function ProductSelectionStep({
           </>
         )}
       </div>
-    </>
+    </div>
   );
 }

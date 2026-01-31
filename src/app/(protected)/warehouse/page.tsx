@@ -77,7 +77,7 @@ export default function WarehouseSelectionPage() {
   }
 
   return (
-    <div className="h-full flex items-center justify-center py-4">
+    <div className="h-full flex justify-center py-4 overflow-y-auto">
       <div className="w-full max-w-md">
         {/* Header with illustration */}
         <div className="flex flex-row items-end justify-between mb-6 px-4">

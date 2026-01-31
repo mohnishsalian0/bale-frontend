@@ -163,6 +163,70 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- =====================================================
+-- PRODUCT AGGREGATES
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION get_product_aggregates()
+RETURNS TABLE (
+    total_products BIGINT,
+    active_products BIGINT,
+    live_products BIGINT,
+    stock_type_breakdown JSONB
+) AS $$
+DECLARE
+    v_company_id UUID;
+BEGIN
+    -- Get company_id from JWT token
+    v_company_id := get_jwt_company_id();
+
+    RETURN QUERY
+    SELECT
+        -- Total products count
+        (SELECT COUNT(*)::BIGINT
+         FROM products
+         WHERE company_id = v_company_id
+           AND deleted_at IS NULL
+        ) AS total_products,
+
+        -- Active products count
+        (SELECT COUNT(*)::BIGINT
+         FROM products
+         WHERE company_id = v_company_id
+           AND is_active = true
+           AND deleted_at IS NULL
+        ) AS active_products,
+
+        -- Live products count (shown on catalog)
+        (SELECT COUNT(*)::BIGINT
+         FROM products
+         WHERE company_id = v_company_id
+           AND show_on_catalog = true
+           AND deleted_at IS NULL
+        ) AS live_products,
+
+        -- Stock type breakdown
+        -- Returns JSONB array: [{"type": "roll", "count": 15}, {"type": "batch", "count": 8}]
+        COALESCE(
+            (SELECT jsonb_agg(type_counts)
+             FROM (
+                 SELECT jsonb_build_object(
+                     'type', stock_type,
+                     'count', COUNT(*)
+                 ) AS type_counts
+                 FROM products
+                 WHERE company_id = v_company_id
+                   AND is_active = true
+                   AND deleted_at IS NULL
+                 GROUP BY stock_type
+                 ORDER BY stock_type
+             ) AS subquery
+            ),
+            '[]'::jsonb
+        ) AS stock_type_breakdown;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =====================================================
 -- GRANT PERMISSIONS
 -- =====================================================
 
@@ -170,3 +234,4 @@ GRANT EXECUTE ON FUNCTION get_invoice_aggregates(UUID, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_sales_order_aggregates(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_purchase_order_aggregates(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_inventory_aggregates(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_product_aggregates() TO authenticated;

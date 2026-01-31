@@ -12,6 +12,7 @@ import {
   getStockUnits,
   getStockUnitsWithInward,
   getStockUnitWithProductDetail,
+  getStockUnitActivity,
   updateStockUnit,
   updateStockUnits,
   deleteStockUnit,
@@ -64,6 +65,23 @@ export function useStockUnitWithProductDetail(stockUnitId: string | null) {
   return useQuery({
     queryKey: queryKeys.stockUnits.byId(stockUnitId || ""),
     queryFn: () => getStockUnitWithProductDetail(stockUnitId!),
+    ...getQueryOptions(STALE_TIME.STOCK_UNITS, GC_TIME.TRANSACTIONAL),
+    enabled: !!stockUnitId,
+  });
+}
+
+/**
+ * Fetch complete activity history for a stock unit
+ * Returns chronological timeline of all events (newest first):
+ * - Creation via goods inward
+ * - Transfers between warehouses
+ * - Outward dispatches to partners
+ * - Quantity adjustments
+ */
+export function useStockUnitActivity(stockUnitId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.stockUnits.activity(stockUnitId || ""),
+    queryFn: () => getStockUnitActivity(stockUnitId!),
     ...getQueryOptions(STALE_TIME.STOCK_UNITS, GC_TIME.TRANSACTIONAL),
     enabled: !!stockUnitId,
   });

@@ -9,6 +9,7 @@ import {
   StockUnitWithProductListViewRaw,
   StockUnitWithInwardListViewRaw,
   StockUnitWithProductDetailViewRaw,
+  StockUnitActivity,
 } from "@/types/stock-units.types";
 import {
   transformProductListView,
@@ -44,6 +45,7 @@ export const buildStockUnitsQuery = (
       created_at,
       created_from_inward_id,
       supplier_number,
+			warehouse:warehouses(id, name),
       product:products(
         id,
         sequence_number,
@@ -64,7 +66,7 @@ export const buildStockUnitsQuery = (
       )
     `,
     )
-    .eq("warehouse_id", warehouseId)
+    .eq("current_warehouse_id", warehouseId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
@@ -130,6 +132,7 @@ export const buildStockUnitsWithInwardQuery = (
       created_at,
       created_from_inward_id,
       supplier_number,
+			warehouse:warehouses(id, name),
       product:products(
         id,
         sequence_number,
@@ -152,15 +155,12 @@ export const buildStockUnitsWithInwardQuery = (
         id, sequence_number, inward_date, inward_type,
         partner:partners!goods_inwards_partner_id_fkey(
           id, first_name, last_name, display_name, company_name
-        ),
-        from_warehouse:warehouses!goods_inwards_from_warehouse_id_fkey(
-          id, name
         )
       )
     `,
       { count: "exact" },
     )
-    .eq("warehouse_id", warehouseId)
+    .eq("current_warehouse_id", warehouseId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
@@ -214,6 +214,7 @@ export const buildStockUnitWithProductDetailQuery = (
     .select(
       `
       *,
+			warehouse:warehouses(id, name),
       product:products(
         *,
         attributes:product_attributes!inner(id, name, group_name, color_hex)
@@ -225,7 +226,7 @@ export const buildStockUnitWithProductDetailQuery = (
 
   // Apply optional filters
   if (filters?.warehouseId) {
-    query = query.eq("warehouse_id", filters.warehouseId);
+    query = query.eq("current_warehouse_id", filters.warehouseId);
   }
 
   if (filters?.status) {
@@ -237,6 +238,23 @@ export const buildStockUnitWithProductDetailQuery = (
   }
 
   return query.single();
+};
+
+/**
+ * Query builder for fetching stock unit activity history
+ * Uses RPC function to get complete activity timeline including:
+ * - Creation (goods inward)
+ * - Transfers between warehouses
+ * - Outward dispatches
+ * - Quantity adjustments
+ */
+export const buildStockUnitActivityQuery = (
+  supabase: SupabaseClient<Database>,
+  stockUnitId: string,
+) => {
+  return supabase.rpc("get_stock_unit_activity", {
+    p_stock_unit_id: stockUnitId,
+  });
 };
 
 // ============================================================================
@@ -268,7 +286,7 @@ function transformStockUnitWithInwardListView(
   return {
     ...stockUnit,
     product: rawProduct ? transformProductListView(rawProduct) : null,
-    goods_inward,
+    goods_inward: goods_inward,
   };
 }
 
@@ -437,4 +455,29 @@ export async function deleteStockUnit(id: string): Promise<void> {
     console.error("Error deleting stock unit:", error);
     throw error;
   }
+}
+
+/**
+ * Fetch complete activity history for a stock unit
+ * Returns chronological timeline of all events (newest first):
+ * - Creation via goods inward
+ * - Transfers between warehouses
+ * - Outward dispatches to partners
+ * - Quantity adjustments
+ */
+export async function getStockUnitActivity(
+  stockUnitId: string,
+): Promise<StockUnitActivity[]> {
+  const supabase = createClient();
+  const { data, error } = await buildStockUnitActivityQuery(
+    supabase,
+    stockUnitId,
+  );
+
+  if (error) {
+    console.error("Error fetching stock unit activity:", error);
+    throw error;
+  }
+
+  return data || [];
 }

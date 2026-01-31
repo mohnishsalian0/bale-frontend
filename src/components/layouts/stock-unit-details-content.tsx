@@ -14,6 +14,7 @@ import {
   useStockUnitAdjustments,
   useStockUnitAdjustmentMutations,
 } from "@/lib/query/hooks/stock-unit-adjustments";
+import { useStockUnitActivity } from "@/lib/query/hooks/stock-units";
 import { toast } from "sonner";
 
 type StockUnit = Tables<"stock_units">;
@@ -53,6 +54,10 @@ export function StockUnitDetailsContent({
   const { data: adjustments = [], isLoading: adjustmentsLoading } =
     useStockUnitAdjustments(stockUnit.id);
   const { delete: deleteAdjustment } = useStockUnitAdjustmentMutations();
+
+  // Fetch activity history for this stock unit
+  const { data: activities = [], isLoading: activitiesLoading } =
+    useStockUnitActivity(stockUnit.id);
 
   const handleAdjustment = () => {
     if (onAdjustment) {
@@ -172,7 +177,7 @@ export function StockUnitDetailsContent({
             )}
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-700">QR generated at</span>
+            <span className="text-gray-700">QR on</span>
             {stockUnit.qr_generated_at ? (
               <span className="font-semibold text-gray-700">
                 {formatAbsoluteDate(stockUnit.qr_generated_at)}
@@ -239,6 +244,124 @@ export function StockUnitDetailsContent({
                     >
                       <IconTrash className="size-4" />
                     </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Activity History Section */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-500">
+            Activity History
+          </h3>
+          {activitiesLoading ? (
+            <p className="text-sm text-gray-500">Loading activity...</p>
+          ) : activities.length === 0 ? (
+            <p className="text-sm text-gray-500">-</p>
+          ) : (
+            <div className="space-y-2">
+              {activities.map((activity) => {
+                // Determine event type label and color
+                const eventTypeConfig = {
+                  created: {
+                    label: "Created",
+                    color: "text-blue-600",
+                    bgColor: "bg-blue-50",
+                  },
+                  transfer: {
+                    label: "Transfer",
+                    color: "text-purple-600",
+                    bgColor: "bg-purple-50",
+                  },
+                  dispatched: {
+                    label: "Dispatched",
+                    color: "text-orange-600",
+                    bgColor: "bg-orange-50",
+                  },
+                  adjustment: {
+                    label: "Adjustment",
+                    color: "text-gray-600",
+                    bgColor: "bg-gray-50",
+                  },
+                };
+
+                const config =
+                  eventTypeConfig[
+                    activity.event_type as keyof typeof eventTypeConfig
+                  ];
+                const quantityColor =
+                  activity.quantity_change > 0
+                    ? "text-green-600"
+                    : "text-red-600";
+
+                return (
+                  <div
+                    key={`${activity.event_type}-${activity.event_id}`}
+                    className="px-3 py-2 border border-gray-200 rounded-md"
+                  >
+                    <div className="space-y-1">
+                      {/* Event Type and Number */}
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-xs font-semibold ${config.color}`}
+                        >
+                          {config.label}
+                        </span>
+                        {activity.event_number && (
+                          <span className="text-xs text-gray-500">
+                            {activity.event_number}
+                          </span>
+                        )}
+                        {activity.status !== "completed" && (
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded ${
+                              activity.status === "in_transit"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {activity.status}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* From/To Information */}
+                      {(activity.from_name || activity.to_name) && (
+                        <p className="text-xs text-gray-600">
+                          {activity.from_name && (
+                            <span title={activity.from_name}>
+                              From: {activity.from_name}
+                            </span>
+                          )}
+                          {activity.from_name && activity.to_name && (
+                            <span className="mx-1">→</span>
+                          )}
+                          {activity.to_name && (
+                            <span title={activity.to_name}>
+                              To: {activity.to_name}
+                            </span>
+                          )}
+                        </p>
+                      )}
+
+                      {/* Quantity, Date, and Notes */}
+                      <p className="text-xs text-gray-500">
+                        <span className={`font-semibold ${quantityColor}`}>
+                          {activity.quantity_change > 0 ? "+" : ""}
+                          {activity.quantity_change} {unitAbbr}
+                        </span>
+                        {" • "}
+                        <span>{formatAbsoluteDate(activity.event_date)}</span>
+                        {activity.notes && (
+                          <>
+                            {" • "}
+                            <span title={activity.notes}>{activity.notes}</span>
+                          </>
+                        )}
+                      </p>
+                    </div>
                   </div>
                 );
               })}

@@ -29,6 +29,7 @@ interface StockUnitScannerStepProps {
   onScannedUnitsChange: (units: ScannedStockUnit[]) => void;
   warehouseId: string;
   orderProducts?: Record<string, number>; // productId -> requested_quantity
+  fullQuantity?: boolean; // If true, always transfer full quantity without showing quantity sheet
 }
 
 export function StockUnitScannerStep({
@@ -36,6 +37,7 @@ export function StockUnitScannerStep({
   onScannedUnitsChange,
   warehouseId,
   orderProducts = {},
+  fullQuantity = false,
 }: StockUnitScannerStepProps) {
   const [error, setError] = useState<string | null>(null);
   const [torch, setTorch] = useState(false);
@@ -100,6 +102,21 @@ export function StockUnitScannerStep({
       );
 
       if (existingIndex !== -1) {
+        if (fullQuantity) {
+          // For fullQuantity mode: update to full remaining quantity
+          const updatedUnits = [...scannedUnits];
+          updatedUnits[existingIndex] = {
+            ...updatedUnits[existingIndex],
+            quantity: stockUnitWithProduct.remaining_quantity,
+          };
+
+          onScannedUnitsChange(updatedUnits);
+
+          // Resume scanning immediately
+          setPaused(false);
+          return;
+        }
+
         // For piece type: increment quantity by 1
         if (stockType === "piece") {
           const updatedUnits = [...scannedUnits];
@@ -134,6 +151,21 @@ export function StockUnitScannerStep({
       }
 
       // New scan
+      if (fullQuantity) {
+        // For fullQuantity mode: add directly with full remaining quantity
+        onScannedUnitsChange([
+          ...scannedUnits,
+          {
+            stockUnit: stockUnitWithProduct,
+            quantity: stockUnitWithProduct.remaining_quantity,
+          },
+        ]);
+
+        // Resume scanning immediately
+        setPaused(false);
+        return;
+      }
+
       if (stockType === "piece") {
         // For piece type: add directly with quantity 1, no modal
         onScannedUnitsChange([
@@ -381,6 +413,7 @@ export function StockUnitScannerStep({
                       type="button"
                       size="sm"
                       onClick={() => handleEditQuantity(index)}
+                      disabled={fullQuantity}
                     >
                       {item.quantity} / {maxQuantity} {pluralizedUnit}
                     </Button>
@@ -411,6 +444,7 @@ export function StockUnitScannerStep({
           scannedUnits={scannedUnits}
           onScannedUnitsChange={onScannedUnitsChange}
           orderProducts={orderProducts}
+          fullQuantity={fullQuantity}
         />
       )}
 

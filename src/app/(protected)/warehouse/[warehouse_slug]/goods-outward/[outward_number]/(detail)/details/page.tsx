@@ -82,14 +82,9 @@ export default function OutwardDetailsPage({ params }: PageParams) {
     ReasonIcon = IconNote;
   }
 
-  // Determine receiver (partner or warehouse)
-  const isWarehouseTransfer = !!outward.to_warehouse;
-  const receiverName = isWarehouseTransfer
-    ? outward.to_warehouse?.name || "Unknown Warehouse"
-    : getPartnerName(outward.partner);
-  const receiverAddressLines = isWarehouseTransfer
-    ? getFormattedAddress(outward.to_warehouse)
-    : getFormattedAddress(getPartnerShippingAddress(outward.partner));
+  // Receiver is always a partner (warehouse transfers handled separately)
+  const receiverName = getPartnerName(outward.partner);
+  const receiverAddressLines = getFormattedAddress(getPartnerShippingAddress(outward.partner));
 
   const TransportIcon = getTransportIcon(outward.transport_type);
 
@@ -115,11 +110,7 @@ export default function OutwardDetailsPage({ params }: PageParams) {
       <Section
         title={receiverName}
         subtitle="Receiver"
-        icon={
-          isWarehouseTransfer
-            ? () => <IconBuildingWarehouse />
-            : () => <>{getInitials(receiverName)}</>
-        }
+        icon={() => <>{getInitials(receiverName)}</>}
       >
         {receiverAddressLines.length > 0 && (
           <div className="flex justify-between text-sm">

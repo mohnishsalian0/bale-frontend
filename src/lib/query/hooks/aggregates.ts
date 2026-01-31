@@ -8,6 +8,7 @@ import {
   getSalesOrderAggregates,
   getPurchaseOrderAggregates,
   getInventoryAggregates,
+  getProductAggregates,
 } from "@/lib/queries/aggregates";
 import type { InvoiceAggregateFilters } from "@/types/aggregates.types";
 
@@ -95,5 +96,20 @@ export function useInventoryAggregates({
       }),
     ...getQueryOptions(STALE_TIME.AGGREGATES, GC_TIME.AGGREGATES),
     enabled: enabled && !!warehouseId,
+  });
+}
+
+// =====================================================
+// PRODUCT AGGREGATES
+// =====================================================
+
+export function useProductAggregates({
+  enabled = true,
+}: { enabled?: boolean } = {}) {
+  return useQuery({
+    queryKey: queryKeys.products.aggregates(),
+    queryFn: () => getProductAggregates(),
+    ...getQueryOptions(STALE_TIME.AGGREGATES, GC_TIME.AGGREGATES),
+    enabled,
   });
 }

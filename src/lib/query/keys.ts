@@ -49,6 +49,7 @@ export const queryKeys = {
     colors: () => ["products", "colors"] as const,
     tags: () => ["products", "tags"] as const,
     attributes: () => ["products", "attributes"] as const,
+    aggregates: () => ["products", "aggregates"] as const,
   },
 
   // Partners (companyId removed - RLS handles scoping, user in single company)
@@ -101,9 +102,11 @@ export const queryKeys = {
     ) => ["stock-units", warehouseId, filters, page] as const,
     byId: (stockUnitId: string) =>
       ["stock-units", "product", stockUnitId] as const,
+    activity: (stockUnitId: string) =>
+      ["stock-units", "activity", stockUnitId] as const,
   },
 
-  // Stock Flow (Goods Inward/Outward)
+  // Stock Flow (Goods Inward/Outward/Transfers)
   stockFlow: {
     inwards: (
       warehouseId: string,
@@ -115,6 +118,11 @@ export const queryKeys = {
       filters?: Record<string, unknown>,
       page?: number,
     ) => ["stock-flow", "outwards", warehouseId, filters, page] as const,
+    transfers: (
+      warehouseId: string,
+      filters?: Record<string, unknown>,
+      page?: number,
+    ) => ["stock-flow", "transfers", warehouseId, filters, page] as const,
     inwardsByPurchaseOrder: (orderNumber: string, page?: number) =>
       ["stock-flow", "inwards", orderNumber, page] as const,
     outwardsBySalesOrder: (orderNumber: string, page?: number) =>
@@ -123,6 +131,8 @@ export const queryKeys = {
       ["stock-flow", "inward", "detail", sequenceNumber] as const,
     outwardDetail: (sequenceNumber: string) =>
       ["stock-flow", "outward", "detail", sequenceNumber] as const,
+    transferDetail: (sequenceNumber: string) =>
+      ["stock-flow", "transfer", "detail", sequenceNumber] as const,
     outwardItemsByProduct: (productId: string, page?: number) =>
       ["stock-flow", "outward-items", "product", productId, page] as const,
   },

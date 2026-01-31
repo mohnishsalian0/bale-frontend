@@ -23,8 +23,7 @@ CREATE TABLE goods_inwards (
     other_reason TEXT, -- Required when inward_type = 'other'
 
     -- Senders
-    partner_id UUID REFERENCES partners(id),
-    from_warehouse_id UUID REFERENCES warehouses(id), -- For warehouse transfers
+    partner_id UUID NOT NULL REFERENCES partners(id),
     agent_id UUID REFERENCES partners(id), -- Optional agent
 
     -- Details
@@ -56,11 +55,6 @@ CREATE TABLE goods_inwards (
     search_vector tsvector,
 
     -- Business logic constraints
-    CONSTRAINT check_inward_source
-        CHECK (
-            (partner_id IS NOT NULL AND from_warehouse_id IS NULL) OR
-            (partner_id IS NULL AND from_warehouse_id IS NOT NULL AND from_warehouse_id != warehouse_id)
-        ),
     CONSTRAINT check_inward_type_requirements
         CHECK (
 						(inward_type = 'job_work' AND job_work_id IS NOT NULL) OR
@@ -162,8 +156,7 @@ CREATE TRIGGER trigger_prevent_invoiced_inward_edit
     FOR EACH ROW
     WHEN (
         OLD.inward_date IS DISTINCT FROM NEW.inward_date OR
-        OLD.partner_id IS DISTINCT FROM NEW.partner_id OR
-        OLD.from_warehouse_id IS DISTINCT FROM NEW.from_warehouse_id
+        OLD.partner_id IS DISTINCT FROM NEW.partner_id
     )
     EXECUTE FUNCTION prevent_invoiced_inward_edit();
 

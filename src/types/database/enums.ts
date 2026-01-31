@@ -130,6 +130,9 @@ export type OutwardLinkToType =
   | "purchase_return"
   | "other";
 
+export type TransferStatus = "in_transit" | "completed" | "cancelled";
+export const TRANSFER_STATUSES = ["in_transit", "completed", "cancelled"];
+
 export type TransportType = "road" | "rail" | "air" | "sea" | "courier";
 export const TRANSPORT_TYPES = [
   "road",

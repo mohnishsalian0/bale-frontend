@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { IconSearch } from "@tabler/icons-react";
+import { IconSearch, IconTruckDelivery } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
 import {
@@ -30,11 +30,16 @@ import { useSession } from "@/contexts/session-context";
 import { formatMeasuringUnitQuantities } from "@/lib/utils/measuring-units";
 import { getPartnerName, getPartnerTypeLabel } from "@/lib/utils/partner";
 import { formatMonthHeader } from "@/lib/utils/date";
-import type { MeasuringUnit, PartnerType } from "@/types/database/enums";
+import type {
+  MeasuringUnit,
+  PartnerType,
+  TransferStatus,
+} from "@/types/database/enums";
 import {
   useGoodsInwards,
   useGoodsOutwards,
 } from "@/lib/query/hooks/stock-flow";
+import { useGoodsTransfers } from "@/lib/query/hooks/goods-transfers";
 import { usePartners } from "@/lib/query/hooks/partners";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -42,6 +47,9 @@ import {
   getInwardQuantitiesByUnit,
   getOutwardProductsSummary,
   getOutwardQuantitiesByUnit,
+  getTransferProductsSummary,
+  getTransferQuantitiesByUnit,
+  getTransferWarehousesName,
   getReceiverName,
   getSenderName,
 } from "@/lib/utils/stock-flow";
@@ -50,10 +58,12 @@ import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { useInfiniteProducts } from "@/lib/query/hooks/products";
 import { Button } from "@/components/ui/button";
+import { TransferStatusBadge } from "@/components/ui/transfer-status-badge";
 
 interface StockFlowItem {
   id: string;
-  type: "outward" | "inward";
+  type: "outward" | "inward" | "transfer";
+  status?: TransferStatus;
   productsSummary: string;
   partnerId: string | null;
   senderOrReceiverName: string;
@@ -76,9 +86,9 @@ export default function StockFlowPage() {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
-  const [selectedFilter, setSelectedFilter] = useState<"outward" | "inward">(
-    "inward",
-  );
+  const [selectedFilter, setSelectedFilter] = useState<
+    "outward" | "inward" | "transfer"
+  >("inward");
   const [selectedPartner, setSelectedPartner] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -89,6 +99,8 @@ export default function StockFlowPage() {
 
   // Determine which view is active
   const isInwardView = selectedFilter === "inward";
+  const isOutwardView = selectedFilter === "outward";
+  const isTransferView = selectedFilter === "transfer";
 
   // Build filters for backend
   const inwardFilters = {
@@ -104,6 +116,14 @@ export default function StockFlowPage() {
   const outwardFilters = {
     partner_id: selectedPartner !== "all" ? selectedPartner : undefined,
     product_id: selectedProduct !== "all" ? selectedProduct : undefined,
+    search_term: debouncedSearchQuery || undefined,
+    date_from: dateRange?.from
+      ? format(dateRange.from, "yyyy-MM-dd")
+      : undefined,
+    date_to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
+  };
+
+  const transferFilters = {
     search_term: debouncedSearchQuery || undefined,
     date_from: dateRange?.from
       ? format(dateRange.from, "yyyy-MM-dd")
@@ -132,7 +152,18 @@ export default function StockFlowPage() {
   } = useGoodsOutwards(
     warehouse.id,
     outwardFilters,
-    !isInwardView ? currentPage : 1,
+    isOutwardView ? currentPage : 1,
+    PAGE_SIZE,
+  );
+  const {
+    data: transfersResponse,
+    isLoading: transfersLoading,
+    isError: transfersError,
+    refetch: refetchTransfers,
+  } = useGoodsTransfers(
+    warehouse.id,
+    transferFilters,
+    isTransferView ? currentPage : 1,
     PAGE_SIZE,
   );
   const { data: partners = [], isLoading: partnersLoading } = usePartners();
@@ -154,16 +185,25 @@ export default function StockFlowPage() {
   // Use only the selected filter's data
   const loading = isInwardView
     ? inwardsLoading || partnersLoading || productsLoading
-    : outwardsLoading || partnersLoading || productsLoading;
-  const error = isInwardView ? inwardsError : outwardsError;
+    : isOutwardView
+      ? outwardsLoading || partnersLoading || productsLoading
+      : transfersLoading || productsLoading;
+  const error = isInwardView
+    ? inwardsError
+    : isOutwardView
+      ? outwardsError
+      : transfersError;
 
   const inwards = isInwardView ? inwardsResponse?.data || [] : [];
-  const outwards = isInwardView ? [] : outwardsResponse?.data || [];
+  const outwards = isOutwardView ? outwardsResponse?.data || [] : [];
+  const transfers = isTransferView ? transfersResponse?.data || [] : [];
   const products = productsData?.pages.flatMap((page) => page.data) || [];
 
   const totalCount = isInwardView
     ? inwardsResponse?.totalCount || 0
-    : outwardsResponse?.totalCount || 0;
+    : isOutwardView
+      ? outwardsResponse?.totalCount || 0
+      : transfersResponse?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   // Reset to page 1 when server-side filters change (use debounced search)
@@ -189,9 +229,7 @@ export default function StockFlowPage() {
     // Transform inwards
     const inwardItems: StockFlowItem[] = inwards.map((r) => {
       const senderName = getSenderName(r);
-
       const productsSummary = getInwardProductsSummary(r);
-
       const quantities = getInwardQuantitiesByUnit(r);
 
       return {
@@ -210,9 +248,7 @@ export default function StockFlowPage() {
     // Transform outwards
     const outwardItems: StockFlowItem[] = outwards.map((d) => {
       const receiverName = getReceiverName(d);
-
       const productsSummary = getOutwardProductsSummary(d);
-
       const quantities = getOutwardQuantitiesByUnit(d);
 
       return {
@@ -228,8 +264,29 @@ export default function StockFlowPage() {
       };
     });
 
+    // Transform transfers
+    const transferItems: StockFlowItem[] = transfers.map((t) => {
+      const transferName = getTransferWarehousesName(t);
+      const status = t.status as TransferStatus;
+      const productsSummary = getTransferProductsSummary(t);
+      const quantities = getTransferQuantitiesByUnit(t);
+
+      return {
+        id: t.id,
+        type: "transfer" as const,
+        status,
+        productsSummary,
+        partnerId: null,
+        senderOrReceiverName: transferName,
+        date: t.transfer_date,
+        quantities,
+        billNumber: `GT-${t.sequence_number}`,
+        sequenceNumber: t.sequence_number,
+      };
+    });
+
     // Combine and sort by date
-    const allItems = [...outwardItems, ...inwardItems].sort(
+    const allItems = [...outwardItems, ...inwardItems, ...transferItems].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
 
@@ -284,7 +341,7 @@ export default function StockFlowPage() {
     });
 
     return sortedGroups;
-  }, [inwards, outwards]);
+  }, [inwards, outwards, transfers]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -315,8 +372,10 @@ export default function StockFlowPage() {
         onRetry={() => {
           if (isInwardView) {
             refetchInwards();
-          } else {
+          } else if (isOutwardView) {
             refetchOutwards();
+          } else {
+            refetchTransfers();
           }
         }}
       />
@@ -378,10 +437,11 @@ export default function StockFlowPage() {
           options={[
             { value: "inward", label: "Inward" },
             { value: "outward", label: "Outward" },
+            { value: "transfer", label: "Transfer" },
           ]}
           value={selectedFilter}
           onValueChange={(value) =>
-            setSelectedFilter(value as "outward" | "inward")
+            setSelectedFilter(value as "outward" | "inward" | "transfer")
           }
         />
 
@@ -474,21 +534,32 @@ export default function StockFlowPage() {
                       router.push(
                         `/warehouse/${warehouse.slug}/goods-inward/${item.sequenceNumber}`,
                       );
+                    } else if (item.type === "transfer") {
+                      router.push(
+                        `/warehouse/${warehouse.slug}/goods-transfer/${item.sequenceNumber}`,
+                      );
                     }
                   }}
                   className="flex gap-4 p-4 border-t border-dashed border-gray-300 hover:bg-gray-100 hover:cursor-pointer transition-colors"
                 >
                   <div className="flex-3 text-left">
                     <p className="text-base font-medium text-gray-700">
-                      {item.type === "inward" ? "From" : "To"}{" "}
-                      {item.senderOrReceiverName}
+                      {item.type === "inward"
+                        ? `From ${item.senderOrReceiverName}`
+                        : item.type === "outward"
+                          ? `To ${item.senderOrReceiverName}`
+                          : item.senderOrReceiverName}
                     </p>
                     <p className="text-sm text-gray-500 mt-1">
                       {item.productsSummary}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {item.type === "inward" ? "GI" : "GO"}-
-                      {item.sequenceNumber}
+                      {item.type === "inward"
+                        ? "GI"
+                        : item.type === "outward"
+                          ? "GO"
+                          : "GT"}
+                      -{item.sequenceNumber}
                       <span> &nbsp;•&nbsp; </span>
                       {formatDate(item.date)}
                     </p>
@@ -498,14 +569,26 @@ export default function StockFlowPage() {
                       className={`text-sm font-semibold ${
                         item.type === "inward"
                           ? "text-yellow-700"
-                          : "text-teal-700"
+                          : item.type === "outward"
+                            ? "text-teal-700"
+                            : "text-primary-700"
                       }`}
                     >
                       {formatMeasuringUnitQuantities(item.quantities)}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {item.type === "inward" ? "In" : "Out"}
+                      {item.type === "inward"
+                        ? "In"
+                        : item.type === "outward"
+                          ? "Out"
+                          : "Transfer"}
                     </p>
+                    {item.type === "transfer" && item.status && (
+                      <TransferStatusBadge
+                        status={item.status}
+                        className="mt-1"
+                      />
+                    )}
                   </div>
                 </button>
               ))}
@@ -538,7 +621,7 @@ export default function StockFlowPage() {
               router.push(`/warehouse/${warehouse.slug}/goods-inward/create`)
             }
           >
-            <IconGoodsInward className="size-8 mr-1 fill-gray-500 group-hover:fill-primary-foreground" />
+            <IconGoodsInward className="size-8 mr-1 text-gray-500 group-hover:text-primary-foreground" />
             Goods Inward
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -547,8 +630,20 @@ export default function StockFlowPage() {
               router.push(`/warehouse/${warehouse.slug}/goods-outward/create`)
             }
           >
-            <IconGoodsOutward className="size-8 mr-1 fill-gray-500 group-hover:fill-primary-foreground" />
+            <IconGoodsOutward className="size-8 mr-1 text-gray-500 group-hover:text-primary-foreground" />
             Goods Outward
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="group"
+            onSelect={() =>
+              router.push(`/warehouse/${warehouse.slug}/goods-transfer/create`)
+            }
+          >
+            <IconTruckDelivery
+              className="size-5.5 mr-3.5 text-gray-500 group-hover:text-primary-foreground"
+              stroke={1.5}
+            />
+            Goods Transfer
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

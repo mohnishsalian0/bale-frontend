@@ -15,7 +15,11 @@ import {
   IconFileText,
   IconQrcode,
 } from "@tabler/icons-react";
-import type { SalesOrderStatus, PartnerType } from "@/types/database/enums";
+import type {
+  SalesOrderStatus,
+  PartnerType,
+  TransferStatus,
+} from "@/types/database/enums";
 import type { Invoice } from "@/types/invoices.types";
 import type { Payment } from "@/types/payments.types";
 import type { AdjustmentNote } from "@/types/adjustment-notes.types";
@@ -879,6 +883,59 @@ export function getGoodsOutwardActions(
     onClick: callbacks.onDelete,
     variant: "destructive",
     hidden: hasInvoice || isCancelled,
+  });
+
+  return items;
+}
+
+// ============================================================================
+// GOODS TRANSFER ACTIONS
+// ============================================================================
+
+export interface GoodsTransferActionsCallbacks {
+  onComplete: () => void;
+  onCancel: () => void;
+  onDelete: () => void;
+}
+
+/**
+ * Get action items for goods transfer
+ * Shows complete/cancel/delete based on status
+ */
+export function getGoodsTransferActions(
+  status: TransferStatus,
+  callbacks: GoodsTransferActionsCallbacks,
+): ContextMenuItem[] {
+  const items: ContextMenuItem[] = [];
+
+  const isInTransit = status === "in_transit";
+  const isCancelled = status === "cancelled";
+
+  // Primary CTA: Complete button - only for in_transit
+  items.push({
+    label: "Complete transfer",
+    icon: IconCheck,
+    onClick: callbacks.onComplete,
+    variant: "default",
+    hidden: !isInTransit,
+  });
+
+  // Secondary CTA: Cancel button - only for in_transit
+  items.push({
+    label: "Cancel transfer",
+    icon: IconX,
+    onClick: callbacks.onCancel,
+    variant: "outline",
+    hidden: !isInTransit,
+  });
+
+  // Dropdown menu items: Delete - only for in_transit
+  items.push({
+    label: "Delete transfer",
+    icon: IconTrash,
+    onClick: callbacks.onDelete,
+    variant: "destructive",
+    hidden: !isInTransit || isCancelled,
   });
 
   return items;

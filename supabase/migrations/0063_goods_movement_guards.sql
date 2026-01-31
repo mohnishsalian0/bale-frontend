@@ -79,7 +79,6 @@ BEGIN
     -- Rule 5: Cannot edit critical fields if has invoice
     IF OLD.has_invoice = TRUE AND (
         NEW.partner_id IS DISTINCT FROM OLD.partner_id OR
-        NEW.from_warehouse_id IS DISTINCT FROM OLD.from_warehouse_id OR
         NEW.inward_date IS DISTINCT FROM OLD.inward_date OR
         NEW.inward_type IS DISTINCT FROM OLD.inward_type
     ) THEN
@@ -94,7 +93,6 @@ BEGIN
           AND deleted_at IS NULL
     ) AND (
         NEW.partner_id IS DISTINCT FROM OLD.partner_id OR
-        NEW.from_warehouse_id IS DISTINCT FROM OLD.from_warehouse_id OR
         NEW.inward_date IS DISTINCT FROM OLD.inward_date OR
         NEW.inward_type IS DISTINCT FROM OLD.inward_type
     ) THEN
@@ -174,7 +172,6 @@ BEGIN
     -- Rule 4: Cannot edit critical fields if has invoice
     IF OLD.has_invoice = TRUE AND (
         NEW.partner_id IS DISTINCT FROM OLD.partner_id OR
-        NEW.to_warehouse_id IS DISTINCT FROM OLD.to_warehouse_id OR
         NEW.outward_date IS DISTINCT FROM OLD.outward_date OR
         NEW.outward_type IS DISTINCT FROM OLD.outward_type
     ) THEN
@@ -246,7 +243,7 @@ BEGIN
     -- Rule 3: Cannot edit critical fields if unit has been dispatched
     IF OLD.has_outward = TRUE AND (
         NEW.product_id IS DISTINCT FROM OLD.product_id OR
-        NEW.warehouse_id IS DISTINCT FROM OLD.warehouse_id OR
+        NEW.current_warehouse_id IS DISTINCT FROM OLD.current_warehouse_id OR
         NEW.created_from_inward_id IS DISTINCT FROM OLD.created_from_inward_id OR
         NEW.initial_quantity IS DISTINCT FROM OLD.initial_quantity
     ) THEN

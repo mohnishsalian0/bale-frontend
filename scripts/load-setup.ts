@@ -610,7 +610,7 @@ async function generateProducts(
 
 async function generateGoodsInwards(
   companyId: string,
-  warehouseId: string,
+  warehouses: Array<{ id: string; name: string }>,
   userId: string,
   partnerIds: string[],
   productIds: string[],
@@ -618,7 +618,10 @@ async function generateGoodsInwards(
 ) {
   console.log("\n📥 Generating 600 goods inwards entries...\n");
   console.log(
-    "   Distribution: 50% purchase orders, 30% sales returns, 20% other\n",
+    "   Distribution: 50% purchase orders, 30% sales returns, 20% other",
+  );
+  console.log(
+    `   Warehouses: Distributed across ${warehouses.length} locations (warehouses & factories)\n`,
   );
 
   const monthlyTargets = [
@@ -647,6 +650,7 @@ async function generateGoodsInwards(
     .select(
       `
       id,
+      warehouse_id,
       status,
       supplier_id,
       purchase_order_items (
@@ -657,7 +661,6 @@ async function generateGoodsInwards(
     `,
     )
     .eq("company_id", companyId)
-    .eq("warehouse_id", warehouseId)
     .eq("status", "in_progress");
 
   const eligiblePOs = posFromDb || [];
@@ -668,6 +671,7 @@ async function generateGoodsInwards(
     .select(
       `
       id,
+      warehouse_id,
       status,
       customer_id,
       sales_order_items (
@@ -678,7 +682,6 @@ async function generateGoodsInwards(
     `,
     )
     .eq("company_id", companyId)
-    .eq("warehouse_id", warehouseId)
     .eq("status", "in_progress");
 
   const eligibleSOs = sosFromDb || [];
@@ -708,12 +711,15 @@ async function generateGoodsInwards(
       let selectedProducts: Array<{ id: string; quantity: number }> = [];
 
       // Determine inward type based on distribution: 50% PO, 30% SR, 20% other
+      let selectedWarehouseId: string;
+
       if (typeRoll < 0.5 && eligiblePOs.length > 0) {
         // Link to purchase order (50%)
         inwardType = "purchase_order";
         const po = eligiblePOs[poIndex % eligiblePOs.length];
         poIndex++;
         purchaseOrderId = po.id;
+        selectedWarehouseId = po.warehouse_id; // Use PO's warehouse
 
         // Use products from the PO - receive 50-100% of required quantity randomly
         selectedProducts = (po.purchase_order_items || []).map((item) => {
@@ -733,6 +739,7 @@ async function generateGoodsInwards(
         const so = eligibleSOs[soIndex % eligibleSOs.length];
         soIndex++;
         salesOrderId = so.id;
+        selectedWarehouseId = so.warehouse_id; // Use SO's warehouse
 
         // Use some products from the SO as returns (20-50% of required quantity)
         const soItems = so.sales_order_items || [];
@@ -744,10 +751,11 @@ async function generateGoodsInwards(
           }));
         linkedToSR++;
       } else {
-        // Other type (20%)
+        // Other type (20%) - randomly assign to any warehouse
         inwardType = "other";
         otherReason =
           otherReasons[Math.floor(Math.random() * otherReasons.length)];
+        selectedWarehouseId = warehouses[randomInt(0, warehouses.length - 1)].id;
 
         // Random products
         const itemCount = randomInt(1, 5);
@@ -766,7 +774,7 @@ async function generateGoodsInwards(
         .from("goods_inwards")
         .insert({
           company_id: companyId,
-          warehouse_id: warehouseId,
+          warehouse_id: selectedWarehouseId,
           inward_type: inwardType,
           purchase_order_id: purchaseOrderId,
           sales_order_id: salesOrderId,
@@ -804,7 +812,7 @@ async function generateGoodsInwards(
 
           await supabase.from("stock_units").insert({
             company_id: companyId,
-            warehouse_id: warehouseId,
+            warehouse_id: selectedWarehouseId,
             product_id: product.id,
             created_from_inward_id: inward.id,
             initial_quantity: quantity,
@@ -845,13 +853,16 @@ async function generateGoodsInwards(
 
 async function generateSalesOrders(
   companyId: string,
-  warehouseId: string,
+  warehouses: Array<{ id: string; name: string }>,
   userId: string,
   customerIds: string[],
   productIds: string[],
   year: number,
 ) {
   console.log("\n📋 Generating 500 sales orders...\n");
+  console.log(
+    `   Warehouses: Distributed across ${warehouses.length} locations\n`,
+  );
 
   const monthlyTargets = [
     50,
@@ -927,13 +938,16 @@ async function generateSalesOrders(
         };
       });
 
+      // Randomly assign warehouse (can be any warehouse or factory)
+      const selectedWarehouse = warehouses[randomInt(0, warehouses.length - 1)];
+
       // Create order using RPC function
       const { data: sequenceNumber, error: orderError } = await supabase.rpc(
         "create_sales_order_with_items",
         {
           p_order_data: {
             company_id: companyId,
-            warehouse_id: warehouseId,
+            warehouse_id: selectedWarehouse.id,
             customer_id: customerId,
             order_date: orderDate,
             delivery_due_date: deliveryDueDate,
@@ -990,7 +1004,7 @@ async function generateSalesOrders(
 
 async function generatePurchaseOrders(
   companyId: string,
-  warehouseId: string,
+  warehouses: Array<{ id: string; name: string }>,
   userId: string,
   supplierIds: string[],
   agentIds: string[],
@@ -998,6 +1012,9 @@ async function generatePurchaseOrders(
   year: number,
 ) {
   console.log("\n📦 Generating 400 purchase orders...\n");
+  console.log(
+    `   Warehouses: Distributed across ${warehouses.length} locations\n`,
+  );
 
   const monthlyTargets = [
     40,
@@ -1092,13 +1109,16 @@ async function generatePurchaseOrders(
         };
       });
 
+      // Randomly assign warehouse (can be any warehouse or factory)
+      const selectedWarehouse = warehouses[randomInt(0, warehouses.length - 1)];
+
       // Create order using RPC function
       const { data: sequenceNumber, error: orderError } = await supabase.rpc(
         "create_purchase_order_with_items",
         {
           p_order_data: {
             company_id: companyId,
-            warehouse_id: warehouseId,
+            warehouse_id: selectedWarehouse.id,
             supplier_id: supplierId,
             agent_id: agentId,
             order_date: orderDate,
@@ -1377,6 +1397,304 @@ async function generateGoodsOutwards(
   }
 
   console.log(`\n✨ Successfully created ${totalCreated} goods outwards!`);
+  return totalCreated;
+}
+
+// ============================================================================
+// GOODS TRANSFERS GENERATION
+// ============================================================================
+
+async function generateGoodsTransfers(
+  companyId: string,
+  warehouses: Array<{ id: string; name: string }>,
+  userId: string,
+  year: number,
+) {
+  console.log("\n🔄 Generating 300 goods transfers...\n");
+  console.log("   5-10 stock units per transfer");
+  console.log("   Max 2 transfers per stock unit");
+  console.log("   Status: 60% completed, 30% in_transit, 10% cancelled\n");
+
+  const monthlyTargets = [
+    30, 30, 30, // Jan-Mar (wedding season)
+    23, 23, 23, 23, 23, // Apr-Aug (regular)
+    28, 28, 28, // Sep-Nov (festive)
+    18, // Dec
+  ];
+
+  // 1. Query all stock units outside the loop
+  console.log("   Loading stock units...");
+  const { data: allStockUnits } = await supabase
+    .from("stock_units")
+    .select("id, current_warehouse_id, created_at")
+    .eq("company_id", companyId)
+    .in("status", ["full", "partial"])
+    .gt("remaining_quantity", 0);
+
+  if (!allStockUnits || allStockUnits.length === 0) {
+    console.error("❌ No stock units available for transfers");
+    return 0;
+  }
+
+  // Build map: stockUnitId -> { transfer_count: number, has_in_transit: boolean }
+  // Initialize all stock units with zero transfers (we're creating all transfers in this loop)
+  const stockUnitTransferMap = new Map<
+    string,
+    { transfer_count: number; has_in_transit: boolean }
+  >();
+
+  allStockUnits.forEach((su) => {
+    stockUnitTransferMap.set(su.id, {
+      transfer_count: 0,
+      has_in_transit: false,
+    });
+  });
+
+  console.log(`   Loaded ${allStockUnits.length} stock units`);
+
+  // Helper function to generate contextual notes
+  const generateTransferNote = (
+    fromName: string,
+    toName: string,
+    count: number,
+  ): string => {
+    const isFromFactory = fromName.includes("Factory");
+    const isToFactory = toName.includes("Factory");
+    const isFromMain = fromName.includes("Main");
+    const isToMain = toName.includes("Main");
+    const isFromRegional = fromName.includes("Regional");
+    const isToRegional = toName.includes("Regional");
+
+    let action = "";
+
+    if (isFromMain && isToFactory) {
+      // Main -> Factory
+      if (toName.includes("Dyeing")) action = "Sent for dyeing";
+      else if (toName.includes("Knitting")) action = "Sent for knitting";
+      else if (toName.includes("Weaving")) action = "Sent for weaving";
+      else if (toName.includes("Processing")) action = "Sent for processing";
+      else action = "Sent for job work";
+    } else if (isFromFactory && isToMain) {
+      // Factory -> Main
+      if (fromName.includes("Dyeing")) action = "Finished dyeing";
+      else if (fromName.includes("Knitting")) action = "Finished knitting";
+      else if (fromName.includes("Weaving")) action = "Finished weaving";
+      else if (fromName.includes("Processing")) action = "Finished processing";
+      else action = "Job work completed";
+    } else if (isFromMain && isToRegional) {
+      // Main -> Regional
+      action = "Stock distribution";
+    } else if (isFromRegional && isToMain) {
+      // Regional -> Main
+      action = "Consolidation to main warehouse";
+    } else if (isFromRegional && isToFactory) {
+      // Regional -> Factory
+      if (toName.includes("Dyeing")) action = "Sent for dyeing";
+      else if (toName.includes("Knitting")) action = "Sent for knitting";
+      else if (toName.includes("Weaving")) action = "Sent for weaving";
+      else if (toName.includes("Processing")) action = "Sent for processing";
+      else action = "Sent for job work";
+    } else if (isFromFactory && isToRegional) {
+      // Factory -> Regional
+      action = "Direct delivery to regional warehouse";
+    } else if (isFromRegional && isToRegional) {
+      // Regional -> Regional
+      action = "Inter-regional stock transfer";
+    } else if (isFromFactory && isToFactory) {
+      // Factory -> Factory
+      action = "Sent for additional processing";
+    } else {
+      action = "Warehouse transfer";
+    }
+
+    return `${action} (${count} units)`;
+  };
+
+  let totalCreated = 0;
+  let completedCount = 0;
+  let inTransitCount = 0;
+  let cancelledCount = 0;
+  let skippedCount = 0;
+
+  for (let month = 1; month <= 12; month++) {
+    const targetCount = monthlyTargets[month - 1];
+    console.log(`   📅 Month ${month}: Creating ${targetCount} transfers...`);
+
+    for (let i = 0; i < targetCount; i++) {
+      const transferDate = new Date(getRandomDate(month, year));
+
+      // 1. Select a random from_warehouse
+      const fromWarehouse = warehouses[randomInt(0, warehouses.length - 1)];
+
+      // 2. Get eligible stock units from this warehouse
+      const targetStockUnitCount = randomInt(5, 10);
+
+      const eligibleStockUnits = allStockUnits.filter((su) => {
+        // Must be at from_warehouse
+        if (su.current_warehouse_id !== fromWarehouse.id) return false;
+
+        // Must exist before transfer date
+        const created = new Date(su.created_at);
+        if (created > transferDate) return false;
+
+        // Check transfer constraints
+        const transferInfo = stockUnitTransferMap.get(su.id);
+        if (!transferInfo) return false;
+
+        // Max 2 transfers, no in_transit
+        return transferInfo.transfer_count < 2 && !transferInfo.has_in_transit;
+      });
+
+      if (eligibleStockUnits.length < 5) {
+        skippedCount++;
+        continue; // Not enough eligible stock units
+      }
+
+      // Select random stock units
+      const selectedStockUnits = selectRandom(
+        eligibleStockUnits,
+        Math.min(targetStockUnitCount, eligibleStockUnits.length),
+      );
+      const selectedStockUnitIds = selectedStockUnits.map((su) => su.id);
+
+      // 3. Select a random to_warehouse (different from from_warehouse)
+      const possibleDestinations = warehouses.filter(
+        (w) => w.id !== fromWarehouse.id,
+      );
+      const toWarehouse =
+        possibleDestinations[randomInt(0, possibleDestinations.length - 1)];
+
+      // 4. Create transfer
+      const expectedDeliveryDate = new Date(transferDate);
+      expectedDeliveryDate.setDate(
+        expectedDeliveryDate.getDate() + randomInt(3, 10),
+      );
+
+      const notes = generateTransferNote(
+        fromWarehouse.name,
+        toWarehouse.name,
+        selectedStockUnitIds.length,
+      );
+
+      const transferData = {
+        company_id: companyId,
+        from_warehouse_id: fromWarehouse.id,
+        to_warehouse_id: toWarehouse.id,
+        transfer_date: transferDate.toISOString().split("T")[0],
+        expected_delivery_date: expectedDeliveryDate
+          .toISOString()
+          .split("T")[0],
+        transport_type: ["road", "rail", "air"][randomInt(0, 2)] as
+          | "road"
+          | "rail"
+          | "air",
+        notes,
+        created_by: userId,
+      };
+
+      const { error: transferError } = await supabase.rpc(
+        "create_goods_transfer_with_items",
+        {
+          p_transfer_data: transferData,
+          p_stock_unit_ids: selectedStockUnitIds,
+        },
+      );
+
+      if (transferError) {
+        console.error(
+          `      ❌ Failed to create transfer: ${transferError.message}`,
+        );
+        skippedCount++;
+        continue;
+      }
+
+      // Get the created transfer
+      const { data: createdTransfer } = await supabase
+        .from("goods_transfers")
+        .select("id, sequence_number")
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (createdTransfer) {
+        // 5. Status roll (60% completed, 30% in_transit, 10% cancelled)
+        const statusRoll = Math.random();
+        let status: "completed" | "in_transit" | "cancelled";
+
+        if (statusRoll < 0.6) {
+          status = "completed";
+          const completedDate = new Date(transferDate);
+          completedDate.setDate(completedDate.getDate() + randomInt(4, 9));
+
+          await supabase
+            .from("goods_transfers")
+            .update({
+              status: "completed",
+              completed_at: completedDate.toISOString(),
+              completed_by: userId,
+            })
+            .eq("id", createdTransfer.id);
+
+          // Update stock unit locations in our tracking (reconciliation handles DB)
+          selectedStockUnits.forEach((su) => {
+            su.current_warehouse_id = toWarehouse.id;
+          });
+
+          completedCount++;
+        } else if (statusRoll < 0.9) {
+          status = "in_transit";
+          // Keep default in_transit status
+          inTransitCount++;
+        } else {
+          status = "cancelled";
+          await supabase
+            .from("goods_transfers")
+            .update({
+              status: "cancelled",
+              cancellation_reason: [
+                "Warehouse capacity issue",
+                "Transport unavailable",
+                "Order changed",
+              ][randomInt(0, 2)],
+            })
+            .eq("id", createdTransfer.id);
+
+          cancelledCount++;
+        }
+
+        // Update transfer count in map for these stock units
+        selectedStockUnitIds.forEach((suId) => {
+          const info = stockUnitTransferMap.get(suId);
+          if (info && status !== "cancelled") {
+            info.transfer_count++;
+            if (status === "in_transit") {
+              info.has_in_transit = true;
+            }
+          }
+        });
+
+        totalCreated++;
+
+        if (totalCreated % 25 === 0) {
+          console.log(`      ✅ Created ${totalCreated} transfers...`);
+        }
+      }
+    }
+  }
+
+  console.log(`\n✨ Successfully created ${totalCreated} goods transfers!`);
+  console.log(
+    `   • Completed: ${completedCount} (${Math.round((completedCount / totalCreated) * 100)}%)`,
+  );
+  console.log(
+    `   • In-transit: ${inTransitCount} (${Math.round((inTransitCount / totalCreated) * 100)}%)`,
+  );
+  console.log(
+    `   • Cancelled: ${cancelledCount} (${Math.round((cancelledCount / totalCreated) * 100)}%)`,
+  );
+  console.log(`   • Skipped (insufficient stock): ${skippedCount}`);
+
   return totalCreated;
 }
 
@@ -3009,20 +3327,32 @@ async function loadTestData() {
   const companyName = companies[0].name;
   console.log(`📦 Using company: ${companyName} (${companyId})\n`);
 
-  // Get warehouse
+  // Get all warehouses
   const { data: warehouses, error: whError } = await supabase
     .from("warehouses")
     .select("id, name")
-    .eq("company_id", companyId)
-    .limit(1);
+    .eq("company_id", companyId);
 
   if (whError || !warehouses || warehouses.length === 0) {
-    console.error("❌ No warehouse found. Please run setup.ts first.");
+    console.error("❌ No warehouses found. Please run setup.ts first.");
     return;
   }
 
-  const warehouseId = warehouses[0].id;
-  console.log(`🏭 Using warehouse: ${warehouses[0].name} (${warehouseId})\n`);
+  // Classify warehouses by name
+  const mainWarehouse = warehouses.find((w) => w.name === "Main Warehouse");
+  const regionalWarehouses = warehouses.filter((w) => w.name.includes("Regional"));
+  const factories = warehouses.filter((w) => w.name.includes("Factory"));
+
+  if (!mainWarehouse) {
+    console.error("❌ Main warehouse not found. Please run setup.ts first.");
+    return;
+  }
+
+  const warehouseId = mainWarehouse.id; // Use main warehouse as default for backward compatibility
+  console.log(`🏭 Using ${warehouses.length} warehouses:`);
+  console.log(`   • Main: ${mainWarehouse.name}`);
+  console.log(`   • Regional: ${regionalWarehouses.length}`);
+  console.log(`   • Factories: ${factories.length}\n`);
 
   // Get user
   const { data: users, error: userError } = await supabase
@@ -3110,7 +3440,7 @@ async function loadTestData() {
   // Generate purchase orders first (needed for linking goods inwards)
   const purchaseOrders = await generatePurchaseOrders(
     companyId,
-    warehouseId,
+    warehouses,
     userId,
     supplierIds,
     agentIds,
@@ -3121,7 +3451,7 @@ async function loadTestData() {
   // Generate sales orders
   const salesOrders = await generateSalesOrders(
     companyId,
-    warehouseId,
+    warehouses,
     userId,
     customerIds,
     productIds,
@@ -3134,12 +3464,15 @@ async function loadTestData() {
   // Generate goods inwards (link 50% to POs, 30% to sales returns, 20% to other)
   await generateGoodsInwards(
     companyId,
-    warehouseId,
+    warehouses,
     userId,
     supplierIds,
     productIds,
     2025,
   );
+
+  // Generate goods transfers (before outwards so stock units are available)
+  await generateGoodsTransfers(companyId, warehouses, userId, 2025);
 
   // Generate goods outwards
   await generateGoodsOutwards(companyId, warehouseId, userId, 2025);
@@ -3201,15 +3534,18 @@ async function loadTestData() {
   console.log("\n📊 Summary:");
   console.log("\n📦 Inventory & Orders:");
   console.log("   • 100 products with varied attributes");
-  console.log("   • 600 goods inwards with stock units");
+  console.log("   • 10 warehouses (1 main, 4 regional, 5 factories)");
+  console.log("   • 600 goods inwards distributed across all warehouses");
+  console.log("   • ~300 goods transfers (warehouse-to-warehouse, 5-10 units each)");
+  console.log("   • Transfer validation: Max 2 per unit, chain consistency enforced");
   console.log("   • ~400 goods outwards (linked to orders + standalone)");
-  console.log("   • 500 sales orders (spanning Jan-Dec 2025)");
-  console.log("   • 400 purchase orders (spanning Jan-Dec 2025)");
+  console.log("   • 500 sales orders distributed across all locations");
+  console.log("   • 400 purchase orders distributed across all locations");
   console.log(
     "   • Order statuses: 15% pending, 25% in_progress, 50% completed, 10% cancelled",
   );
   console.log(
-    "   • Received/dispatched quantities auto-reconciled by database triggers",
+    "   • Movement reconciliation auto-handled by database triggers",
   );
   console.log("\n💰 Accounting:");
   console.log("   • 500 sales invoices (50% GST, 30% IGST, 20% no_tax)");

@@ -50,7 +50,6 @@ export const buildGoodsInwardsQuery = (
       `
       *,
       partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name),
-			from_warehouse:warehouses!from_warehouse_id(id, name),
       stock_units!inner(
         product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number),
         initial_quantity
@@ -59,6 +58,7 @@ export const buildGoodsInwardsQuery = (
       { count: "exact" },
     )
     .eq("warehouse_id", warehouseId)
+    .is("deleted_at", null)
     .order("inward_date", { ascending: false })
     .range(offset, offset + pageSize - 1);
 
@@ -106,7 +106,6 @@ export const buildGoodsOutwardsQuery = (
       `
       *,
       partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name),
-			to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(id, name),
       goods_outward_items!inner(
         quantity_dispatched,
         stock_unit:stock_units!inner(
@@ -117,6 +116,7 @@ export const buildGoodsOutwardsQuery = (
       { count: "exact" },
     )
     .eq("warehouse_id", warehouseId)
+    .is("deleted_at", null)
     .order("outward_date", { ascending: false })
     .range(offset, offset + pageSize - 1);
 
@@ -166,7 +166,6 @@ export const buildGoodsOutwardsBySalesOrderQuery = (
       `
       *,
       partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name),
-			to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(id, name),
 			sales_order:sales_orders!inner(id, sequence_number),
       goods_outward_items(
         quantity_dispatched,
@@ -200,7 +199,6 @@ export const buildGoodsInwardsByPurchaseOrderQuery = (
       `
       *,
       partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name),
-			from_warehouse:warehouses!from_warehouse_id(id, name),
 			purchase_order:purchase_orders!inner(id, sequence_number),
       stock_units(
         product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number),
@@ -230,11 +228,11 @@ export const buildGoodsInwardByNumberQuery = (
       partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name, shipping_same_as_billing, shipping_address_line1, shipping_address_line2, shipping_city, shipping_state, shipping_pin_code, shipping_country, billing_address_line1, billing_address_line2, billing_city, billing_state, billing_pin_code, billing_country),
       agent:partners!goods_inwards_agent_id_fkey(first_name, last_name, display_name, company_name),
       warehouse:warehouses!goods_inwards_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
-      from_warehouse:warehouses!goods_inwards_from_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       sales_order:sales_orders(sequence_number),
       job_work:job_works(sequence_number),
       stock_units(
         *,
+				warehouse:warehouses(id, name),
         product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number, hsn_code, gsm, gst_rate)
       )
     `,
@@ -258,13 +256,13 @@ export const buildGoodsOutwardByNumberQuery = (
       partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name, shipping_same_as_billing, shipping_address_line1, shipping_address_line2, shipping_city, shipping_state, shipping_pin_code, shipping_country, billing_address_line1, billing_address_line2, billing_city, billing_state, billing_pin_code, billing_country),
       agent:partners!goods_outwards_agent_id_fkey(first_name, last_name, display_name, company_name),
       warehouse:warehouses!goods_outwards_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
-      to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       sales_order:sales_orders(sequence_number),
       job_work:job_works(sequence_number),
       goods_outward_items(
         *,
         stock_unit:stock_units(
           *,
+					warehouse:warehouses(id, name),
           product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number, hsn_code, gsm, gst_rate)
         )
       )
@@ -451,9 +449,6 @@ export async function getOutwardItemsByProduct(
         id, sequence_number, outward_date, outward_type,
         partner:partners!goods_outwards_partner_id_fkey(
           id, first_name, last_name, display_name, company_name
-        ),
-        to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(
-          id, name
         )
       )
     `,

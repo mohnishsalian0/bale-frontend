@@ -96,6 +96,7 @@ export const buildQRBatchByIdQuery = (
         *,
         stock_unit:stock_units (
           *,
+					warehouse:warehouses(id, name),
           product:products(
             *,
             attributes:product_attributes!inner(id, name, group_name, color_hex)

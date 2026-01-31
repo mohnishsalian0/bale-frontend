@@ -76,14 +76,9 @@ export default function InwardDetailsPage({ params }: PageParams) {
     ReasonIcon = IconNote;
   }
 
-  // Determine source (from partner or from warehouse)
-  const isWarehouseTransfer = !!inward.from_warehouse;
-  const sourceName = isWarehouseTransfer
-    ? inward.from_warehouse?.name || "Unknown Warehouse"
-    : getPartnerName(inward.partner);
-  const sourceAddressLines = isWarehouseTransfer
-    ? getFormattedAddress(inward.from_warehouse)
-    : getFormattedAddress(getPartnerShippingAddress(inward.partner));
+  // Source is always from partner (warehouse transfers handled separately)
+  const sourceName = getPartnerName(inward.partner);
+  const sourceAddressLines = getFormattedAddress(getPartnerShippingAddress(inward.partner));
 
   const TransportIcon = getTransportIcon(inward.transport_type);
 
@@ -100,11 +95,7 @@ export default function InwardDetailsPage({ params }: PageParams) {
       <Section
         title={sourceName}
         subtitle="Sender"
-        icon={
-          isWarehouseTransfer
-            ? () => <IconBuildingWarehouse />
-            : () => <>{getInitials(sourceName)}</>
-        }
+        icon={() => <>{getInitials(sourceName)}</>}
       >
         {sourceAddressLines.length > 0 && (
           <div className="flex justify-between text-sm">

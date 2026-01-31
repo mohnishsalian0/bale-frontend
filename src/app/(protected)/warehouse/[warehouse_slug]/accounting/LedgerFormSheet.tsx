@@ -160,7 +160,7 @@ export function LedgerFormSheet({
                 errorText={errors.name?.message}
               />
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
                 <Label
                   required
                   htmlFor="parent_group_id"
@@ -197,7 +197,7 @@ export function LedgerFormSheet({
                 )}
               </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
                 <Label
                   required
                   htmlFor="ledger_type"
@@ -271,7 +271,7 @@ export function LedgerFormSheet({
                       errorText={errors.opening_balance?.message}
                     />
 
-                    <div className="flex-1 flex flex-col gap-2">
+                    <div className="flex-1 flex flex-col gap-1">
                       <Label className="text-sm font-medium text-gray-700">
                         Dr/Cr
                       </Label>
@@ -411,7 +411,7 @@ export function LedgerFormSheet({
                         errorText={errors.gst_rate?.message}
                       />
 
-                      <div className="flex-1 flex flex-col gap-2">
+                      <div className="flex-1 flex flex-col gap-1">
                         <Label
                           htmlFor="gst_type"
                           className="text-sm font-medium text-gray-700"

@@ -51,7 +51,7 @@ export function DashboardScannerModal({
 
     if (scannedStockUnit) {
       // Check if stock unit belongs to current warehouse
-      if (scannedStockUnit.warehouse_id !== warehouse.id) {
+      if (scannedStockUnit.current_warehouse_id !== warehouse.id) {
         queueMicrotask(() =>
           setError("Stock unit not found in this warehouse"),
         );
