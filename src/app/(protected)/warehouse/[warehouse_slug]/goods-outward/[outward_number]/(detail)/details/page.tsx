@@ -84,7 +84,9 @@ export default function OutwardDetailsPage({ params }: PageParams) {
 
   // Receiver is always a partner (warehouse transfers handled separately)
   const receiverName = getPartnerName(outward.partner);
-  const receiverAddressLines = getFormattedAddress(getPartnerShippingAddress(outward.partner));
+  const receiverAddressLines = getFormattedAddress(
+    getPartnerShippingAddress(outward.partner),
+  );
 
   const TransportIcon = getTransportIcon(outward.transport_type);
 

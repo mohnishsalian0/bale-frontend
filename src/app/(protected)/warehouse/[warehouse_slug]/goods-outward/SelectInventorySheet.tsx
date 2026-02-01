@@ -12,15 +12,10 @@ import {
 import { InventoryProductListStep } from "./InventoryProductListStep";
 import { StockUnitListStep } from "./StockUnitListStep";
 import { StockUnitQuantitySheet } from "./StockUnitQuantitySheet";
-import { PieceQuantitySheet } from "./PieceQuantitySheet";
-import {
-  getStockUnits,
-  getStockUnitWithProductDetail,
-} from "@/lib/queries/stock-units";
+import { getStockUnitWithProductDetail } from "@/lib/queries/stock-units";
 import type { ScannedStockUnit } from "./QRScannerStep";
 import type { ProductWithInventoryListView } from "@/types/products.types";
 import type { StockUnitWithProductDetailView } from "@/types/stock-units.types";
-import type { StockType } from "@/types/database/enums";
 
 type SelectInventoryStep = "products" | "stockUnits" | "quantity";
 
@@ -67,74 +62,8 @@ export function SelectInventorySheet({
 
   const handleProductSelect = async (product: ProductWithInventoryListView) => {
     setSelectedProduct(product);
-    const stockType = product.stock_type as StockType;
-
-    if (fullQuantity && stockType === "piece") {
-      // For piece type with fullQuantity: fetch and auto-add full quantity
-      try {
-        const stockUnits = await getStockUnits(warehouseId, {
-          product_id: product.id,
-          status: ["full", "partial"],
-        });
-
-        if (stockUnits.length > 0) {
-          const pieceUnit = stockUnits[0];
-          const stockUnitDetail = await getStockUnitWithProductDetail(
-            pieceUnit.id,
-          );
-
-          // Auto-add with full quantity
-          const existingIndex = scannedUnits.findIndex(
-            (unit) => unit.stockUnit.id === stockUnitDetail.id,
-          );
-
-          if (existingIndex !== -1) {
-            const updatedUnits = [...scannedUnits];
-            updatedUnits[existingIndex] = {
-              ...updatedUnits[existingIndex],
-              quantity: stockUnitDetail.remaining_quantity,
-            };
-            onScannedUnitsChange(updatedUnits);
-          } else {
-            onScannedUnitsChange([
-              ...scannedUnits,
-              {
-                stockUnit: stockUnitDetail,
-                quantity: stockUnitDetail.remaining_quantity,
-              },
-            ]);
-          }
-        } else {
-          console.error("No stock unit found for piece product");
-        }
-      } catch (error) {
-        console.error("Error fetching piece stock unit:", error);
-      }
-    } else if (stockType === "piece") {
-      // For piece type without fullQuantity: show quantity sheet
-      try {
-        const stockUnits = await getStockUnits(warehouseId, {
-          product_id: product.id,
-          status: ["full", "partial"],
-        });
-
-        if (stockUnits.length > 0) {
-          const pieceUnit = stockUnits[0];
-          const stockUnitDetail = await getStockUnitWithProductDetail(
-            pieceUnit.id,
-          );
-          setSelectedStockUnit(stockUnitDetail);
-          setShowQuantitySheet(true);
-        } else {
-          console.error("No stock unit found for piece product");
-        }
-      } catch (error) {
-        console.error("Error fetching piece stock unit:", error);
-      }
-    } else {
-      // For roll/batch: show stock unit list
-      setCurrentStep("stockUnits");
-    }
+    // For roll/batch: show stock unit list
+    setCurrentStep("stockUnits");
   };
 
   const handleStockUnitSelect = async (stockUnitId: string) => {
@@ -298,27 +227,14 @@ export function SelectInventorySheet({
 
       {/* Quantity Selection Sheets - Outside main sheet to avoid nesting */}
       {showQuantitySheet && selectedStockUnit && (
-        <>
-          {selectedProduct?.stock_type === "piece" ? (
-            <PieceQuantitySheet
-              open={showQuantitySheet}
-              onOpenChange={handleQuantitySheetClose}
-              product={selectedProduct}
-              initialQuantity={getInitialQuantity()}
-              availableQuantity={selectedStockUnit.remaining_quantity}
-              onConfirm={handleQuantityConfirm}
-            />
-          ) : (
-            <StockUnitQuantitySheet
-              key={selectedStockUnit.id}
-              open={showQuantitySheet}
-              onOpenChange={handleQuantitySheetClose}
-              stockUnit={selectedStockUnit}
-              initialQuantity={getInitialQuantity()}
-              onConfirm={handleQuantityConfirm}
-            />
-          )}
-        </>
+        <StockUnitQuantitySheet
+          key={selectedStockUnit.id}
+          open={showQuantitySheet}
+          onOpenChange={handleQuantitySheetClose}
+          stockUnit={selectedStockUnit}
+          initialQuantity={getInitialQuantity()}
+          onConfirm={handleQuantityConfirm}
+        />
       )}
     </>
   );

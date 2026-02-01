@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { ProductSelectionStep, StockUnitSpec } from "../ProductSelectionStep";
 import { StockUnitFormSheet } from "../StockUnitFormSheet";
 import { AllSpecificationsSheet } from "../AllSpecificationsSheet";
-import { PieceQuantitySheet } from "../PieceQuantitySheet";
 import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
 import { InwardLinkToStep, InwardLinkToData } from "../InwardLinkToStep";
 import { InwardDetailsStep } from "../InwardDetailsStep";
@@ -71,7 +70,6 @@ export default function CreateGoodsInwardPage() {
   // Unit entry sheet state
   const [showUnitEntrySheet, setShowUnitEntrySheet] = useState(false);
   const [showAllSpecsSheet, setShowAllSpecsSheet] = useState(false);
-  const [showPieceQuantitySheet, setShowPieceQuantitySheet] = useState(false);
   const [showCreateProduct, setShowCreateProduct] = useState(false);
   const [showCreatePartner, setShowCreatePartner] = useState(false);
   const [selectedProduct, setSelectedProduct] =
@@ -161,10 +159,7 @@ export default function CreateGoodsInwardPage() {
   ) => {
     setSelectedProduct(product);
 
-    // For piece type, always open the quantity sheet (simpler flow, no specifications)
-    if (product.stock_type === "piece") {
-      setShowPieceQuantitySheet(true);
-    } else if (hasExistingUnits) {
+    if (hasExistingUnits) {
       setShowAllSpecsSheet(true);
     } else {
       setShowUnitEntrySheet(true);
@@ -238,25 +233,6 @@ export default function CreateGoodsInwardPage() {
   const handleAddNewUnitFromAllSpecs = () => {
     setShowAllSpecsSheet(false);
     setShowUnitEntrySheet(true);
-  };
-
-  // Handle piece quantity confirmation
-  const handlePieceQuantityConfirm = (quantity: number) => {
-    if (!selectedProduct) return;
-
-    // For piece type, we store a single unit with the total quantity
-    // Count will be 1 because we're tracking total pieces in quantity field
-    const newUnit: StockUnitSpec = {
-      id: `temp-${Date.now()}-${Math.random()}`,
-      quantity,
-      grade: "A", // Default grade for pieces
-      count: 1, // Always 1 for pieces, quantity represents total pieces
-    };
-
-    setProductUnits((prev) => ({
-      ...prev,
-      [selectedProduct.id]: [newUnit], // Replace any existing unit (singleton)
-    }));
   };
 
   // Partner selection handlers
@@ -345,7 +321,7 @@ export default function CreateGoodsInwardPage() {
       notes: detailsFormData.notes || undefined,
     };
 
-    // Prepare stock units for all products (RPC handles piece vs non-piece)
+    // Prepare stock units for all products
     const stockUnits: CreateInwardStockUnitData = [];
 
     for (const [productId, units] of Object.entries(productUnits)) {
@@ -529,20 +505,6 @@ export default function CreateGoodsInwardPage() {
           onUpdateUnitCount={handleUpdateUnitCount}
           onDeleteUnit={handleDeleteUnit}
           onAddNewUnit={handleAddNewUnitFromAllSpecs}
-        />
-      )}
-
-      {showPieceQuantitySheet && selectedProduct && (
-        <PieceQuantitySheet
-          open={showPieceQuantitySheet}
-          onOpenChange={setShowPieceQuantitySheet}
-          product={selectedProduct}
-          initialQuantity={
-            currentProductUnits.length > 0
-              ? currentProductUnits[0].quantity
-              : undefined
-          }
-          onConfirm={handlePieceQuantityConfirm}
         />
       )}
 

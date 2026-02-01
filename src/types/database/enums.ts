@@ -74,17 +74,11 @@ export type MaterialType =
   | "Blend"
   | "Custom";
 
-export type StockType = "roll" | "batch" | "piece";
-export const STOCK_TYPES = ["roll", "batch", "piece"] as const;
+export type StockType = "roll" | "batch";
+export const STOCK_TYPES = ["roll", "batch"] as const;
 
-export type MeasuringUnit = "metre" | "yard" | "kilogram" | "unit" | "piece";
-export const MEASURING_UNITS = [
-  "metre",
-  "yard",
-  "kilogram",
-  "unit",
-  "piece",
-] as const;
+export type MeasuringUnit = "metre" | "yard" | "kilogram" | "unit";
+export const MEASURING_UNITS = ["metre", "yard", "kilogram", "unit"] as const;
 
 export type StockUnitStatus = "full" | "partial" | "empty" | "removed";
 

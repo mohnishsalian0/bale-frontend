@@ -186,12 +186,14 @@ Company-specific account ledgers with:
 **Common Use Cases:**
 
 **Sales Invoices:**
+
 - Freight Outward (transport to customer)
 - Packaging Charges
 - Agent Commission
 - Handling Charges
 
 **Purchase Invoices:**
+
 - Freight Inward (transport from supplier)
 - Loading/Unloading Charges
 - Labour Charges
@@ -275,15 +277,15 @@ Invoice Total: ₹100,000 - ₹5,000 + ₹3,400 + (Item Tax) + ₹417 = Final To
 
 Created automatically for each company:
 
-| Ledger Name               | Parent Group       | GST Rate | Common Use Case      |
-| ------------------------- | ------------------ | -------- | -------------------- |
-| Freight Outward           | Indirect Expenses  | 5%       | Sales transport      |
-| Freight Inward            | Direct Expenses    | 5%       | Purchase transport   |
-| Packaging Charges         | Indirect Expenses  | 18%      | Packing materials    |
-| Agent Commission          | Indirect Expenses  | 18%      | Sales commission     |
-| Handling Charges          | Indirect Expenses  | 18%      | Material handling    |
-| Loading/Unloading Charges | Indirect Expenses  | 18%      | Labour at warehouse  |
-| Labour Charges            | Direct Expenses    | 18%      | Processing labour    |
+| Ledger Name               | Parent Group      | GST Rate | Common Use Case     |
+| ------------------------- | ----------------- | -------- | ------------------- |
+| Freight Outward           | Indirect Expenses | 5%       | Sales transport     |
+| Freight Inward            | Direct Expenses   | 5%       | Purchase transport  |
+| Packaging Charges         | Indirect Expenses | 18%      | Packing materials   |
+| Agent Commission          | Indirect Expenses | 18%      | Sales commission    |
+| Handling Charges          | Indirect Expenses | 18%      | Material handling   |
+| Loading/Unloading Charges | Indirect Expenses | 18%      | Labour at warehouse |
+| Labour Charges            | Direct Expenses   | 18%      | Processing labour   |
 
 **Immutability:**
 

@@ -332,7 +332,7 @@ interface ProductTemplate {
   category: string;
   gsmRange: [number, number];
   threadCountRange: [number, number];
-  stockType: "roll" | "batch" | "piece";
+  stockType: "roll" | "batch";
   measuringUnit: MeasuringUnit;
   priceRange: [number, number];
   materials: string[];
@@ -406,10 +406,9 @@ const PRODUCT_TEMPLATES: ProductTemplate[] = [
       tags: ["winter", "warm", "premium", "luxury"],
     };
   }),
-  // Synthetic (20) - Mix of roll, batch, and piece
+  // Synthetic (20) - Mix of roll and batch
   ...Array.from({ length: 20 }, (_, i) => {
-    const isPiece = i % 5 === 0;
-    const isBatch = i % 7 === 0 && !isPiece;
+    const isBatch = i % 7 === 0;
     const rollUnits: Array<"metre" | "yard" | "kilogram"> = [
       "metre",
       "yard",
@@ -420,20 +419,12 @@ const PRODUCT_TEMPLATES: ProductTemplate[] = [
       category: "synthetic",
       gsmRange: [140, 220] as [number, number],
       threadCountRange: [55, 85] as [number, number],
-      stockType: (isPiece ? "piece" : isBatch ? "batch" : "roll") as
-        | "roll"
-        | "batch"
-        | "piece",
-      measuringUnit: (isPiece
-        ? "piece"
-        : isBatch
-          ? "unit"
-          : rollUnits[i % 3]) as
+      stockType: (isBatch ? "batch" : "roll") as "roll" | "batch",
+      measuringUnit: (isBatch ? "unit" : rollUnits[i % 3]) as
         | "metre"
         | "yard"
         | "kilogram"
-        | "unit"
-        | "piece",
+        | "unit",
       priceRange: [250, 700] as [number, number],
       materials: ["Polyester"],
       colors: ["Blue", "Black", "Red", "Green", "Yellow"],
@@ -3417,8 +3408,9 @@ async function loadTestData() {
   // Create lot numbers (50-100 lot numbers for high-volume test data)
   console.log("\n🏷️  Creating lot numbers...");
   const lotNumberCount = randomInt(50, 100);
-  const lotNumbers = Array.from({ length: lotNumberCount }, (_, i) =>
-    `LOT-${String(i + 1).padStart(6, "0")}`,
+  const lotNumbers = Array.from(
+    { length: lotNumberCount },
+    (_, i) => `LOT-${String(i + 1).padStart(6, "0")}`,
   );
 
   for (const name of lotNumbers) {

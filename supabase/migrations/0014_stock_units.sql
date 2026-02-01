@@ -1,5 +1,5 @@
 -- Bale Backend - Stock Units and Inventory Management
--- Individual fabric rolls/pieces tracking with qr code management
+-- Individual fabric rolls/batches tracking with qr code management
 
 -- =====================================================
 -- STOCK UNITS TABLE
@@ -13,7 +13,7 @@ CREATE TABLE stock_units (
     
     -- Identity
     sequence_number INTEGER NOT NULL,
-    stock_number VARCHAR(100) NOT NULL, -- Auto-generated (ROLL-123, BATCH-456, PIECE-789) or custom identifier
+    stock_number VARCHAR(100) NOT NULL, -- Auto-generated (ROLL-123, BATCH-456) or custom identifier
 
     -- Physical specifications
     remaining_quantity DECIMAL(10,3) NOT NULL,
@@ -72,10 +72,6 @@ CREATE INDEX idx_stock_units_inward_id ON stock_units(created_from_inward_id);
 -- Quality grade filtering
 CREATE INDEX idx_stock_units_quality_grade ON stock_units(company_id, quality_grade);
 
--- FIFO queries (crucial for piece dispatch performance)
-CREATE INDEX idx_stock_units_fifo ON stock_units(company_id, product_id, created_at, id)
-    WHERE deleted_at IS NULL;
-
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES
 -- =====================================================
@@ -112,7 +108,6 @@ BEGIN
         v_prefix := CASE
             WHEN v_stock_type = 'roll' THEN 'ROLL'
             WHEN v_stock_type = 'batch' THEN 'BATCH'
-            WHEN v_stock_type = 'piece' THEN 'PIECE'
             ELSE 'SU'
         END;
 

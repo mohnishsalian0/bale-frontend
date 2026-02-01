@@ -78,7 +78,9 @@ export default function InwardDetailsPage({ params }: PageParams) {
 
   // Source is always from partner (warehouse transfers handled separately)
   const sourceName = getPartnerName(inward.partner);
-  const sourceAddressLines = getFormattedAddress(getPartnerShippingAddress(inward.partner));
+  const sourceAddressLines = getFormattedAddress(
+    getPartnerShippingAddress(inward.partner),
+  );
 
   const TransportIcon = getTransportIcon(inward.transport_type);
 

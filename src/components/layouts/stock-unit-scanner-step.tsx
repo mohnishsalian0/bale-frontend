@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import { IconBolt, IconTrash, IconPhoto } from "@tabler/icons-react";
 import { IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { SelectInventorySheet } from "@/app/(protected)/warehouse/[warehouse_slug]/goods-outward/SelectInventorySheet";
@@ -93,8 +92,6 @@ export function StockUnitScannerStep({
         return;
       }
 
-      const stockType = stockUnitWithProduct.product.stock_type as StockType;
-
       // Check if already scanned
       const existingIndex = scannedUnits.findIndex(
         (unit) => unit.stockUnit.id === decodedText,
@@ -110,29 +107,6 @@ export function StockUnitScannerStep({
           };
 
           onScannedUnitsChange(updatedUnits);
-
-          // Resume scanning immediately
-          setPaused(false);
-          return;
-        }
-
-        // For piece type: increment quantity by 1
-        if (stockType === "piece") {
-          const updatedUnits = [...scannedUnits];
-          const maxQuantity =
-            updatedUnits[existingIndex].stockUnit.remaining_quantity;
-          const newQuantity = Math.min(
-            updatedUnits[existingIndex].quantity + 1,
-            maxQuantity,
-          );
-
-          updatedUnits[existingIndex] = {
-            ...updatedUnits[existingIndex],
-            quantity: newQuantity,
-          };
-
-          onScannedUnitsChange(updatedUnits);
-          toast.success(`Quantity increased to ${newQuantity}`);
 
           // Resume scanning immediately
           setPaused(false);
@@ -159,22 +133,6 @@ export function StockUnitScannerStep({
             quantity: stockUnitWithProduct.remaining_quantity,
           },
         ]);
-
-        // Resume scanning immediately
-        setPaused(false);
-        return;
-      }
-
-      if (stockType === "piece") {
-        // For piece type: add directly with quantity 1, no modal
-        onScannedUnitsChange([
-          ...scannedUnits,
-          {
-            stockUnit: stockUnitWithProduct,
-            quantity: 1,
-          },
-        ]);
-        toast.success("Added 1 piece");
 
         // Resume scanning immediately
         setPaused(false);

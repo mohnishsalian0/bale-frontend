@@ -49,9 +49,7 @@ BEGIN
         v_has_outward := FALSE;
     END IF;
 
-    -- For piece type products with singleton pattern, we also need to account for
-    -- additions from multiple inwards. The initial_quantity represents cumulative receipts.
-    -- For non-piece types, initial_quantity is set once at creation.
+    -- The initial_quantity is set at creation time for all stock types.
 
     -- Calculate remaining quantity: initial - dispatched + adjustments
     -- Note: adjustments can be positive (found stock) or negative (wastage)

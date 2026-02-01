@@ -63,15 +63,11 @@ export function InwardLinkToStep({
         {/* Radio Pills */}
         <RadioGroup
           value={linkToData.linkToType}
-          onValueChange={(value) =>
-            handleTypeChange(value as InwardLinkToType)
-          }
+          onValueChange={(value) => handleTypeChange(value as InwardLinkToType)}
           name="link-to-type"
           className="flex-wrap"
         >
-          <RadioGroupItem value="purchase_order">
-            Purchase order
-          </RadioGroupItem>
+          <RadioGroupItem value="purchase_order">Purchase order</RadioGroupItem>
           <RadioGroupItem value="sales_return">Sales return</RadioGroupItem>
           <RadioGroupItem value="other">Other</RadioGroupItem>
         </RadioGroup>

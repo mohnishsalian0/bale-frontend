@@ -68,7 +68,9 @@ export function TransferDetailsStep({
             label="Transfer date"
             placeholder="Pick a date"
             value={
-              formData.transferDate ? new Date(formData.transferDate) : undefined
+              formData.transferDate
+                ? new Date(formData.transferDate)
+                : undefined
             }
             onChange={(date) =>
               onChange({

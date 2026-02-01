@@ -237,9 +237,7 @@ export default function GoodsTransferPage() {
       >
         <div className={`${isMobile ? "w-full" : "flex-1"}`}>
           <div className="mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Goods Transfer
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900">Goods Transfer</h1>
           </div>
 
           {/* Search */}
@@ -338,7 +336,10 @@ export default function GoodsTransferPage() {
         </Select>
 
         {/* Date Range Picker */}
-        <DateRangePicker date={dateRange} onDateChange={handleDateRangeChange} />
+        <DateRangePicker
+          date={dateRange}
+          onDateChange={handleDateRangeChange}
+        />
       </div>
 
       {/* List */}

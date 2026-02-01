@@ -397,7 +397,6 @@ export function ProductFormSheet({
 
   const RollIcon = getProductIcon("roll");
   const BatchIcon = getProductIcon("batch");
-  const PieceIcon = getProductIcon("piece");
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -465,8 +464,6 @@ export function ProductFormSheet({
                         // Auto-set measuring unit based on stock type
                         if (stockType === "batch") {
                           measuringUnit = "unit";
-                        } else if (stockType === "piece") {
-                          measuringUnit = "piece";
                         }
 
                         field.onChange(stockType);
@@ -482,10 +479,6 @@ export function ProductFormSheet({
                       <RadioGroupItem value="batch">
                         <BatchIcon />
                         Batch
-                      </RadioGroupItem>
-                      <RadioGroupItem value="piece">
-                        <PieceIcon />
-                        Piece
                       </RadioGroupItem>
                     </RadioGroup>
                   )}

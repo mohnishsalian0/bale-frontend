@@ -527,7 +527,11 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
                                 ` (${charge.charge_value}%)`}
                             </span>
                             <span className="font-semibold">
-                              ₹{formatCurrency((charge.charge_amount || 0) + (charge.total_tax_amount || 0))}
+                              ₹
+                              {formatCurrency(
+                                (charge.charge_amount || 0) +
+                                  (charge.total_tax_amount || 0),
+                              )}
                             </span>
                           </div>
                         ))}

@@ -556,11 +556,10 @@ Permissions are organized hierarchically with the following top-level categories
   - Thread count (optional, in cms)
   - Tags (multi-select for categorization)
 - **Stock Information:**
-  - Stock Type (required: 'roll', 'batch', 'piece' - defines how the product is tracked)
+  - Stock Type (required: 'roll', 'batch' - defines how the product is tracked)
   - Measuring Unit (conditional based on stock type):
     - For 'roll': metre, yard, or kilogram
     - For 'batch': unit
-    - For 'piece': NULL (no measuring unit)
   - Cost Price Per Unit (optional, for margin calculation)
   - Selling Price Per Unit (optional, for quotations)
   - Product Images (max 5 images, 2MB each)

@@ -33,8 +33,8 @@ CREATE TABLE invoice_items (
 
     -- Product snapshot (taken at invoice creation time)
     product_name VARCHAR(200),
-    product_stock_type VARCHAR(20), -- 'roll', 'batch', 'piece'
-    product_measuring_unit VARCHAR(20), -- 'metre', 'yard', 'kilogram', 'unit', 'piece'
+    product_stock_type VARCHAR(20), -- 'roll', 'batch'
+    product_measuring_unit VARCHAR(20), -- 'metre', 'yard', 'kilogram', 'unit'
     product_hsn_code VARCHAR(8),
 
     -- Tax configuration (from product)

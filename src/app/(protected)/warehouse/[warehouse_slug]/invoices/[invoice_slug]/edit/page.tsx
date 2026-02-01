@@ -15,10 +15,7 @@ import {
   useInvoiceBySlug,
 } from "@/lib/query/hooks/invoices";
 import { useLedgers } from "@/lib/query/hooks/ledgers";
-import {
-  CreateInvoiceData,
-  CreateInvoiceCharge,
-} from "@/types/invoices.types";
+import { CreateInvoiceData, CreateInvoiceCharge } from "@/types/invoices.types";
 import type {
   DiscountType,
   InvoiceTaxType,

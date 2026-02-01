@@ -13,7 +13,7 @@ import type { StockType } from "@/types/database/enums";
 
 /**
  * Create stock unit schema with dynamic quantity validation
- * @param stockType - The type of stock (roll, batch, or piece)
+ * @param stockType - The type of stock (roll or batch)
  * @returns Zod schema for stock unit form
  */
 export const createStockUnitSchema = (stockType: StockType) => {
@@ -24,10 +24,10 @@ export const createStockUnitSchema = (stockType: StockType) => {
     })
     .positive({ message: "Quantity must be greater than 0" });
 
-  // For batch and piece types, quantity must be a whole number
-  if (stockType === "batch" || stockType === "piece") {
+  // For batch type, quantity must be a whole number
+  if (stockType === "batch") {
     quantitySchema = quantitySchema.int({
-      message: "Quantity must be a whole number for batch/piece items",
+      message: "Quantity must be a whole number for batch items",
     });
   }
 

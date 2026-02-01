@@ -197,7 +197,9 @@ export function InvoiceReviewStep({
         }
       }
 
-      const chargeTotalTax = roundCurrency(chargeCGST + chargeSGST + chargeIGST);
+      const chargeTotalTax = roundCurrency(
+        chargeCGST + chargeSGST + chargeIGST,
+      );
 
       chargeLineItems.push({
         ledgerName: ledger.name,
@@ -277,7 +279,9 @@ export function InvoiceReviewStep({
     const totalDiscountAmount = roundCurrency(globalDiscountAmount);
 
     // Taxable amount = amount_after_discount + charges_amount (matches backend)
-    const totalTaxableAmount = roundCurrency(amountAfterDiscount + totalChargesAmount);
+    const totalTaxableAmount = roundCurrency(
+      amountAfterDiscount + totalChargesAmount,
+    );
 
     // Total tax = items tax + charges tax (matches backend)
     totalItemsCGST = roundCurrency(totalItemsCGST);
@@ -499,7 +503,9 @@ export function InvoiceReviewStep({
                       ` (${charge.chargeValue}%)`}
                   </span>
                   <span className="font-semibold">
-                    {formatCurrency(charge.chargeAmount + charge.chargeTotalTax)}
+                    {formatCurrency(
+                      charge.chargeAmount + charge.chargeTotalTax,
+                    )}
                   </span>
                 </div>
               ))}

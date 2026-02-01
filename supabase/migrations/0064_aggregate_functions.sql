@@ -50,7 +50,7 @@ BEGIN
         ) AS order_count,
 
         -- Aggregate pending quantities by measuring unit
-        -- Returns JSONB array: [{"unit": "metre", "quantity": 100}, {"unit": "piece", "quantity": 50}]
+        -- Returns JSONB array: [{"unit": "metre", "quantity": 100}, {"unit": "unit", "quantity": 50}]
         COALESCE(
             (SELECT jsonb_agg(unit_totals)
              FROM (
@@ -96,7 +96,7 @@ BEGIN
         ) AS order_count,
 
         -- Aggregate pending quantities by measuring unit
-        -- Returns JSONB array: [{"unit": "metre", "quantity": 100}, {"unit": "piece", "quantity": 50}]
+        -- Returns JSONB array: [{"unit": "metre", "quantity": 100}, {"unit": "unit", "quantity": 50}]
         COALESCE(
             (SELECT jsonb_agg(unit_totals)
              FROM (
@@ -141,7 +141,7 @@ BEGIN
         ) AS product_count,
 
         -- Aggregate in_stock_quantity by measuring unit
-        -- Returns JSONB array: [{"unit": "metre", "quantity": 100}, {"unit": "piece", "quantity": 50}]
+        -- Returns JSONB array: [{"unit": "metre", "quantity": 100}, {"unit": "unit", "quantity": 50}]
         COALESCE(
             (SELECT jsonb_agg(unit_totals)
              FROM (
