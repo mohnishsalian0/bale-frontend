@@ -8,14 +8,13 @@ import {
   createAttribute,
   createAttributesBatch,
 } from "@/lib/queries/attributes";
-import type { ProductAttributeGroup } from "@/types/database/enums";
 import type { CreateAttributeData } from "@/types/attributes.types";
 
 /**
  * Fetch attributes filtered by single group
  * @param groupName - Optional attribute group to filter by (material, color, product_tag)
  */
-export function useAttributes(groupName?: ProductAttributeGroup) {
+export function useAttributes(groupName?: string) {
   return useQuery({
     queryKey: groupName
       ? queryKeys.attributes.byGroup(groupName)

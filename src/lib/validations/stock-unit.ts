@@ -33,7 +33,8 @@ export const createStockUnitSchema = (stockType: StockType) => {
 
   return z.object({
     quantity: quantitySchema,
-    supplier_number: optionalCodeSchema,
+    stock_number: optionalCodeSchema,
+    lot_number: z.string().trim().optional(),
     grade: optionalGradeSchema,
     manufactured_on: z.date().nullish(),
     location: optionalLocationSchema,
@@ -51,10 +52,11 @@ export type StockUnitFormData = z.infer<
 /**
  * Update stock unit schema - for editing existing stock units
  * Note: initial_quantity is excluded as it cannot be changed if has_outward is true
- * Other fields (grade, supplier_number, location, manufactured_on, notes) can always be edited
+ * Other fields (grade, stock_number, lot_number, location, manufactured_on, notes) can always be edited
  */
 export const updateStockUnitSchema = z.object({
-  supplier_number: optionalCodeSchema,
+  stock_number: optionalCodeSchema,
+  lot_number: z.string().trim().optional(),
   grade: optionalGradeSchema,
   manufactured_on: z.date().nullish(),
   location: optionalLocationSchema,

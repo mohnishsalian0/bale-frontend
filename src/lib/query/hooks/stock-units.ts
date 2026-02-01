@@ -97,14 +97,17 @@ export function useStockUnitMutations(_warehouseId: string) {
     mutationFn: ({
       id,
       data,
+      lotNumber,
     }: {
       id: string;
       data: TablesUpdate<"stock_units">;
-    }) => updateStockUnit(id, data),
+      lotNumber?: string | null;
+    }) => updateStockUnit(id, data, lotNumber),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stock-units"] });
       queryClient.invalidateQueries({ queryKey: ["products"] }); // Inventory counts may change
       queryClient.invalidateQueries({ queryKey: ["dashboard"] }); // Dashboard stats may change
+      queryClient.invalidateQueries({ queryKey: ["attributes"] }); // Lot numbers may have been created
     },
   });
 

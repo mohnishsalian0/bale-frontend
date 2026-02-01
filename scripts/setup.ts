@@ -624,6 +624,34 @@ async function createTestPartners() {
     }
   }
 
+  // Create lot numbers
+  const lotNumbers = Array.from(
+    { length: 10 },
+    (_, i) => `LOT-${String(i + 1).padStart(6, "0")}`,
+  );
+  const lotNumberIds: Record<string, string> = {};
+
+  console.log("Creating lot numbers...");
+  for (const name of lotNumbers) {
+    const { data, error } = await supabase
+      .from("attributes")
+      .upsert(
+        { company_id: companyId, name, group_name: "lot_number" },
+        { onConflict: "company_id,name" },
+      )
+      .select()
+      .single();
+
+    if (error) {
+      console.error(
+        `   ❌ Failed to create lot number: ${name} - ${error.message}`,
+      );
+    } else {
+      lotNumberIds[name] = data.id;
+      console.log(`   ✅ Lot Number: ${name}`);
+    }
+  }
+
   // Define products with their attribute references
   const testProducts = [
     {
@@ -838,6 +866,7 @@ async function createTestPartners() {
 
     if (allAttributeIds.length > 0) {
       const assignments = allAttributeIds.map((attributeId) => ({
+        company_id: companyId,
         product_id: productId,
         attribute_id: attributeId,
       }));
@@ -960,79 +989,58 @@ async function createTestPartners() {
       const inwardIds: string[] = [];
 
       for (const inwards of testInwards) {
-        const { data, error } = await supabase
-          .from("goods_inwards")
-          .insert({
-            ...inwards,
-            created_by: userId,
-          })
-          .select()
-          .single();
+        // Select a random lot number for all stock units in this goods inward
+        const lotNumberName =
+          lotNumbers[Math.floor(Math.random() * lotNumbers.length)];
 
-        if (error) {
-          console.error(`❌ Failed to create inwards: ${error.message}`);
-          continue;
-        }
-
-        const inwardId = data.id;
-        inwardIds.push(inwardId);
-        console.log(`✅ Created goods inwards: SEQ-${data.sequence_number}`);
-
-        // Check if stock units already exist for this inwards
-        const { data: existingStockUnits, error: checkStockError } =
-          await supabase
-            .from("stock_units")
-            .select("id")
-            .eq("created_from_inward_id", inwardId);
-
-        if (checkStockError) {
-          console.error(
-            `   ❌ Failed to check existing stock units: ${checkStockError.message}`,
-          );
-          continue;
-        }
-
-        if (existingStockUnits && existingStockUnits.length > 0) {
-          console.log(
-            `   ⏭️  Stock units already exist (${existingStockUnits.length} units)`,
-          );
-          continue;
-        }
-
-        // Create stock units directly (2-3 products per inwards)
+        // Prepare stock units data (2-3 products per inwards)
         const itemCount = Math.floor(Math.random() * 2) + 2; // 2-3 items
+        const stockUnitsData = [];
+
         for (let i = 0; i < itemCount && i < productsList.length; i++) {
           const quantityCount = Math.floor(Math.random() * 5) + 1; // 1-5 units per product
 
           // Create stock units for each quantity
           for (let j = 0; j < quantityCount; j++) {
             const quantity = parseFloat((Math.random() * 50 + 10).toFixed(2)); // Random size 10-60
-            const { error: stockError } = await supabase
-              .from("stock_units")
-              .insert({
-                company_id: companyId,
-                current_warehouse_id: warehouseId,
-                product_id: productsList[i].id,
-                created_from_inward_id: inwardId,
-                initial_quantity: quantity,
-                remaining_quantity: quantity,
-                quality_grade: ["A", "B", "C"][Math.floor(Math.random() * 3)],
-                warehouse_location: `Rack ${String.fromCharCode(65 + Math.floor(Math.random() * 5))}-${Math.floor(Math.random() * 10) + 1}`,
-                manufacturing_date: inwards.inward_date,
-                created_by: userId,
-              });
-
-            if (stockError) {
-              console.error(
-                `   ❌ Failed to create stock unit: ${stockError.message}`,
-              );
-            } else {
-              console.log(
-                `   ✅ Created stock unit ${j + 1}/${quantityCount} for product ${i + 1}`,
-              );
-            }
+            stockUnitsData.push({
+              product_id: productsList[i].id,
+              initial_quantity: quantity,
+              quality_grade: ["A", "B", "C"][Math.floor(Math.random() * 3)],
+              warehouse_location: `Rack ${String.fromCharCode(65 + Math.floor(Math.random() * 5))}-${Math.floor(Math.random() * 10) + 1}`,
+              lot_number: lotNumberName, // All units in this inward get the same lot number
+              created_by: userId,
+            });
           }
         }
+
+        // Use RPC function to create goods inward with stock units
+        const { data: inwardId, error } = await supabase.rpc(
+          "create_goods_inward_with_units",
+          {
+            p_inward_data: {
+              company_id: companyId,
+              warehouse_id: warehouseId,
+              inward_type: inwards.inward_type,
+              other_reason: inwards.other_reason || null,
+              partner_id: inwards.partner_id,
+              inward_date: inwards.inward_date,
+              notes: inwards.notes,
+              created_by: userId,
+            },
+            p_stock_units: stockUnitsData,
+          },
+        );
+
+        if (error) {
+          console.error(`❌ Failed to create inwards: ${error.message}`);
+          continue;
+        }
+
+        inwardIds.push(inwardId);
+        console.log(
+          `✅ Created goods inwards with ${stockUnitsData.length} stock units (lot ${lotNumberName})`,
+        );
       }
 
       // Get stock units that were auto-created from inwards

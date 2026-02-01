@@ -7,7 +7,7 @@ import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useGoodsTransferBySequenceNumber } from "@/lib/query/hooks/goods-transfers";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
-import { formatStockUnitNumber, getStockUnitInfo } from "@/lib/utils/product";
+import { getStockUnitInfo } from "@/lib/utils/product";
 import type { Tables } from "@/types/database/supabase";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon } from "@/lib/utils/product";
@@ -131,12 +131,7 @@ export default function StockUnitsPage({ params }: PageParams) {
                 </p>
 
                 <p className="text-sm text-gray-500">
-                  {stockUnit?.sequence_number
-                    ? formatStockUnitNumber(
-                        stockUnit.sequence_number,
-                        stockType,
-                      )
-                    : "No unit number"}
+                  {stockUnit?.stock_number || "No unit number"}
                 </p>
 
                 {/* Additional Details */}

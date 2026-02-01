@@ -25,6 +25,9 @@ DECLARE
     v_existing_unit_id UUID;
     v_existing_initial_qty DECIMAL;
     v_existing_remaining_qty DECIMAL;
+    v_stock_unit_id UUID;
+    v_lot_number TEXT;
+    v_lot_attribute_id UUID;
 BEGIN
     -- Derive company_id from JWT if not provided (short-circuit evaluation)
     v_company_id := COALESCE(
@@ -109,6 +112,7 @@ BEGIN
                     remaining_quantity,
                     initial_quantity,
                     quality_grade,
+                    stock_number,
                     created_by
                 )
                 VALUES (
@@ -119,8 +123,31 @@ BEGIN
                     v_quantity,
                     v_quantity,
                     COALESCE(v_unit->>'quality_grade', 'A'),
+                    v_unit->>'stock_number',
                     COALESCE((v_unit->>'created_by')::UUID, auth.uid())
-                );
+                )
+                RETURNING id INTO v_stock_unit_id;
+
+                -- Handle lot_number for piece type (if provided)
+                v_lot_number := v_unit->>'lot_number';
+                IF v_lot_number IS NOT NULL AND v_lot_number != '' THEN
+                    -- Find or create lot_number attribute
+                    SELECT id INTO v_lot_attribute_id
+                    FROM attributes
+                    WHERE company_id = v_company_id
+                      AND name = v_lot_number
+                      AND group_name = 'lot_number';
+
+                    IF v_lot_attribute_id IS NULL THEN
+                        INSERT INTO attributes (company_id, name, group_name)
+                        VALUES (v_company_id, v_lot_number, 'lot_number')
+                        RETURNING id INTO v_lot_attribute_id;
+                    END IF;
+
+                    -- Create assignment
+                    INSERT INTO stock_unit_attribute_assignments (company_id, stock_unit_id, attribute_id)
+                    VALUES (v_company_id, v_stock_unit_id, v_lot_attribute_id);
+                END IF;
             END IF;
         ELSE
             -- Handle non-piece type products (create new stock units as usual)
@@ -131,9 +158,8 @@ BEGIN
                 created_from_inward_id,
                 remaining_quantity,
                 initial_quantity,
-                status,
                 quality_grade,
-                supplier_number,
+                stock_number,
                 warehouse_location,
                 notes,
                 created_by
@@ -145,13 +171,34 @@ BEGIN
                 v_inward_id,
                 v_quantity,
                 v_quantity,
-                v_unit->>'status',
                 v_unit->>'quality_grade',
-                v_unit->>'supplier_number',
+                v_unit->>'stock_number',
                 v_unit->>'warehouse_location',
                 v_unit->>'notes',
                 COALESCE((v_unit->>'created_by')::UUID, auth.uid())
-            );
+            )
+            RETURNING id INTO v_stock_unit_id;
+
+            -- Handle lot_number (if provided)
+            v_lot_number := v_unit->>'lot_number';
+            IF v_lot_number IS NOT NULL AND v_lot_number != '' THEN
+                -- Find or create lot_number attribute
+                SELECT id INTO v_lot_attribute_id
+                FROM attributes
+                WHERE company_id = v_company_id
+                  AND name = v_lot_number
+                  AND group_name = 'lot_number';
+
+                IF v_lot_attribute_id IS NULL THEN
+                    INSERT INTO attributes (company_id, name, group_name)
+                    VALUES (v_company_id, v_lot_number, 'lot_number')
+                    RETURNING id INTO v_lot_attribute_id;
+                END IF;
+
+                -- Create assignment
+                INSERT INTO stock_unit_attribute_assignments (company_id, stock_unit_id, attribute_id)
+                VALUES (v_company_id, v_stock_unit_id, v_lot_attribute_id);
+            END IF;
         END IF;
     END LOOP;
 

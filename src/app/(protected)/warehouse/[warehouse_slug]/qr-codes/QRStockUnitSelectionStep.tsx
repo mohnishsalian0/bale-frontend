@@ -5,8 +5,6 @@ import { IconChevronDown } from "@tabler/icons-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { formatRelativeDate } from "@/lib/utils/date";
-import { formatStockUnitNumber } from "@/lib/utils/product";
-import type { StockType } from "@/types/database/enums";
 import {
   Collapsible,
   CollapsibleContent,
@@ -237,10 +235,7 @@ export function QRStockUnitSelectionStep({
                       <div className="flex items-center gap-3 flex-1">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-700">
-                            {formatStockUnitNumber(
-                              unit.sequence_number,
-                              unit.product?.stock_type as StockType,
-                            )}
+                            {unit.stock_number}
                           </p>
                           <div className="flex items-center gap-1.5 text-sm text-gray-500">
                             {unit.manufacturing_date && (

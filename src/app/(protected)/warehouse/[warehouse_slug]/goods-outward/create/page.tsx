@@ -14,13 +14,16 @@ import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useStockFlowMutations } from "@/lib/query/hooks/stock-flow";
 import { useSalesOrderById } from "@/lib/query/hooks/sales-orders";
 import { usePurchaseOrderById } from "@/lib/query/hooks/purchase-orders";
-import type { TablesInsert } from "@/types/database/supabase";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import { dateToISOString } from "@/lib/utils/date";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
+import {
+  CreateOutwardData,
+  CreateOutwardItemData,
+} from "@/types/stock-flow.types";
 
 interface DetailsFormData {
   outwardDate: string;
@@ -207,10 +210,7 @@ export default function CreateGoodsOutwardPage() {
 
     try {
       // Prepare outward data - direct field mapping with aligned enums
-      const outwardData: Omit<
-        TablesInsert<"goods_outwards">,
-        "created_by" | "sequence_number"
-      > = {
+      const outwardData: CreateOutwardData = {
         warehouse_id: warehouse.id,
         outward_type: linkToData.linkToType as
           | "sales_order"
@@ -229,10 +229,12 @@ export default function CreateGoodsOutwardPage() {
       };
 
       // Prepare stock unit items from scannedUnits
-      const stockUnitItems = scannedUnits.map((item) => ({
-        stock_unit_id: item.stockUnit.id,
-        quantity: item.quantity,
-      }));
+      const stockUnitItems: CreateOutwardItemData[] = scannedUnits.map(
+        (item) => ({
+          stock_unit_id: item.stockUnit.id,
+          quantity: item.quantity,
+        }),
+      );
 
       // Use mutation to create outward with items atomically
       await createOutwardWithItems.mutateAsync({

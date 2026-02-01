@@ -626,6 +626,13 @@ Permissions are organized hierarchically with the following top-level categories
 - **Location Tracking:**
   - Location Description (free-form text field, e.g., "Section A Rack 5", "Left Corner")
 - **Additional Information:**
+  - Lot Number (optional, user-defined text field)
+    - Custom format determined by user's business practices (e.g., LOT-123456, BATCH-2024-A, L001, etc.)
+    - Shared across multiple stock units from the same batch/shipment
+    - All stock units from a single goods inward typically share the same lot number
+    - Assigned during goods inward creation
+    - Stored as attribute in consolidated attributes table with group_name = 'lot_number'
+    - Linked via stock_unit_attribute_assignments junction table
   - Barcode generated (boolean, default false, auto updates when barcode is generated for this stock unit)
   - Barcode generated at (time, auto updates when barcode is generated for this stock unit)
   - Quality Grade (custom text field with auto-suggestions from previously used values)
@@ -1269,11 +1276,17 @@ Permissions are organized hierarchically with the following top-level categories
 
 **Stock Units Creation**
 
-- User directly creates stock units with complete details (size, quality grade, location, etc.)
+- User directly creates stock units with complete details (size, quality grade, location, lot number, etc.)
 - Each stock unit created with full specifications during inward process
 - If multiple units have identical details, user can specify quantity to create multiple at once
 - Stock units created with status as 'in_stock'
 - All units automatically linked to this goods inward via created_from_inward_id
+- **Lot Number Assignment:**
+  - User can optionally assign a lot number during goods inward creation (format: LOT-XXXXXX)
+  - All stock units from the same goods inward typically share the same lot number
+  - Lot numbers are stored as attributes (group_name = 'lot_number') in the consolidated attributes table
+  - Assignment handled automatically via stock_unit_attribute_assignments junction table
+  - If lot number doesn't exist, it's created automatically during the inward process
 
 **Staff Access Controls**
 

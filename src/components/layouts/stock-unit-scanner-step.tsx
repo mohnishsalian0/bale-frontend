@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { SelectInventorySheet } from "@/app/(protected)/warehouse/[warehouse_slug]/goods-outward/SelectInventorySheet";
 import { StockUnitQuantitySheet } from "@/app/(protected)/warehouse/[warehouse_slug]/goods-outward/StockUnitQuantitySheet";
-import { formatStockUnitNumber } from "@/lib/utils/product";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import {
   getMeasuringUnitAbbreviation,
@@ -368,10 +367,6 @@ export function StockUnitScannerStep({
                 unitAbbreviation,
               );
               const stockType = item.stockUnit.product?.stock_type as StockType;
-              const stockUnitNumber = formatStockUnitNumber(
-                item.stockUnit.sequence_number,
-                stockType,
-              );
               if (stockType !== "roll") {
                 maxQuantity = Math.floor(maxQuantity);
               }
@@ -399,10 +394,10 @@ export function StockUnitScannerStep({
                       {item.stockUnit.product?.name}
                     </p>
                     <p
-                      title={stockUnitNumber}
+                      title={item.stockUnit.stock_number}
                       className="text-xs text-gray-500 truncate"
                     >
-                      {stockUnitNumber}
+                      {item.stockUnit.stock_number}
                     </p>
                   </div>
 

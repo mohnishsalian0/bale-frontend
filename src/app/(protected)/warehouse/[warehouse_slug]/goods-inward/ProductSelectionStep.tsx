@@ -28,7 +28,8 @@ export interface StockUnitSpec {
   id: string; // temp ID for UI
   quantity: number;
   grade?: string;
-  supplier_number?: string;
+  stock_number?: string;
+  lot_number?: string;
   manufactured_on?: Date;
   location?: string;
   notes?: string;

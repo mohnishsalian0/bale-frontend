@@ -5,7 +5,7 @@ import { IconBox, IconPlus, IconTrash } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { StockStatusBadge } from "@/components/ui/stock-status-badge";
 import { formatAbsoluteDate } from "@/lib/utils/date";
-import { formatStockUnitNumber, getStockUnitInfo } from "@/lib/utils/product";
+import { getStockUnitInfo } from "@/lib/utils/product";
 import {
   getMeasuringUnitAbbreviation,
   pluralizeMeasuringUnitAbbreviation,
@@ -161,12 +161,7 @@ export function StockUnitListStep({
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 text-base font-medium text-gray-700">
-                        <span>
-                          {formatStockUnitNumber(
-                            unit.sequence_number,
-                            stockType,
-                          )}
-                        </span>
+                        <span>{unit.stock_number}</span>
                         <StockStatusBadge
                           status={unit.status as StockUnitStatus}
                         />

@@ -27,8 +27,11 @@ import {
   getGoodsOutwardsBySalesOrder,
   getGoodsInwardsByPurchaseOrder,
 } from "@/lib/queries/stock-flow";
-import type { TablesInsert } from "@/types/database/supabase";
 import type {
+  CreateInwardData,
+  CreateInwardStockUnitData,
+  CreateOutwardData,
+  CreateOutwardItemData,
   UpdateInwardData,
   UpdateOutwardData,
 } from "@/types/stock-flow.types";
@@ -157,14 +160,8 @@ export function useStockFlowMutations(warehouseId: string) {
       inwardData,
       stockUnits,
     }: {
-      inwardData: Omit<
-        TablesInsert<"goods_inwards">,
-        "created_by" | "sequence_number"
-      >;
-      stockUnits: Omit<
-        TablesInsert<"stock_units">,
-        "created_by" | "modified_by" | "sequence_number"
-      >[];
+      inwardData: CreateInwardData;
+      stockUnits: CreateInwardStockUnitData;
     }) => createGoodsInwardWithUnits(inwardData, stockUnits),
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -187,14 +184,8 @@ export function useStockFlowMutations(warehouseId: string) {
       outwardData,
       stockUnitItems,
     }: {
-      outwardData: Omit<
-        TablesInsert<"goods_outwards">,
-        "created_by" | "sequence_number"
-      >;
-      stockUnitItems: Array<{
-        stock_unit_id: string;
-        quantity: number;
-      }>;
+      outwardData: CreateOutwardData;
+      stockUnitItems: CreateOutwardItemData[];
     }) => createGoodsOutwardWithItems(outwardData, stockUnitItems),
     onSuccess: () => {
       queryClient.invalidateQueries({

@@ -1,4 +1,4 @@
-import type { Tables, TablesUpdate } from "./database/supabase";
+import type { Tables, TablesInsert, TablesUpdate } from "./database/supabase";
 import type { QueryData } from "@supabase/supabase-js";
 import {
   buildGoodsInwardsQuery,
@@ -32,6 +32,36 @@ export interface OutwardFilters extends Record<string, unknown> {
   date_to?: string;
   search_term?: string;
 }
+
+// =====================================================
+// INSERT TYPES
+// =====================================================
+
+/**
+ * Data for creating goods inward
+ */
+export type CreateInwardData = Omit<
+  TablesInsert<"goods_inwards">,
+  "created_by" | "sequence_number"
+>;
+
+export type CreateInwardStockUnitData = (Omit<
+  TablesInsert<"stock_units">,
+  "created_by" | "modified_by" | "sequence_number" | "status" | "stock_number"
+> & { stock_number: string | null })[];
+
+/**
+ * Data for creating goods outward
+ */
+export type CreateOutwardData = Omit<
+  TablesInsert<"goods_outwards">,
+  "created_by" | "sequence_number"
+>;
+
+export type CreateOutwardItemData = {
+  stock_unit_id: string;
+  quantity: number;
+};
 
 // =====================================================
 // UPDATE TYPES

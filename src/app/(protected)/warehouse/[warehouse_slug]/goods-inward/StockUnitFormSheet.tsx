@@ -20,6 +20,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { DatePicker } from "@/components/ui/date-picker";
+import MultipleSelector from "@/components/ui/multiple-selector";
 import type { ProductListView } from "@/types/products.types";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import type { StockUnitSpec } from "./ProductSelectionStep";
@@ -29,6 +30,7 @@ import {
   createStockUnitSchema,
   StockUnitFormData,
 } from "@/lib/validations/stock-unit";
+import { useAttributes } from "@/lib/query/hooks/attributes";
 
 interface StockUnitFormSheetProps {
   open: boolean;
@@ -45,6 +47,9 @@ export function StockUnitFormSheet({
   initialUnit,
   onConfirm,
 }: StockUnitFormSheetProps) {
+  // Fetch lot numbers
+  const { data: lotNumbers = [] } = useAttributes("lot_number");
+
   // Create validation schema based on product stock type
   const stockUnitSchema = createStockUnitSchema(
     (product?.stock_type as StockType) || "roll",
@@ -62,7 +67,8 @@ export function StockUnitFormSheet({
     resolver: zodResolver(stockUnitSchema),
     defaultValues: {
       quantity: initialUnit?.quantity || 0,
-      supplier_number: initialUnit?.supplier_number || "",
+      stock_number: initialUnit?.stock_number || "",
+      lot_number: initialUnit?.lot_number || "",
       grade: initialUnit?.grade || "",
       manufactured_on: undefined,
       location: initialUnit?.location || "",
@@ -87,7 +93,8 @@ export function StockUnitFormSheet({
     onConfirm({
       quantity: data.quantity,
       grade: data.grade || undefined,
-      supplier_number: data.supplier_number || undefined,
+      stock_number: data.stock_number || undefined,
+      lot_number: data.lot_number || undefined,
       manufactured_on: data.manufactured_on || undefined,
       location: data.location || undefined,
       notes: data.notes || undefined,
@@ -206,13 +213,47 @@ export function StockUnitFormSheet({
         </div>
 
         <div className="flex flex-col gap-4">
-          {/* Supplier Number - Full Width */}
+          {/* Stock Number - Full Width */}
           <InputWrapper
             type="text"
-            placeholder="Supplier number"
-            {...register("supplier_number")}
+            placeholder="Stock number"
+            {...register("stock_number")}
             icon={<IconHash />}
           />
+
+          {/* Lot Number - Full Width */}
+          <div className="flex flex-col gap-2">
+            <Controller
+              name="lot_number"
+              control={control}
+              render={({ field }) => (
+                <MultipleSelector
+                  value={
+                    field.value
+                      ? [{ value: field.value, label: field.value }]
+                      : []
+                  }
+                  onChange={(options) => {
+                    field.onChange(options[0]?.value || "");
+                  }}
+                  defaultOptions={lotNumbers.map((lot) => ({
+                    value: lot.name,
+                    label: lot.name,
+                  }))}
+                  placeholder="Lot number"
+                  maxSelected={1}
+                  creatable
+                  triggerSearchOnFocus
+                  hidePlaceholderWhenSelected
+                  emptyIndicator={
+                    <p className="text-center text-sm text-gray-500">
+                      No lot numbers found
+                    </p>
+                  }
+                />
+              )}
+            />
+          </div>
 
           <div className="flex gap-4">
             {/* Quality - Input with Icon */}

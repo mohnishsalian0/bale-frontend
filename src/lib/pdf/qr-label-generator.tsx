@@ -8,10 +8,9 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import QRCode from "qrcode";
-import { formatStockUnitNumber } from "@/lib/utils/product";
 import type { QRTemplateField, PageSize } from "@/lib/utils/qr-batches";
 import type { Tables } from "@/types/database/supabase";
-import type { MeasuringUnit, StockType } from "@/types/database/enums";
+import type { MeasuringUnit } from "@/types/database/enums";
 import { getMeasuringUnitAbbreviation } from "../utils/measuring-units";
 
 // Page size dimensions in points (1 inch = 72 points)
@@ -28,6 +27,7 @@ export type LabelData = Pick<
   Tables<"stock_units">,
   | "id"
   | "sequence_number"
+  | "stock_number"
   | "manufacturing_date"
   | "initial_quantity"
   | "quality_grade"
@@ -176,10 +176,8 @@ function getFieldValue(unit: LabelData, field: QRTemplateField): string {
       value = `₹ ${unit.product.selling_price_per_unit}`;
       break;
     case "unit_number":
-      return formatStockUnitNumber(
-        unit.sequence_number,
-        unit.product.stock_type as StockType,
-      );
+      value = unit.stock_number;
+      break;
     case "manufacturing_date":
       value = unit.manufacturing_date
         ? new Date(unit.manufacturing_date).toLocaleDateString()

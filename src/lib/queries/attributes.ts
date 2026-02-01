@@ -19,7 +19,7 @@ import type { CreateAttributeData } from "@/types/attributes.types";
  */
 export const buildAttributesQuery = (
   supabase: SupabaseClient<Database>,
-  groupName?: ProductAttributeGroup,
+  groupName?: string,
 ) => {
   let query = supabase
     .from("attributes")
@@ -42,7 +42,7 @@ export const buildAttributesQuery = (
  * @param groupName - Optional filter by single attribute group (material, color, product_tag)
  * @returns Array of attributes
  */
-export async function getAttributes(groupName?: ProductAttributeGroup) {
+export async function getAttributes(groupName?: string) {
   const supabase = createClient();
   const { data, error } = await buildAttributesQuery(supabase, groupName);
 

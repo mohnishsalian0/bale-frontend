@@ -2895,17 +2895,14 @@ export type Database = {
       product_attribute_assignments: {
         Row: {
           attribute_id: string
-          company_id: string
           product_id: string
         }
         Insert: {
           attribute_id: string
-          company_id?: string
           product_id: string
         }
         Update: {
           attribute_id?: string
-          company_id?: string
           product_id?: string
         }
         Relationships: [
@@ -2914,13 +2911,6 @@ export type Database = {
             columns: ["attribute_id"]
             isOneToOne: false
             referencedRelation: "attributes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_attribute_assignments_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
@@ -4173,46 +4163,6 @@ export type Database = {
           },
         ]
       }
-      stock_unit_attribute_assignments: {
-        Row: {
-          attribute_id: string
-          company_id: string
-          stock_unit_id: string
-        }
-        Insert: {
-          attribute_id: string
-          company_id?: string
-          stock_unit_id: string
-        }
-        Update: {
-          attribute_id?: string
-          company_id?: string
-          stock_unit_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stock_unit_attribute_assignments_attribute_id_fkey"
-            columns: ["attribute_id"]
-            isOneToOne: false
-            referencedRelation: "attributes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stock_unit_attribute_assignments_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stock_unit_attribute_assignments_stock_unit_id_fkey"
-            columns: ["stock_unit_id"]
-            isOneToOne: false
-            referencedRelation: "stock_units"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       stock_units: {
         Row: {
           company_id: string
@@ -4233,7 +4183,7 @@ export type Database = {
           remaining_quantity: number
           sequence_number: number
           status: string
-          stock_number: string
+          supplier_number: string | null
           updated_at: string
           warehouse_location: string | null
         }
@@ -4256,7 +4206,7 @@ export type Database = {
           remaining_quantity: number
           sequence_number: number
           status?: string
-          stock_number: string
+          supplier_number?: string | null
           updated_at?: string
           warehouse_location?: string | null
         }
@@ -4279,7 +4229,7 @@ export type Database = {
           remaining_quantity?: number
           sequence_number?: number
           status?: string
-          stock_number?: string
+          supplier_number?: string | null
           updated_at?: string
           warehouse_location?: string | null
         }

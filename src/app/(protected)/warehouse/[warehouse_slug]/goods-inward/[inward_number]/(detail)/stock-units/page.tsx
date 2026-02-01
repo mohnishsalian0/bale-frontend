@@ -8,7 +8,6 @@ import { ErrorState } from "@/components/layouts/error-state";
 import { useGoodsInwardBySequenceNumber } from "@/lib/query/hooks/stock-flow";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon, getStockUnitInfo } from "@/lib/utils/product";
-import { formatStockUnitNumber } from "@/lib/utils/product";
 import {
   MeasuringUnit,
   StockType,
@@ -138,7 +137,7 @@ export default function StockUnitsPage({ params }: PageParams) {
                 </div>
 
                 <p className="text-sm text-gray-500 mt-1">
-                  {formatStockUnitNumber(item.sequence_number, stockType)}
+                  {item.stock_number}
                   {" • "}
                   {item.warehouse.name}
                   {" • "}

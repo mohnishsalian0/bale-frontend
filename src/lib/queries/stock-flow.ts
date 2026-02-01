@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/browser";
-import type { TablesInsert, Database, Json } from "@/types/database/supabase";
+import type { Database, Json } from "@/types/database/supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   InwardFilters,
@@ -13,6 +13,10 @@ import type {
   OutwardItemWithOutwardDetailView,
   UpdateInwardData,
   UpdateOutwardData,
+  CreateInwardData,
+  CreateInwardStockUnitData,
+  CreateOutwardData,
+  CreateOutwardItemData,
 } from "@/types/stock-flow.types";
 
 // Re-export types for convenience
@@ -473,14 +477,8 @@ export async function getOutwardItemsByProduct(
  * Create a new goods inward with stock units atomically using RPC
  */
 export async function createGoodsInwardWithUnits(
-  inwardData: Omit<
-    TablesInsert<"goods_inwards">,
-    "created_by" | "sequence_number"
-  >,
-  stockUnits: Omit<
-    TablesInsert<"stock_units">,
-    "created_by" | "modified_by" | "sequence_number"
-  >[],
+  inwardData: CreateInwardData,
+  stockUnits: CreateInwardStockUnitData,
 ): Promise<string> {
   const supabase = createClient();
 
@@ -501,14 +499,8 @@ export async function createGoodsInwardWithUnits(
  * Create a new goods outward with items atomically using RPC
  */
 export async function createGoodsOutwardWithItems(
-  outwardData: Omit<
-    TablesInsert<"goods_outwards">,
-    "created_by" | "sequence_number"
-  >,
-  stockUnitItems: Array<{
-    stock_unit_id: string;
-    quantity: number;
-  }>,
+  outwardData: CreateOutwardData,
+  stockUnitItems: CreateOutwardItemData[],
 ): Promise<string> {
   const supabase = createClient();
 

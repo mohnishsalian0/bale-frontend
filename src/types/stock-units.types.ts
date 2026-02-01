@@ -81,7 +81,7 @@ export interface InwardWithPartnerListView extends InwardListView {
  * Stock unit with minimal details for list views
  * Used in: inventory list page
  */
-export type StockUnitListView = Pick<
+export interface StockUnitListView extends Pick<
   StockUnit,
   | "id"
   | "sequence_number"
@@ -94,14 +94,18 @@ export type StockUnitListView = Pick<
   | "qr_generated_at"
   | "created_at"
   | "created_from_inward_id"
-  | "supplier_number"
->;
+  | "stock_number"
+> {
+  lot_number?: string | null; // Derived from stock_unit_attribute_assignments
+}
 
 /**
  * Stock unit with all details for detail views
  * Used in: stock unit detail page, inventory detail page
  */
-export type StockUnitDetailView = StockUnit;
+export interface StockUnitDetailView extends StockUnit {
+  lot_number?: string | null; // Derived from stock_unit_attribute_assignments
+}
 
 /**
  * Stock unit with product details for list views

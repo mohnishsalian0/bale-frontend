@@ -189,6 +189,7 @@ export default function CreateQRBatchPage() {
         return {
           id: unit.id,
           sequence_number: unit.sequence_number,
+          stock_number: unit.stock_number,
           manufacturing_date: unit.manufacturing_date,
           initial_quantity: unit.initial_quantity,
           quality_grade: unit.quality_grade,

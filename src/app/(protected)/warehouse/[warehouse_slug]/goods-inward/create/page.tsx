@@ -13,17 +13,19 @@ import { InwardDetailsStep } from "../InwardDetailsStep";
 import { ProductFormSheet } from "../../products/ProductFormSheet";
 import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useStockFlowMutations } from "@/lib/query/hooks/stock-flow";
-import type { TablesInsert } from "@/types/database/supabase";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import { ProductListView } from "@/types/products.types";
-import { StockUnitStatus } from "@/types/database/enums";
 import { dateToISOString } from "@/lib/utils/date";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
 import { usePurchaseOrderById } from "@/lib/query/hooks/purchase-orders";
 import { useSalesOrderById } from "@/lib/query/hooks/sales-orders";
+import {
+  CreateInwardData,
+  CreateInwardStockUnitData,
+} from "@/types/stock-flow.types";
 
 interface DetailsFormData {
   inwardDate: string;
@@ -325,10 +327,7 @@ export default function CreateGoodsInwardPage() {
     setSaving(true);
 
     // Prepare inward data - direct field mapping with aligned enums
-    const inwardData: Omit<
-      TablesInsert<"goods_inwards">,
-      "created_by" | "sequence_number"
-    > = {
+    const inwardData: CreateInwardData = {
       warehouse_id: warehouse.id,
       inward_type: linkToData.linkToType as
         | "purchase_order"
@@ -347,10 +346,7 @@ export default function CreateGoodsInwardPage() {
     };
 
     // Prepare stock units for all products (RPC handles piece vs non-piece)
-    const stockUnits: Omit<
-      TablesInsert<"stock_units">,
-      "created_by" | "modified_by" | "sequence_number"
-    >[] = [];
+    const stockUnits: CreateInwardStockUnitData = [];
 
     for (const [productId, units] of Object.entries(productUnits)) {
       if (units.length === 0) continue;
@@ -359,7 +355,6 @@ export default function CreateGoodsInwardPage() {
         // We don't have stock_type here, but the backend RPC will handle it
         // For now, just use unit.count as-is
         const unitCount = unit.count;
-        const stockStatus: StockUnitStatus = "full";
 
         for (let i = 0; i < unitCount; i++) {
           stockUnits.push({
@@ -367,9 +362,8 @@ export default function CreateGoodsInwardPage() {
             product_id: productId,
             initial_quantity: unit.quantity,
             remaining_quantity: unit.quantity,
-            status: stockStatus,
             quality_grade: unit.grade || null,
-            supplier_number: unit.supplier_number || null,
+            stock_number: unit.stock_number || null,
             warehouse_location: unit.location || null,
             notes: unit.notes || null,
           });

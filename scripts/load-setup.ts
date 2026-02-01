@@ -614,12 +614,14 @@ async function generateGoodsInwards(
   userId: string,
   partnerIds: string[],
   productIds: string[],
+  lotNumbers: string[],
   year: number,
 ) {
   console.log("\n📥 Generating 600 goods inwards entries...\n");
   console.log(
     "   Distribution: 50% purchase orders, 30% sales returns, 20% other",
   );
+  console.log("   Lot numbers: 80% of stock units get lot numbers");
   console.log(
     `   Warehouses: Distributed across ${warehouses.length} locations (warehouses & factories)\n`,
   );
@@ -770,30 +772,14 @@ async function generateGoodsInwards(
       const partnerId =
         partnerIds[Math.floor(Math.random() * partnerIds.length)];
 
-      // Create inward
-      const { data: inward, error: inwardError } = await supabase
-        .from("goods_inwards")
-        .insert({
-          company_id: companyId,
-          warehouse_id: selectedWarehouseId,
-          inward_type: inwardType,
-          purchase_order_id: purchaseOrderId,
-          sales_order_id: salesOrderId,
-          other_reason: otherReason,
-          partner_id: partnerId,
-          inward_date: inwardDate,
-          notes: `${inwardType === "purchase_order" ? "PO receipt" : inwardType === "sales_return" ? "Customer return" : otherReason} - auto-generated`,
-          created_by: userId,
-        })
-        .select()
-        .single();
+      // Determine if this inward gets lot numbers (80% chance)
+      const hasLotNumber = Math.random() < 0.8;
+      const lotNumber = hasLotNumber
+        ? lotNumbers[Math.floor(Math.random() * lotNumbers.length)]
+        : null;
 
-      if (inwardError || !inward) {
-        console.error(`❌ Failed to create inward: ${inwardError?.message}`);
-        continue;
-      }
-
-      // Create stock units for this inward
+      // Prepare stock units data
+      const stockUnitsData = [];
       for (const product of selectedProducts) {
         const stockUnitsCount = randomInt(1, 5); // Fewer stock units per product
         const totalQty = product.quantity;
@@ -811,19 +797,40 @@ async function generateGoodsInwards(
           const rackLetter = String.fromCharCode(65 + randomInt(0, 9)); // A-J
           const rackNumber = randomInt(1, 20);
 
-          await supabase.from("stock_units").insert({
-            company_id: companyId,
-            warehouse_id: selectedWarehouseId,
+          stockUnitsData.push({
             product_id: product.id,
-            created_from_inward_id: inward.id,
             initial_quantity: quantity,
-            remaining_quantity: quantity,
             quality_grade: qualityGrade,
             warehouse_location: `Rack ${rackLetter}-${rackNumber}`,
-            manufacturing_date: inwardDate,
+            lot_number: lotNumber, // All units in this inward get the same lot (or null)
             created_by: userId,
           });
         }
+      }
+
+      // Use RPC function to create goods inward with stock units
+      const { error: inwardError } = await supabase.rpc(
+        "create_goods_inward_with_units",
+        {
+          p_inward_data: {
+            company_id: companyId,
+            warehouse_id: selectedWarehouseId,
+            inward_type: inwardType,
+            purchase_order_id: purchaseOrderId,
+            sales_order_id: salesOrderId,
+            other_reason: otherReason,
+            partner_id: partnerId,
+            inward_date: inwardDate,
+            notes: `${inwardType === "purchase_order" ? "PO receipt" : inwardType === "sales_return" ? "Customer return" : otherReason} - auto-generated`,
+            created_by: userId,
+          },
+          p_stock_units: stockUnitsData,
+        },
+      );
+
+      if (inwardError) {
+        console.error(`❌ Failed to create inward: ${inwardError.message}`);
+        continue;
       }
 
       totalCreated++;
@@ -3393,6 +3400,7 @@ async function loadTestData() {
   const materialIds: Record<string, string> = {};
   const colorIds: Record<string, string> = {};
   const tagIds: Record<string, string> = {};
+  const lotNumberIds: Record<string, string> = {};
 
   attributes.forEach((attr) => {
     if (attr.group_name === "material") {
@@ -3401,8 +3409,41 @@ async function loadTestData() {
       colorIds[attr.name] = attr.id;
     } else if (attr.group_name === "tag") {
       tagIds[attr.name] = attr.id;
+    } else if (attr.group_name === "lot_number") {
+      lotNumberIds[attr.name] = attr.id;
     }
   });
+
+  // Create lot numbers (50-100 lot numbers for high-volume test data)
+  console.log("\n🏷️  Creating lot numbers...");
+  const lotNumberCount = randomInt(50, 100);
+  const lotNumbers = Array.from({ length: lotNumberCount }, (_, i) =>
+    `LOT-${String(i + 1).padStart(6, "0")}`,
+  );
+
+  for (const name of lotNumbers) {
+    // Skip if already exists
+    if (lotNumberIds[name]) continue;
+
+    const { data, error } = await supabase
+      .from("attributes")
+      .upsert(
+        { company_id: companyId, name, group_name: "lot_number" },
+        { onConflict: "company_id,name" },
+      )
+      .select()
+      .single();
+
+    if (error) {
+      console.error(
+        `   ❌ Failed to create lot number: ${name} - ${error.message}`,
+      );
+    } else {
+      lotNumberIds[name] = data.id;
+    }
+  }
+
+  console.log(`   ✅ Created/verified ${lotNumberCount} lot numbers\n`);
 
   // Get partners
   const { data: partners } = await supabase
@@ -3479,6 +3520,7 @@ async function loadTestData() {
     userId,
     supplierIds,
     productIds,
+    lotNumbers,
     2025,
   );
 

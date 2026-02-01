@@ -13,11 +13,11 @@ CREATE TABLE stock_units (
     
     -- Identity
     sequence_number INTEGER NOT NULL,
+    stock_number VARCHAR(100) NOT NULL, -- Auto-generated (ROLL-123, BATCH-456, PIECE-789) or custom identifier
 
     -- Physical specifications
     remaining_quantity DECIMAL(10,3) NOT NULL,
     initial_quantity DECIMAL(10,3) NOT NULL, -- Track initial quantity at creation
-    supplier_number VARCHAR(100),
     quality_grade TEXT, -- Custom quality grade with auto-suggestions from previously used values
     warehouse_location TEXT,
     
@@ -93,10 +93,33 @@ CREATE TRIGGER set_stock_units_modified_by
 -- Auto-generate sequence numbers
 CREATE OR REPLACE FUNCTION auto_generate_unit_sequence()
 RETURNS TRIGGER AS $$
+DECLARE
+	v_stock_type VARCHAR(10);
+	v_prefix VARCHAR(10);
 BEGIN
     IF NEW.sequence_number IS NULL THEN
         NEW.sequence_number := get_next_sequence('stock_units', NEW.company_id);
     END IF;
+
+    -- Only generate if stock_number is not provided
+    IF NEW.stock_number IS NULL THEN
+        -- Get stock_type from the product
+        SELECT stock_type INTO v_stock_type
+        FROM products
+        WHERE id = NEW.product_id;
+
+        -- Determine prefix based on stock_type
+        v_prefix := CASE
+            WHEN v_stock_type = 'roll' THEN 'ROLL'
+            WHEN v_stock_type = 'batch' THEN 'BATCH'
+            WHEN v_stock_type = 'piece' THEN 'PIECE'
+            ELSE 'SU'
+        END;
+
+        -- Generate stock_number using prefix and sequence_number
+        NEW.stock_number := v_prefix || '-' || NEW.sequence_number;
+    END IF;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -104,9 +127,6 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_auto_unit_sequence
     BEFORE INSERT ON stock_units
     FOR EACH ROW EXECUTE FUNCTION auto_generate_unit_sequence();
-
--- NOTE: Status auto-update logic has been merged into reconcile_stock_unit() function
--- in migration 0062_stock_unit_reconciliation.sql for better consistency and maintainability.
 
 -- =====================================================
 -- STOCK UNITS TABLE RLS POLICIES

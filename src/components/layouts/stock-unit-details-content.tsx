@@ -4,11 +4,7 @@ import { useState } from "react";
 import { IconTrash } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import ImageWrapper from "@/components/ui/image-wrapper";
-import {
-  formatStockUnitNumber,
-  getProductIcon,
-  getProductInfo,
-} from "@/lib/utils/product";
+import { getProductIcon, getProductInfo } from "@/lib/utils/product";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import type { Tables } from "@/types/database/supabase";
@@ -125,7 +121,7 @@ export function StockUnitDetailsContent({
       {
         id: stockUnit.id,
         data: {
-          supplier_number: data.supplier_number || null,
+          stock_number: data.stock_number || undefined,
           quality_grade: data.grade || null,
           manufacturing_date: data.manufactured_on
             ? data.manufactured_on.toISOString().split("T")[0]
@@ -133,6 +129,7 @@ export function StockUnitDetailsContent({
           warehouse_location: data.location || null,
           notes: data.notes || null,
         },
+        lotNumber: data.lot_number || null,
       },
       {
         onSuccess: () => {
@@ -256,10 +253,11 @@ export function StockUnitDetailsContent({
       <div className="flex flex-col gap-6 overflow-y-auto">
         {/* Stock unit number & Status */}
         <h2 className="flex gap-2 items-center text-lg leading-none font-semibold">
-          {formatStockUnitNumber(
-            stockUnit.sequence_number,
-            stockUnit.product?.stock_type as StockType,
-          )}
+          {/* {formatStockUnitNumber( */}
+          {/*   stockUnit.sequence_number, */}
+          {/*   stockUnit.product?.stock_type as StockType, */}
+          {/* )} */}
+          {stockUnit.stock_number}
           <StockStatusBadge status={stockUnit.status as StockUnitStatus} />
         </h2>
 
@@ -319,15 +317,15 @@ export function StockUnitDetailsContent({
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-700">Quality grade</span>
+            <span className="text-gray-700">Lot number</span>
             <span className="font-semibold text-gray-700">
-              {stockUnit.quality_grade || "-"}
+              {stockUnit.lot_number || "-"}
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-700">Supplier number</span>
+            <span className="text-gray-700">Quality grade</span>
             <span className="font-semibold text-gray-700">
-              {stockUnit.supplier_number || "-"}
+              {stockUnit.quality_grade || "-"}
             </span>
           </div>
           <div className="flex justify-between text-sm">

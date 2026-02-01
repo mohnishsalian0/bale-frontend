@@ -18,15 +18,11 @@ import { ErrorState } from "@/components/layouts/error-state";
 import { StockUnitDetailsModal } from "@/components/layouts/stock-unit-modal";
 import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
-import { formatStockUnitNumber, getStockUnitInfo } from "@/lib/utils/product";
+import { getStockUnitInfo } from "@/lib/utils/product";
 import { useSession } from "@/contexts/session-context";
 import { useProductWithInventoryAndOrdersByNumber } from "@/lib/query/hooks/products";
 import { useStockUnitsWithInward } from "@/lib/query/hooks/stock-units";
-import type {
-  MeasuringUnit,
-  StockType,
-  StockUnitStatus,
-} from "@/types/database/enums";
+import type { MeasuringUnit, StockUnitStatus } from "@/types/database/enums";
 import type { StockUnitWithInwardListView } from "@/types/stock-units.types";
 import type { InwardWithPartnerListView } from "@/types/stock-flow.types";
 import { StockStatusBadge } from "@/components/ui/stock-status-badge";
@@ -260,12 +256,7 @@ export default function StockUnitsPage({ params }: PageParams) {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 text-base font-medium text-gray-700">
-                        <span>
-                          {formatStockUnitNumber(
-                            unit.sequence_number,
-                            product!.stock_type as StockType,
-                          )}
-                        </span>
+                        <span>{unit.stock_number}</span>
                         <span>
                           <StockStatusBadge
                             status={unit.status as StockUnitStatus}
