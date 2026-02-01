@@ -3,7 +3,7 @@ import type {
   TablesInsert,
   TablesUpdate,
 } from "@/types/database/supabase";
-import type { AttributeGroup } from "@/types/database/enums";
+import type { ProductAttributeGroup } from "@/types/database/enums";
 import type { QueryData } from "@supabase/supabase-js";
 import {
   buildProductsQuery,
@@ -15,7 +15,7 @@ import {
 } from "@/lib/queries/products";
 
 export type Product = Tables<"products">;
-type ProductAttributeRaw = Tables<"product_attributes">;
+type AttributeBase = Tables<"attributes">;
 
 export type ProductInventory = Tables<"product_inventory_aggregates">;
 export type ProductSalesOrderAggregate =
@@ -33,9 +33,9 @@ export type ProductUpsertData = Omit<
   "sequence_number" | "created_by" | "modified_by"
 >;
 
-// Attribute type (consolidated materials, colors, and tags)
+// Product-specific attribute type (consolidated materials, colors, and tags)
 export type ProductAttribute = Pick<
-  ProductAttributeRaw,
+  AttributeBase,
   "id" | "name" | "group_name" | "color_hex"
 >;
 
@@ -44,7 +44,7 @@ export type ProductAttribute = Pick<
 // ============================================================================
 
 export interface AttributeFilter {
-  group: AttributeGroup;
+  group: ProductAttributeGroup;
   id: string; // attribute ID
 }
 

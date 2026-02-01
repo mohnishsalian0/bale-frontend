@@ -166,15 +166,15 @@ USING (
     )
 );
 
--- Allow anonymous users to view product attributes
-CREATE POLICY "Anonymous users can view product attributes"
-ON product_attributes
+-- Allow anonymous users to view attributes
+CREATE POLICY "Anonymous users can view attributes"
+ON attributes
 FOR SELECT
 TO anon
 USING (
     EXISTS (
         SELECT 1 FROM catalog_configurations cc
-        WHERE cc.company_id = product_attributes.company_id
+        WHERE cc.company_id = attributes.company_id
         AND cc.accepting_orders = true
     )
 );
@@ -210,7 +210,7 @@ GRANT SELECT ON companies TO anon;
 GRANT SELECT ON products TO anon;
 GRANT SELECT ON partners TO anon;
 GRANT SELECT ON product_inventory_aggregates TO anon;
-GRANT SELECT ON product_attributes TO anon;
+GRANT SELECT ON attributes TO anon;
 GRANT SELECT ON product_attribute_assignments TO anon;
 
 -- Grant INSERT permissions for creating data

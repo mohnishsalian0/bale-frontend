@@ -23,10 +23,10 @@ BEGIN
     END IF;
 
     -- Get all attribute names for this product
-    SELECT STRING_AGG(pa.name, ' ')
+    SELECT STRING_AGG(a.name, ' ')
     INTO attribute_names
     FROM product_attribute_assignments paa
-    JOIN product_attributes pa ON pa.id = paa.attribute_id
+    JOIN attributes a ON a.id = paa.attribute_id
     WHERE paa.product_id = NEW.id;
 
     -- Build weighted search vector

@@ -40,7 +40,7 @@ export const buildPublicProductsQuery = (
         in_stock_quantity,
         warehouse_id
       ),
-      attributes:product_attributes!inner(id, name, group_name, color_hex)
+      attributes:attributes!inner(id, name, group_name, color_hex)
     `,
     )
     .eq("company_id", companyId)

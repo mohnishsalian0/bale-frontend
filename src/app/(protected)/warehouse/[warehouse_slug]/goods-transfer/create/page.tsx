@@ -141,7 +141,7 @@ export default function CreateGoodsTransferPage() {
 
       // Success! Show toast and redirect to stock flow
       toast.success("Goods transfer created successfully");
-      router.push(`/warehouse/${warehouse.slug}/stock-flow`);
+      router.push(`/warehouse/${warehouse.slug}/goods-transfer`);
     } catch (error) {
       console.error("Error creating goods transfer:", error);
       toast.error("Failed to create goods transfer");

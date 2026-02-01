@@ -62,7 +62,7 @@ export const buildStockUnitsQuery = (
         min_stock_threshold,
         tax_type,
         gst_rate,
-        attributes:product_attributes!inner(id, name, group_name, color_hex)
+        attributes:attributes!inner(id, name, group_name, color_hex)
       )
     `,
     )
@@ -149,7 +149,7 @@ export const buildStockUnitsWithInwardQuery = (
         min_stock_threshold,
         tax_type,
         gst_rate,
-        attributes:product_attributes!inner(id, name, group_name, color_hex)
+        attributes:attributes!inner(id, name, group_name, color_hex)
       ),
       goods_inward:goods_inwards!created_from_inward_id(
         id, sequence_number, inward_date, inward_type,
@@ -217,7 +217,7 @@ export const buildStockUnitWithProductDetailQuery = (
 			warehouse:warehouses(id, name),
       product:products(
         *,
-        attributes:product_attributes!inner(id, name, group_name, color_hex)
+        attributes:attributes!inner(id, name, group_name, color_hex)
       )
     `,
     )

@@ -40,11 +40,11 @@ import { GST_RATES } from "@/types/database/enums";
 import { useSession } from "@/contexts/session-context";
 import {
   useProductMutations,
-  useCreateProductAttribute,
   useProductImageMutations,
   useProductAttributes,
   useProductByCode,
 } from "@/lib/query/hooks/products";
+import { useAttributeMutations } from "@/lib/query/hooks/attributes";
 import { InputWrapper } from "@/components/ui/input-wrapper";
 import { productSchema, ProductFormData } from "@/lib/validations/product";
 import IconGSM from "@/components/icons/IconGSM";
@@ -65,7 +65,7 @@ export function ProductFormSheet({
 }: ProductFormSheetProps) {
   const { user } = useSession();
   const { create, update } = useProductMutations();
-  const createAttribute = useCreateProductAttribute();
+  const { create: createAttribute } = useAttributeMutations();
   const { upload, deleteImages, updateField } = useProductImageMutations();
   const { data: attributesData } = useProductAttributes();
 
@@ -286,7 +286,7 @@ export function ProductFormSheet({
           // New tag, create it
           const id = await createAttribute.mutateAsync({
             name: opt.label,
-            groupName: "tag",
+            groupName: "product_tag",
           });
           tagIds.push(id);
         } else {

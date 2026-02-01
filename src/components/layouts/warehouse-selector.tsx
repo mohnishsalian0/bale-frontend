@@ -56,7 +56,7 @@ export default function WarehouseSelector({
       },
       {
         onSuccess: () => {
-          let redirectPath = `/warehouse/${selectedWarehouse.slug}/dashboard`;
+          let redirectPath = `/warehouse/${selectedWarehouse.slug}/inventory`;
 
           const warehouseRouteMatch = pathname.match(
             /^\/warehouse\/[^/]+\/(.+)$/,

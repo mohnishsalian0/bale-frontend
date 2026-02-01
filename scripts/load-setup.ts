@@ -755,7 +755,8 @@ async function generateGoodsInwards(
         inwardType = "other";
         otherReason =
           otherReasons[Math.floor(Math.random() * otherReasons.length)];
-        selectedWarehouseId = warehouses[randomInt(0, warehouses.length - 1)].id;
+        selectedWarehouseId =
+          warehouses[randomInt(0, warehouses.length - 1)].id;
 
         // Random products
         const itemCount = randomInt(1, 5);
@@ -1416,9 +1417,17 @@ async function generateGoodsTransfers(
   console.log("   Status: 60% completed, 30% in_transit, 10% cancelled\n");
 
   const monthlyTargets = [
-    30, 30, 30, // Jan-Mar (wedding season)
-    23, 23, 23, 23, 23, // Apr-Aug (regular)
-    28, 28, 28, // Sep-Nov (festive)
+    30,
+    30,
+    30, // Jan-Mar (wedding season)
+    23,
+    23,
+    23,
+    23,
+    23, // Apr-Aug (regular)
+    28,
+    28,
+    28, // Sep-Nov (festive)
     18, // Dec
   ];
 
@@ -3340,7 +3349,9 @@ async function loadTestData() {
 
   // Classify warehouses by name
   const mainWarehouse = warehouses.find((w) => w.name === "Main Warehouse");
-  const regionalWarehouses = warehouses.filter((w) => w.name.includes("Regional"));
+  const regionalWarehouses = warehouses.filter((w) =>
+    w.name.includes("Regional"),
+  );
   const factories = warehouses.filter((w) => w.name.includes("Factory"));
 
   if (!mainWarehouse) {
@@ -3370,7 +3381,7 @@ async function loadTestData() {
 
   // Get existing attributes (consolidated table)
   const { data: attributes } = await supabase
-    .from("product_attributes")
+    .from("attributes")
     .select("id, name, group_name")
     .eq("company_id", companyId);
 
@@ -3536,17 +3547,19 @@ async function loadTestData() {
   console.log("   • 100 products with varied attributes");
   console.log("   • 10 warehouses (1 main, 4 regional, 5 factories)");
   console.log("   • 600 goods inwards distributed across all warehouses");
-  console.log("   • ~300 goods transfers (warehouse-to-warehouse, 5-10 units each)");
-  console.log("   • Transfer validation: Max 2 per unit, chain consistency enforced");
+  console.log(
+    "   • ~300 goods transfers (warehouse-to-warehouse, 5-10 units each)",
+  );
+  console.log(
+    "   • Transfer validation: Max 2 per unit, chain consistency enforced",
+  );
   console.log("   • ~400 goods outwards (linked to orders + standalone)");
   console.log("   • 500 sales orders distributed across all locations");
   console.log("   • 400 purchase orders distributed across all locations");
   console.log(
     "   • Order statuses: 15% pending, 25% in_progress, 50% completed, 10% cancelled",
   );
-  console.log(
-    "   • Movement reconciliation auto-handled by database triggers",
-  );
+  console.log("   • Movement reconciliation auto-handled by database triggers");
   console.log("\n💰 Accounting:");
   console.log("   • 500 sales invoices (50% GST, 30% IGST, 20% no_tax)");
   console.log("   • 400 purchase invoices (same tax distribution)");

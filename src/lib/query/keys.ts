@@ -48,8 +48,13 @@ export const queryKeys = {
     materials: () => ["products", "materials"] as const,
     colors: () => ["products", "colors"] as const,
     tags: () => ["products", "tags"] as const,
-    attributes: () => ["products", "attributes"] as const,
     aggregates: () => ["products", "aggregates"] as const,
+  },
+
+  // Attributes (shared across products and partners)
+  attributes: {
+    all: () => ["attributes"] as const,
+    byGroup: (groupName: string) => ["attributes", groupName] as const,
   },
 
   // Partners (companyId removed - RLS handles scoping, user in single company)

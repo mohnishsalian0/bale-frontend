@@ -16,8 +16,12 @@ export const PARTNER_TYPES = [
   "agent",
 ] as const;
 
-export type AttributeGroup = "material" | "color" | "tag";
-export const ATTRIBUTE_GROUPS = ["material", "color", "tag"] as const;
+export type ProductAttributeGroup = "material" | "color" | "product_tag";
+export const PRODUCT_ATTRIBUTE_GROUPS = [
+  "material",
+  "color",
+  "product_tag",
+] as const;
 
 export type ProductStockStatus = "in_stock" | "low_stock" | "out_of_stock";
 

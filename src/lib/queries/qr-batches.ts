@@ -60,7 +60,7 @@ export const buildQRBatchesQuery = (
             min_stock_threshold,
             tax_type,
             gst_rate,
-            attributes:product_attributes!inner(id, name, group_name, color_hex)
+            attributes:attributes!inner(id, name, group_name, color_hex)
           )
         )
       )
@@ -99,7 +99,7 @@ export const buildQRBatchByIdQuery = (
 					warehouse:warehouses(id, name),
           product:products(
             *,
-            attributes:product_attributes!inner(id, name, group_name, color_hex)
+            attributes:attributes!inner(id, name, group_name, color_hex)
           )
         )
       )

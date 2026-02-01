@@ -76,7 +76,7 @@ export default function ProductsPage() {
     attributeFilters.push({ group: "color" as const, id: colorFilter });
   }
   if (tagFilter !== "all") {
-    attributeFilters.push({ group: "tag" as const, id: tagFilter });
+    attributeFilters.push({ group: "product_tag" as const, id: tagFilter });
   }
 
   // Fetch products with inventory and orders using TanStack Query with pagination and debounced search

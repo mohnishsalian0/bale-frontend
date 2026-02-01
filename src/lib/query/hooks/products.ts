@@ -11,7 +11,6 @@ import {
 import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
-  getProductAttributeLists,
   getProductById,
   getProductByNumber,
   getProductByCode,
@@ -19,8 +18,6 @@ import {
   getProductsWithInventoryAndOrders,
   getProductWithInventoryById,
   getProductWithInventoryAndOrdersByNumber,
-  getLowStockProducts,
-  createProductAttribute,
   createProduct,
   updateProduct,
   uploadProductImages,
@@ -30,13 +27,14 @@ import {
   updateProductActiveStatus,
   updateProductCatalogVisibility,
 } from "@/lib/queries/products";
+import { getAttributes } from "@/lib/queries/attributes";
 import {
   ProductFilters,
   ProductUpsertData,
   ProductListView,
   ProductWithInventoryListView,
+  ProductAttribute,
 } from "@/types/products.types";
-import type { AttributeGroup } from "@/types/database/enums";
 
 /**
  * Fetch all products with attributes
@@ -254,36 +252,39 @@ export function useProductWithInventoryAndOrdersByNumber(
 }
 
 /**
- * Fetch all product attributes (materials, colors, tags)
+ * Fetch all product attributes (materials, colors, tags) with separate cache entries
+ * Uses useQueries to fetch each group separately for granular cache invalidation
  */
 export function useProductAttributes() {
-  return useQuery({
-    queryKey: queryKeys.products.attributes(),
-    queryFn: getProductAttributeLists,
-    ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+  const results = useQueries({
+    queries: [
+      {
+        queryKey: queryKeys.attributes.byGroup("material"),
+        queryFn: () => getAttributes("material"),
+        ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+      },
+      {
+        queryKey: queryKeys.attributes.byGroup("color"),
+        queryFn: () => getAttributes("color"),
+        ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+      },
+      {
+        queryKey: queryKeys.attributes.byGroup("product_tag"),
+        queryFn: () => getAttributes("product_tag"),
+        ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.MASTER_DATA),
+      },
+    ],
   });
-}
 
-/**
- * Attribute mutation hook - consolidated for all attribute types
- */
-export function useCreateProductAttribute() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      name,
-      groupName,
-    }: {
-      name: string;
-      groupName: AttributeGroup;
-    }) => createProductAttribute(name, groupName),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.products.attributes(),
-      });
+  return {
+    data: {
+      materials: (results[0].data as ProductAttribute[]) || [],
+      colors: (results[1].data as ProductAttribute[]) || [],
+      tags: (results[2].data as ProductAttribute[]) || [],
     },
-  });
+    isLoading: results.some((r) => r.isLoading),
+    isError: results.some((r) => r.isError),
+  };
 }
 
 /**
@@ -405,19 +406,4 @@ export function useProductImageMutations() {
     deleteImages,
     updateField,
   };
-}
-
-/**
- * Fetch products with low stock for a warehouse
- */
-export function useLowStockProducts(warehouseId: string, limit?: number) {
-  return useQuery({
-    queryKey: [
-      ...queryKeys.products.withInventoryAndOrders(warehouseId),
-      "low-stock",
-      limit,
-    ],
-    queryFn: () => getLowStockProducts(warehouseId, limit),
-    ...getQueryOptions(STALE_TIME.PRODUCTS, GC_TIME.REALTIME),
-  });
 }

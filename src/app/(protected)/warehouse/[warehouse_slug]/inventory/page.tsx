@@ -115,7 +115,7 @@ export default function InventoryPage() {
     attributeFilters.push({ group: "color" as const, id: colorFilter });
   }
   if (tagFilter !== "all") {
-    attributeFilters.push({ group: "tag" as const, id: tagFilter });
+    attributeFilters.push({ group: "product_tag" as const, id: tagFilter });
   }
 
   // Fetch products with inventory and orders (ONLY products with stock > 0)

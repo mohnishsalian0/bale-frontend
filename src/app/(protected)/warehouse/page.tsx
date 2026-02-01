@@ -38,7 +38,7 @@ export default function WarehouseSelectionPage() {
           userId: user!.id,
           warehouseId: warehouse.id,
         });
-        router.push(`/warehouse/${warehouse.slug}/dashboard`);
+        router.push(`/warehouse/${warehouse.slug}/inventory`);
       } catch (error) {
         console.error("Error selecting warehouse:", error);
         toast.error("Failed to load warehouse");

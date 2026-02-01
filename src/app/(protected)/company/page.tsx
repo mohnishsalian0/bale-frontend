@@ -241,7 +241,7 @@ export default function CompanyPage() {
                     <div
                       key={warehouse.id}
                       onClick={() =>
-                        router.push(`/warehouse/${warehouse.slug}/dashboard`)
+                        router.push(`/warehouse/${warehouse.slug}/inventory`)
                       }
                       className="flex items-center gap-3 p-4 rounded-lg cursor-pointer select-none transition-all bg-background border border-border hover:bg-gray-50"
                     >

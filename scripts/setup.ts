@@ -540,7 +540,7 @@ async function createTestPartners() {
   console.log("Creating materials...");
   for (const name of materialNames) {
     const { data, error } = await supabase
-      .from("product_attributes")
+      .from("attributes")
       .upsert(
         { company_id: companyId, name, group_name: "material" },
         { onConflict: "company_id,name" },
@@ -565,7 +565,7 @@ async function createTestPartners() {
   console.log("Creating colors...");
   for (const name of colorNames) {
     const { data, error } = await supabase
-      .from("product_attributes")
+      .from("attributes")
       .upsert(
         { company_id: companyId, name, group_name: "color" },
         { onConflict: "company_id,name" },
@@ -608,7 +608,7 @@ async function createTestPartners() {
   console.log("Creating tags...");
   for (const name of tagNames) {
     const { data, error } = await supabase
-      .from("product_attributes")
+      .from("attributes")
       .upsert(
         { company_id: companyId, name, group_name: "tag" },
         { onConflict: "company_id,name" },
