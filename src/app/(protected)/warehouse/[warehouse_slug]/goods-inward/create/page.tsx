@@ -317,7 +317,7 @@ export default function CreateGoodsInwardPage() {
   };
 
   const handleCancel = () => {
-    router.push(`/warehouse/${warehouse.slug}/stock-flow`);
+    router.push(`/warehouse/${warehouse.slug}/goods-movement`);
   };
 
   const handleSubmit = async () => {
@@ -383,7 +383,7 @@ export default function CreateGoodsInwardPage() {
       {
         onSuccess: () => {
           toast.success("Goods inward created successfully");
-          router.push(`/warehouse/${warehouse.slug}/stock-flow`);
+          router.push(`/warehouse/${warehouse.slug}/goods-movement`);
         },
         onError: (error) => {
           console.error("Error creating goods inward:", error);

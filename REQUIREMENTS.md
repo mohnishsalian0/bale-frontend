@@ -69,7 +69,8 @@ The app uses Next.js App Router with two main route groups for clean separation 
 - `/warehouse/[warehouse_slug]/inventory` - Product catalog
 - `/warehouse/[warehouse_slug]/partners` - Partners management
 - `/warehouse/[warehouse_slug]/sales-orders` - Sales orders
-- `/warehouse/[warehouse_slug]/stock-flow` - Stock flow (inward/outward)
+- `/warehouse/[warehouse_slug]/goods-movement` - Goods movement (inward/outward)
+- `/warehouse/[warehouse_slug]/goods-transfer` - Goods transfer
 - `/warehouse/[warehouse_slug]/qr-codes` - QR code batches
 - `/warehouse/[warehouse_slug]/staff` - Staff management
 - `/warehouse/[warehouse_slug]/goods-inward/create` - Create goods inward (chrome-less)

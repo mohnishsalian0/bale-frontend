@@ -12,11 +12,11 @@ interface QRScannerOverlayProps {
   /**
    * Whether the torch/flashlight is on
    */
-  torch: boolean;
+  torch?: boolean;
   /**
    * Callback when torch button is toggled
    */
-  onTorchToggle: () => void;
+  onTorchToggle?: () => void;
   /**
    * Callback when QR code is scanned
    */

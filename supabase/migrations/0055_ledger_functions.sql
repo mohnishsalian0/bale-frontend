@@ -92,7 +92,6 @@ BEGIN
     INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, gst_applicable, gst_rate)
     VALUES
         (NEW.id, 'Packaging Charges', 'packaging_charges', v_indirect_expenses_id, 'expense', true, 18.00),
-        (NEW.id, 'Agent Commission', 'agent_commission', v_indirect_expenses_id, 'expense', true, 18.00),
         (NEW.id, 'Handling Charges', 'handling_charges', v_indirect_expenses_id, 'expense', true, 18.00),
         (NEW.id, 'Loading/Unloading Charges', 'loading_unloading_charges', v_indirect_expenses_id, 'expense', true, 18.00),
         (NEW.id, 'Labour Charges', 'labour_charges', v_direct_expenses_id, 'expense', true, 18.00);

@@ -278,7 +278,7 @@ export function InvoiceDetailsStep({
         </div>
 
         {/* Additional Charges Section */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           {/* List of added charges */}
           {additionalCharges.map((charge, index) => {
             const chargeLedger = allLedgers.find(
@@ -287,7 +287,7 @@ export function InvoiceDetailsStep({
             return (
               <div
                 key={index}
-                className="relative border border-gray-200 rounded-lg px-4 py-6"
+                className="relative bg-background-100 shadow-gray-md border border-gray-200 rounded-lg px-4 py-6"
               >
                 {/* Ledger Dropdown with Remove Button */}
                 <div className="flex items-start gap-2">

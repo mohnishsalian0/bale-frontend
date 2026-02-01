@@ -15,8 +15,10 @@ export function StockUnitDeleteConfirmation({
 }: StockUnitDeleteConfirmationProps) {
   return (
     <>
+      <h2 className="text-lg font-semibold mb-2">Delete stock unit</h2>
+
       {/* Content */}
-      <div className="px-4 pt-0 pb-6 md:px-0 overflow-y-auto">
+      <div className="overflow-y-auto">
         <p className="text-sm text-gray-700">
           Are you sure you want to delete this stock unit?
         </p>
@@ -24,7 +26,7 @@ export function StockUnitDeleteConfirmation({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-3 w-full pb-2 px-4 md:px-0">
+      <div className="flex gap-3 w-full py-4 md:pb-0">
         <Button
           type="button"
           variant="outline"

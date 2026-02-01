@@ -494,7 +494,7 @@ export default function OrdersPage() {
                 )
               }
             >
-              <IconBolt className="mr-2 size-4" />
+              <IconBolt className="mr-1 size-4" />
               Quick Sale
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -502,7 +502,7 @@ export default function OrdersPage() {
                 router.push(`/warehouse/${warehouse.slug}/sales-orders/create`)
               }
             >
-              <IconPlus className="mr-2 size-4" />
+              <IconPlus className="mr-1 size-4" />
               New Order
             </DropdownMenuItem>
           </DropdownMenuContent>

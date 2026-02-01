@@ -21,10 +21,7 @@ import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { formatStockUnitNumber, getStockUnitInfo } from "@/lib/utils/product";
 import { useSession } from "@/contexts/session-context";
 import { useProductWithInventoryAndOrdersByNumber } from "@/lib/query/hooks/products";
-import {
-  useStockUnitsWithInward,
-  useStockUnitWithProductDetail,
-} from "@/lib/query/hooks/stock-units";
+import { useStockUnitsWithInward } from "@/lib/query/hooks/stock-units";
 import type {
   MeasuringUnit,
   StockType,
@@ -76,10 +73,6 @@ export default function StockUnitsPage({ params }: PageParams) {
     currentPage,
     PAGE_SIZE,
   );
-
-  // Fetch stock unit detail when selected
-  const { data: stockUnitDetail } =
-    useStockUnitWithProductDetail(selectedStockUnitId);
 
   const loading = productLoading || stockUnitsLoading;
   const error = stockUnitsError;
@@ -332,7 +325,7 @@ export default function StockUnitsPage({ params }: PageParams) {
       <StockUnitDetailsModal
         open={showDetailsModal}
         onOpenChange={handleModalClose}
-        stockUnit={stockUnitDetail || null}
+        stockUnitId={selectedStockUnitId}
       />
     </div>
   );

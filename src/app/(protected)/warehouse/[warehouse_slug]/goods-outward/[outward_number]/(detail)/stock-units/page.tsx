@@ -13,7 +13,6 @@ import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon } from "@/lib/utils/product";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
 import { StockUnitDetailsModal } from "@/components/layouts/stock-unit-modal";
-import { useStockUnitWithProductDetail } from "@/lib/query/hooks/stock-units";
 import { Warehouse } from "@/types/warehouses.types";
 
 type Product = Tables<"products">;
@@ -50,10 +49,6 @@ export default function StockUnitsPage({ params }: PageParams) {
     isLoading: loading,
     isError: error,
   } = useGoodsOutwardBySequenceNumber(outward_number);
-
-  // Fetch stock unit detail when selected
-  const { data: stockUnitDetail } =
-    useStockUnitWithProductDetail(selectedStockUnitId);
 
   // Extract items from the fetched data
   const items = useMemo(() => {
@@ -172,7 +167,7 @@ export default function StockUnitsPage({ params }: PageParams) {
       <StockUnitDetailsModal
         open={modalOpen}
         onOpenChange={handleModalClose}
-        stockUnit={stockUnitDetail || null}
+        stockUnitId={selectedStockUnitId}
       />
     </>
   );

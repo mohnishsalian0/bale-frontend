@@ -14,9 +14,10 @@ import {
   IconSearch,
   IconAlertTriangle,
   IconTruckDelivery,
+  IconTransferIn,
+  IconTransferOut,
+  IconScan,
 } from "@tabler/icons-react";
-import IconGoodsInward from "@/components/icons/IconGoodsInward";
-import IconGoodsOutward from "@/components/icons/IconGoodsOutward";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,6 +52,8 @@ import {
 } from "@/lib/utils/product";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import { Badge } from "@/components/ui/badge";
+import { Fab } from "@/components/ui/fab";
+import { DashboardScannerModal } from "../dashboard/DashboardScannerModal";
 
 export default function InventoryPage() {
   const router = useRouter();
@@ -69,6 +72,7 @@ export default function InventoryPage() {
   const [materialFilter, setMaterialFilter] = useState<string>("all");
   const [colorFilter, setColorFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
+  const [showScannerModal, setShowScannerModal] = useState(false);
 
   // Get current page from URL (default to 1)
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
@@ -183,12 +187,12 @@ export default function InventoryPage() {
       href: `/warehouse/${warehouse.slug}/products`,
     },
     {
-      icon: IconGoodsInward,
+      icon: IconTransferIn,
       label: "Goods inward",
       href: `/warehouse/${warehouse.slug}/goods-inward/create`,
     },
     {
-      icon: IconGoodsOutward,
+      icon: IconTransferOut,
       label: "Goods outward",
       href: `/warehouse/${warehouse.slug}/goods-outward/create`,
     },
@@ -268,9 +272,20 @@ export default function InventoryPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => router.push(`/warehouse/${warehouse.slug}/stock-flow`)}
+          onClick={() =>
+            router.push(`/warehouse/${warehouse.slug}/goods-movement`)
+          }
         >
           All goods movement
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            router.push(`/warehouse/${warehouse.slug}/goods-transfer`)
+          }
+        >
+          All goods transfer
         </Button>
         <Button
           variant="outline"
@@ -493,6 +508,21 @@ export default function InventoryPage() {
           onPageChange={handlePageChange}
         />
       )}
+
+      {/* Scanner Modal */}
+      {showScannerModal && (
+        <DashboardScannerModal
+          open={showScannerModal}
+          onOpenChange={setShowScannerModal}
+        />
+      )}
+
+      {/* FAB */}
+      <Fab
+        icon={IconScan}
+        onClick={() => setShowScannerModal(true)}
+        className="fixed bottom-20 right-4"
+      />
     </div>
   );
 }

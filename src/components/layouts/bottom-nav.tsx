@@ -12,22 +12,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  // { path: "dashboard", label: "Home", icon: "/illustrations/dashboard.png" },
   {
     path: "inventory",
     label: "Inventory",
     icon: "/illustrations/inventory.png",
   },
-  // {
-  //   path: "stock-flow",
-  //   label: "Stock flow",
-  //   icon: "/illustrations/stock-flow.png",
-  // },
-  // {
-  //   path: "sales-orders",
-  //   label: "Sales orders",
-  //   icon: "/illustrations/sales-order.png",
-  // },
   {
     path: "orders",
     label: "Orders",

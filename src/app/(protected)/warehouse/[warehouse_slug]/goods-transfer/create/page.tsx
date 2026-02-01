@@ -85,7 +85,11 @@ export default function CreateGoodsTransferPage() {
       canProceedFromWarehouse &&
       canProceedFromScanner &&
       detailsFormData.transferDate !== "",
-    [canProceedFromWarehouse, canProceedFromScanner, detailsFormData.transferDate],
+    [
+      canProceedFromWarehouse,
+      canProceedFromScanner,
+      detailsFormData.transferDate,
+    ],
   );
 
   const handleNext = () => {
@@ -105,7 +109,7 @@ export default function CreateGoodsTransferPage() {
   };
 
   const handleCancel = () => {
-    router.push(`/warehouse/${warehouse.slug}/stock-flow`);
+    router.push(`/warehouse/${warehouse.slug}/goods-transfer`);
   };
 
   const handleSubmit = async () => {
@@ -118,7 +122,8 @@ export default function CreateGoodsTransferPage() {
         from_warehouse_id: warehouse.id,
         to_warehouse_id: selectedWarehouseId,
         transfer_date: detailsFormData.transferDate || undefined,
-        expected_delivery_date: detailsFormData.expectedDeliveryDate || undefined,
+        expected_delivery_date:
+          detailsFormData.expectedDeliveryDate || undefined,
         transport_type: detailsFormData.transportType || undefined,
         transport_reference_number:
           detailsFormData.transportReferenceNumber || undefined,

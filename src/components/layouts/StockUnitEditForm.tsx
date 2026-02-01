@@ -72,8 +72,10 @@ export function StockUnitEditForm({
       <form
         id="stock-unit-edit-form"
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-6 p-4 md:px-0 overflow-y-auto"
+        className="flex flex-col gap-6 overflow-y-auto"
       >
+        <h2 className="text-lg font-semibold">Edit stock unit</h2>
+
         {/* Read-only Quantity Display */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-700">
@@ -169,7 +171,7 @@ export function StockUnitEditForm({
       </form>
 
       {/* Action Buttons */}
-      <div className="flex gap-3 w-full pb-2 px-4 md:px-0">
+      <div className="flex gap-3 w-full py-4 md:pb-0">
         <Button
           type="button"
           variant="outline"

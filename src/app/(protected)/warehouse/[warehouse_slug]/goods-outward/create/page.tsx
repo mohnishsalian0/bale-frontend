@@ -198,7 +198,7 @@ export default function CreateGoodsOutwardPage() {
   };
 
   const handleCancel = () => {
-    router.push(`/warehouse/${warehouse.slug}/stock-flow`);
+    router.push(`/warehouse/${warehouse.slug}/goods-movement`);
   };
 
   const handleSubmit = async () => {
@@ -242,7 +242,7 @@ export default function CreateGoodsOutwardPage() {
 
       // Success! Show toast and redirect to stock flow
       toast.success("Goods outward created successfully");
-      router.push(`/warehouse/${warehouse.slug}/stock-flow`);
+      router.push(`/warehouse/${warehouse.slug}/goods-movement`);
     } catch (error) {
       console.error("Error creating goods outward:", error);
       toast.error("Failed to create goods outward");

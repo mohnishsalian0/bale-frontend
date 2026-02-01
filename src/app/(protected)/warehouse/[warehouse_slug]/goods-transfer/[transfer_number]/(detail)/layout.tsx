@@ -103,7 +103,7 @@ export default function GoodsTransferDetailLayout({
     deleteTransfer.mutate(transfer.id, {
       onSuccess: () => {
         toast.success("Goods transfer deleted successfully");
-        router.push(`/warehouse/${warehouse.slug}/stock-flow`);
+        router.push(`/warehouse/${warehouse.slug}/goods-transfer`);
         setShowDeleteDialog(false);
       },
       onError: (error) => {

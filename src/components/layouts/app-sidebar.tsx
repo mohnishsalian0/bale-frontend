@@ -10,11 +10,12 @@ import {
   IconCash,
   IconReceiptRefund,
   IconShoppingCart,
-  IconTruck,
+  IconTruckDelivery,
   IconTruckLoading,
   IconShirt,
   IconBuilding,
   IconListDetails,
+  IconTransfer,
 } from "@tabler/icons-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -65,9 +66,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           permission: "inventory.products.read",
         },
         {
-          label: "Goods movement",
-          path: `/warehouse/${warehouse.slug}/stock-flow`,
-          icon: IconTruck,
+          label: "Goods In & Out",
+          path: `/warehouse/${warehouse.slug}/goods-movement`,
+          icon: IconTransfer,
+          permission: "movement.read",
+        },
+        {
+          label: "Goods Transfer",
+          path: `/warehouse/${warehouse.slug}/goods-transfer`,
+          icon: IconTruckDelivery,
           permission: "movement.read",
         },
         {

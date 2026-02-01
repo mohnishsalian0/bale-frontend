@@ -17,7 +17,6 @@ import {
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import type { Tables } from "@/types/database/supabase";
 import { StockUnitDetailsModal } from "@/components/layouts/stock-unit-modal";
-import { useStockUnitWithProductDetail } from "@/lib/query/hooks/stock-units";
 import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
 import { StockStatusBadge } from "@/components/ui/stock-status-badge";
 import { Warehouse } from "@/types/warehouses.types";
@@ -51,10 +50,6 @@ export default function StockUnitsPage({ params }: PageParams) {
     isLoading: loading,
     isError: error,
   } = useGoodsInwardBySequenceNumber(inward_number);
-
-  // Fetch stock unit detail when selected
-  const { data: stockUnitDetail } =
-    useStockUnitWithProductDetail(selectedStockUnitId);
 
   // Extract stock units from the fetched data
   const stockUnits = useMemo(() => {
@@ -185,7 +180,7 @@ export default function StockUnitsPage({ params }: PageParams) {
       <StockUnitDetailsModal
         open={modalOpen}
         onOpenChange={handleModalClose}
-        stockUnit={stockUnitDetail || null}
+        stockUnitId={selectedStockUnitId}
       />
     </>
   );

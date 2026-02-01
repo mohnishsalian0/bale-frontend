@@ -80,7 +80,10 @@ export default function WarehouseSelector({
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="items-center">
+        <SheetContent
+          side="bottom"
+          className="items-center max-h-[90vh] overflow-y-auto scrollbar-hide"
+        >
           <div className="w-full max-w-md">
             {/* Header with illustration */}
             <SheetHeader className="flex flex-row flex-1 items-end justify-between mt-10 mb-4 py-0">
@@ -99,62 +102,59 @@ export default function WarehouseSelector({
             </SheetHeader>
 
             {/* Warehouse Cards - Scrollable */}
-            <div className="flex-1 overflow-y-auto">
-              {loading ? (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  Loading warehouses...
-                </p>
-              ) : warehouses.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  No warehouses found
-                </p>
-              ) : (
-                <div className="flex flex-col mb-24 overflow-y-auto border-x border-b border-gray-300">
-                  {warehouses.map((warehouse) => {
-                    const isSelected = warehouse.id === currentWarehouse;
-                    const formattedAddress =
-                      getWarehouseFormattedAddress(warehouse);
-                    const contactDetails =
-                      getWarehouseContactDetails(warehouse);
+            {loading ? (
+              <p className="text-sm text-gray-500 text-center py-4">
+                Loading warehouses...
+              </p>
+            ) : warehouses.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">
+                No warehouses found
+              </p>
+            ) : (
+              <div className="flex flex-col mb-24 overflow-y-auto border-x border-b border-gray-300">
+                {warehouses.map((warehouse) => {
+                  const isSelected = warehouse.id === currentWarehouse;
+                  const formattedAddress =
+                    getWarehouseFormattedAddress(warehouse);
+                  const contactDetails = getWarehouseContactDetails(warehouse);
 
-                    return (
-                      <div
-                        key={warehouse.id}
-                        onClick={() => handleSelect(warehouse.id)}
-                        className={`flex gap-3 p-4 cursor-pointer select-none transition-all bg-background border-t border-border ${isSelected && "bg-primary-100 border border-primary-500"}`}
-                      >
-                        {/* Content */}
-                        <div className="flex-1 min-w-0 flex flex-col">
+                  return (
+                    <div
+                      key={warehouse.id}
+                      onClick={() => handleSelect(warehouse.id)}
+                      className={`flex gap-3 p-4 cursor-pointer select-none transition-all bg-background border-t border-border ${isSelected && "bg-primary-100 border border-primary-500"}`}
+                    >
+                      {/* Content */}
+                      <div className="flex-1 min-w-0 flex flex-col">
+                        <p
+                          className="text-base font-medium text-gray-700 truncate"
+                          title={warehouse.name}
+                        >
+                          {warehouse.name}
+                        </p>
+                        <p
+                          className="text-sm text-gray-500"
+                          title={formattedAddress}
+                        >
+                          {formattedAddress}
+                        </p>
+                        {contactDetails && (
                           <p
-                            className="text-base font-medium text-gray-700 truncate"
-                            title={warehouse.name}
+                            className="text-sm font-medium text-gray-500"
+                            title={contactDetails}
                           >
-                            {warehouse.name}
+                            {contactDetails}
                           </p>
-                          <p
-                            className="text-sm text-gray-500"
-                            title={formattedAddress}
-                          >
-                            {formattedAddress}
-                          </p>
-                          {contactDetails && (
-                            <p
-                              className="text-sm font-medium text-gray-500"
-                              title={contactDetails}
-                            >
-                              {contactDetails}
-                            </p>
-                          )}
-                        </div>
-                        {isSelected && (
-                          <IconMapPin className="size-5 text-primary-700" />
                         )}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                      {isSelected && (
+                        <IconMapPin className="size-5 text-primary-700" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>
