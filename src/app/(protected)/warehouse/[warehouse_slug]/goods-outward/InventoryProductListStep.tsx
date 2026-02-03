@@ -19,12 +19,12 @@ import {
 } from "@/lib/utils/measuring-units";
 import type { ProductWithInventoryListView } from "@/types/products.types";
 import type { StockType, MeasuringUnit } from "@/types/database/enums";
-import type { ScannedStockUnit } from "./QRScannerStep";
 import {
   useInfiniteProductsWithInventoryAndOrders,
   useProductAttributes,
   useProductsWithInventoryByIds,
 } from "@/lib/query/hooks/products";
+import { ScannedStockUnit } from "./SelectInventorySheet";
 
 interface InventoryProductListStepProps {
   warehouseId: string;

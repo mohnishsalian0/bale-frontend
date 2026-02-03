@@ -13,11 +13,15 @@ import { InventoryProductListStep } from "./InventoryProductListStep";
 import { StockUnitListStep } from "./StockUnitListStep";
 import { StockUnitQuantitySheet } from "./StockUnitQuantitySheet";
 import { getStockUnitWithProductDetail } from "@/lib/queries/stock-units";
-import type { ScannedStockUnit } from "./QRScannerStep";
 import type { ProductWithInventoryListView } from "@/types/products.types";
 import type { StockUnitWithProductDetailView } from "@/types/stock-units.types";
 
 type SelectInventoryStep = "products" | "stockUnits" | "quantity";
+
+export interface ScannedStockUnit {
+  stockUnit: StockUnitWithProductDetailView;
+  quantity: number; // User-entered quantity to dispatch
+}
 
 interface SelectInventorySheetProps {
   open: boolean;

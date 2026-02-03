@@ -101,12 +101,11 @@ export default function EditGoodsTransferPage({
           product_id: item.stock_unit.product_id,
           remaining_quantity: item.stock_unit.remaining_quantity,
           initial_quantity: item.stock_unit.initial_quantity,
-          measuring_unit: item.stock_unit.measuring_unit,
           lot_number: item.stock_unit.lot_number,
           stock_number: item.stock_unit.stock_number,
           product: item.stock_unit.product,
         },
-        scannedQuantity: item.quantity_transferred,
+        quantity: item.quantity_transferred,
       }));
     setScannedUnits(initialScannedUnits);
 
