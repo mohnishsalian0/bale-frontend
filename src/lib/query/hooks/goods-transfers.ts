@@ -12,14 +12,15 @@ import {
   getGoodsTransfers,
   getGoodsTransferByNumber,
   createGoodsTransferWithItems,
+  updateGoodsTransferWithItems,
   updateGoodsTransfer,
   completeGoodsTransfer,
   cancelGoodsTransfer,
   deleteGoodsTransfer,
   type TransferFilters,
+  type CreateTransferData,
   type UpdateTransferData,
 } from "@/lib/queries/goods-transfers";
-import type { TablesInsert } from "@/types/database/supabase";
 
 /**
  * Fetch goods transfers for a warehouse
@@ -67,15 +68,41 @@ export function useGoodsTransferMutations(warehouseId: string) {
       transferData,
       stockUnitIds,
     }: {
-      transferData: Omit<
-        TablesInsert<"goods_transfers">,
-        "created_by" | "sequence_number"
-      >;
+      transferData: CreateTransferData;
       stockUnitIds: string[];
     }) => createGoodsTransferWithItems(transferData, stockUnitIds),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.stockFlow.transfers(warehouseId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.stockUnits.all(warehouseId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.products.withInventoryAndOrders(warehouseId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.dashboard.all(warehouseId),
+      });
+    },
+  });
+
+  const updateTransferWithItems = useMutation({
+    mutationFn: ({
+      transferId,
+      transferData,
+      stockUnitIds,
+    }: {
+      transferId: string;
+      transferData: CreateTransferData;
+      stockUnitIds: string[];
+    }) => updateGoodsTransferWithItems(transferId, transferData, stockUnitIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["stock-flow", "transfers"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["stock-flow", "transfer", "detail"],
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.stockUnits.all(warehouseId),
@@ -166,6 +193,7 @@ export function useGoodsTransferMutations(warehouseId: string) {
 
   return {
     createTransferWithItems,
+    updateTransferWithItems,
     updateTransfer,
     completeTransfer,
     cancelTransfer,

@@ -5,8 +5,8 @@
 
 import type { Database } from "./supabase";
 
-export type UserRole = "admin" | "staff";
-export const USER_ROLES = ["admin", "staff"] as const;
+export type UserRole = "admin" | "staff" | "accountant";
+export const USER_ROLES = ["admin", "staff", "accountant"] as const;
 
 export type PartnerType = "customer" | "vendor" | "supplier" | "agent";
 export const PARTNER_TYPES = [

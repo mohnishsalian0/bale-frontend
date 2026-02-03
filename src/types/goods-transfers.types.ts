@@ -1,4 +1,4 @@
-import type { Tables, TablesUpdate } from "./database/supabase";
+import type { Tables, TablesInsert, TablesUpdate } from "./database/supabase";
 import type { QueryData } from "@supabase/supabase-js";
 import {
   buildGoodsTransfersQuery,
@@ -21,6 +21,18 @@ export interface TransferFilters extends Record<string, unknown> {
   date_to?: string;
   search_term?: string;
 }
+
+// =====================================================
+// INSERT TYPES
+// =====================================================
+
+/**
+ * Data for creating goods transfer
+ */
+export type CreateTransferData = Omit<
+  TablesInsert<"goods_transfers">,
+  "created_by" | "sequence_number"
+>;
 
 // =====================================================
 // UPDATE TYPES

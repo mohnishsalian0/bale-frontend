@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/browser";
-import type { TablesInsert, Database, Json } from "@/types/database/supabase";
+import type { Database, Json } from "@/types/database/supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   TransferFilters,
   TransferListView,
   TransferDetailView,
+  CreateTransferData,
   UpdateTransferData,
   CompleteTransferData,
   CancelTransferData,
@@ -15,6 +16,7 @@ export type {
   TransferFilters,
   TransferListView,
   TransferDetailView,
+  CreateTransferData,
   UpdateTransferData,
   CompleteTransferData,
   CancelTransferData,
@@ -175,10 +177,7 @@ export async function getGoodsTransferByNumber(
  * Create a new goods transfer with items atomically using RPC
  */
 export async function createGoodsTransferWithItems(
-  transferData: Omit<
-    TablesInsert<"goods_transfers">,
-    "created_by" | "sequence_number"
-  >,
+  transferData: CreateTransferData,
   stockUnitIds: string[],
 ): Promise<string> {
   const supabase = createClient();
@@ -197,6 +196,29 @@ export async function createGoodsTransferWithItems(
   }
 
   return data as string;
+}
+
+/**
+ * Update goods transfer with new items atomically using RPC
+ * Allows editing warehouse, stock units, and all transfer details
+ */
+export async function updateGoodsTransferWithItems(
+  transferId: string,
+  transferData: CreateTransferData,
+  stockUnitIds: string[],
+): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase.rpc("update_goods_transfer_with_items", {
+    p_transfer_id: transferId,
+    p_transfer_data: transferData as unknown as Json,
+    p_stock_unit_ids: stockUnitIds,
+  });
+
+  if (error) {
+    console.error("Error updating goods transfer:", error);
+    throw error;
+  }
 }
 
 /**

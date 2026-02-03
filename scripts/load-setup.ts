@@ -1713,6 +1713,9 @@ async function generateGoodsTransfers(
  * PHASE 1: Approve orders before goods movements
  * Updates 85% of orders to in_progress (so they can receive goods movements)
  * Keeps 15% as approval_pending
+ *
+ * NOTE: Purchase orders are finalized immediately after goods inwards
+ * Sales orders are finalized after goods outwards
  */
 async function approveOrdersForMovements(
   purchaseOrders: Array<{ id: string }>,
@@ -1751,7 +1754,7 @@ async function approveOrdersForMovements(
 }
 
 /**
- * PHASE 2: Finalize order statuses after goods movements
+ * Finalize order statuses after goods movements
  *
  * Final distribution: 15% approval_pending, 25% in_progress, 50% completed, 10% cancelled
  *
@@ -1763,109 +1766,65 @@ async function approveOrdersForMovements(
  * NOTE: received_quantity and dispatched_quantity are automatically reconciled by database triggers
  */
 async function finalizeOrderStatuses(
-  purchaseOrders: Array<{ id: string }>,
-  salesOrders: Array<{ id: string }>,
+  orders: Array<{ id: string }>,
+  orderType: "purchase" | "sales",
 ) {
+  const orderTable = orderType === "purchase" ? "purchase_orders" : "sales_orders";
+  const movementTable = orderType === "purchase" ? "goods_inwards" : "goods_outwards";
+  const orderIdColumn = orderType === "purchase" ? "purchase_order_id" : "sales_order_id";
+
   console.log(
-    "\n📊 PHASE 2: Finalizing order statuses after goods movements...\n",
+    `\n📊 Finalizing ${orderType} order statuses after goods movements...\n`,
   );
   console.log(
     "   Target: 15% pending, 25% in_progress, 50% completed, 10% cancelled\n",
   );
 
-  // Update purchase orders
-  console.log("   Finalizing purchase order statuses...");
-  for (const po of purchaseOrders) {
+  for (const order of orders) {
     // Check if order has goods movements
-    const { data: inwards } = await supabase
-      .from("goods_inwards")
+    const { data: movements } = await supabase
+      .from(movementTable)
       .select("id")
-      .eq("purchase_order_id", po.id)
+      .eq(orderIdColumn, order.id)
       .limit(1);
 
-    const hasMovements = inwards && inwards.length > 0;
+    const hasMovements = movements && movements.length > 0;
 
     // Get current status
-    const { data: order } = await supabase
-      .from("purchase_orders")
+    const { data: orderData } = await supabase
+      .from(orderTable)
       .select("status")
-      .eq("id", po.id)
+      .eq("id", order.id)
       .single();
 
-    if (!order) continue;
+    if (!orderData) continue;
 
     // If approval_pending, leave as-is
-    if (order.status === "approval_pending") continue;
+    if (orderData.status === "approval_pending") continue;
 
     // If in_progress with movements, 50% chance to mark completed
-    if (order.status === "in_progress" && hasMovements) {
+    if (orderData.status === "in_progress" && hasMovements) {
       if (Math.random() < 0.59) {
         // 50/85 = 0.59 to get final 50% completed
         await supabase
-          .from("purchase_orders")
+          .from(orderTable)
           .update({ status: "completed" })
-          .eq("id", po.id);
+          .eq("id", order.id);
       }
     }
     // If in_progress without movements, 10% chance to cancel
-    else if (order.status === "in_progress" && !hasMovements) {
+    else if (orderData.status === "in_progress" && !hasMovements) {
       if (Math.random() < 0.12) {
         // 10/85 = 0.12 to get final 10% cancelled
         await supabase
-          .from("purchase_orders")
+          .from(orderTable)
           .update({ status: "cancelled" })
-          .eq("id", po.id);
+          .eq("id", order.id);
       }
     }
   }
 
-  // Update sales orders
-  console.log("   Finalizing sales order statuses...");
-  for (const so of salesOrders) {
-    // Check if order has goods movements
-    const { data: outwards } = await supabase
-      .from("goods_outwards")
-      .select("id")
-      .eq("sales_order_id", so.id)
-      .limit(1);
-
-    const hasMovements = outwards && outwards.length > 0;
-
-    // Get current status
-    const { data: order } = await supabase
-      .from("sales_orders")
-      .select("status")
-      .eq("id", so.id)
-      .single();
-
-    if (!order) continue;
-
-    // If approval_pending, leave as-is
-    if (order.status === "approval_pending") continue;
-
-    // If in_progress with movements, 50% chance to mark completed
-    if (order.status === "in_progress" && hasMovements) {
-      if (Math.random() < 0.59) {
-        // 50/85 = 0.59 to get final 50% completed
-        await supabase
-          .from("sales_orders")
-          .update({ status: "completed" })
-          .eq("id", so.id);
-      }
-    }
-    // If in_progress without movements, 10% chance to cancel
-    else if (order.status === "in_progress" && !hasMovements) {
-      if (Math.random() < 0.12) {
-        // 10/85 = 0.12 to get final 10% cancelled
-        await supabase
-          .from("sales_orders")
-          .update({ status: "cancelled" })
-          .eq("id", so.id);
-      }
-    }
-  }
-
-  console.log("   ✅ Order statuses finalized!");
+  console.log(`   ✅ ${orderType} order statuses finalized!`);
   console.log(
     "   Distribution: 15% pending, 25% in_progress, 50% completed, 10% cancelled",
   );
@@ -3516,14 +3475,17 @@ async function loadTestData() {
     2025,
   );
 
+  // Finalize purchase order statuses after goods inwards
+  await finalizeOrderStatuses(purchaseOrders, "purchase");
+
   // Generate goods transfers (before outwards so stock units are available)
   await generateGoodsTransfers(companyId, warehouses, userId, 2025);
 
   // Generate goods outwards
   await generateGoodsOutwards(companyId, warehouseId, userId, 2025);
 
-  // PHASE 2: Finalize order statuses after goods movements
-  await finalizeOrderStatuses(purchaseOrders, salesOrders);
+  // Finalize sales order statuses after goods outwards
+  await finalizeOrderStatuses(salesOrders, "sales");
 
   // ============================================================================
   // ACCOUNTING DATA GENERATION

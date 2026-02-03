@@ -132,6 +132,7 @@ export default function GoodsTransferDetailLayout({
 
   // Get actions based on transfer status
   const actions = getGoodsTransferActions(transfer.status as TransferStatus, {
+    onEdit: () => router.push(`${basePath}/edit`),
     onComplete: () => setShowCompleteDialog(true),
     onCancel: () => setShowCancelDialog(true),
     onDelete: () => setShowDeleteDialog(true),

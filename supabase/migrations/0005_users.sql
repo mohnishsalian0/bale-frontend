@@ -79,7 +79,7 @@ FOR SELECT
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND (
-        auth_user_id = auth.uid() OR authorize('users.read')
+        auth_user_id = auth.uid() OR authorize('business.users.read')
     )
 );
 
@@ -89,7 +89,7 @@ ON users
 FOR INSERT
 TO authenticated
 WITH CHECK (
-    company_id = get_jwt_company_id() AND authorize('users.create')
+    company_id = get_jwt_company_id() AND authorize('business.users.create')
 );
 
 -- Users can update their own profile, authorized users can update all users in their company
@@ -99,12 +99,12 @@ FOR UPDATE
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND (
-        auth_user_id = auth.uid() OR authorize('users.update')
+        auth_user_id = auth.uid() OR authorize('business.users.update')
     )
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND (
-        auth_user_id = auth.uid() OR authorize('users.update')
+        auth_user_id = auth.uid() OR authorize('business.users.update')
     )
 );
 
@@ -114,7 +114,7 @@ ON users
 FOR DELETE
 TO authenticated
 USING (
-    company_id = get_jwt_company_id() AND authorize('users.delete')
+    company_id = get_jwt_company_id() AND authorize('business.users.delete')
 );
 
 -- =====================================================

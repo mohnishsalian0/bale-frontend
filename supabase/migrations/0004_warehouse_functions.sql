@@ -24,8 +24,18 @@ BEGIN
         SET updated_at = NOW()
         WHERE warehouse_id = NEW.id;
 
+        -- Update goods_transfers where this warehouse is referenced
+        UPDATE goods_transfers
+        SET updated_at = NOW()
+        WHERE warehouse_id = NEW.id;
+
         -- Update sales_orders where this warehouse is referenced
         UPDATE sales_orders
+        SET updated_at = NOW()
+        WHERE warehouse_id = NEW.id;
+
+        -- Update purchase_order where this warehouse is referenced
+        UPDATE purchase_orders
         SET updated_at = NOW()
         WHERE warehouse_id = NEW.id;
     END IF;

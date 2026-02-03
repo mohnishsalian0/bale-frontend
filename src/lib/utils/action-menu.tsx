@@ -34,6 +34,12 @@ export type ContextMenuItem = {
   hidden?: boolean;
   size?: "sm" | "icon-sm";
   content?: React.ReactNode;
+  /**
+   * Permission required to perform this action
+   * Used by PermissionGate to enable/disable the action button
+   * Example: "orders.sales_orders.update", "inventory.goods_outward.create"
+   */
+  permission?: string;
 };
 
 // Sales Order Context Menu Items
@@ -249,6 +255,7 @@ export function getSalesOrderActions(
     onClick: callbacks.onApprove,
     variant: "default",
     hidden: !(displayStatus === "approval_pending"),
+    permission: "orders.sales_orders.update",
   });
 
   items.push({
@@ -257,6 +264,7 @@ export function getSalesOrderActions(
     onClick: callbacks.onCreateOutward,
     variant: "default",
     hidden: !(displayStatus === "in_progress" || displayStatus === "overdue"),
+    permission: "inventory.goods_outward.create",
   });
 
   // Secondary button (flex-1)
@@ -267,6 +275,7 @@ export function getSalesOrderActions(
     variant: "outline",
     hidden:
       displayStatus === "approval_pending" || displayStatus === "cancelled",
+    permission: "accounting.invoices.create",
   });
 
   // Dropdown menu items
@@ -275,6 +284,7 @@ export function getSalesOrderActions(
     icon: IconEdit,
     onClick: callbacks.onEdit,
     hidden: displayStatus === "completed" || displayStatus === "cancelled",
+    permission: "orders.sales_orders.update",
   });
 
   items.push({
@@ -282,6 +292,7 @@ export function getSalesOrderActions(
     icon: IconCheck,
     onClick: callbacks.onComplete,
     hidden: !(displayStatus === "in_progress" || displayStatus === "overdue"),
+    permission: "orders.sales_orders.update",
   });
 
   items.push({
@@ -311,6 +322,7 @@ export function getSalesOrderActions(
     onClick: callbacks.onDelete,
     variant: "destructive",
     hidden: displayStatus !== "approval_pending",
+    permission: "orders.sales_orders.delete",
   });
 
   // Cancel order
@@ -324,6 +336,7 @@ export function getSalesOrderActions(
       displayStatus === "completed" ||
       displayStatus === "cancelled" ||
       has_outward,
+    permission: "orders.sales_orders.update",
   });
 
   return items;
@@ -359,6 +372,7 @@ export function getPurchaseOrderActions(
     onClick: callbacks.onApprove,
     variant: "default",
     hidden: !(displayStatus === "approval_pending"),
+    permission: "orders.purchase_orders.update",
   });
 
   items.push({
@@ -367,6 +381,7 @@ export function getPurchaseOrderActions(
     onClick: callbacks.onCreateInward,
     variant: "default",
     hidden: !(displayStatus === "in_progress" || displayStatus === "overdue"),
+    permission: "inventory.goods_inward.create",
   });
 
   // Create invoice
@@ -377,6 +392,7 @@ export function getPurchaseOrderActions(
     variant: "outline",
     hidden:
       displayStatus === "approval_pending" || displayStatus === "cancelled",
+    permission: "accounting.invoices.create",
   });
 
   // Dropdown menu items
@@ -385,6 +401,7 @@ export function getPurchaseOrderActions(
     icon: IconEdit,
     onClick: callbacks.onEdit,
     hidden: displayStatus === "completed" || displayStatus === "cancelled",
+    permission: "orders.purchase_orders.update",
   });
 
   items.push({
@@ -392,6 +409,7 @@ export function getPurchaseOrderActions(
     icon: IconCheck,
     onClick: callbacks.onComplete,
     hidden: !(displayStatus === "in_progress" || displayStatus === "overdue"),
+    permission: "orders.purchase_orders.update",
   });
 
   items.push({
@@ -421,6 +439,7 @@ export function getPurchaseOrderActions(
     onClick: callbacks.onDelete,
     variant: "destructive",
     hidden: displayStatus !== "approval_pending",
+    permission: "orders.purchase_orders.delete",
   });
 
   items.push({
@@ -432,6 +451,7 @@ export function getPurchaseOrderActions(
       displayStatus === "approval_pending" ||
       displayStatus === "completed" ||
       displayStatus === "cancelled",
+    permission: "orders.purchase_orders.update",
   });
 
   return items;
@@ -465,12 +485,14 @@ export function getProductActions(
       icon: IconEdit,
       onClick: callbacks.onEdit,
       variant: "outline",
+      permission: "business.products.update",
     },
     // Dropdown items
     {
       label: product.show_on_catalog ? "Hide from catalog" : "Show on catalog",
       icon: product.show_on_catalog ? IconBasketOff : IconBasket,
       onClick: callbacks.onToggleCatalog,
+      permission: "business.products.update",
     },
     {
       label: "Delete",
@@ -478,6 +500,7 @@ export function getProductActions(
       onClick: callbacks.onDelete,
       variant: "destructive",
       size: "icon-sm",
+      permission: "business.products.delete",
     },
   ];
 
@@ -513,6 +536,7 @@ export function getPartnerActions(
       icon: IconPlus,
       onClick: callbacks.onCreateSalesOrder,
       variant: "outline",
+      permission: "orders.sales_orders.create",
     });
   } else if (isSupplier && callbacks.onCreatePurchaseOrder) {
     items.push({
@@ -520,6 +544,7 @@ export function getPartnerActions(
       icon: IconPlus,
       onClick: callbacks.onCreatePurchaseOrder,
       variant: "outline",
+      permission: "orders.purchase_orders.create",
     });
   }
 
@@ -529,12 +554,14 @@ export function getPartnerActions(
       label: "Create sales invoice",
       icon: IconReceiptRupee,
       onClick: callbacks.onCreateSalesInvoice,
+      permission: "accounting.invoices.create",
     });
   } else if (isSupplier && callbacks.onCreatePurchaseInvoice) {
     items.push({
       label: "Create purchase invoice",
       icon: IconReceiptRupee,
       onClick: callbacks.onCreatePurchaseInvoice,
+      permission: "accounting.invoices.create",
     });
   }
 
@@ -544,12 +571,14 @@ export function getPartnerActions(
       label: "Record receipt",
       icon: IconCurrencyRupee,
       onClick: callbacks.onRecordReceipt,
+      permission: "accounting.payments.create",
     });
   } else if (isSupplier && callbacks.onRecordPayment) {
     items.push({
       label: "Record payment",
       icon: IconCurrencyRupee,
       onClick: callbacks.onRecordPayment,
+      permission: "accounting.payments.create",
     });
   }
 
@@ -559,6 +588,7 @@ export function getPartnerActions(
     icon: IconEdit,
     onClick: callbacks.onEdit,
     variant: "outline",
+    permission: "business.partners.update",
   });
 
   // Delete
@@ -568,6 +598,7 @@ export function getPartnerActions(
     onClick: callbacks.onDelete,
     variant: "destructive",
     size: "icon-sm",
+    permission: "business.partners.delete",
   });
 
   return items;
@@ -605,6 +636,7 @@ export function getInvoiceActions(
     onClick: callbacks.onMakePayment,
     variant: "default",
     hidden: invoice.status === "settled" || invoice.is_cancelled,
+    permission: "accounting.payments.create",
   });
 
   // Secondary button (flex-1): Download
@@ -625,6 +657,7 @@ export function getInvoiceActions(
     icon: IconFileText,
     onClick: callbacks.onCreateAdjustment,
     hidden: invoice.is_cancelled,
+    permission: "accounting.adjustment_notes.create",
   });
 
   // Edit: hidden if cancelled or exported to Tally
@@ -637,6 +670,7 @@ export function getInvoiceActions(
       invoice.has_adjustment ||
       invoice.has_payment ||
       invoice.exported_to_tally_at !== null,
+    permission: "accounting.invoices.update",
   });
 
   // Delete: shown only if not cancelled, no payments, no adjustments, not exported
@@ -650,6 +684,7 @@ export function getInvoiceActions(
       invoice.has_payment ||
       invoice.has_adjustment ||
       invoice.exported_to_tally_at !== null,
+    permission: "accounting.invoices.delete",
   });
 
   // Cancel: shown only if not cancelled, no payments, no adjustments
@@ -660,6 +695,7 @@ export function getInvoiceActions(
     variant: "destructive",
     hidden:
       invoice.is_cancelled || invoice.has_payment || invoice.has_adjustment,
+    permission: "accounting.invoices.update",
   });
 
   return items;
@@ -686,6 +722,7 @@ export function getPaymentActions(
     onClick: callbacks.onEdit,
     variant: "outline",
     hidden: payment.is_cancelled || payment.exported_to_tally_at !== null,
+    permission: "accounting.payments.update",
   });
 
   // Secondary button (flex-1): Delete
@@ -695,6 +732,7 @@ export function getPaymentActions(
     onClick: callbacks.onDelete,
     variant: "destructive",
     hidden: payment.is_cancelled || payment.exported_to_tally_at !== null,
+    permission: "accounting.payments.delete",
   });
 
   // Dropdown menu items: Cancel
@@ -704,6 +742,7 @@ export function getPaymentActions(
     onClick: callbacks.onCancel,
     variant: "destructive",
     hidden: payment.is_cancelled,
+    permission: "accounting.payments.update",
   });
 
   return items;
@@ -732,6 +771,7 @@ export function getAdjustmentNoteActions(
     hidden:
       adjustmentNote.is_cancelled ||
       adjustmentNote.exported_to_tally_at !== null,
+    permission: "accounting.adjustment_notes.update",
   });
 
   // Secondary button (flex-1): Delete
@@ -743,6 +783,7 @@ export function getAdjustmentNoteActions(
     hidden:
       adjustmentNote.is_cancelled ||
       adjustmentNote.exported_to_tally_at !== null,
+    permission: "accounting.adjustment_notes.delete",
   });
 
   // Dropdown menu items: Cancel
@@ -752,6 +793,7 @@ export function getAdjustmentNoteActions(
     onClick: callbacks.onCancel,
     variant: "destructive",
     hidden: adjustmentNote.is_cancelled,
+    permission: "accounting.adjustment_notes.update",
   });
 
   return items;
@@ -785,6 +827,7 @@ export function getGoodsInwardActions(
     icon: IconQrcode,
     onClick: callbacks.onGenerateQR,
     variant: "outline",
+    permission: "inventory.qr_batches.create",
   });
 
   // Secondary CTA: Edit button - hidden if invoiced or cancelled
@@ -794,6 +837,7 @@ export function getGoodsInwardActions(
     onClick: callbacks.onEdit,
     variant: "outline",
     hidden: hasInvoice || isCancelled,
+    permission: "inventory.goods_inward.update",
   });
 
   // Dropdown menu items: Cancel - hidden if already cancelled or invoiced
@@ -803,6 +847,7 @@ export function getGoodsInwardActions(
     onClick: callbacks.onCancel,
     variant: "destructive",
     hidden: isCancelled || hasInvoice,
+    permission: "inventory.goods_inward.update",
   });
 
   // Dropdown menu items: Delete - hidden if invoiced or cancelled
@@ -812,6 +857,7 @@ export function getGoodsInwardActions(
     onClick: callbacks.onDelete,
     variant: "destructive",
     hidden: hasInvoice || isCancelled,
+    permission: "inventory.goods_inward.delete",
   });
 
   return items;
@@ -865,6 +911,7 @@ export function getGoodsOutwardActions(
     onClick: callbacks.onEdit,
     variant: "outline",
     hidden: hasInvoice || isCancelled,
+    permission: "inventory.goods_outward.update",
   });
 
   // Dropdown menu items: Cancel - hidden if already cancelled or invoiced
@@ -874,6 +921,7 @@ export function getGoodsOutwardActions(
     onClick: callbacks.onCancel,
     variant: "destructive",
     hidden: isCancelled || hasInvoice,
+    permission: "inventory.goods_outward.update",
   });
 
   // Dropdown menu items: Delete - hidden if invoiced or cancelled
@@ -883,6 +931,7 @@ export function getGoodsOutwardActions(
     onClick: callbacks.onDelete,
     variant: "destructive",
     hidden: hasInvoice || isCancelled,
+    permission: "inventory.goods_outward.delete",
   });
 
   return items;
@@ -893,6 +942,7 @@ export function getGoodsOutwardActions(
 // ============================================================================
 
 export interface GoodsTransferActionsCallbacks {
+  onEdit: () => void;
   onComplete: () => void;
   onCancel: () => void;
   onDelete: () => void;
@@ -900,7 +950,7 @@ export interface GoodsTransferActionsCallbacks {
 
 /**
  * Get action items for goods transfer
- * Shows complete/cancel/delete based on status
+ * Shows edit/complete/cancel/delete based on status
  */
 export function getGoodsTransferActions(
   status: TransferStatus,
@@ -918,6 +968,7 @@ export function getGoodsTransferActions(
     onClick: callbacks.onComplete,
     variant: "default",
     hidden: !isInTransit,
+    permission: "inventory.goods_transfers.update",
   });
 
   // Secondary CTA: Cancel button - only for in_transit
@@ -927,6 +978,16 @@ export function getGoodsTransferActions(
     onClick: callbacks.onCancel,
     variant: "outline",
     hidden: !isInTransit,
+    permission: "inventory.goods_transfers.update",
+  });
+
+  // Dropdown menu items: Edit - only for in_transit
+  items.push({
+    label: "Edit transfer",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    hidden: !isInTransit,
+    permission: "inventory.goods_transfers.update",
   });
 
   // Dropdown menu items: Delete - only for in_transit
@@ -936,6 +997,7 @@ export function getGoodsTransferActions(
     onClick: callbacks.onDelete,
     variant: "destructive",
     hidden: !isInTransit || isCancelled,
+    permission: "inventory.goods_transfers.delete",
   });
 
   return items;

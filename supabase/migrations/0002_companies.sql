@@ -112,7 +112,7 @@ ON companies
 FOR SELECT
 TO authenticated
 USING (
-    id = get_jwt_company_id() AND authorize('companies.read')
+    id = get_jwt_company_id() AND authorize('business.companies.read')
 );
 
 -- Authorized users can update their own company
@@ -121,10 +121,10 @@ ON companies
 FOR UPDATE
 TO authenticated
 USING (
-    id = get_jwt_company_id() AND authorize('companies.update')
+    id = get_jwt_company_id() AND authorize('business.companies.update')
 )
 WITH CHECK (
-    id = get_jwt_company_id() AND authorize('companies.update')
+    id = get_jwt_company_id() AND authorize('business.companies.update')
 );
 
 -- =====================================================

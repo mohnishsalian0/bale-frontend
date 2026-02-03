@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { checkRoutePermission } from "@/lib/utils/permissions";
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -29,7 +30,7 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // Refresh session if expired
+  // Refresh session if expired and get user with custom claims
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -67,6 +68,35 @@ export async function middleware(request: NextRequest) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/warehouse";
     return NextResponse.redirect(redirectUrl);
+  }
+
+  // RBAC: Check route permissions for authenticated users on protected routes
+  if (user && !isPublic) {
+    // Extract warehouse slug from pathname if it's a warehouse route
+    let warehouseSlug: string | null = null;
+    const warehouseMatch = pathname.match(/^\/warehouse\/([^/]+)/);
+    if (warehouseMatch) {
+      warehouseSlug = warehouseMatch[1];
+    }
+
+    // Get user permissions from JWT custom claims
+    const userPermissions: string[] =
+      (user.app_metadata?.permissions as string[]) || [];
+
+    // Check if user has permission to access this route
+    const permissionCheck = checkRoutePermission(
+      pathname,
+      warehouseSlug,
+      userPermissions,
+    );
+
+    if (!permissionCheck.allowed && permissionCheck.redirectTo) {
+      // User doesn't have permission - redirect to restricted page
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = permissionCheck.redirectTo.split("?")[0];
+      redirectUrl.search = permissionCheck.redirectTo.split("?")[1] || "";
+      return NextResponse.redirect(redirectUrl);
+    }
   }
 
   return supabaseResponse;

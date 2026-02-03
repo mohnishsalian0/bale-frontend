@@ -78,7 +78,7 @@ FOR SELECT
 TO authenticated
 USING (
     company_id = get_jwt_company_id() AND (
-        authorize('users.read') OR
+        authorize('business.users.read') OR
         user_id = (SELECT id FROM users WHERE auth_user_id = auth.uid())
     )
 );
@@ -89,10 +89,10 @@ ON user_warehouses
 FOR ALL
 TO authenticated
 USING (
-    company_id = get_jwt_company_id() AND authorize('users.update')
+    company_id = get_jwt_company_id() AND authorize('business.users.update')
 )
 WITH CHECK (
-    company_id = get_jwt_company_id() AND authorize('users.create')
+    company_id = get_jwt_company_id() AND authorize('business.users.create')
 );
 
 -- =====================================================
