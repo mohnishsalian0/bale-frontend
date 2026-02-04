@@ -81,10 +81,11 @@ export interface InwardWithPartnerListView extends InwardListView {
  * Stock unit with minimal details for list views
  * Used in: inventory list page
  */
-export interface StockUnitListView extends Pick<
-  StockUnit,
+export type StockUnitListView = Pick<
+  StockUnitWithProductListViewRaw,
   | "id"
   | "sequence_number"
+  | "lot_number"
   | "initial_quantity"
   | "remaining_quantity"
   | "quality_grade"
@@ -95,17 +96,13 @@ export interface StockUnitListView extends Pick<
   | "created_at"
   | "created_from_inward_id"
   | "stock_number"
-> {
-  lot_number?: string | null; // Derived from stock_unit_attribute_assignments
-}
+>;
 
 /**
  * Stock unit with all details for detail views
  * Used in: stock unit detail page, inventory detail page
  */
-export interface StockUnitDetailView extends StockUnit {
-  lot_number?: string | null; // Derived from stock_unit_attribute_assignments
-}
+export type StockUnitDetailView = StockUnitWithProductDetailViewRaw;
 
 /**
  * Stock unit with product details for list views
@@ -120,7 +117,10 @@ export interface StockUnitWithProductListView extends StockUnitListView {
  * Stock unit with full product details for detail views
  * Used in: stock unit detail page with complete product info
  */
-export interface StockUnitWithProductDetailView extends StockUnitDetailView {
+export interface StockUnitWithProductDetailView extends Omit<
+  StockUnitDetailView,
+  "product"
+> {
   warehouse: Pick<Warehouse, "id" | "name">;
   product: ProductDetailView | null;
 }
@@ -147,3 +147,30 @@ export interface StockUnitWithInwardListView extends StockUnitListView {
 export type StockUnitActivity = QueryData<
   ReturnType<typeof buildStockUnitActivityQuery>
 >[number];
+
+// ============================================================================
+// SCANNER TYPES
+// ============================================================================
+
+/**
+ * Scanned stock unit with quantity for scanner flows
+ * Used in: goods outward scanner, goods transfer scanner
+ * Only includes fields actually used by components
+ */
+export interface ScannedStockUnit {
+  stockUnit: {
+    id: string;
+    product_id: string;
+    remaining_quantity: number;
+    stock_number: string;
+    product: {
+      id: string;
+      name: string;
+      stock_type: string;
+      measuring_unit: string;
+      product_images: string[] | null;
+      selling_price_per_unit: number | null;
+    };
+  };
+  quantity: number;
+}

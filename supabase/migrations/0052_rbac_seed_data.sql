@@ -179,16 +179,53 @@ CROSS JOIN permissions p
 WHERE r.name = 'staff'
 AND p.permission_path IN (
     -- Business Module: Full CRUD on Products
-    'business.products.*',
+    'business.products.read',
+    'business.products.create',
+    'business.products.update',
+    'business.products.delete',
 
     -- Business Module: Read-only on other resources
-    'business.*.read',
+    'business.companies.read',
+    'business.warehouses.read',
+    'business.users.read',
+    'business.partners.read',
+    'business.catalog.read',
 
     -- Inventory Module: Full CRUD (warehouse-scoped via RLS)
-    'inventory.*',
+    'inventory.stock_units.read',
+    'inventory.stock_units.create',
+    'inventory.stock_units.update',
+    'inventory.stock_units.delete',
+    'inventory.qr_batches.read',
+    'inventory.qr_batches.create',
+    'inventory.qr_batches.update',
+    'inventory.qr_batches.delete',
+    'inventory.inward.read',
+    'inventory.inward.create',
+    'inventory.inward.update',
+    'inventory.inward.delete',
+    'inventory.outward.read',
+    'inventory.outward.create',
+    'inventory.outward.update',
+    'inventory.outward.delete',
+    'inventory.transfers.read',
+    'inventory.transfers.create',
+    'inventory.transfers.update',
+    'inventory.transfers.delete',
 
     -- Orders Module: Full CRUD (warehouse-scoped via RLS)
-    'orders.*'
+    'orders.sales_orders.read',
+    'orders.sales_orders.create',
+    'orders.sales_orders.update',
+    'orders.sales_orders.delete',
+    'orders.purchase_orders.read',
+    'orders.purchase_orders.create',
+    'orders.purchase_orders.update',
+    'orders.purchase_orders.delete',
+    'orders.job_works.read',
+    'orders.job_works.create',
+    'orders.job_works.update',
+    'orders.job_works.delete'
 );
 
 -- =====================================================
@@ -204,17 +241,50 @@ CROSS JOIN permissions p
 WHERE r.name = 'accountant'
 AND p.permission_path IN (
     -- Business Module: Full CRUD on Partners
-    'business.*',
+    'business.partners.read',
+    'business.partners.create',
+    'business.partners.update',
+    'business.partners.delete',
 
     -- Business Module: Read-only on other resources
-    'business.*.read',
+    'business.companies.read',
+    'business.warehouses.read',
+    'business.users.read',
+    'business.products.read',
+    'business.catalog.read',
 
     -- Inventory Module: Read-only (for viewing stock levels, movements)
-    'inventory.*.read',
+    'inventory.stock_units.read',
+    'inventory.qr_batches.read',
+    'inventory.inward.read',
+    'inventory.outward.read',
+    'inventory.transfers.read',
 
     -- Orders Module: Full CRUD
-    'orders.*',
+    'orders.sales_orders.read',
+    'orders.sales_orders.create',
+    'orders.sales_orders.update',
+    'orders.sales_orders.delete',
+    'orders.purchase_orders.read',
+    'orders.purchase_orders.create',
+    'orders.purchase_orders.update',
+    'orders.purchase_orders.delete',
+    'orders.job_works.read',
+    'orders.job_works.create',
+    'orders.job_works.update',
+    'orders.job_works.delete',
 
     -- Accounting Module: Full CRUD
-    'accounting.*'
+    'accounting.invoices.read',
+    'accounting.invoices.create',
+    'accounting.invoices.update',
+    'accounting.invoices.delete',
+    'accounting.adjustment_notes.read',
+    'accounting.adjustment_notes.create',
+    'accounting.adjustment_notes.update',
+    'accounting.adjustment_notes.delete',
+    'accounting.payments.read',
+    'accounting.payments.create',
+    'accounting.payments.update',
+    'accounting.payments.delete'
 );

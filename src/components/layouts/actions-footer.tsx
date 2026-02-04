@@ -66,7 +66,9 @@ export function ActionsFooter({
                       onClick={item.onClick}
                       disabled={item.disabled}
                       variant={
-                        item.variant === "destructive" ? "destructive" : undefined
+                        item.variant === "destructive"
+                          ? "destructive"
+                          : undefined
                       }
                     >
                       <Icon />

@@ -17,9 +17,11 @@ import type {
   StockType,
   StockUnitStatus,
 } from "@/types/database/enums";
-import type { StockUnitWithInwardListView } from "@/types/stock-units.types";
+import type {
+  StockUnitWithInwardListView,
+  ScannedStockUnit,
+} from "@/types/stock-units.types";
 import type { InwardWithPartnerListView } from "@/types/stock-flow.types";
-import { ScannedStockUnit } from "./SelectInventorySheet";
 
 interface StockUnitListStepProps {
   product: ProductListView;

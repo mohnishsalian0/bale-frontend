@@ -1,13 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { checkRoutePermission } from "@/lib/utils/permissions";
+import { getUserPermissionsByAuthId } from "@/lib/queries/users";
+import type { Database } from "@/types/database/supabase";
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
 
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -79,9 +81,8 @@ export async function middleware(request: NextRequest) {
       warehouseSlug = warehouseMatch[1];
     }
 
-    // Get user permissions from JWT custom claims
-    const userPermissions: string[] =
-      (user.app_metadata?.permissions as string[]) || [];
+    // Get user permissions from database
+    const userPermissions = await getUserPermissionsByAuthId(supabase, user.id);
 
     // Check if user has permission to access this route
     const permissionCheck = checkRoutePermission(

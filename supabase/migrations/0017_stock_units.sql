@@ -18,6 +18,7 @@ CREATE TABLE stock_units (
     -- Physical specifications
     remaining_quantity DECIMAL(10,3) NOT NULL,
     initial_quantity DECIMAL(10,3) NOT NULL, -- Track initial quantity at creation
+    lot_number_attribute_id UUID REFERENCES attributes(id) ON DELETE SET NULL, -- FK to attributes table (group_name = 'lot_number')
     quality_grade TEXT, -- Custom quality grade with auto-suggestions from previously used values
     warehouse_location TEXT,
     
@@ -71,6 +72,9 @@ CREATE INDEX idx_stock_units_inward_id ON stock_units(created_from_inward_id);
 
 -- Quality grade filtering
 CREATE INDEX idx_stock_units_quality_grade ON stock_units(company_id, quality_grade);
+
+-- Lot number filtering
+CREATE INDEX idx_stock_units_lot_number_attribute_id ON stock_units(lot_number_attribute_id);
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES

@@ -237,7 +237,8 @@ export const buildGoodsInwardByNumberQuery = (
       stock_units(
         *,
 				warehouse:warehouses(id, name),
-        product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number, hsn_code, gsm, gst_rate)
+        product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number, hsn_code, gsm, gst_rate),
+        lot_number:attributes!lot_number_attribute_id(id, name, group_name)
       )
     `,
     )
@@ -267,13 +268,45 @@ export const buildGoodsOutwardByNumberQuery = (
         stock_unit:stock_units(
           *,
 					warehouse:warehouses(id, name),
-          product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number, hsn_code, gsm, gst_rate)
+          product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number, hsn_code, gsm, gst_rate),
+          lot_number:attributes!lot_number_attribute_id(id, name, group_name)
         )
       )
     `,
     )
     .eq("sequence_number", parseInt(sequenceNumber))
     .single();
+};
+
+/**
+ * Query builder for fetching outward items by product ID
+ */
+export const buildOutwardItemsByProductQuery = (
+  supabase: SupabaseClient<Database>,
+  productId: string,
+  page: number = 1,
+  pageSize: number = 20,
+) => {
+  const offset = (page - 1) * pageSize;
+
+  return supabase
+    .from("goods_outward_items")
+    .select(
+      `
+      *,
+      stock_unit:stock_units!inner(product_id),
+      outward:goods_outwards(
+        id, sequence_number, outward_date, outward_type,
+        partner:partners!goods_outwards_partner_id_fkey(
+          id, first_name, last_name, display_name, company_name
+        )
+      )
+    `,
+      { count: "exact" },
+    )
+    .eq("stock_unit.product_id", productId)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + pageSize - 1);
 };
 
 // ============================================================================
@@ -439,28 +472,12 @@ export async function getOutwardItemsByProduct(
 ): Promise<{ data: OutwardItemWithOutwardDetailView[]; totalCount: number }> {
   const supabase = createClient();
 
-  // Calculate pagination range
-  const offset = (page - 1) * pageSize;
-  const limit = pageSize;
-
-  const { data, error, count } = await supabase
-    .from("goods_outward_items")
-    .select(
-      `
-      *,
-      stock_unit:stock_units!inner(product_id),
-      outward:goods_outwards(
-        id, sequence_number, outward_date, outward_type,
-        partner:partners!goods_outwards_partner_id_fkey(
-          id, first_name, last_name, display_name, company_name
-        )
-      )
-    `,
-      { count: "exact" },
-    )
-    .eq("stock_unit.product_id", productId)
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+  const { data, error, count } = await buildOutwardItemsByProductQuery(
+    supabase,
+    productId,
+    page,
+    pageSize,
+  );
 
   if (error) {
     console.error("Error fetching outward items by product:", error);
@@ -468,7 +485,7 @@ export async function getOutwardItemsByProduct(
   }
 
   return {
-    data: (data as OutwardItemWithOutwardDetailView[]) || [],
+    data: data || [],
     totalCount: count || 0,
   };
 }

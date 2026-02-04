@@ -1,5 +1,6 @@
-SELECT n.nspname, p.proname
-FROM pg_proc p
-JOIN pg_namespace n ON n.oid = p.pronamespace
-WHERE pg_get_functiondef(p.oid)
-      ILIKE '%stock_units%warehouse_id%';
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+CROSS JOIN permissions p
+WHERE r.name = 'admin'
+AND p.permission_path = 'business.products.read';

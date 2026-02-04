@@ -64,9 +64,7 @@ export const buildStockUnitsQuery = (
         gst_rate,
         attributes:attributes!inner(id, name, group_name, color_hex)
       ),
-      lot_assignments:stock_unit_attribute_assignments(
-        lot_attribute:attributes(id, name, group_name)
-      )
+      lot_number:attributes!lot_number_attribute_id(id, name, group_name)
     `,
     )
     .eq("current_warehouse_id", warehouseId)
@@ -160,9 +158,7 @@ export const buildStockUnitsWithInwardQuery = (
           id, first_name, last_name, display_name, company_name
         )
       ),
-      lot_assignments:stock_unit_attribute_assignments(
-        lot_attribute:attributes(id, name, group_name)
-      )
+      lot_number:attributes!lot_number_attribute_id(id, name, group_name)
     `,
       { count: "exact" },
     )
@@ -225,9 +221,7 @@ export const buildStockUnitWithProductDetailQuery = (
         *,
         attributes:attributes!inner(id, name, group_name, color_hex)
       ),
-      lot_assignments:stock_unit_attribute_assignments(
-        lot_attribute:attributes(id, name, group_name)
-      )
+      lot_number:attributes!lot_number_attribute_id(id, name, group_name)
     `,
     )
     .eq("id", stockUnitId)
@@ -271,34 +265,15 @@ export const buildStockUnitActivityQuery = (
 // ============================================================================
 
 /**
- * Extract lot_number from stock_unit_attribute_assignments
- */
-function extractLotNumber(
-  lotAssignments?: Array<{
-    lot_attribute: { id: string; name: string; group_name: string } | null;
-  }> | null,
-): string | null {
-  if (!lotAssignments || lotAssignments.length === 0) return null;
-
-  // Find the first lot_number attribute
-  const lotAssignment = lotAssignments.find(
-    (assignment) => assignment.lot_attribute?.group_name === "lot_number",
-  );
-
-  return lotAssignment?.lot_attribute?.name || null;
-}
-
-/**
  * Transform raw stock unit data with product to StockUnitWithProductListView
  */
 function transformStockUnitWithProductListView(
   raw: StockUnitWithProductListViewRaw,
 ): StockUnitWithProductListView {
-  const { product: rawProduct, lot_assignments, ...stockUnit } = raw;
+  const { product: rawProduct, ...stockUnit } = raw;
 
   return {
     ...stockUnit,
-    lot_number: extractLotNumber(lot_assignments),
     product: rawProduct ? transformProductListView(rawProduct) : null,
   };
 }
@@ -309,16 +284,10 @@ function transformStockUnitWithProductListView(
 function transformStockUnitWithInwardListView(
   raw: StockUnitWithInwardListViewRaw,
 ): StockUnitWithInwardListView {
-  const {
-    product: rawProduct,
-    goods_inward,
-    lot_assignments,
-    ...stockUnit
-  } = raw;
+  const { product: rawProduct, goods_inward, ...stockUnit } = raw;
 
   return {
     ...stockUnit,
-    lot_number: extractLotNumber(lot_assignments),
     product: rawProduct ? transformProductListView(rawProduct) : null,
     goods_inward: goods_inward,
   };
@@ -330,11 +299,10 @@ function transformStockUnitWithInwardListView(
 function transformStockUnitWithProductDetailView(
   raw: StockUnitWithProductDetailViewRaw,
 ): StockUnitWithProductDetailView {
-  const { product: rawProduct, lot_assignments, ...stockUnit } = raw;
+  const { product: rawProduct, ...stockUnit } = raw;
 
   return {
     ...stockUnit,
-    lot_number: extractLotNumber(lot_assignments),
     product: rawProduct ? transformProductDetailView(rawProduct) : null,
   };
 }
@@ -431,7 +399,7 @@ export async function getStockUnitWithProductDetail(
  * Update a stock unit with lot_number handling
  * This function:
  * 1. Updates the stock unit fields
- * 2. Manages lot_number attribute assignment (create/update/delete)
+ * 2. Manages lot_number_attribute_id FK (find or create attribute, then set FK)
  */
 export async function updateStockUnit(
   stockUnitId: string,
@@ -440,7 +408,62 @@ export async function updateStockUnit(
 ): Promise<string> {
   const supabase = createClient();
 
-  // Step 1: Update the stock unit fields
+  // Step 1: Handle lot_number if provided
+  let lotNumberAttributeId: string | null = null;
+
+  if (lotNumber !== undefined) {
+    if (lotNumber) {
+      // Get company_id from stock_units table
+      const { data: stockUnit, error: fetchError } = await supabase
+        .from("stock_units")
+        .select("company_id")
+        .eq("id", stockUnitId)
+        .single();
+
+      if (fetchError) {
+        console.error("Error fetching stock unit:", fetchError);
+        throw fetchError;
+      }
+
+      const companyId = stockUnit.company_id;
+
+      // Find or create lot_number attribute
+      let { data: existingAttribute } = await supabase
+        .from("attributes")
+        .select("id")
+        .eq("company_id", companyId)
+        .eq("name", lotNumber)
+        .eq("group_name", "lot_number")
+        .maybeSingle();
+
+      if (existingAttribute) {
+        lotNumberAttributeId = existingAttribute.id;
+      } else {
+        // Create new attribute
+        const { data: newAttribute, error: createAttrError } = await supabase
+          .from("attributes")
+          .insert({
+            company_id: companyId,
+            name: lotNumber,
+            group_name: "lot_number",
+          })
+          .select("id")
+          .single();
+
+        if (createAttrError) {
+          console.error("Error creating lot attribute:", createAttrError);
+          throw createAttrError;
+        }
+
+        lotNumberAttributeId = newAttribute.id;
+      }
+    }
+
+    // Add lot_number_attribute_id to updates
+    updates = { ...updates, lot_number_attribute_id: lotNumberAttributeId };
+  }
+
+  // Step 2: Update the stock unit with all fields including lot_number_attribute_id
   const { error: updateError } = await supabase
     .from("stock_units")
     .update(updates)
@@ -449,81 +472,6 @@ export async function updateStockUnit(
   if (updateError) {
     console.error("Error updating stock unit:", updateError);
     throw updateError;
-  }
-
-  // Step 2: Get company_id from stock_units table
-  const { data: stockUnit, error: fetchError } = await supabase
-    .from("stock_units")
-    .select("company_id")
-    .eq("id", stockUnitId)
-    .single();
-
-  if (fetchError) {
-    console.error("Error fetching stock unit:", fetchError);
-    throw fetchError;
-  }
-
-  const companyId = stockUnit.company_id;
-
-  // Step 3: Delete all existing attribute assignments
-  const { error: deleteError } = await supabase
-    .from("stock_unit_attribute_assignments")
-    .delete()
-    .eq("stock_unit_id", stockUnitId);
-
-  if (deleteError) {
-    console.error("Error deleting attribute assignments:", deleteError);
-    throw deleteError;
-  }
-
-  // Step 4: Create new lot_number assignment if provided
-  if (lotNumber) {
-    // Find or create lot_number attribute
-    let { data: existingAttribute } = await supabase
-      .from("attributes")
-      .select("id")
-      .eq("company_id", companyId)
-      .eq("name", lotNumber)
-      .eq("group_name", "lot_number")
-      .maybeSingle();
-
-    let attributeId: string;
-
-    if (existingAttribute) {
-      attributeId = existingAttribute.id;
-    } else {
-      // Create new attribute
-      const { data: newAttribute, error: createAttrError } = await supabase
-        .from("attributes")
-        .insert({
-          company_id: companyId,
-          name: lotNumber,
-          group_name: "lot_number",
-        })
-        .select("id")
-        .single();
-
-      if (createAttrError) {
-        console.error("Error creating lot attribute:", createAttrError);
-        throw createAttrError;
-      }
-
-      attributeId = newAttribute.id;
-    }
-
-    // Create assignment
-    const { error: assignError } = await supabase
-      .from("stock_unit_attribute_assignments")
-      .insert({
-        company_id: companyId,
-        stock_unit_id: stockUnitId,
-        attribute_id: attributeId,
-      });
-
-    if (assignError) {
-      console.error("Error creating lot assignment:", assignError);
-      throw assignError;
-    }
   }
 
   return stockUnitId;

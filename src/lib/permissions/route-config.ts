@@ -430,6 +430,7 @@ export const routePermissions: Record<string, RouteConfig> = {
   },
 
   // ===== Business Module =====
+
   // Partners
   partners: {
     permission: "business.partners.read",
@@ -536,9 +537,7 @@ export function getRouteConfig(
   path: string,
   isCompanyRoute: boolean = false,
 ): RouteConfig {
-  const config = isCompanyRoute
-    ? companyRoutes[path]
-    : routePermissions[path];
+  const config = isCompanyRoute ? companyRoutes[path] : routePermissions[path];
 
   if (!config) {
     const context = isCompanyRoute ? "company" : "warehouse";

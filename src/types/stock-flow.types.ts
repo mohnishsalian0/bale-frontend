@@ -7,6 +7,7 @@ import {
   buildGoodsInwardsByPurchaseOrderQuery,
   buildGoodsInwardByNumberQuery,
   buildGoodsOutwardByNumberQuery,
+  buildOutwardItemsByProductQuery,
 } from "@/lib/queries/stock-flow";
 
 // Base types from database (still needed for non-query uses)
@@ -175,18 +176,9 @@ export interface InwardWithPartnerListView extends Pick<
 
 /**
  * Outward item with details for product detail page
+ * Type inferred from buildOutwardItemsByProductQuery
  * Shows outward flow history for a specific product
  */
-export interface OutwardItemWithOutwardDetailView extends Tables<"goods_outward_items"> {
-  outward:
-    | (Pick<
-        GoodsOutward,
-        "id" | "sequence_number" | "outward_date" | "outward_type"
-      > & {
-        partner: Pick<
-          Tables<"partners">,
-          "id" | "first_name" | "last_name" | "company_name" | "display_name"
-        >;
-      })
-    | null;
-}
+export type OutwardItemWithOutwardDetailView = QueryData<
+  ReturnType<typeof buildOutwardItemsByProductQuery>
+>[number];

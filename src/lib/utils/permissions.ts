@@ -152,6 +152,13 @@ export function checkRoutePermission(
       pathAfterWarehouse,
       false,
     );
+    console.log(
+      "xcvxc",
+      routeConfig,
+      pathname,
+      pathAfterWarehouse,
+      userPermissions,
+    );
 
     // If not found, try dynamic route matching
     if (!routeConfig) {

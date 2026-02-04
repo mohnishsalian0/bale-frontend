@@ -3,10 +3,7 @@
 import { use, useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  StockUnitScannerStep,
-  ScannedStockUnit,
-} from "@/components/layouts/stock-unit-scanner-step";
+import { StockUnitScannerStep } from "@/components/layouts/stock-unit-scanner-step";
 import { WarehouseSelectionStep } from "../../create/WarehouseSelectionStep";
 import { TransferDetailsStep } from "../../create/TransferDetailsStep";
 import {
@@ -22,6 +19,7 @@ import FormFooter from "@/components/ui/form-footer";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import type { TransportType } from "@/types/database/enums";
+import { ScannedStockUnit } from "@/types/stock-units.types";
 
 interface DetailsFormData {
   transferDate: string;
@@ -97,13 +95,7 @@ export default function EditGoodsTransferPage({
     const initialScannedUnits: ScannedStockUnit[] =
       transfer.goods_transfer_items.map((item) => ({
         stockUnit: {
-          id: item.stock_unit.id,
-          product_id: item.stock_unit.product_id,
-          remaining_quantity: item.stock_unit.remaining_quantity,
-          initial_quantity: item.stock_unit.initial_quantity,
-          lot_number: item.stock_unit.lot_number,
-          stock_number: item.stock_unit.stock_number,
-          product: item.stock_unit.product,
+          ...item.stock_unit,
         },
         quantity: item.quantity_transferred,
       }));

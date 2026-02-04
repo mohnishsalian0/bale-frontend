@@ -3,10 +3,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  StockUnitScannerStep,
-  ScannedStockUnit,
-} from "@/components/layouts/stock-unit-scanner-step";
+import { StockUnitScannerStep } from "@/components/layouts/stock-unit-scanner-step";
+import { ScannedStockUnit } from "@/types/stock-units.types";
 import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
 import { OutwardLinkToStep, OutwardLinkToData } from "../OutwardLinkToStep";
 import { OutwardDetailsStep } from "../OutwardDetailsStep";

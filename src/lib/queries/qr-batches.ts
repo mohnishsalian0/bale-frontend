@@ -100,7 +100,8 @@ export const buildQRBatchByIdQuery = (
           product:products(
             *,
             attributes:attributes!inner(id, name, group_name, color_hex)
-          )
+          ),
+					lot_number:attributes!lot_number_attribute_id(id, name, group_name)
         )
       )
     `,

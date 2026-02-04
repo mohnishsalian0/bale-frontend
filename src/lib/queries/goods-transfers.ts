@@ -113,7 +113,9 @@ export const buildGoodsTransferByNumberQuery = (
         *,
         stock_unit:stock_units!inner(
           *,
-          product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number, hsn_code, gsm, gst_rate)
+					warehouse:warehouses!inner(id, name),
+          product:products(id, name, stock_type, measuring_unit, selling_price_per_unit, product_images, product_code, sequence_number, hsn_code, gsm, gst_rate),
+          lot_number:attributes!lot_number_attribute_id(id, name, group_name)
         )
       )
     `,

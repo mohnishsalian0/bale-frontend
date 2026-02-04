@@ -24,7 +24,7 @@ import {
   useProductAttributes,
   useProductsWithInventoryByIds,
 } from "@/lib/query/hooks/products";
-import { ScannedStockUnit } from "./SelectInventorySheet";
+import { ScannedStockUnit } from "@/types/stock-units.types";
 
 interface InventoryProductListStepProps {
   warehouseId: string;

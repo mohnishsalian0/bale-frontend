@@ -8,25 +8,10 @@ import { ErrorState } from "@/components/layouts/error-state";
 import { useGoodsOutwardBySequenceNumber } from "@/lib/query/hooks/stock-flow";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getStockUnitInfo } from "@/lib/utils/product";
-import type { Tables } from "@/types/database/supabase";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon } from "@/lib/utils/product";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
 import { StockUnitDetailsModal } from "@/components/layouts/stock-unit-modal";
-import { Warehouse } from "@/types/warehouses.types";
-
-type Product = Tables<"products">;
-type StockUnit = Tables<"stock_units">;
-type GoodsOutwardItem = Tables<"goods_outward_items">;
-
-interface OutwardItem extends GoodsOutwardItem {
-  stock_unit:
-    | (StockUnit & {
-        warehouse: Pick<Warehouse, "id" | "name">;
-        product: Product | null;
-      })
-    | null;
-}
 
 interface PageParams {
   params: Promise<{
@@ -55,7 +40,7 @@ export default function StockUnitsPage({ params }: PageParams) {
     if (!outwardData) {
       return [];
     }
-    return (outwardData.goods_outward_items || []) as OutwardItem[];
+    return outwardData.goods_outward_items || [];
   }, [outwardData]);
 
   const handleStockUnitClick = (stockUnitId: string) => {

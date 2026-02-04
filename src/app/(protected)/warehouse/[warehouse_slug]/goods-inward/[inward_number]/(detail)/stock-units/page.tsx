@@ -14,19 +14,9 @@ import {
   StockUnitStatus,
 } from "@/types/database/enums";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
-import type { Tables } from "@/types/database/supabase";
 import { StockUnitDetailsModal } from "@/components/layouts/stock-unit-modal";
 import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
 import { StockStatusBadge } from "@/components/ui/stock-status-badge";
-import { Warehouse } from "@/types/warehouses.types";
-
-type StockUnit = Tables<"stock_units">;
-type Product = Tables<"products">;
-
-interface StockUnitWithProduct extends StockUnit {
-  warehouse: Pick<Warehouse, "id" | "name">;
-  product: Product | null;
-}
 
 interface PageParams {
   params: Promise<{
@@ -55,7 +45,7 @@ export default function StockUnitsPage({ params }: PageParams) {
     if (!inwardData) {
       return [];
     }
-    return (inwardData.stock_units || []) as StockUnitWithProduct[];
+    return inwardData.stock_units || [];
   }, [inwardData]);
 
   const handleStockUnitClick = (stockUnitId: string) => {

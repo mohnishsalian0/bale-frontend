@@ -319,7 +319,7 @@ export function StockUnitDetailsContent({
           <div className="flex justify-between text-sm">
             <span className="text-gray-700">Lot number</span>
             <span className="font-semibold text-gray-700">
-              {stockUnit.lot_number || "-"}
+              {stockUnit.lot_number?.name || "-"}
             </span>
           </div>
           <div className="flex justify-between text-sm">

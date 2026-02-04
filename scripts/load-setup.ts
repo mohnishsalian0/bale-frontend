@@ -1769,9 +1769,12 @@ async function finalizeOrderStatuses(
   orders: Array<{ id: string }>,
   orderType: "purchase" | "sales",
 ) {
-  const orderTable = orderType === "purchase" ? "purchase_orders" : "sales_orders";
-  const movementTable = orderType === "purchase" ? "goods_inwards" : "goods_outwards";
-  const orderIdColumn = orderType === "purchase" ? "purchase_order_id" : "sales_order_id";
+  const orderTable =
+    orderType === "purchase" ? "purchase_orders" : "sales_orders";
+  const movementTable =
+    orderType === "purchase" ? "goods_inwards" : "goods_outwards";
+  const orderIdColumn =
+    orderType === "purchase" ? "purchase_order_id" : "sales_order_id";
 
   console.log(
     `\n📊 Finalizing ${orderType} order statuses after goods movements...\n`,

@@ -13,15 +13,11 @@ import { InventoryProductListStep } from "./InventoryProductListStep";
 import { StockUnitListStep } from "./StockUnitListStep";
 import { StockUnitQuantitySheet } from "./StockUnitQuantitySheet";
 import { getStockUnitWithProductDetail } from "@/lib/queries/stock-units";
+import { toScannedStockUnit } from "@/lib/utils/stock-units";
 import type { ProductWithInventoryListView } from "@/types/products.types";
-import type { StockUnitWithProductDetailView } from "@/types/stock-units.types";
+import type { ScannedStockUnit } from "@/types/stock-units.types";
 
 type SelectInventoryStep = "products" | "stockUnits" | "quantity";
-
-export interface ScannedStockUnit {
-  stockUnit: StockUnitWithProductDetailView;
-  quantity: number; // User-entered quantity to dispatch
-}
 
 interface SelectInventorySheetProps {
   open: boolean;
@@ -48,8 +44,9 @@ export function SelectInventorySheet({
   // Selected state
   const [selectedProduct, setSelectedProduct] =
     useState<ProductWithInventoryListView | null>(null);
-  const [selectedStockUnit, setSelectedStockUnit] =
-    useState<StockUnitWithProductDetailView | null>(null);
+  const [selectedStockUnit, setSelectedStockUnit] = useState<
+    ScannedStockUnit["stockUnit"] | null
+  >(null);
 
   // Quantity sheet state
   const [showQuantitySheet, setShowQuantitySheet] = useState(false);
@@ -91,14 +88,14 @@ export function SelectInventorySheet({
           onScannedUnitsChange([
             ...scannedUnits,
             {
-              stockUnit: stockUnitDetail,
+              stockUnit: toScannedStockUnit(stockUnitDetail),
               quantity: stockUnitDetail.remaining_quantity,
             },
           ]);
         }
       } else {
         // Show quantity sheet for partial quantity selection
-        setSelectedStockUnit(stockUnitDetail);
+        setSelectedStockUnit(toScannedStockUnit(stockUnitDetail));
         setShowQuantitySheet(true);
       }
     } catch (error) {

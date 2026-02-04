@@ -13,14 +13,10 @@ import {
   pluralizeMeasuringUnitAbbreviation,
 } from "@/lib/utils/measuring-units";
 import { getStockUnitWithProductDetail } from "@/lib/queries/stock-units";
-import { StockUnitWithProductDetailView } from "@/types/stock-units.types";
+import { ScannedStockUnit } from "@/types/stock-units.types";
+import { toScannedStockUnit } from "@/lib/utils/stock-units";
 
 const SCAN_DELAY: number = 1200;
-
-export interface ScannedStockUnit {
-  stockUnit: StockUnitWithProductDetailView;
-  quantity: number; // User-entered quantity to dispatch
-}
 
 interface StockUnitScannerStepProps {
   scannedUnits: ScannedStockUnit[];
@@ -43,7 +39,7 @@ export function StockUnitScannerStep({
   const [showInventorySheet, setShowInventorySheet] = useState(false);
   const [showQuantitySheet, setShowQuantitySheet] = useState(false);
   const [pendingStockUnit, setPendingStockUnit] = useState<{
-    stockUnit: StockUnitWithProductDetailView;
+    stockUnit: ScannedStockUnit["stockUnit"];
     editingIndex?: number;
     initialQuantity?: number;
   } | null>(null);
@@ -115,7 +111,7 @@ export function StockUnitScannerStep({
 
         // For roll/batch: reopen modal with current quantity
         setPendingStockUnit({
-          stockUnit: stockUnitWithProduct,
+          stockUnit: toScannedStockUnit(stockUnitWithProduct),
           editingIndex: existingIndex,
           initialQuantity: scannedUnits[existingIndex].quantity,
         });
@@ -129,7 +125,7 @@ export function StockUnitScannerStep({
         onScannedUnitsChange([
           ...scannedUnits,
           {
-            stockUnit: stockUnitWithProduct,
+            stockUnit: toScannedStockUnit(stockUnitWithProduct),
             quantity: stockUnitWithProduct.remaining_quantity,
           },
         ]);
@@ -140,7 +136,9 @@ export function StockUnitScannerStep({
       }
 
       // For roll/batch: Open quantity sheet to select quantity
-      setPendingStockUnit({ stockUnit: stockUnitWithProduct });
+      setPendingStockUnit({
+        stockUnit: toScannedStockUnit(stockUnitWithProduct),
+      });
       setShowQuantitySheet(true);
       // Scanner remains paused until quantity sheet is closed
     } catch (err) {

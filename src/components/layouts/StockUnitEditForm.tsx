@@ -53,7 +53,7 @@ export function StockUnitEditForm({
     resolver: zodResolver(updateStockUnitSchema),
     defaultValues: {
       stock_number: stockUnit.stock_number || "",
-      lot_number: stockUnit.lot_number || "",
+      lot_number: stockUnit.lot_number?.name || "",
       grade: stockUnit.quality_grade || "",
       manufactured_on: stockUnit.manufacturing_date
         ? new Date(stockUnit.manufacturing_date)

@@ -74,37 +74,10 @@ BEGIN
         v_product_id := (v_unit->>'product_id')::UUID;
         v_quantity := (v_unit->>'initial_quantity')::DECIMAL;
 
-        -- Create new stock units for all stock types
-        INSERT INTO stock_units (
-            company_id,
-            current_warehouse_id,
-            product_id,
-            created_from_inward_id,
-            remaining_quantity,
-            initial_quantity,
-            quality_grade,
-            stock_number,
-            warehouse_location,
-            notes,
-            created_by
-        )
-        VALUES (
-            v_company_id,
-            v_warehouse_id,
-            v_product_id,
-            v_inward_id,
-            v_quantity,
-            v_quantity,
-            v_unit->>'quality_grade',
-            v_unit->>'stock_number',
-            v_unit->>'warehouse_location',
-            v_unit->>'notes',
-            COALESCE((v_unit->>'created_by')::UUID, auth.uid())
-        )
-        RETURNING id INTO v_stock_unit_id;
-
-        -- Handle lot_number (if provided)
+        -- Handle lot_number (if provided) - find or create attribute first
         v_lot_number := v_unit->>'lot_number';
+        v_lot_attribute_id := NULL;
+
         IF v_lot_number IS NOT NULL AND v_lot_number != '' THEN
             -- Find or create lot_number attribute
             SELECT id INTO v_lot_attribute_id
@@ -118,11 +91,38 @@ BEGIN
                 VALUES (v_company_id, v_lot_number, 'lot_number')
                 RETURNING id INTO v_lot_attribute_id;
             END IF;
-
-            -- Create assignment
-            INSERT INTO stock_unit_attribute_assignments (company_id, stock_unit_id, attribute_id)
-            VALUES (v_company_id, v_stock_unit_id, v_lot_attribute_id);
         END IF;
+
+        -- Create new stock units with lot_number_attribute_id FK
+        INSERT INTO stock_units (
+            company_id,
+            current_warehouse_id,
+            product_id,
+            created_from_inward_id,
+            remaining_quantity,
+            initial_quantity,
+            lot_number_attribute_id,
+            quality_grade,
+            stock_number,
+            warehouse_location,
+            notes,
+            created_by
+        )
+        VALUES (
+            v_company_id,
+            v_warehouse_id,
+            v_product_id,
+            v_inward_id,
+            v_quantity,
+            v_quantity,
+            v_lot_attribute_id,
+            v_unit->>'quality_grade',
+            v_unit->>'stock_number',
+            v_unit->>'warehouse_location',
+            v_unit->>'notes',
+            COALESCE((v_unit->>'created_by')::UUID, auth.uid())
+        )
+        RETURNING id INTO v_stock_unit_id;
     END LOOP;
 
     -- Return the inward ID

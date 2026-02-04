@@ -8,23 +8,10 @@ import { ErrorState } from "@/components/layouts/error-state";
 import { useGoodsTransferBySequenceNumber } from "@/lib/query/hooks/goods-transfers";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getStockUnitInfo } from "@/lib/utils/product";
-import type { Tables } from "@/types/database/supabase";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon } from "@/lib/utils/product";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
 import { StockUnitDetailsModal } from "@/components/layouts/stock-unit-modal";
-
-type Product = Tables<"products">;
-type StockUnit = Tables<"stock_units">;
-type GoodsTransferItem = Tables<"goods_transfer_items">;
-
-interface TransferItem extends GoodsTransferItem {
-  stock_unit:
-    | (StockUnit & {
-        product: Product | null;
-      })
-    | null;
-}
 
 interface PageParams {
   params: Promise<{
@@ -48,12 +35,12 @@ export default function StockUnitsPage({ params }: PageParams) {
     isError: error,
   } = useGoodsTransferBySequenceNumber(transfer_number);
 
-  // Extract items from the fetched data
   const items = useMemo(() => {
     if (!transferData) {
       return [];
     }
-    return (transferData.goods_transfer_items || []) as TransferItem[];
+
+    return transferData.goods_transfer_items || [];
   }, [transferData]);
 
   const handleStockUnitClick = (stockUnitId: string) => {
