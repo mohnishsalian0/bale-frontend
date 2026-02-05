@@ -19,6 +19,7 @@ type SalesOrder = Tables<"sales_orders">;
 
 /**
  * Query builder for fetching a sales order by ID for public catalog
+ * Type inferred in catalog.types.ts as PublicSalesOrder
  */
 export const buildPublicSalesOrderByIdQuery = (
   supabase: SupabaseClient<Database>,
@@ -29,36 +30,22 @@ export const buildPublicSalesOrderByIdQuery = (
     .from("sales_orders")
     .select(
       `
-      *,
-      customer:partners!customer_id(
-        id,
-        first_name,
-        last_name,
-        display_name,
-        email,
-        phone_number,
-        billing_address_line1,
-        billing_address_line2,
-        billing_city,
-        billing_state,
-        billing_country,
-        billing_pin_code,
-        company_name,
-        gst_number
-      ),
-      sales_order_items(
         *,
-        product:products(
-          id,
-          name,
-          product_code,
-          product_images,
-          measuring_unit,
-          sequence_number,
-          stock_type
+        customer:partners!customer_id(*),
+        sales_order_items(
+          *,
+          product:products(
+            id,
+            name,
+            product_code,
+            product_images,
+            measuring_unit,
+            sequence_number,
+            stock_type,
+						hsn_code
+          )
         )
-      )
-    `,
+      `,
     )
     .eq("company_id", companyId)
     .eq("id", orderId)
@@ -192,6 +179,7 @@ export async function createCatalogOrder({
 
 /**
  * Get sales order by ID (for anonymous confirmation page)
+ * Returns type inferred from buildPublicSalesOrderByIdQuery
  */
 export async function getSalesOrderById(
   companyId: string,

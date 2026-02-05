@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/browser";
 import type { Database, TablesInsert } from "@/types/database/supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
+import type {
   ProductAttribute,
   ProductListView,
   ProductDetailView,
@@ -20,6 +20,7 @@ import {
 } from "@/types/products.types";
 import { uploadProductImage, deleteProductImagesByUrls } from "@/lib/storage";
 import { getAttributes } from "@/lib/queries/attributes";
+import { transformAttributes } from "@/lib/utils/product";
 
 // Re-export raw types for other modules
 export type {
@@ -417,26 +418,6 @@ export const buildProductsWithInventoryAndOrdersQuery = (
 // ============================================================================
 // TRANSFORM FUNCTIONS
 // ============================================================================
-
-/**
- * Helper to transform attributes from nested assignments
- * Groups attributes by group_name into materials, colors, and tags arrays
- */
-export function transformAttributes(product: {
-  attributes: ProductAttribute[] | null;
-}) {
-  const allAttributes = (product.attributes || []).filter(
-    (attr): attr is ProductAttribute => attr !== null,
-  );
-
-  const materials = allAttributes.filter(
-    (attr) => attr.group_name === "material",
-  );
-  const colors = allAttributes.filter((attr) => attr.group_name === "color");
-  const tags = allAttributes.filter((attr) => attr.group_name === "tag");
-
-  return { materials, colors, tags };
-}
 
 /**
  * Transform raw product data to ProductListView

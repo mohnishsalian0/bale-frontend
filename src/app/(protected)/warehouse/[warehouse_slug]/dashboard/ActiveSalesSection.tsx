@@ -26,10 +26,11 @@ import { useSession } from "@/contexts/session-context";
 import type { SalesOrderListView } from "@/types/sales-orders.types";
 import type { SalesOrderStatus } from "@/types/database/enums";
 import { GoodsOutwardSelectionDialog } from "../sales-orders/[sale_number]/GoodsOutwardSelectionDialog";
-import { OrderConfirmationPDF } from "@/components/pdf/OrderConfirmationPDF";
+import { SalesOrderPDF } from "@/components/pdf/SalesOrderPDF";
 import { pdf } from "@react-pdf/renderer";
 import { toast } from "sonner";
 import { CompleteDialog } from "@/components/layouts/complete-dialog";
+import { getSalesOrderById } from "@/lib/queries/sales-orders";
 
 interface ActiveSalesSectionProps {
   title: string;
@@ -53,6 +54,9 @@ export function ActiveSalesSection({
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<SalesOrderListView | null>(
+    null,
+  );
+  const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(
     null,
   );
 
@@ -152,22 +156,20 @@ export function ActiveSalesSection({
   const handleDownload = async (order: SalesOrderListView) => {
     if (!company) return;
 
+    setDownloadingOrderId(order.id);
+
     try {
+      // Fetch complete order details for PDF generation
+      const fullOrder = await getSalesOrderById(order.id);
+
       const blob = await pdf(
-        <OrderConfirmationPDF
-          company={company}
-          order={
-            order as unknown as Parameters<
-              typeof OrderConfirmationPDF
-            >[0]["order"]
-          }
-        />,
+        <SalesOrderPDF company={company} order={fullOrder} />,
       ).toBlob();
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `order-${order.sequence_number}.pdf`;
+      link.download = `sales-order-${order.sequence_number}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -177,6 +179,8 @@ export function ActiveSalesSection({
     } catch (error) {
       console.error("Error downloading PDF:", error);
       toast.error("Failed to download PDF");
+    } finally {
+      setDownloadingOrderId(null);
     }
   };
 
@@ -306,6 +310,9 @@ export function ActiveSalesSection({
                   onDelete: () => {
                     console.log("Delete:", order.id);
                   },
+                },
+                {
+                  downloading: downloadingOrderId === order.id,
                 },
               );
 

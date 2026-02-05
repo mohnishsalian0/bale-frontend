@@ -164,6 +164,7 @@ export const buildInvoiceBySlugQuery = (
           igst_rate, igst_amount, total_tax_amount, sequence_order
         ),
         party_ledger:ledgers!party_ledger_id(id, name, partner_id),
+        counter_ledger:ledgers!counter_ledger_id(id, name, ledger_type, bank_name, account_number, ifsc_code, branch_name),
         warehouse:warehouses!warehouse_id(id, name)
       `,
     )

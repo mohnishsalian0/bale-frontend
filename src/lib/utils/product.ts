@@ -1,17 +1,45 @@
 import { ComponentType } from "react";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
 import { IconCylinder, IconPackage } from "@tabler/icons-react";
-import type { ProductWithInventoryListView } from "@/types/products.types";
+import type {
+  ProductWithInventoryListView,
+  ProductAttribute,
+} from "@/types/products.types";
 import { getMeasuringUnitAbbreviation } from "./measuring-units";
 import { formatAbsoluteDate } from "./date";
 import { StockUnitListView } from "@/types/stock-units.types";
 
-// Type for attribute objects (materials, colors, tags)
-interface ProductAttribute {
-  id: string;
-  name: string;
-  color_hex?: string | null;
+// Re-export ProductAttribute for convenience
+export type { ProductAttribute };
+
+// ============================================================================
+// ATTRIBUTE TRANSFORMATION
+// ============================================================================
+
+/**
+ * Transform attributes from nested assignments array to grouped arrays
+ * Groups attributes by group_name into materials, colors, and tags arrays
+ * Used in: products, catalog, and other product-related queries
+ */
+export function transformAttributes(product: {
+  attributes: ProductAttribute[] | null;
+}) {
+  const allAttributes = (product.attributes || []).filter(
+    (attr): attr is ProductAttribute => attr !== null,
+  );
+
+  const materials = allAttributes.filter(
+    (attr) => attr.group_name === "material",
+  );
+  const colors = allAttributes.filter((attr) => attr.group_name === "color");
+  const tags = allAttributes.filter((attr) => attr.group_name === "tag");
+
+  return { materials, colors, tags };
 }
+
+// ============================================================================
+// PRODUCT DISPLAY UTILITIES
+// ============================================================================
 
 /**
  * Get icon component for a product based on stock type

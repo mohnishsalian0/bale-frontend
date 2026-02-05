@@ -6,18 +6,23 @@ import type {
   PublicCompany,
   CatalogConfiguration,
 } from "@/types/catalog.types";
-import { calculateStockStatus } from "@/lib/utils/product";
-import { transformAttributes } from "./products";
+import { calculateStockStatus, transformAttributes } from "@/lib/utils/product";
 
 // Re-export types for convenience
-export type { PublicProduct, PublicCompany } from "@/types/catalog.types";
+export type {
+  PublicProduct,
+  PublicProductRaw,
+  PublicCompany,
+} from "@/types/catalog.types";
 
 // ============================================================================
 // QUERY BUILDERS
 // ============================================================================
 
 /**
- * Query builder for fetching public products with stock status
+ * Query builder for fetching public products with inventory and attributes
+ * Type inferred in catalog.types.ts as PublicProductRaw
+ * Transformed to PublicProduct with computed fields in getPublicProducts()
  */
 export const buildPublicProductsQuery = (
   supabase: SupabaseClient<Database>,
@@ -27,21 +32,21 @@ export const buildPublicProductsQuery = (
     .from("products")
     .select(
       `
-      id,
-      sequence_number,
-      product_code,
-      name,
-      stock_type,
-      measuring_unit,
-      product_images,
-      min_stock_threshold,
-      inventory:product_inventory_aggregates!product_id(
-        in_stock_units,
-        in_stock_quantity,
-        warehouse_id
-      ),
-      attributes:attributes!inner(id, name, group_name, color_hex)
-    `,
+        id,
+        sequence_number,
+        product_code,
+        name,
+        stock_type,
+        measuring_unit,
+        product_images,
+        min_stock_threshold,
+        inventory:product_inventory_aggregates!product_id(
+          in_stock_units,
+          in_stock_quantity,
+          warehouse_id
+        ),
+        attributes:attributes!inner(id, name, group_name, color_hex)
+      `,
     )
     .eq("company_id", companyId)
     .eq("show_on_catalog", true)
@@ -50,22 +55,48 @@ export const buildPublicProductsQuery = (
 };
 
 /**
+ * Query builder for fetching company by slug (public access)
+ * Type inferred in catalog.types.ts as PublicCompany
+ */
+export const buildCompanyBySlugQuery = (
+  supabase: SupabaseClient<Database>,
+  slug: string,
+) => {
+  return supabase
+    .from("companies")
+    .select("*")
+    .eq("slug", slug)
+    .is("deleted_at", null)
+    .single();
+};
+
+/**
+ * Query builder for fetching catalog configuration
+ * Type inferred in catalog.types.ts as CatalogConfiguration
+ */
+export const buildCatalogConfigurationQuery = (
+  supabase: SupabaseClient<Database>,
+  companyId: string,
+) => {
+  return supabase
+    .from("catalog_configurations")
+    .select("*")
+    .eq("company_id", companyId)
+    .single();
+};
+
+/**
  * Get company by slug (public access)
  */
 export async function getCompanyBySlug(slug: string): Promise<PublicCompany> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
-    .from("companies")
-    .select("*")
-    .eq("slug", slug)
-    .is("deleted_at", null)
-    .single<PublicCompany>();
+  const { data, error } = await buildCompanyBySlugQuery(supabase, slug);
 
   if (error) throw error;
   if (!data) throw new Error("Company not found");
 
-  return data as PublicCompany;
+  return data;
 }
 
 /**
@@ -76,11 +107,10 @@ export async function getCatalogConfiguration(
 ): Promise<CatalogConfiguration> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
-    .from("catalog_configurations")
-    .select("*")
-    .eq("company_id", companyId)
-    .single<CatalogConfiguration>();
+  const { data, error } = await buildCatalogConfigurationQuery(
+    supabase,
+    companyId,
+  );
 
   if (error) throw error;
   if (!data) throw new Error("Catalog configuration not found");
@@ -89,8 +119,12 @@ export async function getCatalogConfiguration(
 }
 
 /**
- * Get public catalog products with stock status
+ * Get public catalog products with computed stock status
  * This uses anonymous access via RLS policies
+ * Transforms PublicProductRaw to PublicProduct with:
+ * - Computed stock_status from stock quantity and threshold
+ * - Aggregated in_stock_quantity from inventory array
+ * - Flattened materials, colors, tags from attributes array
  */
 export async function getPublicProducts(
   companyId: string,
@@ -110,7 +144,8 @@ export async function getPublicProducts(
     return [];
   }
 
-  // Transform products with stock status and flatten attributes
+  // Transform raw products (PublicProductRaw) to PublicProduct
+  // with computed stock status and flattened attributes
   const publicProducts: PublicProduct[] = products.map((product) => {
     // Find inventory for the specified warehouse, or sum across all warehouses
     let totalStock = 0;

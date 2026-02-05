@@ -28,6 +28,7 @@ import { CancelDialog } from "@/components/layouts/cancel-dialog";
 import { ApprovalDialog } from "@/components/layouts/approval-dialog";
 import { DeleteDialog } from "@/components/layouts/delete-dialog";
 import { GoodsInwardSelectionDialog } from "../GoodsInwardSelectionDialog";
+import { PurchaseOrderPDF } from "@/components/pdf/PurchaseOrderPDF";
 import { useSession } from "@/contexts/session-context";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { formatCurrency } from "@/lib/utils/financial";
@@ -63,6 +64,8 @@ import {
 } from "@/lib/query/hooks/purchase-orders";
 import { useGoodsInwardsByPurchaseOrder } from "@/lib/query/hooks/stock-flow";
 import { useInvoices } from "@/lib/query/hooks/invoices";
+import { useCompany } from "@/lib/query/hooks/company";
+import { pdf } from "@react-pdf/renderer";
 import { toast } from "sonner";
 import type {
   MeasuringUnit,
@@ -84,6 +87,7 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
   const router = useRouter();
   const { warehouse_slug, purchase_number } = use(params);
   const { warehouse } = useSession();
+  const [downloading, setDownloading] = useState(false);
 
   // Dialog states
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -93,6 +97,12 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
 
   // Fetch data using TanStack Query hooks
+  const {
+    data: company,
+    isLoading: companyLoading,
+    isError: companyError,
+  } = useCompany();
+
   const {
     data: order,
     isLoading: orderLoading,
@@ -226,6 +236,37 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
     }
   };
 
+  const handleDownloadPDF = async () => {
+    if (!company || !order) return;
+
+    try {
+      setDownloading(true);
+      const blob = await pdf(
+        <PurchaseOrderPDF
+          order={order}
+          company={company}
+          linkedInwards={inwards}
+        />,
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `purchase-order-${order.sequence_number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("PDF downloaded successfully");
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      toast.error("Failed to download PDF");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const handleDelete = () => {
     if (!order) return;
     deleteOrder.mutate(order.id, {
@@ -277,12 +318,12 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
   };
 
   // Loading state
-  if (orderLoading || inwardsLoading || invoicesLoading) {
+  if (companyLoading || orderLoading || inwardsLoading || invoicesLoading) {
     return <LoadingState message="Loading order..." />;
   }
 
   // Error state
-  if (orderError || !order) {
+  if (companyError || orderError || !order) {
     return (
       <ErrorState
         title="Order not found"
@@ -735,10 +776,11 @@ export default function PurchaseOrderDetailsPage({ params }: PageParams) {
             onCreateInvoice: handleCreateInvoice,
             onComplete: () => setShowCompleteDialog(true),
             onShare: handleShare,
-            onDownload: () => {},
+            onDownload: handleDownloadPDF,
             onCancel: () => setShowCancelDialog(true),
             onDelete: () => setShowDeleteDialog(true),
           },
+          { downloading },
         )}
       />
 

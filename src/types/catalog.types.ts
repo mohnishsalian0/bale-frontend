@@ -1,71 +1,83 @@
-import type { Tables } from "./database/supabase";
 import type { QueryData } from "@supabase/supabase-js";
-import { buildPublicProductsQuery } from "@/lib/queries/catalog";
+import {
+  buildPublicProductsQuery,
+  buildCompanyBySlugQuery,
+  buildCatalogConfigurationQuery,
+} from "@/lib/queries/catalog";
 import { buildPublicSalesOrderByIdQuery } from "@/lib/queries/catalog-orders";
 import type { ProductStockStatus } from "./database/enums";
-import { Product, ProductAttribute } from "./products.types";
-
-type Company = Tables<"companies">;
-type Partner = Tables<"partners">;
-type SalesOrder = Tables<"sales_orders">;
-type SalesOrderItem = Tables<"sales_order_items">;
-export type CatalogConfiguration = Tables<"catalog_configurations">;
+import type { ProductAttribute } from "./products.types";
 
 // ============================================================================
 // RAW TYPES (QueryData inferred from query builders)
 // ============================================================================
 
 /**
- * Raw type inferred from buildPublicProductsQuery
- * Used as bridge between Supabase response and PublicProduct
+ * Raw product type inferred from buildPublicProductsQuery
+ * Type automatically matches the query - no manual sync needed
+ * This is the raw response before transformation
+ * Used internally in: getPublicProducts function
  */
-export type PublicProductListViewRaw = QueryData<
+export type PublicProductRaw = QueryData<
   ReturnType<typeof buildPublicProductsQuery>
 >[number];
 
 /**
- * Raw type inferred from buildPublicSalesOrderByIdQuery
- * Used as bridge between Supabase response and PublicSalesOrder
+ * Public company type inferred from buildCompanyBySlugQuery
+ * Type automatically matches the query - no manual sync needed
+ * Used in: public catalog pages
  */
-export type PublicSalesOrderRaw = QueryData<
+export type PublicCompany = QueryData<
+  ReturnType<typeof buildCompanyBySlugQuery>
+>;
+
+/**
+ * Catalog configuration type inferred from buildCatalogConfigurationQuery
+ * Type automatically matches the query - no manual sync needed
+ * Used in: catalog configuration pages
+ */
+export type CatalogConfiguration = QueryData<
+  ReturnType<typeof buildCatalogConfigurationQuery>
+>;
+
+/**
+ * Public sales order type inferred from buildPublicSalesOrderByIdQuery
+ * Type automatically matches the query - no manual sync needed
+ * Used in: order confirmation page
+ */
+export type PublicSalesOrder = QueryData<
   ReturnType<typeof buildPublicSalesOrderByIdQuery>
 >;
+
+/**
+ * Public sales order item type extracted from PublicSalesOrder
+ * Type automatically matches the query - no manual sync needed
+ * Used in: order confirmation page
+ */
+export type PublicSalesOrderItem =
+  PublicSalesOrder["sales_order_items"][number];
 
 // ============================================================================
 // PUBLIC  TYPES
 // ============================================================================
 
 /**
- * Public company view for catalog pages
- * Includes computed stock status and flattened attributes
- * Used in: public catalog, shopping cart, checkout
- */
-export type PublicCompany = Pick<
-  Company,
-  "id" | "slug" | "name" | "logo_url" | "email" | "phone_number" | "website_url"
->;
-
-/**
  * Public product view for catalog pages
- * Includes computed stock status and flattened attributes
+ * Transformed from PublicProductRaw with computed fields
+ * - Computed: in_stock_quantity (aggregated from inventory)
+ * - Computed: stock_status (calculated from stock and threshold)
+ * - Flattened: materials, colors, tags (from attributes array)
  * Used in: public catalog, shopping cart, checkout
  */
-export interface PublicProduct extends Pick<
-  Product,
-  | "id"
-  | "sequence_number"
-  | "product_code"
-  | "name"
-  | "stock_type"
-  | "measuring_unit"
-  | "product_images"
-  | "min_stock_threshold"
+export interface PublicProduct extends Omit<
+  PublicProductRaw,
+  "inventory" | "attributes"
 > {
-  in_stock_quantity: number; // Aggregated from product_inventory_aggregates
+  in_stock_quantity: number; // Aggregated from inventory array
   stock_status: ProductStockStatus; // Computed: in_stock | low_stock | out_of_stock
-  materials: ProductAttribute[];
-  colors: ProductAttribute[];
-  tags: ProductAttribute[];
+  materials: ProductAttribute[]; // Flattened from attributes where group_name = 'Material'
+  colors: ProductAttribute[]; // Flattened from attributes where group_name = 'Color'
+  tags: ProductAttribute[]; // Flattened from attributes where group_name = 'Tag'
 }
 
 // ============================================================================
@@ -97,48 +109,6 @@ export interface CheckoutFormData {
   shippingPinCode: string;
   specialInstructions: string;
   termsAccepted: boolean;
-}
-
-/**
- * Sales order item with product details for public order view
- * Used in: order confirmation page
- */
-export interface PublicSalesOrderItem extends SalesOrderItem {
-  product: Pick<
-    Product,
-    | "id"
-    | "name"
-    | "product_images"
-    | "measuring_unit"
-    | "sequence_number"
-    | "product_code"
-    | "stock_type"
-  > | null;
-}
-
-/**
- * Sales order with details for public order view
- * Used in: order confirmation page
- */
-export interface PublicSalesOrder extends SalesOrder {
-  customer: Pick<
-    Partner,
-    | "id"
-    | "first_name"
-    | "last_name"
-    | "email"
-    | "phone_number"
-    | "billing_address_line1"
-    | "billing_address_line2"
-    | "billing_city"
-    | "billing_state"
-    | "billing_country"
-    | "billing_pin_code"
-    | "company_name"
-    | "gst_number"
-    | "display_name"
-  > | null;
-  sales_order_items: PublicSalesOrderItem[];
 }
 
 /**

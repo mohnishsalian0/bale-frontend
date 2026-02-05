@@ -311,7 +311,8 @@ export function InventoryProductListStep({
                         {/* Show requested quantity if product is from an order */}
                         {requestedQuantity !== undefined && (
                           <span>
-                            | Pending request: {requestedQuantity} {unitAbbr}
+                            {" | "}Pending request: {requestedQuantity}{" "}
+                            {unitAbbr}
                           </span>
                         )}
                       </p>

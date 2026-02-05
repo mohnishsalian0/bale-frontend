@@ -157,7 +157,8 @@ export const buildSalesOrderByNumberQuery = (
           measuring_unit,
           product_images,
           product_code,
-          sequence_number
+          sequence_number,
+          hsn_code
         )
 			)
 		`,
@@ -196,7 +197,8 @@ export const buildSalesOrderByIdQuery = (
           measuring_unit,
           product_images,
           product_code,
-          sequence_number
+          sequence_number,
+          hsn_code
         )
 			)
 		`,

@@ -28,6 +28,9 @@ import type { PurchaseOrderStatus } from "@/types/database/enums";
 import { GoodsInwardSelectionDialog } from "../purchase-orders/[purchase_number]/GoodsInwardSelectionDialog";
 import { toast } from "sonner";
 import { CompleteDialog } from "@/components/layouts/complete-dialog";
+import { PurchaseOrderPDF } from "@/components/pdf/PurchaseOrderPDF";
+import { pdf } from "@react-pdf/renderer";
+import { getPurchaseOrderById } from "@/lib/queries/purchase-orders";
 
 interface ActivePurchaseSectionProps {
   title: string;
@@ -52,6 +55,9 @@ export function ActivePurchaseSection({
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
   const [selectedOrder, setSelectedOrder] =
     useState<PurchaseOrderListView | null>(null);
+  const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(
+    null,
+  );
 
   // Fetch purchase orders
   const {
@@ -144,6 +150,37 @@ export function ActivePurchaseSection({
     const orderShareMessage = `Here are the details and live status of order #${order.sequence_number}\n🔗 ${orderUrl}`;
     const encodedMessage = encodeURIComponent(orderShareMessage);
     window.open(`https://wa.me/?text=${encodedMessage}`, "_blank");
+  };
+
+  const handleDownload = async (order: PurchaseOrderListView) => {
+    if (!company) return;
+
+    setDownloadingOrderId(order.id);
+
+    try {
+      // Fetch complete order details for PDF generation
+      const fullOrder = await getPurchaseOrderById(order.id);
+
+      const blob = await pdf(
+        <PurchaseOrderPDF company={company} order={fullOrder} />,
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `purchase-order-${order.sequence_number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("PDF downloaded successfully");
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      toast.error("Failed to download PDF");
+    } finally {
+      setDownloadingOrderId(null);
+    }
   };
 
   const handleCreateInvoice = (order: PurchaseOrderListView) => {
@@ -267,15 +304,16 @@ export function ActivePurchaseSection({
                   },
                   onComplete: () => handleComplete(order),
                   onShare: () => handleShare(order),
-                  onDownload: () => {
-                    console.log("Download:", order.id);
-                  },
+                  onDownload: () => handleDownload(order),
                   onCancel: () => {
                     console.log("Cancel:", order.id);
                   },
                   onDelete: () => {
                     console.log("Delete:", order.id);
                   },
+                },
+                {
+                  downloading: downloadingOrderId === order.id,
                 },
               );
 

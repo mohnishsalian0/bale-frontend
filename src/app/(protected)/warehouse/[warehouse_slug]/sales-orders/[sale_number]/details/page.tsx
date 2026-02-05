@@ -27,7 +27,7 @@ import { CancelDialog } from "@/components/layouts/cancel-dialog";
 import { ApprovalDialog } from "@/components/layouts/approval-dialog";
 import { DeleteDialog } from "@/components/layouts/delete-dialog";
 import { GoodsOutwardSelectionDialog } from "../GoodsOutwardSelectionDialog";
-import { OrderConfirmationPDF } from "@/components/pdf/OrderConfirmationPDF";
+import { SalesOrderPDF } from "@/components/pdf/SalesOrderPDF";
 import { useSession } from "@/contexts/session-context";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { formatCurrency } from "@/lib/utils/financial";
@@ -243,13 +243,17 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
     try {
       setDownloading(true);
       const blob = await pdf(
-        <OrderConfirmationPDF company={company} order={order} />,
+        <SalesOrderPDF
+          order={order}
+          company={company}
+          linkedOutwards={outwards}
+        />,
       ).toBlob();
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `order-${order.sequence_number}.pdf`;
+      link.download = `sales-order-${order.sequence_number}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
