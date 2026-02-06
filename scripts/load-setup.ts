@@ -1196,12 +1196,14 @@ async function generateGoodsOutwards(
   const customerPartnerIds = customers?.map((c) => c.id) || [];
 
   // Fetch fresh order data from database (only in_progress orders can receive goods movements)
+  // NOTE: Query from ALL warehouses, not just main warehouse
   const { data: ordersFromDb } = await supabase
     .from("sales_orders")
     .select(
       `
       id,
       status,
+      warehouse_id,
       customer_id,
       sales_order_items (
         id,
@@ -1211,7 +1213,6 @@ async function generateGoodsOutwards(
     `,
     )
     .eq("company_id", companyId)
-    .eq("warehouse_id", warehouseId)
     .eq("status", "in_progress"); // Only process in_progress orders
 
   if (!ordersFromDb || ordersFromDb.length === 0) {
@@ -1245,7 +1246,7 @@ async function generateGoodsOutwards(
         const preferFifo = Math.random() < 0.7; // 70% use FIFO
         const selected = await selectStockUnitsForDispatch(
           companyId,
-          warehouseId,
+          order.warehouse_id,
           item.product_id,
           quantityToDispatch,
           preferFifo,
@@ -1279,7 +1280,7 @@ async function generateGoodsOutwards(
       const { error } = await supabase.rpc("create_goods_outward_with_items", {
         p_outward_data: {
           company_id: companyId,
-          warehouse_id: warehouseId,
+          warehouse_id: order.warehouse_id,
           partner_id: partnerId,
           outward_type: "sales_order",
           sales_order_id: order.id,
@@ -1315,13 +1316,13 @@ async function generateGoodsOutwards(
     "Damaged goods removal",
   ];
 
+  // Query stock from ALL warehouses, not just main warehouse
   const { data: availableStockUnits } = await supabase
     .from("stock_units")
     .select(
-      "id, remaining_quantity, initial_quantity, product:products(id, name, stock_type)",
+      "id, remaining_quantity, initial_quantity, current_warehouse_id, product:products(id, name, stock_type)",
     )
     .eq("company_id", companyId)
-    .eq("warehouse_id", warehouseId)
     .in("status", ["full", "partial"])
     .gt("remaining_quantity", 0)
     .limit(500);
@@ -1334,7 +1335,7 @@ async function generateGoodsOutwards(
       const reason =
         otherReasons[Math.floor(Math.random() * otherReasons.length)];
 
-      // Select 1-6 stock units
+      // Select 1-6 stock units from the same warehouse
       const itemCount = Math.min(
         randomInt(1, 6),
         availableStockUnits.length - stockIndex,
@@ -1342,8 +1343,20 @@ async function generateGoodsOutwards(
       const stockUnitItems: Array<{ stock_unit_id: string; quantity: number }> =
         [];
 
+      // Get the warehouse of the first stock unit
+      const firstStockUnit = availableStockUnits[stockIndex];
+      const outwardWarehouseId = firstStockUnit.current_warehouse_id;
+
       for (let j = 0; j < itemCount; j++) {
-        const stockUnit = availableStockUnits[stockIndex++];
+        const stockUnit = availableStockUnits[stockIndex];
+
+        // Skip if this stock unit is from a different warehouse
+        if (stockUnit.current_warehouse_id !== outwardWarehouseId) {
+          stockIndex++;
+          continue;
+        }
+
+        stockIndex++;
         const useFullQty = Math.random() < 0.4; // 40% use full quantity
         const quantity = useFullQty
           ? stockUnit.remaining_quantity
@@ -1354,6 +1367,9 @@ async function generateGoodsOutwards(
           quantity: quantity,
         });
       }
+
+      // Skip if no valid stock units
+      if (stockUnitItems.length === 0) continue;
 
       // Get a random partner for the outward (constraint requires partner_id OR to_warehouse_id)
       const partnerId =
@@ -1373,7 +1389,7 @@ async function generateGoodsOutwards(
       const { error } = await supabase.rpc("create_goods_outward_with_items", {
         p_outward_data: {
           company_id: companyId,
-          warehouse_id: warehouseId,
+          warehouse_id: outwardWarehouseId,
           partner_id: partnerId,
           outward_type: "other",
           other_reason: reason,
@@ -3443,6 +3459,9 @@ async function loadTestData() {
 
   const productIds = productsList.map((p) => p.id);
 
+  // Use current year for all data generation to match stock unit timestamps
+  const currentYear = new Date().getFullYear();
+
   // Generate purchase orders first (needed for linking goods inwards)
   const purchaseOrders = await generatePurchaseOrders(
     companyId,
@@ -3451,7 +3470,7 @@ async function loadTestData() {
     supplierIds,
     agentIds,
     productIds,
-    2025,
+    currentYear,
   );
 
   // Generate sales orders
@@ -3461,7 +3480,7 @@ async function loadTestData() {
     userId,
     customerIds,
     productIds,
-    2025,
+    currentYear,
   );
 
   // PHASE 1: Approve orders so they can receive goods movements
@@ -3475,17 +3494,17 @@ async function loadTestData() {
     supplierIds,
     productIds,
     lotNumbers,
-    2025,
+    currentYear,
   );
 
   // Finalize purchase order statuses after goods inwards
   await finalizeOrderStatuses(purchaseOrders, "purchase");
 
   // Generate goods transfers (before outwards so stock units are available)
-  await generateGoodsTransfers(companyId, warehouses, userId, 2025);
+  await generateGoodsTransfers(companyId, warehouses, userId, currentYear);
 
   // Generate goods outwards
-  await generateGoodsOutwards(companyId, warehouseId, userId, 2025);
+  await generateGoodsOutwards(companyId, warehouseId, userId, currentYear);
 
   // Finalize sales order statuses after goods outwards
   await finalizeOrderStatuses(salesOrders, "sales");
@@ -3501,7 +3520,7 @@ async function loadTestData() {
     userId,
     productIds,
     salesOrders,
-    2025,
+    currentYear,
   );
 
   // Generate purchase invoices
@@ -3511,7 +3530,7 @@ async function loadTestData() {
     userId,
     productIds,
     purchaseOrders,
-    2025,
+    currentYear,
   );
 
   // Add additional charges to invoices

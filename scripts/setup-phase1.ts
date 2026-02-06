@@ -1,0 +1,353 @@
+/**
+ * Setup Script - Minimal Test Data
+ * Creates a fresh test environment with minimal data for development
+ *
+ * Usage:
+ *   npx tsx scripts/setup.ts [local|staging]
+ *
+ * Phase 1: Core Setup (Company, Warehouses, Partners, Attributes, Products)
+ * - Company + Catalog + Admin User
+ * - 5 Warehouses (2 business + 3 vendor factories)
+ * - 9 Partners (3 customers + 2 suppliers + 2 vendors + 2 agents)
+ * - Attributes (6 materials + 6 colors + 19 tags)
+ * - 100 Products (template-based)
+ */
+
+import type { Database } from "@/types/database";
+
+// ============================================================================
+// IMPORTS - Modules & Config
+// ============================================================================
+
+import { initializeEnvironment, createSupabaseClient } from "./modules/shared";
+import {
+  ensureCompany,
+  ensureCatalogConfiguration,
+  ensureAdminUser,
+} from "./modules/company";
+import { ensureWarehouses } from "./modules/warehouse";
+import { ensurePartners } from "./modules/partners";
+import { ensureAllAttributes } from "./modules/attributes";
+import { ensureProducts } from "./modules/products";
+import { generateSalesOrders } from "./modules/sales-orders";
+import { generatePurchaseOrders } from "./modules/purchase-orders";
+import { generateGoodsInwards } from "./modules/goods-inwards";
+import { generateGoodsTransfers } from "./modules/goods-transfers";
+import { generateGoodsOutwards } from "./modules/goods-outwards";
+import {
+  generateSalesInvoices,
+  generatePurchaseInvoices,
+  fetchChargeLedgers,
+} from "./modules/invoices";
+import {
+  generateSalesAdjustmentNotes,
+  generatePurchaseAdjustmentNotes,
+  fetchReturnLedgers,
+} from "./modules/adjustment-notes";
+import {
+  generatePaymentReceipts,
+  generatePaymentMade,
+  fetchPaymentLedgers,
+} from "./modules/payments";
+import { generateQRBatches } from "./modules/qr-batches";
+import {
+  ALL_WAREHOUSES,
+  BUSINESS_WAREHOUSES,
+  VENDOR_FACTORIES,
+} from "./config/warehouses.config";
+import { ALL_TEST_PARTNERS } from "./config/partners.config";
+import { MATERIALS, COLORS, TAGS } from "./config/attributes.config";
+import { PRODUCT_TEMPLATES } from "./config/product-templates.config";
+import { LOT_NUMBERS } from "./config/lot-numbers.config";
+import { GOODS_INWARDS_CONFIG } from "./config/goods-inwards.config";
+import { GOODS_TRANSFERS_CONFIG } from "./config/goods-transfers.config";
+import { GOODS_OUTWARDS_CONFIG } from "./config/goods-outwards.config";
+import { ADJUSTMENT_NOTES_CONFIG } from "./config/adjustment-notes.config";
+import { PAYMENTS_CONFIG } from "./config/payments.config";
+import { QR_BATCHES_CONFIG } from "./config/qr-batches.config";
+
+
+// ============================================================================
+// MAIN SETUP FUNCTION
+// ============================================================================
+
+async function runSetup() {
+  console.log("🚀 Starting Setup Script - Minimal Test Data\n");
+  console.log("=" + "=".repeat(79) + "\n");
+
+  // Initialize environment and Supabase client
+  const env = initializeEnvironment();
+  const supabase = createSupabaseClient(
+    env.supabaseUrl,
+    env.supabaseServiceKey,
+  );
+
+  try {
+    // ========================================================================
+    // PHASE 1: CORE SETUP
+    // ========================================================================
+
+    console.log("📋 PHASE 1: Core Setup\n");
+
+    // Step 1: Company
+    const { companyId, companyName } = await ensureCompany(supabase);
+
+    // Step 2: Catalog Configuration
+    await ensureCatalogConfiguration(supabase, companyId);
+
+    // Step 3: Warehouses (5 total)
+    const warehouses = await ensureWarehouses(
+      supabase,
+      companyId,
+      ALL_WAREHOUSES,
+    );
+
+    // Step 4: Admin User (assigned to first warehouse)
+    const userId = await ensureAdminUser(supabase, companyId, warehouses[0].id);
+
+    // Step 5: Partners (9 total)
+    const partners = await ensurePartners(
+      supabase,
+      companyId,
+      ALL_TEST_PARTNERS,
+    );
+
+    // Step 6: Attributes (materials, colors, tags)
+    const attributes = await ensureAllAttributes(
+      supabase,
+      companyId,
+      MATERIALS,
+      COLORS,
+      TAGS,
+    );
+
+    // Create attribute ID mappings for product creation
+    const attributeIds = {
+      materials: Object.fromEntries(
+        attributes.materials.map((m) => [m.name, m.id]),
+      ),
+      colors: Object.fromEntries(attributes.colors.map((c) => [c.name, c.id])),
+      tags: Object.fromEntries(attributes.tags.map((t) => [t.name, t.id])),
+    };
+
+    // Step 7: Products (100 from templates)
+    const products = await ensureProducts(
+      supabase,
+      companyId,
+      userId,
+      PRODUCT_TEMPLATES,
+      attributeIds,
+    );
+
+    // Extract partner IDs by type
+    const customerIds = partners
+      .filter((p) => p.partner_type === "customer")
+      .map((p) => p.id);
+    const supplierIds = partners
+      .filter((p) => p.partner_type === "supplier")
+      .map((p) => p.id);
+    const agentIds = partners
+      .filter((p) => p.partner_type === "agent")
+      .map((p) => p.id);
+    const productIds = products.map((p) => p.id);
+
+    // Use a fixed year for data generation for consistency in minimal setup
+    const currentYear = 2025; 
+
+    // Step 8: Sales Orders (50 for minimal setup)
+    const salesOrders = await generateSalesOrders(
+      supabase,
+      companyId,
+      warehouses,
+      userId,
+      customerIds,
+      productIds,
+      {
+        totalOrders: 50,
+        year: currentYear,
+      },
+    );
+
+    // Step 9: Purchase Orders (40 for minimal setup)
+    const purchaseOrders = await generatePurchaseOrders(
+      supabase,
+      companyId,
+      warehouses,
+      userId,
+      supplierIds,
+      agentIds,
+      productIds,
+      {
+        totalOrders: 40,
+        year: currentYear,
+      },
+    );
+
+    // Step 10: Goods Inwards (80% of purchase orders)
+    const goodsInwards = await generateGoodsInwards(
+      supabase,
+      companyId,
+      userId,
+      [...LOT_NUMBERS],
+      GOODS_INWARDS_CONFIG,
+    );
+
+    // Step 11: Goods Transfers - Warehouse to Factory (15 transfers)
+    const transfersToFactory = await generateGoodsTransfers(
+      supabase,
+      companyId,
+      userId,
+      warehouses,
+      GOODS_TRANSFERS_CONFIG,
+      {
+        totalTransfers: 15,
+        direction: "warehouse_to_factory",
+        year: currentYear,
+      },
+    );
+
+    // Step 12: Goods Transfers - Factory to Warehouse (15 transfers)
+    const transfersToWarehouse = await generateGoodsTransfers(
+      supabase,
+      companyId,
+      userId,
+      warehouses,
+      GOODS_TRANSFERS_CONFIG,
+      {
+        totalTransfers: 30, // Total cumulative (15 + 15)
+        direction: "factory_to_warehouse",
+        year: currentYear,
+      },
+    );
+
+    // Step 13: Goods Outwards (60% of sales orders)
+    const goodsOutwards = await generateGoodsOutwards(
+      supabase,
+      companyId,
+      userId,
+      GOODS_OUTWARDS_CONFIG,
+    );
+
+    // Step 14: Fetch charge ledgers (reusable for both invoice types)
+    const chargeLedgers = await fetchChargeLedgers(supabase, companyId);
+
+    // Step 15: Sales Invoices (with additional charges inline)
+    const salesInvoices = await generateSalesInvoices(
+      supabase,
+      companyId,
+      userId,
+      currentYear,
+      chargeLedgers,
+    );
+
+    // Step 16: Purchase Invoices (with additional charges inline)
+    const purchaseInvoices = await generatePurchaseInvoices(
+      supabase,
+      companyId,
+      userId,
+      currentYear,
+      chargeLedgers,
+    );
+
+    // Step 17: Fetch return ledgers (reusable for both adjustment note types)
+    const returnLedgers = await fetchReturnLedgers(supabase, companyId);
+
+    // Step 18: Sales Adjustment Notes (credit/debit notes for sales invoices)
+    const salesAdjustmentNotes = await generateSalesAdjustmentNotes(
+      supabase,
+      companyId,
+      userId,
+      warehouses[0].id, // Use first warehouse for adjustment notes
+      productIds,
+      ADJUSTMENT_NOTES_CONFIG,
+      returnLedgers,
+    );
+
+    // Step 19: Purchase Adjustment Notes (credit/debit notes for purchase invoices)
+    const purchaseAdjustmentNotes = await generatePurchaseAdjustmentNotes(
+      supabase,
+      companyId,
+      userId,
+      warehouses[0].id, // Use first warehouse for adjustment notes
+      productIds,
+      ADJUSTMENT_NOTES_CONFIG,
+      returnLedgers,
+    );
+
+    // Step 20: Fetch payment ledgers (reusable for both payment types)
+    const paymentLedgers = await fetchPaymentLedgers(supabase, companyId);
+
+    // Step 21: Payment Receipts (customer payments for sales invoices)
+    const paymentReceipts = await generatePaymentReceipts(
+      supabase,
+      companyId,
+      userId,
+      PAYMENTS_CONFIG,
+      paymentLedgers,
+    );
+
+    // Step 22: Payment Made (supplier payments for purchase invoices)
+    const paymentMade = await generatePaymentMade(
+      supabase,
+      companyId,
+      userId,
+      PAYMENTS_CONFIG,
+      paymentLedgers,
+    );
+
+    // Step 23: QR Batches (QR code batches for stock units)
+    const qrBatches = await generateQRBatches(
+      supabase,
+      companyId,
+      warehouses,
+      userId,
+      QR_BATCHES_CONFIG,
+    );
+
+    // ========================================================================
+    // SUMMARY
+    // ========================================================================
+
+    console.log("\n" + "=".repeat(80));
+    console.log("✅ SETUP COMPLETE - MINIMAL TEST DATA");
+    console.log("=".repeat(80) + "\n");
+
+    console.log("📊 Summary:");
+    console.log(`   Company: ${companyName} (${companyId})`);
+    console.log(`   Warehouses: ${warehouses.length}`);
+    console.log(`   Partners: ${partners.length}`);
+    console.log(
+      `   Attributes: ${attributes.materials.length} materials, ${attributes.colors.length} colors, ${attributes.tags.length} tags`,
+    );
+    console.log(`   Products: ${products.length}`);
+    console.log(`   Sales Orders: ${salesOrders.length}`);
+    console.log(`   Purchase Orders: ${purchaseOrders.length}`);
+    console.log(`   Goods Inwards: ${goodsInwards.length}`);
+    console.log(
+      `   Goods Transfers: ${transfersToWarehouse.length} total (warehouse→factory + factory→warehouse)`,
+    );
+    console.log(`   Goods Outwards: ${goodsOutwards.length}`);
+    console.log(`   Sales Invoices: ${salesInvoices.length}`);
+    console.log(`   Purchase Invoices: ${purchaseInvoices.length}`);
+    console.log(`   Total Invoices: ${salesInvoices.length + purchaseInvoices.length}`);
+    console.log(`   Sales Adjustment Notes: ${salesAdjustmentNotes.length}`);
+    console.log(`   Purchase Adjustment Notes: ${purchaseAdjustmentNotes.length}`);
+    console.log(`   Total Adjustment Notes: ${salesAdjustmentNotes.length + purchaseAdjustmentNotes.length}`);
+    console.log(`   Payment Receipts: ${paymentReceipts.length}`);
+    console.log(`   Payment Made: ${paymentMade.length}`);
+    console.log(`   Total Payments: ${paymentReceipts.length + paymentMade.length}`);
+    console.log(`   QR Batches: ${qrBatches.length}`);
+    console.log(`   Admin User ID: ${userId}\n`);
+
+    console.log("🎉 You can now start using the application!\n");
+  } catch (error) {
+    console.error("\n❌ Setup failed:", error);
+    process.exit(1);
+  }
+}
+
+// ============================================================================
+// RUN
+// ============================================================================
+
+runSetup();
