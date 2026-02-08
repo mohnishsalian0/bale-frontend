@@ -67,9 +67,9 @@ CREATE TABLE goods_inwards (
 );
 
 
--- Now add the missing foreign key constraint to stock_units
-ALTER TABLE stock_units ADD CONSTRAINT fk_stock_unit_inward
-    FOREIGN KEY (created_from_inward_id) REFERENCES goods_inwards(id);
+-- Now add the foreign key constraint from stock_units to goods_inwards
+ALTER TABLE stock_units ADD CONSTRAINT fk_stock_unit_origin_inward
+    FOREIGN KEY (origin_inward_id) REFERENCES goods_inwards(id);
 
 -- =====================================================
 -- INDEXES FOR PERFORMANCE
@@ -107,9 +107,7 @@ CREATE TRIGGER set_goods_inwards_modified_by
 CREATE OR REPLACE FUNCTION auto_generate_inward_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.sequence_number IS NULL THEN
-        NEW.sequence_number := get_next_sequence('goods_inwards', NEW.company_id);
-    END IF;
+		NEW.sequence_number := get_next_sequence('goods_inwards', NEW.company_id);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -174,7 +172,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('inventory.goods_inward.read')
+    authorize('inventory.inward.read')
 );
 
 -- Authorized users can create goods inwards in their assigned warehouses
@@ -185,7 +183,7 @@ TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('inventory.goods_inward.create')
+    authorize('inventory.inward.create')
 );
 
 -- Authorized users can update goods inwards in their assigned warehouses
@@ -196,12 +194,12 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('inventory.goods_inward.update')
+    authorize('inventory.inward.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('inventory.goods_inward.update')
+    authorize('inventory.inward.update')
 );
 
 -- Authorized users can delete goods inwards
@@ -212,7 +210,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('inventory.goods_inward.delete')
+    authorize('inventory.inward.delete')
 );
 
 -- =====================================================

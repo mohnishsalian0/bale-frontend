@@ -93,12 +93,14 @@ BEGIN
             END IF;
         END IF;
 
-        -- Create new stock units with lot_number_attribute_id FK
+        -- Create new stock units with origin tracking
         INSERT INTO stock_units (
             company_id,
             current_warehouse_id,
             product_id,
-            created_from_inward_id,
+            origin_type,
+            origin_inward_id,
+            origin_convert_id,
             remaining_quantity,
             initial_quantity,
             lot_number_attribute_id,
@@ -112,7 +114,9 @@ BEGIN
             v_company_id,
             v_warehouse_id,
             v_product_id,
+            'inward',
             v_inward_id,
+            NULL,
             v_quantity,
             v_quantity,
             v_lot_attribute_id,
@@ -146,15 +150,21 @@ AS $$
 DECLARE
     v_outward_id UUID;
     v_company_id UUID;
+    v_warehouse_id UUID;
+    v_outward_date DATE;
     v_stock_unit_item JSONB;
     v_stock_unit_id UUID;
     v_dispatch_quantity DECIMAL;
+    v_stock_unit RECORD;
 BEGIN
     -- Derive company_id from JWT if not provided (short-circuit evaluation)
     v_company_id := COALESCE(
         (p_outward_data->>'company_id')::UUID,
         get_jwt_company_id()
     );
+
+    v_warehouse_id := (p_outward_data->>'warehouse_id')::UUID;
+    v_outward_date := (p_outward_data->>'outward_date')::DATE;
 
     -- Insert goods outward
     INSERT INTO goods_outwards (
@@ -196,6 +206,40 @@ BEGIN
     LOOP
         v_stock_unit_id := (v_stock_unit_item->>'stock_unit_id')::UUID;
         v_dispatch_quantity := (v_stock_unit_item->>'quantity')::DECIMAL;
+
+        -- Get stock unit details with row lock
+        SELECT * INTO v_stock_unit
+        FROM stock_units
+        WHERE id = v_stock_unit_id
+        FOR UPDATE;
+
+        IF v_stock_unit IS NULL THEN
+            RAISE EXCEPTION 'Stock unit % not found', v_stock_unit_id;
+        END IF;
+
+        -- Validate stock unit is at outward warehouse
+        IF v_stock_unit.current_warehouse_id != v_warehouse_id THEN
+            RAISE EXCEPTION 'Stock unit % is not at outward warehouse. Current location: %, Expected: %',
+                v_stock_unit_id, v_stock_unit.current_warehouse_id, v_warehouse_id;
+        END IF;
+
+        -- Validate stock unit status is available
+        IF v_stock_unit.status != 'available' THEN
+            RAISE EXCEPTION 'Stock unit % is not available (status: %). Cannot dispatch',
+                v_stock_unit_id, v_stock_unit.status;
+        END IF;
+
+        -- Validate quantity
+        IF v_dispatch_quantity > v_stock_unit.remaining_quantity THEN
+            RAISE EXCEPTION 'Cannot dispatch % from stock unit % - only % remaining',
+                v_dispatch_quantity, v_stock_unit_id, v_stock_unit.remaining_quantity;
+        END IF;
+
+        -- Chronological validation
+        IF v_stock_unit.last_activity_date IS NOT NULL AND v_outward_date < v_stock_unit.last_activity_date THEN
+            RAISE EXCEPTION 'Cannot create outward with outward_date % before last activity on stock unit % (last activity: %)',
+                v_outward_date, v_stock_unit_id, v_stock_unit.last_activity_date;
+        END IF;
 
         -- Insert goods outward item
         -- Stock unit remaining_quantity will be auto-reconciled by trigger
@@ -265,7 +309,7 @@ BEGIN
     INTO v_product_names
     FROM stock_units su
     JOIN products p ON p.id = su.product_id
-    WHERE su.created_from_inward_id = NEW.id;
+    WHERE su.origin_inward_id = NEW.id;
 
     -- Get sales order sequence number (if linked)
     IF NEW.sales_order_id IS NOT NULL THEN

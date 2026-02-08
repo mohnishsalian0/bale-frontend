@@ -116,6 +116,7 @@ export async function ensureProducts(
       return {
         company_id: companyId,
         name: template.name,
+        sequence_number: 0,
         product_code: productCode,
         gsm,
         thread_count_cm: threadCount,

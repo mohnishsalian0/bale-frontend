@@ -106,9 +106,7 @@ CREATE TRIGGER set_sales_orders_modified_by
 CREATE OR REPLACE FUNCTION auto_generate_order_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.sequence_number IS NULL THEN
-        NEW.sequence_number := get_next_sequence('sales_orders', NEW.company_id);
-    END IF;
+		NEW.sequence_number := get_next_sequence('sales_orders', NEW.company_id);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

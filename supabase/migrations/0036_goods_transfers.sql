@@ -27,6 +27,7 @@ CREATE TABLE goods_transfers (
     -- Status tracking
     status VARCHAR(20) NOT NULL DEFAULT 'in_transit'
         CHECK (status IN ('in_transit', 'completed', 'cancelled')),
+    completion_date DATE,
     completed_at TIMESTAMPTZ,
     completed_by UUID,
     cancelled_at TIMESTAMPTZ,
@@ -109,9 +110,7 @@ CREATE TRIGGER update_goods_transfer_items_updated_at
 CREATE OR REPLACE FUNCTION auto_generate_transfer_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.sequence_number IS NULL THEN
-        NEW.sequence_number := get_next_sequence('goods_transfers', NEW.company_id);
-    END IF;
+		NEW.sequence_number := get_next_sequence('goods_transfers', NEW.company_id);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -222,7 +221,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     (has_warehouse_access(from_warehouse_id) OR has_warehouse_access(to_warehouse_id)) AND
-    authorize('inventory.goods_transfers.read')
+    authorize('inventory.transfers.read')
 );
 
 -- Users can create transfers from their assigned warehouses
@@ -233,7 +232,7 @@ TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(from_warehouse_id) AND
-    authorize('inventory.goods_transfers.create')
+    authorize('inventory.transfers.create')
 );
 
 -- Users can update transfers involving their warehouses
@@ -244,12 +243,12 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     (has_warehouse_access(from_warehouse_id) OR has_warehouse_access(to_warehouse_id)) AND
-    authorize('inventory.goods_transfers.update')
+    authorize('inventory.transfers.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     (has_warehouse_access(from_warehouse_id) OR has_warehouse_access(to_warehouse_id)) AND
-    authorize('inventory.goods_transfers.update')
+    authorize('inventory.transfers.update')
 );
 
 -- Users can delete transfers from their warehouses
@@ -260,7 +259,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(from_warehouse_id) AND
-    authorize('inventory.goods_transfers.delete')
+    authorize('inventory.transfers.delete')
 );
 
 -- =====================================================
@@ -285,7 +284,7 @@ USING (
             has_warehouse_access(goods_transfers.to_warehouse_id)
         )
     ) AND
-    authorize('inventory.goods_transfers.read')
+    authorize('inventory.transfers.read')
 );
 
 -- Users can create transfer items for their transfers
@@ -301,7 +300,7 @@ WITH CHECK (
         AND goods_transfers.company_id = get_jwt_company_id()
         AND has_warehouse_access(goods_transfers.from_warehouse_id)
     ) AND
-    authorize('inventory.goods_transfers.create')
+    authorize('inventory.transfers.create')
 );
 
 -- Users can update transfer items
@@ -320,11 +319,11 @@ USING (
             has_warehouse_access(goods_transfers.to_warehouse_id)
         )
     ) AND
-    authorize('inventory.goods_transfers.update')
+    authorize('inventory.transfers.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
-    authorize('inventory.goods_transfers.update')
+    authorize('inventory.transfers.update')
 );
 
 -- Users can delete transfer items
@@ -340,7 +339,7 @@ USING (
         AND goods_transfers.company_id = get_jwt_company_id()
         AND has_warehouse_access(goods_transfers.from_warehouse_id)
     ) AND
-    authorize('inventory.goods_transfers.delete')
+    authorize('inventory.transfers.delete')
 );
 
 -- =====================================================

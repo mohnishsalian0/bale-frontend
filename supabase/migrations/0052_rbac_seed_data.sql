@@ -104,6 +104,13 @@ INSERT INTO permissions (permission_path, display_name, description, category) V
 ('inventory.transfers.update', 'Update Transfers', 'Edit transfer records (includes complete/cancel)', 'inventory'),
 ('inventory.transfers.delete', 'Delete Transfers', 'Remove transfer records', 'inventory');
 
+-- Goods Converts
+INSERT INTO permissions (permission_path, display_name, description, category) VALUES
+('inventory.converts.read', 'View Converts', 'View goods conversion records', 'inventory'),
+('inventory.converts.create', 'Create Converts', 'Create goods conversions', 'inventory'),
+('inventory.converts.update', 'Update Converts', 'Edit conversion records (includes complete/cancel)', 'inventory'),
+('inventory.converts.delete', 'Delete Converts', 'Remove conversion records', 'inventory');
+
 -- =====================================================
 -- ORDERS MODULE
 -- =====================================================
@@ -212,6 +219,10 @@ AND p.permission_path IN (
     'inventory.transfers.create',
     'inventory.transfers.update',
     'inventory.transfers.delete',
+    'inventory.converts.read',
+    'inventory.converts.create',
+    'inventory.converts.update',
+    'inventory.converts.delete',
 
     -- Orders Module: Full CRUD (warehouse-scoped via RLS)
     'orders.sales_orders.read',
@@ -259,6 +270,7 @@ AND p.permission_path IN (
     'inventory.inward.read',
     'inventory.outward.read',
     'inventory.transfers.read',
+    'inventory.converts.read',
 
     -- Orders Module: Full CRUD
     'orders.sales_orders.read',

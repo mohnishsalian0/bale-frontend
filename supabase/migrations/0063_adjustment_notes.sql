@@ -165,9 +165,7 @@ BEGIN
     END IF;
 
     -- Generate sequence number if not provided
-    IF NEW.sequence_number IS NULL THEN
-        NEW.sequence_number := get_next_sequence('adjustment_notes_' || NEW.adjustment_type, NEW.company_id);
-    END IF;
+		NEW.sequence_number := get_next_sequence('adjustment_notes_' || NEW.adjustment_type, NEW.company_id);
 
     -- Generate adjustment number: CN/2024-25/0001
     NEW.adjustment_number := v_prefix || '/' ||

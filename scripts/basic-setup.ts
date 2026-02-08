@@ -19,7 +19,11 @@ import type { Database } from "@/types/database";
 // IMPORTS - Modules & Config
 // ============================================================================
 
-import { initializeEnvironment, createSupabaseClient } from "./modules/shared";
+import {
+  initializeEnvironment,
+  createSupabaseClient,
+  updateRecords,
+} from "./modules/shared";
 import {
   ensureCompany,
   ensureCatalogConfiguration,
@@ -50,11 +54,7 @@ import {
   fetchPaymentLedgers,
 } from "./modules/payments";
 import { generateQRBatches } from "./modules/qr-batches";
-import {
-  ALL_WAREHOUSES,
-  BUSINESS_WAREHOUSES,
-  VENDOR_FACTORIES,
-} from "./config/warehouses.config";
+import { ALL_WAREHOUSES } from "./config/warehouses.config";
 import { ALL_TEST_PARTNERS } from "./config/partners.config";
 import { MATERIALS, COLORS, TAGS } from "./config/attributes.config";
 import { PRODUCT_TEMPLATES } from "./config/product-templates.config";
@@ -65,7 +65,6 @@ import { GOODS_OUTWARDS_CONFIG } from "./config/goods-outwards.config";
 import { ADJUSTMENT_NOTES_CONFIG } from "./config/adjustment-notes.config";
 import { PAYMENTS_CONFIG } from "./config/payments.config";
 import { QR_BATCHES_CONFIG } from "./config/qr-batches.config";
-
 
 // ============================================================================
 // MAIN SETUP FUNCTION
@@ -152,7 +151,7 @@ async function runSetup() {
     const productIds = products.map((p) => p.id);
 
     // Use a fixed year for data generation for consistency in minimal setup
-    const currentYear = 2025; 
+    const currentYear = 2025;
 
     // Step 8: Sales Orders (50 for minimal setup)
     const salesOrders = await generateSalesOrders(
@@ -193,6 +192,18 @@ async function runSetup() {
     );
 
     // Step 11: Goods Transfers - Warehouse to Factory (15 transfers)
+    const purchaseOrderCompletionRecords = Object.fromEntries(
+      purchaseOrders
+        .filter(() => Math.random() < 0.5)
+        .map((po) => [po.id, { status: "completed" }]),
+    );
+    await updateRecords(
+      supabase,
+      "purchase_orders",
+      purchaseOrderCompletionRecords,
+    );
+
+    // Step 12: Goods Transfers - Warehouse to Factory (15 transfers)
     const transfersToFactory = await generateGoodsTransfers(
       supabase,
       companyId,
@@ -206,7 +217,7 @@ async function runSetup() {
       },
     );
 
-    // Step 12: Goods Transfers - Factory to Warehouse (15 transfers)
+    // Step 13: Goods Transfers - Factory to Warehouse (15 transfers)
     const transfersToWarehouse = await generateGoodsTransfers(
       supabase,
       companyId,
@@ -220,7 +231,7 @@ async function runSetup() {
       },
     );
 
-    // Step 13: Goods Outwards (60% of sales orders)
+    // Step 14: Goods Outwards (60% of sales orders)
     const goodsOutwards = await generateGoodsOutwards(
       supabase,
       companyId,
@@ -228,10 +239,18 @@ async function runSetup() {
       GOODS_OUTWARDS_CONFIG,
     );
 
-    // Step 14: Fetch charge ledgers (reusable for both invoice types)
+    // Step 15: Goods Transfers - Warehouse to Factory (15 transfers)
+    const salesOrderCompletionRecords = Object.fromEntries(
+      salesOrders
+        .filter(() => Math.random() < 0.5)
+        .map((po) => [po.id, { status: "completed" }]),
+    );
+    await updateRecords(supabase, "sales_orders", salesOrderCompletionRecords);
+
+    // Step 16: Fetch charge ledgers (reusable for both invoice types)
     const chargeLedgers = await fetchChargeLedgers(supabase, companyId);
 
-    // Step 15: Sales Invoices (with additional charges inline)
+    // Step 17: Sales Invoices (with additional charges inline)
     const salesInvoices = await generateSalesInvoices(
       supabase,
       companyId,
@@ -240,7 +259,7 @@ async function runSetup() {
       chargeLedgers,
     );
 
-    // Step 16: Purchase Invoices (with additional charges inline)
+    // Step 19: Purchase Invoices (with additional charges inline)
     const purchaseInvoices = await generatePurchaseInvoices(
       supabase,
       companyId,
@@ -249,10 +268,10 @@ async function runSetup() {
       chargeLedgers,
     );
 
-    // Step 17: Fetch return ledgers (reusable for both adjustment note types)
+    // Step 20: Fetch return ledgers (reusable for both adjustment note types)
     const returnLedgers = await fetchReturnLedgers(supabase, companyId);
 
-    // Step 18: Sales Adjustment Notes (credit/debit notes for sales invoices)
+    // Step 21: Sales Adjustment Notes (credit/debit notes for sales invoices)
     const salesAdjustmentNotes = await generateSalesAdjustmentNotes(
       supabase,
       companyId,
@@ -263,7 +282,7 @@ async function runSetup() {
       returnLedgers,
     );
 
-    // Step 19: Purchase Adjustment Notes (credit/debit notes for purchase invoices)
+    // Step 22: Purchase Adjustment Notes (credit/debit notes for purchase invoices)
     const purchaseAdjustmentNotes = await generatePurchaseAdjustmentNotes(
       supabase,
       companyId,
@@ -274,10 +293,10 @@ async function runSetup() {
       returnLedgers,
     );
 
-    // Step 20: Fetch payment ledgers (reusable for both payment types)
+    // Step 23: Fetch payment ledgers (reusable for both payment types)
     const paymentLedgers = await fetchPaymentLedgers(supabase, companyId);
 
-    // Step 21: Payment Receipts (customer payments for sales invoices)
+    // Step 24: Payment Receipts (customer payments for sales invoices)
     const paymentReceipts = await generatePaymentReceipts(
       supabase,
       companyId,
@@ -286,7 +305,7 @@ async function runSetup() {
       paymentLedgers,
     );
 
-    // Step 22: Payment Made (supplier payments for purchase invoices)
+    // Step 25: Payment Made (supplier payments for purchase invoices)
     const paymentMade = await generatePaymentMade(
       supabase,
       companyId,
@@ -295,7 +314,7 @@ async function runSetup() {
       paymentLedgers,
     );
 
-    // Step 23: QR Batches (QR code batches for stock units)
+    // Step 26: QR Batches (QR code batches for stock units)
     const qrBatches = await generateQRBatches(
       supabase,
       companyId,
@@ -324,18 +343,32 @@ async function runSetup() {
     console.log(`   Purchase Orders: ${purchaseOrders.length}`);
     console.log(`   Goods Inwards: ${goodsInwards.length}`);
     console.log(
-      `   Goods Transfers: ${transfersToWarehouse.length} total (warehouse→factory + factory→warehouse)`,
+      `   Purchase Order completions: ${purchaseOrderCompletionRecords.length}`,
+    );
+    console.log(
+      `   Goods Transfers: ${transfersToFactory.length + transfersToWarehouse.length} total (warehouse→factory + factory→warehouse)`,
     );
     console.log(`   Goods Outwards: ${goodsOutwards.length}`);
+    console.log(
+      `   Sales Order completions: ${salesOrderCompletionRecords.length}`,
+    );
     console.log(`   Sales Invoices: ${salesInvoices.length}`);
     console.log(`   Purchase Invoices: ${purchaseInvoices.length}`);
-    console.log(`   Total Invoices: ${salesInvoices.length + purchaseInvoices.length}`);
+    console.log(
+      `   Total Invoices: ${salesInvoices.length + purchaseInvoices.length}`,
+    );
     console.log(`   Sales Adjustment Notes: ${salesAdjustmentNotes.length}`);
-    console.log(`   Purchase Adjustment Notes: ${purchaseAdjustmentNotes.length}`);
-    console.log(`   Total Adjustment Notes: ${salesAdjustmentNotes.length + purchaseAdjustmentNotes.length}`);
+    console.log(
+      `   Purchase Adjustment Notes: ${purchaseAdjustmentNotes.length}`,
+    );
+    console.log(
+      `   Total Adjustment Notes: ${salesAdjustmentNotes.length + purchaseAdjustmentNotes.length}`,
+    );
     console.log(`   Payment Receipts: ${paymentReceipts.length}`);
     console.log(`   Payment Made: ${paymentMade.length}`);
-    console.log(`   Total Payments: ${paymentReceipts.length + paymentMade.length}`);
+    console.log(
+      `   Total Payments: ${paymentReceipts.length + paymentMade.length}`,
+    );
     console.log(`   QR Batches: ${qrBatches.length}`);
     console.log(`   Admin User ID: ${userId}\n`);
 

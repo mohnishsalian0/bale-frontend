@@ -59,6 +59,7 @@ export async function ensureCompany(
     .from("companies")
     .insert({
       name: "Bale Test Company",
+      slug: "",
       gst_number: "27AABCT1234A1Z5",
       pan_number: "AABCT1234A",
       business_type: "Textile Manufacturing",

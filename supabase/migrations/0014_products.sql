@@ -109,9 +109,7 @@ CREATE TRIGGER set_products_modified_by
 CREATE OR REPLACE FUNCTION auto_generate_product_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.sequence_number IS NULL THEN
-        NEW.sequence_number := get_next_sequence('products', NEW.company_id);
-    END IF;
+		NEW.sequence_number := get_next_sequence('products', NEW.company_id);
 
     -- Auto-generate product_code if not provided
     IF NEW.product_code IS NULL THEN

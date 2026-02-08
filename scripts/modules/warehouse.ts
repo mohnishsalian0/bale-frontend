@@ -15,8 +15,8 @@ import type { WarehouseConfig } from "../config/warehouses.config";
 export interface WarehouseResult {
   id: string;
   name: string;
-  city: string;
-  state: string;
+  city: string | null;
+  state: string | null;
   distribution_weight: number;
 }
 
@@ -83,6 +83,7 @@ export async function ensureWarehouses(
       toCreate.map((config) => ({
         company_id: companyId,
         name: config.name,
+        slug: "",
         address_line1: config.address_line1,
         city: config.city,
         state: config.state,

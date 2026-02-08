@@ -109,14 +109,13 @@ export async function generateQRBatches(
     console.log(`\n🏭 Processing warehouse: ${warehouse.name}`);
 
     // Fetch available stock units for this warehouse
-    const { data: availableStockUnits, error: stockUnitsError } =
-      await supabase
-        .from("stock_units")
-        .select("id")
-        .eq("company_id", companyId)
-        .eq("current_warehouse_id", warehouse.id)
-        .in("status", ["full", "partial"])
-        .limit(100);
+    const { data: availableStockUnits, error: stockUnitsError } = await supabase
+      .from("stock_units")
+      .select("id")
+      .eq("company_id", companyId)
+      .eq("current_warehouse_id", warehouse.id)
+      .in("status", ["full", "partial"])
+      .limit(100);
 
     if (
       stockUnitsError ||
@@ -145,9 +144,7 @@ export async function generateQRBatches(
     const targetCount = config.batchesPerWarehouse;
 
     if (existingCount >= targetCount) {
-      console.log(
-        `   ✅ Sufficient batches already exist (${existingCount})`,
-      );
+      console.log(`   ✅ Sufficient batches already exist (${existingCount})`);
       // Add existing batches to results
       if (existingBatches) {
         for (const batch of existingBatches) {
@@ -176,10 +173,7 @@ export async function generateQRBatches(
 
     for (let i = 0; i < toCreate; i++) {
       // Generate batch details
-      const templateIndex = randomInt(
-        0,
-        config.batchNameTemplates.length - 1,
-      );
+      const templateIndex = randomInt(0, config.batchNameTemplates.length - 1);
       const template = config.batchNameTemplates[templateIndex];
       const batchDate = generateBatchDate(config);
       const batchName = generateBatchName(template, i, batchDate);
@@ -214,7 +208,7 @@ export async function generateQRBatches(
             created_by: userId,
             created_at: batchDate.toISOString(),
           })
-          .select("id, sequence_number, batch_name")
+          .select("id, batch_name")
           .single();
 
         if (batchError || !newBatch) {
@@ -224,7 +218,6 @@ export async function generateQRBatches(
         }
 
         batchId = newBatch.id;
-        sequenceNumber = newBatch.sequence_number;
         batchNameFinal = newBatch.batch_name;
         console.log(`   ✅ Created batch: ${batchName}`);
       }
@@ -241,7 +234,6 @@ export async function generateQRBatches(
         );
         allBatches.push({
           id: batchId,
-          sequence_number: sequenceNumber,
           batch_name: batchNameFinal,
           total_items: existingItems.length,
         });
@@ -251,10 +243,7 @@ export async function generateQRBatches(
 
       // Add stock units to batch
       const itemCount = Math.min(
-        randomInt(
-          config.stockUnitsPerBatch.min,
-          config.stockUnitsPerBatch.max,
-        ),
+        randomInt(config.stockUnitsPerBatch.min, config.stockUnitsPerBatch.max),
         availableStockUnits.length - stockUnitIndex,
       );
 
@@ -295,7 +284,6 @@ export async function generateQRBatches(
 
       allBatches.push({
         id: batchId,
-        sequence_number: sequenceNumber,
         batch_name: batchNameFinal,
         total_items: addedItems,
       });

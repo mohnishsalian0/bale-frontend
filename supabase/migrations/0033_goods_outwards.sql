@@ -102,9 +102,7 @@ CREATE TRIGGER set_goods_outwards_modified_by
 CREATE OR REPLACE FUNCTION auto_generate_outward_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.sequence_number IS NULL THEN
-        NEW.sequence_number := get_next_sequence('goods_outwards', NEW.company_id);
-    END IF;
+		NEW.sequence_number := get_next_sequence('goods_outwards', NEW.company_id);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -190,7 +188,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('inventory.goods_outward.read')
+    authorize('inventory.outward.read')
 );
 
 -- Authorized users can create goods outwards in their assigned warehouses
@@ -201,7 +199,7 @@ TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('inventory.goods_outward.create')
+    authorize('inventory.outward.create')
 );
 
 -- Authorized users can update goods outwards in their assigned warehouses
@@ -212,12 +210,12 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('inventory.goods_outward.update')
+    authorize('inventory.outward.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('inventory.goods_outward.update')
+    authorize('inventory.outward.update')
 );
 
 -- Authorized users can delete goods outwards in their assigned warehouses
@@ -228,7 +226,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('inventory.goods_outward.delete')
+    authorize('inventory.outward.delete')
 );
 
 -- =====================================================

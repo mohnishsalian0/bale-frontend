@@ -12,6 +12,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { randomInt, randomFloat } from "./shared";
+import { Json } from "@/types/database/supabase";
 
 // ============================================================================
 // TYPES
@@ -212,7 +213,7 @@ export async function generateGoodsOutwards(
       const selected = await selectStockUnitsForDispatch(
         supabase,
         companyId,
-        so.warehouse_id,
+        so.warehouse_id!,
         item.product_id,
         quantityToDispatch,
         preferFifo,
@@ -251,7 +252,7 @@ export async function generateGoodsOutwards(
           notes: "Sales order dispatch - auto-generated test data",
           created_by: userId,
         },
-        p_stock_unit_items: stockUnitItems,
+        p_stock_unit_items: stockUnitItems as unknown as Json[],
       },
     );
 
@@ -267,7 +268,7 @@ export async function generateGoodsOutwards(
       .from("goods_outwards")
       .select("id, sequence_number")
       .eq("company_id", companyId)
-      .eq("sequence_number", sequenceNumber)
+      .eq("sequence_number", Number(sequenceNumber))
       .single();
 
     if (outward) {
@@ -276,7 +277,9 @@ export async function generateGoodsOutwards(
 
     totalCreated++;
     if (totalCreated % 10 === 0) {
-      console.log(`   ✅ Created ${totalCreated}/${toCreate} goods outwards...`);
+      console.log(
+        `   ✅ Created ${totalCreated}/${toCreate} goods outwards...`,
+      );
     }
   }
 

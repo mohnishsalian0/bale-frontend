@@ -2,6 +2,12 @@
 -- Individual fabric rolls/batches tracking with qr code management
 
 -- =====================================================
+-- STOCK UNIT STATUS ENUM
+-- =====================================================
+
+CREATE TYPE stock_unit_status_enum AS ENUM ('available', 'in_transit', 'processing');
+
+-- =====================================================
 -- STOCK UNITS TABLE
 -- =====================================================
 
@@ -21,19 +27,23 @@ CREATE TABLE stock_units (
     lot_number_attribute_id UUID REFERENCES attributes(id) ON DELETE SET NULL, -- FK to attributes table (group_name = 'lot_number')
     quality_grade TEXT, -- Custom quality grade with auto-suggestions from previously used values
     warehouse_location TEXT,
-    
-    -- Status tracking
-    status VARCHAR(20) NOT NULL DEFAULT 'full'
-        CHECK (status IN ('full', 'partial', 'empty', 'removed')),
-    
+
+    -- Status tracking (operational status, not quantity-based)
+    status stock_unit_status_enum NOT NULL DEFAULT 'available',
+
     -- Dates
     manufacturing_date DATE,
 
-    -- Inward tracking (links back to goods inward that created this unit)
-    created_from_inward_id UUID, -- FK will be added in goods movement migration
+    -- Origin tracking (where this unit came from: inward or convert)
+    origin_type VARCHAR(10) NOT NULL DEFAULT 'inward' CHECK (origin_type IN ('inward', 'convert')),
+    origin_inward_id UUID, -- FK will be added in goods movement migration
+    origin_convert_id UUID, -- FK will be added in goods convert migration
 
-    -- Outward tracking (has this unit ever been dispatched)
+    -- Activity tracking flags (has this unit ever been used in these operations)
     has_outward BOOLEAN DEFAULT false,
+    has_convert BOOLEAN DEFAULT false,
+    has_transfers BOOLEAN DEFAULT false,
+    last_activity_date DATE, -- Last date of any activity (outward/convert/transfer/adjustment)
 
     notes TEXT,
 
@@ -46,7 +56,14 @@ CREATE TABLE stock_units (
     created_by UUID NOT NULL DEFAULT get_jwt_user_id(),
     modified_by UUID,
     deleted_at TIMESTAMPTZ,
-    
+
+    -- Business logic constraints
+    CONSTRAINT check_origin_type_consistency
+        CHECK (
+            (origin_type = 'inward' AND origin_inward_id IS NOT NULL AND origin_convert_id IS NULL) OR
+            (origin_type = 'convert' AND origin_convert_id IS NOT NULL AND origin_inward_id IS NULL)
+        ),
+
     UNIQUE(company_id, sequence_number)
 );
 
@@ -67,8 +84,9 @@ CREATE INDEX idx_stock_units_product_id ON stock_units(product_id);
 -- Sequence number lookup within company
 CREATE INDEX idx_stock_units_sequence_number ON stock_units(company_id, sequence_number);
 
--- Inward tracking (for audit trail)
-CREATE INDEX idx_stock_units_inward_id ON stock_units(created_from_inward_id);
+-- Origin tracking (for audit trail)
+CREATE INDEX idx_stock_units_origin_inward_id ON stock_units(origin_inward_id);
+CREATE INDEX idx_stock_units_origin_convert_id ON stock_units(origin_convert_id);
 
 -- Quality grade filtering
 CREATE INDEX idx_stock_units_quality_grade ON stock_units(company_id, quality_grade);
@@ -97,9 +115,7 @@ DECLARE
 	v_stock_type VARCHAR(10);
 	v_prefix VARCHAR(10);
 BEGIN
-    IF NEW.sequence_number IS NULL THEN
-        NEW.sequence_number := get_next_sequence('stock_units', NEW.company_id);
-    END IF;
+		NEW.sequence_number := get_next_sequence('stock_units', NEW.company_id);
 
     -- Only generate if stock_number is not provided
     IF NEW.stock_number IS NULL THEN

@@ -143,9 +143,7 @@ BEGIN
     END IF;
 
     -- Generate sequence number if not provided
-    IF NEW.sequence_number IS NULL THEN
-        NEW.sequence_number := get_next_sequence('payments_' || NEW.voucher_type, NEW.company_id);
-    END IF;
+		NEW.sequence_number := get_next_sequence('payments_' || NEW.voucher_type, NEW.company_id);
 
     -- Generate payment number: PMT/2024-25/0001
     NEW.payment_number := v_prefix || '/' ||

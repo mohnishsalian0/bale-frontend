@@ -300,3 +300,48 @@ export function generatePaymentModeDetails(
 
   return details;
 }
+
+// ============================================================================
+// UPDATE RECORD FUNCTIONS
+// ============================================================================
+
+/**
+ * Apply update to records. Mostly used to update status with other related fields
+ * like completed_at, cancellation reason, etc
+ *
+ * @param supabase - Supabase client
+ * @param tableName - Table name (e.g., "goods_transfers", "sales_orders")
+ * @param records - Dictionary of record IDs <=> update data
+ */
+export async function updateRecords(
+  supabase: SupabaseClient<Database>,
+  tableName: string,
+  records: Record<string, any>,
+) {
+  if (records.length === 0) {
+    return [];
+  }
+
+  let errorCount = 0;
+
+  for (const [id, data] of Object.entries(records)) {
+    const { error } = await supabase
+      .from(tableName as any)
+      .update(data)
+      .eq("id", id);
+
+    if (error) {
+      errorCount++;
+      console.log(error);
+    }
+  }
+
+  if (errorCount) {
+    console.error(`❌ Failed to update ${errorCount} rows in ${tableName}`);
+    return;
+  }
+
+  console.log(
+    `✅ Successfully updated ${Object.keys(records).length} rows in ${tableName}`,
+  );
+}

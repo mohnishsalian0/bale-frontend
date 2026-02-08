@@ -14,7 +14,7 @@ BEGIN
     IF NEW.is_cancelled = TRUE AND OLD.is_cancelled = FALSE THEN
         UPDATE stock_units
         SET deleted_at = NOW()
-        WHERE created_from_inward_id = NEW.id
+        WHERE origin_inward_id = NEW.id
           AND deleted_at IS NULL;  -- Don't re-delete already deleted units
     END IF;
 
@@ -67,7 +67,7 @@ BEGIN
     IF NEW.is_cancelled = TRUE AND OLD.is_cancelled = FALSE THEN
         IF EXISTS(
             SELECT 1 FROM stock_units
-            WHERE created_from_inward_id = OLD.id
+            WHERE origin_inward_id = OLD.id
               AND has_outward = TRUE
               AND deleted_at IS NULL
         ) THEN
@@ -88,7 +88,7 @@ BEGIN
     -- Rule 6: Cannot edit critical fields if ANY stock unit has been dispatched
     IF EXISTS(
         SELECT 1 FROM stock_units
-        WHERE created_from_inward_id = OLD.id
+        WHERE origin_inward_id = OLD.id
           AND has_outward = TRUE
           AND deleted_at IS NULL
     ) AND (
@@ -302,19 +302,13 @@ BEGIN
         RAISE EXCEPTION 'Cannot edit stock unit - unit is deleted';
     END IF;
 
-    -- Rule 2: Cannot edit if status is removed
-    IF OLD.status = 'removed' THEN
-        RAISE EXCEPTION 'Cannot edit stock unit - unit is removed';
-    END IF;
-
-    -- Rule 3: Cannot edit critical fields if unit has been dispatched
-    IF OLD.has_outward = TRUE AND (
-        NEW.product_id IS DISTINCT FROM OLD.product_id OR
-        NEW.current_warehouse_id IS DISTINCT FROM OLD.current_warehouse_id OR
-        NEW.created_from_inward_id IS DISTINCT FROM OLD.created_from_inward_id OR
+    -- Rule 2: Cannot edit critical fields (never allowed)
+    IF NEW.product_id IS DISTINCT FROM OLD.product_id OR
+        NEW.origin_inward_id IS DISTINCT FROM OLD.origin_inward_id OR
+        NEW.origin_convert_id IS DISTINCT FROM OLD.origin_convert_id OR
         NEW.initial_quantity IS DISTINCT FROM OLD.initial_quantity
-    ) THEN
-        RAISE EXCEPTION 'Cannot edit stock unit - unit has been dispatched. Critical fields are locked';
+    THEN
+        RAISE EXCEPTION 'Cannot edit stock unit - critical fields are locked';
     END IF;
 
     RETURN NEW;
@@ -326,7 +320,7 @@ CREATE TRIGGER trigger_prevent_stock_unit_edit
     FOR EACH ROW
     EXECUTE FUNCTION prevent_stock_unit_edit();
 
-COMMENT ON FUNCTION prevent_stock_unit_edit() IS 'Prevents editing stock units that are deleted, removed, or have critical field changes when dispatched. Allows editing quality_grade, location, notes, etc.';
+COMMENT ON FUNCTION prevent_stock_unit_edit() IS 'Prevents editing stock units that are deleted or have critical field changes when dispatched. Allows editing quality_grade, location, notes, etc.';
 
 -- Prevent stock unit deletion in invalid states
 CREATE OR REPLACE FUNCTION prevent_stock_unit_delete()
@@ -343,9 +337,9 @@ BEGIN
         RAISE EXCEPTION 'Cannot delete stock unit - already soft deleted';
     END IF;
 
-    -- Rule 3: Cannot delete if status is removed
-    IF OLD.status = 'removed' THEN
-        RAISE EXCEPTION 'Cannot delete stock unit - unit is removed. Already conceptually deleted';
+    -- Rule 3: Cannot delete if status is 'in_transit' or 'processing'
+    IF OLD.status IN ('in_transit', 'processing') THEN
+        RAISE EXCEPTION 'Cannot delete stock unit - unit is currently % (complete or cancel the operation first)', OLD.status;
     END IF;
 
     RETURN OLD;
@@ -357,4 +351,4 @@ CREATE TRIGGER trigger_prevent_stock_unit_delete
     FOR EACH ROW
     EXECUTE FUNCTION prevent_stock_unit_delete();
 
-COMMENT ON FUNCTION prevent_stock_unit_delete() IS 'Prevents deleting stock units that have outward history, are deleted, or removed. Maintains audit trail integrity.';
+COMMENT ON FUNCTION prevent_stock_unit_delete() IS 'Prevents deleting stock units that have outward history, are deleted, or are in_transit/processing. Maintains audit trail integrity.';

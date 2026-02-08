@@ -19,6 +19,9 @@ CREATE TABLE stock_unit_adjustments (
     adjustment_date DATE NOT NULL,
     reason TEXT NOT NULL,
 
+    -- Convert tracking (links wastage adjustments to their source convert)
+    convert_id UUID, -- FK will be added in goods convert migration
+
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -42,6 +45,9 @@ CREATE INDEX idx_stock_unit_adjustments_stock_unit_id ON stock_unit_adjustments(
 
 -- Date-based filtering
 CREATE INDEX idx_stock_unit_adjustments_date ON stock_unit_adjustments(company_id, adjustment_date);
+
+-- Convert tracking
+CREATE INDEX idx_stock_unit_adjustments_convert_id ON stock_unit_adjustments(convert_id);
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES

@@ -14,7 +14,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import type { TransportType } from "../config/goods-transfers.config";
-import { randomInt, selectRandom } from "./shared";
+import { randomInt, selectRandom, updateRecords } from "./shared";
 import { applyStatusDistribution } from "./record-status";
 
 // ============================================================================
@@ -245,7 +245,7 @@ export async function generateGoodsTransfers(
   console.log(`   Loaded ${allStockUnits.length} eligible stock units`);
 
   // Shuffle stock units for random selection
-  const shuffledStockUnits = [...allStockUnits].sort(() => Math.random() - 0.5);
+  let shuffledStockUnits = [...allStockUnits].sort(() => Math.random() - 0.5);
 
   // Create transfers
   const createdTransfers: GoodsTransferResult[] = [];
@@ -282,10 +282,9 @@ export async function generateGoodsTransfers(
     const selectedStockUnitIds = selectedStockUnits.map((su) => su.id);
 
     // Remove selected stock units from shuffled array to avoid reuse
-    selectedStockUnitIds.forEach((id) => {
-      const index = shuffledStockUnits.findIndex((su) => su.id === id);
-      if (index > -1) shuffledStockUnits.splice(index, 1);
-    });
+    shuffledStockUnits = shuffledStockUnits.filter(
+      (su) => !selectedStockUnitIds.includes(su.id),
+    );
 
     // Get the latest updated_at from selected stock units
     const latestUpdatedAt = selectedStockUnits.reduce((latest, su) => {
@@ -319,10 +318,9 @@ export async function generateGoodsTransfers(
     );
 
     // Random transport type
-    const transportType =
-      config.transportTypes[
-        randomInt(0, config.transportTypes.length - 1)
-      ] as TransportType;
+    const transportType = config.transportTypes[
+      randomInt(0, config.transportTypes.length - 1)
+    ] as TransportType;
 
     const transferData = {
       company_id: companyId,
@@ -344,7 +342,9 @@ export async function generateGoodsTransfers(
     );
 
     if (transferError) {
-      console.error(`   ❌ Failed to create transfer: ${transferError.message}`);
+      console.error(
+        `   ❌ Failed to create transfer: ${transferError.message}`,
+      );
       skippedCount++;
       continue;
     }
@@ -384,47 +384,35 @@ export async function generateGoodsTransfers(
       "Order changed",
     ];
 
-    const statusResults = await applyStatusDistribution(
-      supabase,
-      "goods_transfers",
-      createdTransfers.map((t) => t.id),
-      [
-        {
-          status: "completed",
-          percentage: config.statusDistribution.completed,
-          updateFieldsGenerator: () => {
-            // Generate random completion date (between min and max delivery days)
-            const daysToComplete = randomInt(
-              config.expectedDeliveryDays.min,
-              config.expectedDeliveryDays.max - 1,
-            );
-            const completedDate = new Date();
-            completedDate.setDate(completedDate.getDate() - daysToComplete);
-            return {
-              completed_at: completedDate.toISOString(),
-              completed_by: userId,
-            };
-          },
-        },
-        {
-          status: "in_transit",
-          percentage: config.statusDistribution.in_transit,
-        },
-        {
-          status: "cancelled",
-          percentage: config.statusDistribution.cancelled,
-          updateFieldsGenerator: () => ({
-            cancellation_reason:
-              cancellationReasons[randomInt(0, cancellationReasons.length - 1)],
-          }),
-        },
-      ],
+    const records = Object.fromEntries(
+      createdTransfers.map(({ id }) => {
+        const status = Math.random() < 0.8 ? "completed" : "cancelled";
+        const daysToComplete = randomInt(
+          config.expectedDeliveryDays.min,
+          config.expectedDeliveryDays.max - 1,
+        );
+
+        const completedDate = new Date();
+        completedDate.setDate(completedDate.getDate() - daysToComplete);
+
+        if (status === "cancelled") {
+          return [
+            id,
+            {
+              status,
+              cancellation_reason:
+                cancellationReasons[
+                  randomInt(0, cancellationReasons.length - 1)
+                ],
+            },
+          ];
+        }
+
+        return [id, { status, completed_at: completedDate }];
+      }),
     );
 
-    statusResults.forEach((result) => {
-      const percentage = Math.round((result.count / createdTransfers.length) * 100);
-      console.log(`   • ${result.status}: ${result.count} (${percentage}%)`);
-    });
+    await updateRecords(supabase, "goods_transfers", records);
   }
 
   // Re-query to get all transfers

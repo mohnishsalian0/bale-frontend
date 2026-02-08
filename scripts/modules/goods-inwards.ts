@@ -45,9 +45,7 @@ export async function generateGoodsInwards(
   lotNumbers: string[],
   config: GoodsInwardsConfig,
 ): Promise<GoodsInwardResult[]> {
-  console.log(
-    `\n📥 Ensuring goods inwards exist...\n`,
-  );
+  console.log(`\n📥 Ensuring goods inwards exist...\n`);
 
   // Fetch existing goods inwards for this company
   const { data: existing, error: fetchError } = await supabase
@@ -89,13 +87,13 @@ export async function generateGoodsInwards(
   }
 
   // Calculate target based on purchase order fulfillment rate
-  const targetCount = Math.floor(
-    allPOs.length * config.fulfillmentRate,
-  );
+  const targetCount = Math.floor(allPOs.length * config.fulfillmentRate);
 
   // If count matches expected, return existing
   if (existingCount >= targetCount) {
-    console.log(`✅ Sufficient goods inwards already exist (${existingCount})\n`);
+    console.log(
+      `✅ Sufficient goods inwards already exist (${existingCount})\n`,
+    );
     return existing!;
   }
 
@@ -130,7 +128,10 @@ export async function generateGoodsInwards(
 
   // Step 2: Get purchase orders that are now in_progress
   const posWithItems = allPOs
-    .filter((po) => po.status === "in_progress" || posToUpdate.some(p => p.id === po.id))
+    .filter(
+      (po) =>
+        po.status === "in_progress" || posToUpdate.some((p) => p.id === po.id),
+    )
     .slice(0, targetCount);
 
   // Step 3: Create goods inwards
@@ -210,7 +211,7 @@ export async function generateGoodsInwards(
       .from("goods_inwards")
       .select("id, sequence_number")
       .eq("company_id", companyId)
-      .eq("sequence_number", sequenceNumber)
+      .eq("sequence_number", Number(sequenceNumber))
       .single();
 
     if (inward) {

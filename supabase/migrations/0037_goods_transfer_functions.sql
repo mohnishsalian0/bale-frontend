@@ -19,6 +19,7 @@ DECLARE
     v_company_id UUID;
     v_from_warehouse_id UUID;
     v_to_warehouse_id UUID;
+    v_transfer_date DATE;
     v_stock_unit_id UUID;
     v_stock_unit RECORD;
 BEGIN
@@ -30,6 +31,7 @@ BEGIN
 
     v_from_warehouse_id := (p_transfer_data->>'from_warehouse_id')::UUID;
     v_to_warehouse_id := (p_transfer_data->>'to_warehouse_id')::UUID;
+    v_transfer_date := (p_transfer_data->>'transfer_date')::DATE;
 
     -- Validate different warehouses
     IF v_from_warehouse_id = v_to_warehouse_id THEN
@@ -74,6 +76,18 @@ BEGIN
         IF v_stock_unit.current_warehouse_id != v_from_warehouse_id THEN
             RAISE EXCEPTION 'Stock unit % is not at source warehouse. Current location: %, Expected: %',
                 v_stock_unit_id, v_stock_unit.current_warehouse_id, v_from_warehouse_id;
+        END IF;
+
+        -- Validate stock unit status is available
+        IF v_stock_unit.status != 'available' THEN
+            RAISE EXCEPTION 'Stock unit % is not available (status: %). Cannot transfer',
+                v_stock_unit_id, v_stock_unit.status;
+        END IF;
+
+        -- Chronological validation
+        IF v_stock_unit.last_activity_date IS NOT NULL AND v_transfer_date < v_stock_unit.last_activity_date THEN
+            RAISE EXCEPTION 'Cannot create transfer with transfer_date % before last activity on stock unit % (last activity: %)',
+                v_transfer_date, v_stock_unit_id, v_stock_unit.last_activity_date;
         END IF;
 
         -- Create transfer item

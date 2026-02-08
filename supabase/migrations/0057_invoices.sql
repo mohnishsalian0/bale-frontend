@@ -223,9 +223,7 @@ BEGIN
     END IF;
 
     -- Generate sequence number if not provided
-    IF NEW.sequence_number IS NULL THEN
-        NEW.sequence_number := get_next_sequence('invoices_' || NEW.invoice_type, NEW.company_id);
-    END IF;
+		NEW.sequence_number := get_next_sequence('invoices_' || NEW.invoice_type, NEW.company_id);
 
     -- Generate invoice number: INV/2024-25/0001
     NEW.invoice_number := v_prefix || '/' ||

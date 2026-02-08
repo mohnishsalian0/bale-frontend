@@ -7,7 +7,7 @@ export interface PartnerConfig {
   partner_type: "customer" | "supplier" | "vendor" | "agent";
   first_name: string;
   last_name: string;
-  company_name?: string;
+  company_name: string;
   phone_number: string;
   email?: string;
   billing_address_line1: string;

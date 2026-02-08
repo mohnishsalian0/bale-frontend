@@ -14,11 +14,11 @@ import type { PartnerConfig } from "../config/partners.config";
 
 export interface PartnerResult {
   id: string;
-  partner_type: "customer" | "supplier" | "vendor" | "agent";
-  first_name: string;
-  last_name: string;
+  partner_type: string;
+  first_name: string | null;
+  last_name: string | null;
   company_name: string | null;
-  phone_number: string;
+  phone_number: string | null;
   email: string | null;
 }
 
@@ -79,7 +79,7 @@ export async function ensurePartners(
         partner_type: config.partner_type,
         first_name: config.first_name,
         last_name: config.last_name,
-        company_name: config.company_name || null,
+        company_name: config.company_name,
         phone_number: config.phone_number,
         email: config.email || null,
         billing_address_line1: config.billing_address_line1,
