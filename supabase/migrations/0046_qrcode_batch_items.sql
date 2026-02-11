@@ -1,5 +1,5 @@
 
--- Bale Backend - QR Code Generation System
+-- Bale Backend - QR Code Batch items
 -- Comprehensive QR code generation with customization and batch printing
 
 -- =====================================================

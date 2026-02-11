@@ -1,5 +1,5 @@
 
--- Bale Backend - Purchase Order Management
+-- Bale Backend - Purchase Order Items
 -- Supplier order management with real-time fulfillment tracking
 
 -- =====================================================

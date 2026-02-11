@@ -14,12 +14,13 @@ CREATE TABLE goods_converts (
     sequence_number INTEGER NOT NULL,
 
     -- Conversion details
-    conversion_type VARCHAR(50) NOT NULL, -- Dyeing, Embroidery, Printing, Stitching, etc.
-    vendor_id UUID REFERENCES partners(id), -- Vendor performing the work
+    service_type_attribute_id UUID NOT NULL REFERENCES attributes(id), -- Service type from attributes (group_name='service_type')
+    output_product_id UUID NOT NULL REFERENCES products(id), -- Product created after conversion
+    vendor_id UUID NOT NULL REFERENCES partners(id), -- Vendor performing the work
     agent_id UUID REFERENCES partners(id), -- Optional agent/broker
 
     -- Job work billing
-    invoice_id UUID REFERENCES invoices(id), -- Links to purchase invoice for job work charges
+    invoice_id UUID, -- Links to purchase invoice for job work charges
 
     -- Reference tracking
     reference_number VARCHAR(50), -- Form GST ITC-04, delivery challan, or other reference
@@ -94,6 +95,8 @@ ALTER TABLE stock_unit_adjustments ADD CONSTRAINT fk_adjustment_convert
 -- goods_converts indexes
 CREATE INDEX idx_goods_converts_company_id ON goods_converts(company_id);
 CREATE INDEX idx_goods_converts_warehouse_id ON goods_converts(warehouse_id);
+CREATE INDEX idx_goods_converts_service_type ON goods_converts(service_type_attribute_id);
+CREATE INDEX idx_goods_converts_output_product ON goods_converts(output_product_id);
 CREATE INDEX idx_goods_converts_vendor_id ON goods_converts(vendor_id);
 CREATE INDEX idx_goods_converts_invoice_id ON goods_converts(invoice_id);
 CREATE INDEX idx_goods_converts_job_work_id ON goods_converts(job_work_id);
@@ -173,8 +176,9 @@ AS $$
 DECLARE
     v_vendor_name TEXT;
     v_warehouse_name TEXT;
+    v_service_type_name TEXT;
+    v_output_product_name TEXT;
     v_input_product_names TEXT;
-    v_output_product_names TEXT;
     v_invoice_number TEXT;
 BEGIN
     -- If record is soft-deleted, set search_vector to NULL to exclude from index
@@ -197,6 +201,18 @@ BEGIN
     FROM warehouses
     WHERE id = NEW.warehouse_id;
 
+    -- Get service type attribute name
+    SELECT name
+    INTO v_service_type_name
+    FROM attributes
+    WHERE id = NEW.service_type_attribute_id;
+
+    -- Get output product name
+    SELECT name
+    INTO v_output_product_name
+    FROM products
+    WHERE id = NEW.output_product_id;
+
     -- Get aggregated input product names
     SELECT string_agg(DISTINCT p.name, ' ')
     INTO v_input_product_names
@@ -204,13 +220,6 @@ BEGIN
     JOIN stock_units su ON su.id = gci.stock_unit_id
     JOIN products p ON p.id = su.product_id
     WHERE gci.convert_id = NEW.id;
-
-    -- Get aggregated output product names
-    SELECT string_agg(DISTINCT p.name, ' ')
-    INTO v_output_product_names
-    FROM stock_units su
-    JOIN products p ON p.id = su.product_id
-    WHERE su.origin_convert_id = NEW.id;
 
     -- Get invoice number (if linked)
     IF NEW.invoice_id IS NOT NULL THEN
@@ -227,10 +236,10 @@ BEGIN
         setweight(to_tsvector('english', COALESCE(v_vendor_name, '')), 'A') ||
         setweight(to_tsvector('english', COALESCE(v_warehouse_name, '')), 'A') ||
 
-        -- Weight B: Product names and conversion type
+        -- Weight B: Product names and service type
         setweight(to_tsvector('english', COALESCE(v_input_product_names, '')), 'B') ||
-        setweight(to_tsvector('english', COALESCE(v_output_product_names, '')), 'B') ||
-        setweight(to_tsvector('english', COALESCE(NEW.conversion_type, '')), 'B') ||
+        setweight(to_tsvector('english', COALESCE(v_output_product_name, '')), 'B') ||
+        setweight(to_tsvector('english', COALESCE(v_service_type_name, '')), 'B') ||
 
         -- Weight C: Reference and invoice
         setweight(to_tsvector('simple', COALESCE(NEW.reference_number, '')), 'C') ||

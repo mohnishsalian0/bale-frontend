@@ -1,6 +1,4 @@
-
--- Bale Backend - Goods Movement (Outward and Inward)
--- Comprehensive outward and inward inventory management
+-- Bale Backend - Goods Outward Items
 
 -- =====================================================
 -- GOODS OUTWARD ITEMS (linking to specific stock units)

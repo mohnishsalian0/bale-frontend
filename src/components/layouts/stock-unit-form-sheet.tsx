@@ -23,7 +23,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import MultipleSelector from "@/components/ui/multiple-selector";
 import type { ProductListView } from "@/types/products.types";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
-import type { StockUnitSpec } from "./ProductSelectionStep";
+import type { StockUnitSpec } from "@/app/(protected)/warehouse/[warehouse_slug]/goods-inward/ProductSelectionStep";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import {
@@ -35,9 +35,13 @@ import { useAttributes } from "@/lib/query/hooks/attributes";
 interface StockUnitFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  product: ProductListView | null;
+  product: Pick<
+    ProductListView,
+    "name" | "measuring_unit" | "stock_type"
+  > | null;
   initialUnit?: Partial<StockUnitSpec>;
   onConfirm: (unit: Omit<StockUnitSpec, "id">) => void;
+  enableWastage?: boolean; // Show wastage fields (for convert output)
 }
 
 export function StockUnitFormSheet({
@@ -46,6 +50,7 @@ export function StockUnitFormSheet({
   product,
   initialUnit,
   onConfirm,
+  enableWastage = false,
 }: StockUnitFormSheetProps) {
   // Fetch lot numbers
   const { data: lotNumbers = [] } = useAttributes("lot_number");
@@ -73,10 +78,13 @@ export function StockUnitFormSheet({
       manufactured_on: undefined,
       location: initialUnit?.location || "",
       notes: initialUnit?.notes || "",
+      wastage_quantity: initialUnit?.wastage_quantity || 0,
+      wastage_reason: initialUnit?.wastage_reason || "",
     },
   });
 
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
+  const [showWastage, setShowWastage] = useState(false);
   const quantity = useWatch({ control, name: "quantity" });
 
   // Early return after hooks
@@ -86,6 +94,7 @@ export function StockUnitFormSheet({
     // Reset form
     reset();
     setShowAdditionalDetails(false);
+    setShowWastage(false);
     onOpenChange(false);
   };
 
@@ -98,6 +107,8 @@ export function StockUnitFormSheet({
       manufactured_on: data.manufactured_on || undefined,
       location: data.location || undefined,
       notes: data.notes || undefined,
+      wastage_quantity: enableWastage ? data.wastage_quantity : undefined,
+      wastage_reason: enableWastage ? data.wastage_reason : undefined,
       count: initialUnit?.count || 1,
     });
     handleCancel();
@@ -236,7 +247,7 @@ export function StockUnitFormSheet({
                   onChange={(options) => {
                     field.onChange(options[0]?.value || "");
                   }}
-                  defaultOptions={lotNumbers.map((lot) => ({
+                  options={lotNumbers.map((lot) => ({
                     value: lot.name,
                     label: lot.name,
                   }))}
@@ -288,6 +299,38 @@ export function StockUnitFormSheet({
             icon={<IconTruckLoading />}
           />
         </div>
+
+        {/* Wastage Section - Only shown when enableWastage is true */}
+        {enableWastage && (
+          <Collapsible open={showWastage} onOpenChange={setShowWastage}>
+            <CollapsibleTrigger
+              className={`flex items-center justify-between w-full ${showWastage ? "pb-3" : "pb-0"}`}
+            >
+              <h3 className="font-medium text-gray-900">Wastage</h3>
+              <IconChevronDown
+                className={`size-5 text-gray-500 transition-transform ${showWastage ? "rotate-180" : "rotate-0"}`}
+              />
+            </CollapsibleTrigger>
+
+            <CollapsibleContent className="flex flex-col gap-4">
+              <InputWrapper
+                type="number"
+                rightText={unitAbbreviation}
+                min="0"
+                step={product.stock_type === "roll" ? "0.1" : "1"}
+                placeholder={
+                  product.stock_type === "roll" ? "0.0 wastage" : "0 wastage"
+                }
+                {...register("wastage_quantity", { valueAsNumber: true })}
+              />
+              <Textarea
+                placeholder="Wastage reason"
+                {...register("wastage_reason")}
+                className="min-h-24"
+              />
+            </CollapsibleContent>
+          </Collapsible>
+        )}
 
         {/* Additional Details */}
         <Collapsible

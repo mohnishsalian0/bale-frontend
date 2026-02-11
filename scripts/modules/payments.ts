@@ -12,7 +12,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
+import type { Database } from "@/types/database/supabase";
 import { randomInt, randomFloat } from "./shared";
 
 // ============================================================================
@@ -91,14 +91,11 @@ function generatePaymentMode(
   const roll = Math.random();
   let cumulative = 0;
 
-  if (roll < (cumulative += config.paymentModeDistribution.cash))
-    return "cash";
+  if (roll < (cumulative += config.paymentModeDistribution.cash)) return "cash";
   if (roll < (cumulative += config.paymentModeDistribution.cheque))
     return "cheque";
-  if (roll < (cumulative += config.paymentModeDistribution.neft))
-    return "neft";
-  if (roll < (cumulative += config.paymentModeDistribution.rtgs))
-    return "rtgs";
+  if (roll < (cumulative += config.paymentModeDistribution.neft)) return "neft";
+  if (roll < (cumulative += config.paymentModeDistribution.rtgs)) return "rtgs";
   if (roll < (cumulative += config.paymentModeDistribution.upi)) return "upi";
   return "card";
 }
@@ -117,8 +114,7 @@ function generatePaymentModeDetails(
     case "cheque":
       // Cheque details - 80% full details, 20% only number
       if (
-        Math.random() <
-        config.instrumentDetailProbabilities.cheque.fullDetails
+        Math.random() < config.instrumentDetailProbabilities.cheque.fullDetails
       ) {
         details.instrument_number = `${randomInt(100000, 999999)}`;
         // Instrument date is 1-3 days before payment date
@@ -136,9 +132,7 @@ function generatePaymentModeDetails(
         details.instrument_branch =
           config.branches[randomInt(0, config.branches.length - 1)];
         const ifscPrefix =
-          config.ifscPrefixes[
-            randomInt(0, config.ifscPrefixes.length - 1)
-          ];
+          config.ifscPrefixes[randomInt(0, config.ifscPrefixes.length - 1)];
         details.instrument_ifsc = `${ifscPrefix}0${String(randomInt(100000, 999999)).substring(0, 6)}`;
       } else {
         details.instrument_number = `${randomInt(100000, 999999)}`;
@@ -165,8 +159,7 @@ function generatePaymentModeDetails(
         details.vpa = `${userName}${handle}`;
       }
       if (
-        Math.random() <
-        config.instrumentDetailProbabilities.upi.transactionId
+        Math.random() < config.instrumentDetailProbabilities.upi.transactionId
       ) {
         details.transaction_id = `${randomInt(100000000000, 999999999999)}`;
       }
@@ -178,8 +171,7 @@ function generatePaymentModeDetails(
         details.card_last_four = `${randomInt(1000, 9999)}`;
       }
       if (
-        Math.random() <
-        config.instrumentDetailProbabilities.card.transactionId
+        Math.random() < config.instrumentDetailProbabilities.card.transactionId
       ) {
         details.transaction_id = `TXN${randomInt(10000000000, 99999999999)}`;
       }
@@ -542,9 +534,7 @@ export async function generatePaymentMade(
   console.log("\n💸 Generating payment made (purchase)...\n");
 
   if (!paymentLedgers.cash || !paymentLedgers.bank || !paymentLedgers.tds) {
-    console.error(
-      "❌ Cash, Bank, or TDS ledger not found. Skipping...\n",
-    );
+    console.error("❌ Cash, Bank, or TDS ledger not found. Skipping...\n");
     return [];
   }
 

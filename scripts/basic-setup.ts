@@ -13,8 +13,6 @@
  * - 100 Products (template-based)
  */
 
-import type { Database } from "@/types/database";
-
 // ============================================================================
 // IMPORTS - Modules & Config
 // ============================================================================
@@ -38,6 +36,7 @@ import { generatePurchaseOrders } from "./modules/purchase-orders";
 import { generateGoodsInwards } from "./modules/goods-inwards";
 import { generateGoodsTransfers } from "./modules/goods-transfers";
 import { generateGoodsOutwards } from "./modules/goods-outwards";
+import { generateGoodsConverts } from "./modules/goods-converts";
 import {
   generateSalesInvoices,
   generatePurchaseInvoices,
@@ -62,6 +61,7 @@ import { LOT_NUMBERS } from "./config/lot-numbers.config";
 import { GOODS_INWARDS_CONFIG } from "./config/goods-inwards.config";
 import { GOODS_TRANSFERS_CONFIG } from "./config/goods-transfers.config";
 import { GOODS_OUTWARDS_CONFIG } from "./config/goods-outwards.config";
+import { GOODS_CONVERTS_CONFIG } from "./config/goods-converts.config";
 import { ADJUSTMENT_NOTES_CONFIG } from "./config/adjustment-notes.config";
 import { PAYMENTS_CONFIG } from "./config/payments.config";
 import { QR_BATCHES_CONFIG } from "./config/qr-batches.config";
@@ -145,29 +145,48 @@ async function runSetup() {
     const supplierIds = partners
       .filter((p) => p.partner_type === "supplier")
       .map((p) => p.id);
+    const vendorIds = partners
+      .filter((p) => p.partner_type === "vendor")
+      .map((p) => p.id);
     const agentIds = partners
       .filter((p) => p.partner_type === "agent")
       .map((p) => p.id);
+
+    // Split products into raw materials and finished goods
+    // Raw material products have names starting with "Raw "
+    const rawProductIds = products
+      .filter((p) => p.name.startsWith("Raw "))
+      .map((p) => p.id);
+    const finishedProductIds = products
+      .filter((p) => !p.name.startsWith("Raw "))
+      .map((p) => p.id);
+
+    // Purchase orders: biased 80% towards raw materials (suppliers provide raw stock)
+    // Sales orders: finished products only (customers buy finished goods)
+    const poProductIds = [
+      ...Array(4).fill(rawProductIds).flat(), // 80% raw
+      ...finishedProductIds, // 20% finished
+    ];
     const productIds = products.map((p) => p.id);
 
     // Use a fixed year for data generation for consistency in minimal setup
     const currentYear = 2025;
 
-    // Step 8: Sales Orders (50 for minimal setup)
+    // Step 8: Sales Orders (50 for minimal setup) — finished products only
     const salesOrders = await generateSalesOrders(
       supabase,
       companyId,
       warehouses,
       userId,
       customerIds,
-      productIds,
+      finishedProductIds,
       {
         totalOrders: 50,
         year: currentYear,
       },
     );
 
-    // Step 9: Purchase Orders (40 for minimal setup)
+    // Step 9: Purchase Orders (40 for minimal setup) — 80% raw, 20% finished
     const purchaseOrders = await generatePurchaseOrders(
       supabase,
       companyId,
@@ -175,7 +194,7 @@ async function runSetup() {
       userId,
       supplierIds,
       agentIds,
-      productIds,
+      poProductIds,
       {
         totalOrders: 40,
         year: currentYear,
@@ -215,6 +234,19 @@ async function runSetup() {
         direction: "warehouse_to_factory",
         year: currentYear,
       },
+    );
+
+    // Step 12.5: Goods Converts — raw materials → finished goods at factory warehouses
+    const goodsConverts = await generateGoodsConverts(
+      supabase,
+      companyId,
+      userId,
+      warehouses,
+      vendorIds,
+      rawProductIds,
+      finishedProductIds,
+      10,
+      GOODS_CONVERTS_CONFIG,
     );
 
     // Step 13: Goods Transfers - Factory to Warehouse (15 transfers)
@@ -346,7 +378,11 @@ async function runSetup() {
       `   Purchase Order completions: ${purchaseOrderCompletionRecords.length}`,
     );
     console.log(
-      `   Goods Transfers: ${transfersToFactory.length + transfersToWarehouse.length} total (warehouse→factory + factory→warehouse)`,
+      `   Goods Transfers: ${transfersToFactory.length} total warehouse→factory`,
+    );
+    console.log(`   Goods Converts: ${goodsConverts.length}`);
+    console.log(
+      `   Goods Transfers: ${transfersToWarehouse.length} total factory→warehouse`,
     );
     console.log(`   Goods Outwards: ${goodsOutwards.length}`);
     console.log(

@@ -10,7 +10,7 @@ import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getStockUnits,
-  getStockUnitsWithInward,
+  getStockUnitsWithOrigin,
   getStockUnitWithProductDetail,
   getStockUnitActivity,
   updateStockUnit,
@@ -37,10 +37,10 @@ export function useStockUnits(warehouseId: string, filters?: StockUnitFilters) {
 }
 
 /**
- * Fetch stock units for a product with full inward details
+ * Fetch stock units for a product with full origin details (inward or convert)
  * Useful for product detail page to show stock flow history
  */
-export function useStockUnitsWithInward(
+export function useStockUnitsWithOrigin(
   warehouseId: string,
   filters?: StockUnitFilters,
   page: number = 1,
@@ -50,7 +50,7 @@ export function useStockUnitsWithInward(
   return useQuery({
     queryKey: queryKeys.stockUnits.all(warehouseId, filters, page),
     queryFn: () =>
-      getStockUnitsWithInward(warehouseId, filters, page, pageSize),
+      getStockUnitsWithOrigin(warehouseId, filters, page, pageSize),
     ...getQueryOptions(STALE_TIME.STOCK_UNITS, GC_TIME.TRANSACTIONAL),
     placeholderData: keepPreviousData,
     enabled,

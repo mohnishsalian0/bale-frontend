@@ -250,7 +250,7 @@ export function InventoryProductListStep({
                 const quantityDisplay = formatQuantityDisplay(product);
                 const requestedQuantity = orderProducts[product.id];
                 const availableQuantity =
-                  product.inventory.in_stock_quantity ?? 0;
+                  product.inventory.available_quantity ?? 0;
 
                 const unitAbbr = getMeasuringUnitAbbreviation(
                   product.measuring_unit as MeasuringUnit,

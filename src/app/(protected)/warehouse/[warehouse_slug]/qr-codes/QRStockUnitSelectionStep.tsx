@@ -1,23 +1,35 @@
 "use client";
 
 import { useState, useMemo, Fragment } from "react";
-import { IconChevronDown } from "@tabler/icons-react";
+import {
+  IconChevronDown,
+  IconTransferIn,
+  IconTransform,
+} from "@tabler/icons-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { formatRelativeDate } from "@/lib/utils/date";
+import { formatRelativeDate, formatAbsoluteDate } from "@/lib/utils/date";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useSession } from "@/contexts/session-context";
-import { useStockUnitsWithInward } from "@/lib/query/hooks/stock-units";
-import { StockUnitWithProductListView } from "@/types/stock-units.types";
-import { InwardWithPartnerListView } from "@/types/stock-flow.types";
+import { useStockUnitsWithOrigin } from "@/lib/query/hooks/stock-units";
+import {
+  StockUnitWithProductListView,
+  StockUnitWithOriginListView,
+} from "@/types/stock-units.types";
+import { getMovementNumber } from "@/lib/utils/stock-flow";
+import { getConvertNumber } from "@/lib/utils/goods-convert";
 import { LoadingState } from "@/components/layouts/loading-state";
 
-interface GoodsInward extends InwardWithPartnerListView {
-  stock_units: StockUnitWithProductListView[];
+interface StockUnitOriginGroup {
+  id: string;
+  type: "inward" | "convert";
+  sequence_number: number;
+  date: string; // For sorting
+  stock_units: StockUnitWithOriginListView[];
 }
 
 interface QRStockUnitSelectionStepProps {
@@ -35,90 +47,89 @@ export function QRStockUnitSelectionStep({
 
   // Fetch stock units using TanStack Query
   const { data: stockUnitsResponse, isLoading: loading } =
-    useStockUnitsWithInward(warehouse.id, {
+    useStockUnitsWithOrigin(warehouse.id, {
       product_id: productId,
-      status: ["full", "partial"],
+      status: "available",
     });
 
   const stockUnitsData = stockUnitsResponse?.data || [];
 
-  // Group stock units by goods inward
-  const goodsInwards: GoodsInward[] = useMemo(() => {
-    // Group stock units by goods inward
-    const inwardMap = new Map<string | null, StockUnitWithProductListView[]>();
+  // Group stock units by origin (goods inward or goods convert), sorted by date
+  const originGroups: StockUnitOriginGroup[] = useMemo(() => {
+    const groups: StockUnitOriginGroup[] = [];
+    const groupMap = new Map<string, StockUnitOriginGroup>();
+
+    // Group by origin
     stockUnitsData.forEach((unit) => {
-      const inwardId = unit.created_from_inward_id;
-      if (!inwardMap.has(inwardId)) {
-        inwardMap.set(inwardId, []);
+      if (unit.origin_type === "inward" && unit.goods_inward) {
+        const key = `inward-${unit.origin_inward_id}`;
+        if (!groupMap.has(key)) {
+          groupMap.set(key, {
+            id: key,
+            type: "inward",
+            sequence_number: unit.goods_inward.sequence_number,
+            date: unit.goods_inward.inward_date,
+            stock_units: [],
+          });
+        }
+        groupMap.get(key)!.stock_units.push(unit);
+      } else if (unit.origin_type === "convert" && unit.goods_convert) {
+        const key = `convert-${unit.origin_convert_id}`;
+        if (!groupMap.has(key)) {
+          groupMap.set(key, {
+            id: key,
+            type: "convert",
+            sequence_number: unit.goods_convert.sequence_number,
+            date:
+              unit.goods_convert.completion_date ||
+              unit.goods_convert.start_date,
+            stock_units: [],
+          });
+        }
+        groupMap.get(key)!.stock_units.push(unit);
       }
-      inwardMap.get(inwardId)!.push(unit);
     });
 
-    // Get unique inward data from stock units
-    const inwardDataMap = new Map<string, InwardWithPartnerListView>();
-    stockUnitsData.forEach((unit) => {
-      if (unit.created_from_inward_id && unit.goods_inward) {
-        inwardDataMap.set(unit.created_from_inward_id, unit.goods_inward);
-      }
-    });
+    // Convert to array and sort by date (newest first)
+    groups.push(...Array.from(groupMap.values()));
+    groups.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
 
-    // Combine goods inwards with their stock units
-    const groupedInwards: GoodsInward[] = [];
-    Array.from(inwardMap.keys()).forEach((inwardId) => {
-      if (inwardId === null) return; // Handle orphans separately
-      const inwardData = inwardDataMap.get(inwardId);
-      if (inwardData) {
-        groupedInwards.push({
-          ...inwardData,
-          stock_units: inwardMap.get(inwardId) || [],
-        });
-      }
-    });
-
-    // Handle units without goods inward (if any)
-    const orphanedUnits = inwardMap.get(null) || [];
-    if (orphanedUnits.length > 0) {
-      groupedInwards.push({
-        id: "orphaned",
-        sequence_number: 0,
-        stock_units: orphanedUnits,
-      } as GoodsInward);
-    }
-
-    return groupedInwards;
+    return groups;
   }, [stockUnitsData]);
 
-  // Auto-expand first inward
-  const [expandedInwards, setExpandedInwards] = useState<Set<string>>(() =>
-    goodsInwards.length > 0 ? new Set([goodsInwards[0].id]) : new Set(),
+  // Auto-expand first group
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() =>
+    originGroups.length > 0 ? new Set([originGroups[0].id]) : new Set(),
   );
 
-  const toggleInward = (inwardId: string) => {
-    setExpandedInwards((prev) => {
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups((prev) => {
       const next = new Set(prev);
-      if (next.has(inwardId)) {
-        next.delete(inwardId);
+      if (next.has(groupId)) {
+        next.delete(groupId);
       } else {
-        next.add(inwardId);
+        next.add(groupId);
       }
       return next;
     });
   };
 
-  const handleInwardCheckboxChange = (
-    inward: GoodsInward,
+  const handleGroupCheckboxChange = (
+    group: StockUnitOriginGroup,
     checked: boolean,
   ) => {
-    const inwardUnitIds = inward.stock_units.map((u) => u.id);
+    const groupUnitIds = group.stock_units.map((u) => u.id);
     if (checked) {
-      // Add all units from this inward
+      // Add all units from this group
       onSelectionChange([
-        ...new Set([...selectedStockUnitIds, ...inwardUnitIds]),
+        ...new Set([...selectedStockUnitIds, ...groupUnitIds]),
       ]);
     } else {
-      // Remove all units from this inward
+      // Remove all units from this group
       onSelectionChange(
-        selectedStockUnitIds.filter((id) => !inwardUnitIds.includes(id)),
+        selectedStockUnitIds.filter((id) => !groupUnitIds.includes(id)),
       );
     }
   };
@@ -131,15 +142,15 @@ export function QRStockUnitSelectionStep({
     }
   };
 
-  const getInwardSelectionState = (
-    inward: GoodsInward,
+  const getGroupSelectionState = (
+    group: StockUnitOriginGroup,
   ): "all" | "some" | "none" => {
-    const inwardUnitIds = inward.stock_units.map((u) => u.id);
-    const selectedCount = inwardUnitIds.filter((id) =>
+    const groupUnitIds = group.stock_units.map((u) => u.id);
+    const selectedCount = groupUnitIds.filter((id) =>
       selectedStockUnitIds.includes(id),
     ).length;
     if (selectedCount === 0) return "none";
-    if (selectedCount === inwardUnitIds.length) return "all";
+    if (selectedCount === groupUnitIds.length) return "all";
     return "some";
   };
 
@@ -157,7 +168,7 @@ export function QRStockUnitSelectionStep({
     return <LoadingState message="Loading stock units..." />;
   }
 
-  if (goodsInwards.length === 0) {
+  if (originGroups.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <p className="text-sm text-gray-500">
@@ -179,20 +190,27 @@ export function QRStockUnitSelectionStep({
         </p>
       </div>
 
-      {/* Goods Inward List - Scrollable */}
+      {/* Origin Groups List - Scrollable */}
       <div className="flex-1 overflow-y-auto">
-        {goodsInwards.map((inward) => {
-          const isExpanded = expandedInwards.has(inward.id);
-          const selectionState = getInwardSelectionState(inward);
-          const selectedInwardCount = inward.stock_units.filter((u) =>
+        {originGroups.map((group) => {
+          const isExpanded = expandedGroups.has(group.id);
+          const selectionState = getGroupSelectionState(group);
+          const selectedCount = group.stock_units.filter((u) =>
             selectedStockUnitIds.includes(u.id),
           ).length;
 
+          const groupLabel =
+            group.type === "inward"
+              ? getMovementNumber("inward", group.sequence_number)
+              : getConvertNumber(group.sequence_number);
+
+          const Icon = group.type === "inward" ? IconTransferIn : IconTransform;
+
           return (
             <Collapsible
-              key={inward.id}
+              key={group.id}
               open={isExpanded}
-              onOpenChange={() => toggleInward(inward.id)}
+              onOpenChange={() => toggleGroup(group.id)}
               className="border-b border-gray-200 px-4 py-3"
             >
               <div
@@ -201,7 +219,7 @@ export function QRStockUnitSelectionStep({
                 <Checkbox
                   checked={selectionState === "all"}
                   onCheckedChange={(checked) =>
-                    handleInwardCheckboxChange(inward, checked === true)
+                    handleGroupCheckboxChange(group, checked === true)
                   }
                   className={
                     selectionState === "some"
@@ -209,21 +227,31 @@ export function QRStockUnitSelectionStep({
                       : ""
                   }
                 />
-                <CollapsibleTrigger className="flex items-center justify-between w-full">
-                  <span className="flex-1 text-sm font-semibold text-gray-700 text-start">
-                    GI-{inward.sequence_number} ({selectedInwardCount}/
-                    {inward.stock_units.length} selected)
-                  </span>
-                  <IconChevronDown
-                    className={`size-5 text-gray-500 transition-transform ${isExpanded ? "rotate-180" : "rotate-0"}`}
-                  />
+                <CollapsibleTrigger className="flex items-center justify-between w-full gap-2">
+                  <div className="flex items-center gap-2 flex-1 text-start">
+                    <Icon className="size-4 text-gray-500 shrink-0" />
+                    <span className="text-sm font-semibold text-gray-700">
+                      {groupLabel}
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      ({selectedCount}/{group.stock_units.length} selected)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-gray-500">
+                      {formatAbsoluteDate(group.date)}
+                    </span>
+                    <IconChevronDown
+                      className={`size-5 text-gray-500 transition-transform ${isExpanded ? "rotate-180" : "rotate-0"}`}
+                    />
+                  </div>
                 </CollapsibleTrigger>
               </div>
 
-              <CollapsibleContent key={inward.id}>
+              <CollapsibleContent key={group.id}>
                 {/* Stock Units List */}
                 <div className="flex flex-col">
-                  {inward.stock_units.map((unit) => (
+                  {group.stock_units.map((unit) => (
                     <div key={unit.id} className="flex gap-3 py-3">
                       <Checkbox
                         checked={selectedStockUnitIds.includes(unit.id)}

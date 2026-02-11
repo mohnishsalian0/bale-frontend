@@ -156,7 +156,7 @@ export function getAvailableStockText(
   product: ProductWithInventoryListView,
 ): string {
   const stockType = product.stock_type as StockType;
-  const quantity = product.inventory.in_stock_quantity as number;
+  const quantity = product.inventory.available_quantity as number;
   const unitAbbreviation = getMeasuringUnitAbbreviation(
     product.measuring_unit as MeasuringUnit | null,
   );
@@ -194,8 +194,8 @@ export function getStockUnitInfo(
 
   const parts: string[] = [];
 
-  if (stockUnit.lot_number) {
-    parts.push(`Stock #: ${stockUnit.lot_number}`);
+  if (stockUnit.lot_number?.name) {
+    parts.push(`Lot #: ${stockUnit.lot_number.name}`);
   }
 
   if (stockUnit.quality_grade) {

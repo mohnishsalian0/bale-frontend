@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ProductSelectionStep, StockUnitSpec } from "../ProductSelectionStep";
-import { StockUnitFormSheet } from "../StockUnitFormSheet";
+import { StockUnitFormSheet } from "@/components/layouts/stock-unit-form-sheet";
 import { AllSpecificationsSheet } from "../AllSpecificationsSheet";
 import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
 import { InwardLinkToStep, InwardLinkToData } from "../InwardLinkToStep";

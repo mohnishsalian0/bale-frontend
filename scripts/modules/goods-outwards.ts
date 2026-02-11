@@ -10,7 +10,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
+import type { Database } from "@/types/database/supabase";
 import { randomInt, randomFloat } from "./shared";
 import { Json } from "@/types/database/supabase";
 
@@ -55,7 +55,7 @@ async function selectStockUnitsForDispatch(
     .eq("company_id", companyId)
     .eq("current_warehouse_id", warehouseId)
     .eq("product_id", productId)
-    .in("status", ["full", "partial"])
+    .in("status", ["available"])
     .gt("remaining_quantity", 0)
     .order("quality_grade", { ascending: true }) // Prefer grade A
     .order("created_at", { ascending: preferFifo })

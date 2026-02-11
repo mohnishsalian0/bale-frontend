@@ -1,5 +1,5 @@
 
--- Bale Backend - Companies and Users Management
+-- Bale Backend - User warehouse assignment
 -- Multi-tenant foundation with role-based access control
 
 -- =====================================================

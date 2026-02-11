@@ -9,6 +9,7 @@ import type { MeasuringUnit } from "@/types/database/enums";
 export interface ProductTemplate {
   name: string;
   category: string;
+  isRawMaterial?: boolean;
   gsmRange: [number, number];
   threadCountRange: [number, number];
   stockType: "roll" | "batch";
@@ -20,8 +21,12 @@ export interface ProductTemplate {
 }
 
 /**
- * 100 Product Templates
- * Categories: Silk (20), Cotton (30), Wool (15), Synthetic (20), Specialty (15)
+ * 120 Product Templates
+ * Finished goods (100): Silk (20), Cotton (30), Wool (15), Synthetic (20), Specialty (15)
+ * Raw materials (20): Grey Cotton (5), Undyed Silk (5), Raw Synthetic (4), Natural Wool (3), Raw Specialty (3)
+ *
+ * Raw material products are identified by the "Raw " name prefix.
+ * They are used as inputs for goods converts to produce finished fabric.
  */
 export const PRODUCT_TEMPLATES: ProductTemplate[] = [
   // Silk fabrics (20) - All rolls with metre/yard/kilogram
@@ -139,4 +144,90 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
       tags: ["eco-friendly", "summer", "breathable", "modern"],
     };
   }),
+
+  // ============================================================================
+  // RAW MATERIALS (20) — inputs for goods converts
+  // All named with "Raw " prefix for easy identification in seed scripts
+  // ============================================================================
+
+  // Raw Cotton (5) — grey/unprocessed cotton fabric rolls
+  ...Array.from({ length: 5 }, (_, i) => ({
+    name: `Raw Grey Cotton ${["Yarn", "Greige", "Base Fabric", "Grey Cloth", "Undyed Roll"][i]}`,
+    category: "raw_material",
+    isRawMaterial: true,
+    gsmRange: [100, 160] as [number, number],
+    threadCountRange: [40, 70] as [number, number],
+    stockType: "roll" as const,
+    measuringUnit: (
+      ["metre", "kilogram", "metre", "kilogram", "metre"] as MeasuringUnit[]
+    )[i],
+    priceRange: [80, 250] as [number, number],
+    materials: ["Cotton"],
+    colors: ["White"],
+    tags: ["eco-friendly", "breathable"],
+  })),
+
+  // Raw Silk (5) — undyed silk threads and grey silk fabric
+  ...Array.from({ length: 5 }, (_, i) => ({
+    name: `Raw Silk ${["Thread", "Yarn", "Greige Fabric", "Grey Silk", "Undyed Silk"][i]}`,
+    category: "raw_material",
+    isRawMaterial: true,
+    gsmRange: [60, 110] as [number, number],
+    threadCountRange: [60, 100] as [number, number],
+    stockType: "roll" as const,
+    measuringUnit: (
+      ["kilogram", "kilogram", "metre", "metre", "kilogram"] as MeasuringUnit[]
+    )[i],
+    priceRange: [500, 1200] as [number, number],
+    materials: ["Silk"],
+    colors: ["White"],
+    tags: ["premium", "luxury"],
+  })),
+
+  // Raw Synthetic (4) — unprocessed polyester and nylon base fabric
+  ...Array.from({ length: 4 }, (_, i) => ({
+    name: `Raw Synthetic ${["Polyester Yarn", "Nylon Base Fabric", "Grey Polyester", "Unfinished Rayon"][i]}`,
+    category: "raw_material",
+    isRawMaterial: true,
+    gsmRange: [100, 180] as [number, number],
+    threadCountRange: [45, 75] as [number, number],
+    stockType: "roll" as const,
+    measuringUnit: (
+      ["kilogram", "metre", "kilogram", "metre"] as MeasuringUnit[]
+    )[i],
+    priceRange: [60, 180] as [number, number],
+    materials: ["Polyester"],
+    colors: ["White"],
+    tags: ["durable", "modern"],
+  })),
+
+  // Natural Wool (3) — unprocessed wool for finishing
+  ...Array.from({ length: 3 }, (_, i) => ({
+    name: `Raw Wool ${["Natural Fleece", "Unprocessed Merino", "Grey Wool Fabric"][i]}`,
+    category: "raw_material",
+    isRawMaterial: true,
+    gsmRange: [150, 260] as [number, number],
+    threadCountRange: [35, 55] as [number, number],
+    stockType: "roll" as const,
+    measuringUnit: (["kilogram", "kilogram", "metre"] as MeasuringUnit[])[i],
+    priceRange: [350, 900] as [number, number],
+    materials: ["Wool"],
+    colors: ["White"],
+    tags: ["winter", "warm", "premium"],
+  })),
+
+  // Raw Specialty (3) — unprocessed linen and jute
+  ...Array.from({ length: 3 }, (_, i) => ({
+    name: `Raw Specialty ${["Natural Linen", "Raw Jute Fabric", "Unbleached Hemp"][i]}`,
+    category: "raw_material",
+    isRawMaterial: true,
+    gsmRange: [110, 170] as [number, number],
+    threadCountRange: [35, 60] as [number, number],
+    stockType: "roll" as const,
+    measuringUnit: (["metre", "kilogram", "metre"] as MeasuringUnit[])[i],
+    priceRange: [120, 400] as [number, number],
+    materials: ["Linen"],
+    colors: ["White"],
+    tags: ["eco-friendly", "breathable"],
+  })),
 ];

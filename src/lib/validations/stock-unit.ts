@@ -39,6 +39,8 @@ export const createStockUnitSchema = (stockType: StockType) => {
     manufactured_on: z.date().nullish(),
     location: optionalLocationSchema,
     notes: z.string().trim().optional(),
+    wastage_quantity: z.number().min(0).optional(),
+    wastage_reason: z.string().trim().optional(),
   });
 };
 

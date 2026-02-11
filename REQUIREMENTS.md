@@ -603,7 +603,7 @@ Permissions are organized hierarchically with the following top-level categories
 
 - **Stock Entry**: Stock units can ONLY be added to inventory via Goods Inward process
 - **Stock Removal**: Stock units can ONLY be removed from inventory via Goods Outward process
-- **Traceability**: Every stock unit must be linked to its originating goods inward (created_from_inward_id)
+- **Traceability**: Every stock unit must be linked to its originating goods inward or convert (origin_type, origin_inward_id & origin_convert_id)
 - **Special Case Inwards**: For opening stock, adjustments, and manual additions, use link_type = 'other' with descriptive other_reference (e.g., "Opening Stock - System Setup", "Stock Adjustment - Found Inventory")
 
 **Unit Creation Methods**
@@ -1279,7 +1279,7 @@ Permissions are organized hierarchically with the following top-level categories
 - Each stock unit created with full specifications during inward process
 - If multiple units have identical details, user can specify quantity to create multiple at once
 - Stock units created with status as 'in_stock'
-- All units automatically linked to this goods inward via created_from_inward_id
+- All units automatically linked to this goods inward via origin_inward_id
 - **Lot Number Assignment:**
   - User can optionally assign a lot number during goods inward creation (format: LOT-XXXXXX)
   - All stock units from the same goods inward typically share the same lot number
@@ -1336,6 +1336,176 @@ Permissions are organized hierarchically with the following top-level categories
   - Agent: Conditionally shown if agent_id exists
   - Notes: Inward notes
 - **Stock Units Tab**: List of created stock units with product images, SU-{number}, initial quantity with unit
+
+#### 8.3 Goods Convert
+
+**Feature Description**: Fabric conversion and processing management for job work operations like dyeing, embroidery, printing, etc. Tracks input stock units consumed and output stock units created, with wastage tracking.
+
+**Use Case**: User sends fabric rolls for processing (dyeing/embroidery) to a vendor. After processing, the vendor returns finished goods. This feature tracks the conversion process, wastage, and creates new stock units for the finished goods.
+
+**Specifications:**
+
+**Convert Header**
+
+**Conversion Details**
+
+- Conversion Type (required, text input with suggestions: Dyeing, Embroidery, Printing, Stitching, Washing, Finishing, etc.)
+- Vendor (optional, dropdown from partners list - vendors/suppliers performing the work)
+- Agent (optional, dropdown from partners with type=Agent)
+- Start Date (required, date when conversion/processing started)
+- Reference Number (optional, Form GST ITC-04, delivery challan, or other reference)
+- Job Work (optional, link to system job work for future fulfillment tracking)
+- Invoice (optional, link to purchase invoice for job work charges - added later when invoice is created)
+- Notes (additional information about the conversion process)
+- Add files (attachments for challans, reports, quality certificates)
+
+**Input Stock Units**
+
+- Stock Units (selected from available inventory via barcode scan or list selection)
+- Quantity Consumed (per stock unit, can be partial or full quantity)
+- Real-time stock validation (warehouse-scoped, status must be 'available')
+- Stock unit status automatically changes to 'processing' when convert is created
+- Chronological validation: Cannot use stock units in conversion if they have activity after the start date
+
+**Conversion Process States**
+
+- **In Progress**: Conversion created, input stock units marked as 'processing', quantities NOT yet deducted
+- **Completed**: Conversion finished, output stock units created, wastage recorded, input quantities deducted, status returns to 'available'
+- **Cancelled**: Conversion cancelled, input stock units restored to 'available' status, no quantity changes
+
+**Completion Flow**
+
+When completing a conversion, user provides:
+
+**Output Stock Units Creation**
+
+- Product (required, can be same or different from input product)
+- Initial Quantity (required, quantity of finished goods created)
+- Lot Number (optional, typically same as input for traceability)
+- Quality Grade (optional, quality assessment of finished goods)
+- Stock Number (optional, custom identifier or auto-generated)
+- Warehouse Location (optional, storage location within warehouse)
+- Manufacturing Date (optional, processing completion date)
+- Notes (optional, additional details about output unit)
+- Wastage Quantity (optional, material lost during processing for this output unit)
+- Wastage Reason (optional, explanation of wastage - shrinkage, defects, offcuts, etc.)
+
+**Wastage Tracking**
+
+- Wastage is recorded per output stock unit via stock_unit_adjustments table
+- Each wastage creates a negative adjustment linked to the convert via convert_id
+- Wastage adjustments are automatically created when convert is completed
+- Adjustment date matches the conversion completion_date
+- Wastage quantities are deducted from output stock unit's remaining quantity
+
+**Completion Date**
+
+- Completion Date (auto-set to current date, can be overridden)
+- Used for chronological validation and reconciliation
+- Sets completion timestamp and user who completed
+
+**Staff Access Controls**
+
+- Can only create conversions in assigned warehouse
+- Can only use stock units from assigned warehouse inventory
+- All conversion operations warehouse-scoped via RLS
+
+**Audit Information**
+
+- Unique ID (auto-generated, UUID)
+- Sequence Number (auto-generated: 1, 2, etc.)
+- Created on (timestamptz, auto-generated)
+- Updated on (timestamptz, auto-updated)
+- Created by (user UUID, auto-captured)
+- Modified by (user UUID, auto-updated on edits)
+- Completed at (timestamptz, when status changed to completed)
+- Completed by (user UUID, who completed the conversion)
+- Cancelled at (timestamptz, when status changed to cancelled)
+- Cancelled by (user UUID, who cancelled the conversion)
+- Deleted at (soft delete timestamp)
+
+**Business Rules**
+
+**Stock Unit Origin Tracking**
+
+- Stock units can originate from two sources: 'inward' or 'convert'
+- Origin tracked via origin_type, origin_inward_id, and origin_convert_id fields
+- Output stock units created from conversion have origin_type = 'convert'
+- Critical fields (product_id, origin fields, initial_quantity) are permanently locked - never editable
+
+**Status and Reconciliation**
+
+- Stock unit status hierarchy: in_transit > processing > available
+- Stock unit is 'processing' if it has any goods convert with status = 'in_progress'
+- Stock unit is 'available' when no active transfers or conversions
+- Remaining quantity ONLY reduced when convert is 'completed' (not during 'in_progress')
+- Quantity reconciliation: initial_quantity - outwards - completed_converts + adjustments >= 0
+
+**Chronological Validation**
+
+- Cannot create conversion with start_date before stock unit's last_activity_date
+- last_activity_date tracks latest: outward_date, completion_date (for converts), transfer_date, adjustment_date
+- Ensures proper timeline: cannot backdate conversions after subsequent operations
+
+**Edit/Delete Guards**
+
+- Cannot edit conversion if status = 'completed' or 'cancelled'
+- Cannot edit conversion if soft-deleted
+- Cannot change warehouse_id after creation
+- Cannot delete if status = 'completed' or 'cancelled' (use soft delete)
+- Can delete 'in_progress' conversions (cascade deletes input items)
+
+**Cancellation Rules**
+
+- Can only cancel if status = 'in_progress'
+- Cancellation reason required (text field)
+- Automatically restores input stock unit status to 'available'
+- Quantities remain unchanged (cancelled conversions don't affect quantities)
+- Cannot re-open after cancellation (terminal state)
+
+**Completion Validation**
+
+- Can only complete if status = 'in_progress'
+- Must provide at least one output stock unit
+- Output quantities can be less than input (wastage), but total cannot exceed input without explanation
+- Each output unit can have associated wastage
+- Completion automatically deducts consumed quantities from input stock units
+
+**Convert Details Page:**
+
+- **Layout**: Tabbed interface with "Convert details", "Input units", and "Output units" tabs
+- **Header**: GC-{sequence_number} title with conversion type and status badge subtitle
+- **Details Tab Sections**:
+  - Conversion Info: Type (with icon), start date, completion date (if completed)
+  - Vendor: Vendor details with company name, contact, initials (if vendor assigned)
+  - Processing Warehouse: Warehouse where conversion happened with full address
+  - Job Work Link: Shows linked job work (JW-{number}) if associated
+  - Invoice Link: Shows linked invoice (INV-{number}) if job work charges invoiced
+  - Reference: Reference number (challan/ITC-04) if provided
+  - Agent: Conditionally shown if agent_id exists
+  - Notes: Conversion notes
+  - Status: In Progress / Completed / Cancelled with appropriate color coding
+- **Input Units Tab**: List of consumed stock units with product images, SU-{number}, quantity consumed
+- **Output Units Tab**: List of created stock units with product images, SU-{number}, initial quantity, wastage (if any)
+
+**Integration Notes:**
+
+- **With Goods Inward**: Use recommended workflow: Receive stock at vendor's warehouse (create as separate warehouse like "Dyeing House"), then create goods inward from vendor, then create goods convert
+- **With Goods Transfer**: Alternative workflow: Transfer stock to vendor warehouse first, then create goods convert at vendor warehouse
+- **With Job Work**: Future enhancement - conversions can be linked to job work orders for fulfillment tracking
+- **With Invoices**: Job work processing charges can be invoiced separately and linked via invoice_id
+
+**Warehouse Recommendation for Vendor Processing:**
+
+For users sending stock to external vendors for processing:
+
+1. Create a warehouse representing the vendor's facility (e.g., "ABC Dyeing House")
+2. Use Goods Inward to receive stock at the vendor warehouse (if supplier sends directly to vendor)
+3. OR use Goods Transfer to send stock from your warehouse to vendor warehouse
+4. Create Goods Convert at the vendor warehouse to track the processing
+5. Once processing is complete, create Goods Inward to receive finished goods back to your warehouse
+
+This approach maintains proper inventory tracking across all locations and processing stages.
 
 ### 9. Barcode Generation System
 

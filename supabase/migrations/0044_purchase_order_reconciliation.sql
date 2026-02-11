@@ -35,7 +35,7 @@ BEGIN
     SELECT COALESCE(SUM(su.initial_quantity), 0)
     INTO v_product_received
     FROM stock_units su
-    INNER JOIN goods_inwards gi ON gi.id = su.created_from_inward_id
+    INNER JOIN goods_inwards gi ON gi.id = su.origin_inward_id
     WHERE gi.purchase_order_id = v_purchase_order_id
       AND su.product_id = NEW.product_id
       AND gi.deleted_at IS NULL
@@ -192,20 +192,20 @@ DECLARE
 BEGIN
     -- Get the affected purchase order ID and product from goods_inward
     IF TG_OP = 'DELETE' THEN
-        IF OLD.created_from_inward_id IS NOT NULL THEN
+        IF OLD.origin_inward_id IS NOT NULL THEN
             SELECT gi.purchase_order_id
             INTO v_purchase_order_id
             FROM goods_inwards gi
-            WHERE gi.id = OLD.created_from_inward_id;
+            WHERE gi.id = OLD.origin_inward_id;
 
             v_product_id := OLD.product_id;
         END IF;
     ELSE
-        IF NEW.created_from_inward_id IS NOT NULL THEN
+        IF NEW.origin_inward_id IS NOT NULL THEN
             SELECT gi.purchase_order_id
             INTO v_purchase_order_id
             FROM goods_inwards gi
-            WHERE gi.id = NEW.created_from_inward_id;
+            WHERE gi.id = NEW.origin_inward_id;
 
             v_product_id := NEW.product_id;
         END IF;

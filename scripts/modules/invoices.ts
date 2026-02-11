@@ -11,12 +11,8 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
-import {
-  randomInt,
-  randomFloat,
-  getRandomDate,
-} from "../modules/shared";
+import type { Database } from "@/types/database/supabase";
+import { randomInt, randomFloat, getRandomDate } from "../modules/shared";
 import { INVOICES_CONFIG } from "../config/invoices.config";
 
 // ============================================================================
@@ -240,7 +236,8 @@ async function createSingleInvoice(
   } = params;
 
   const invoiceDate = getRandomDate(randomInt(1, 12), year);
-  const dueInDays = invoiceType === "sales" ? randomInt(15, 45) : randomInt(15, 60);
+  const dueInDays =
+    invoiceType === "sales" ? randomInt(15, 45) : randomInt(15, 60);
   const dueDateObj = new Date(invoiceDate);
   dueDateObj.setDate(dueDateObj.getDate() + dueInDays);
   const dueDate = dueDateObj.toISOString().split("T")[0];
@@ -261,9 +258,7 @@ async function createSingleInvoice(
 
   // Discount distribution from config
   const discountConfig =
-    invoiceType === "sales"
-      ? INVOICES_CONFIG.sales
-      : INVOICES_CONFIG.purchase;
+    invoiceType === "sales" ? INVOICES_CONFIG.sales : INVOICES_CONFIG.purchase;
   const discountRoll = Math.random();
   let discountType: "none" | "percentage" | "flat_amount";
   let discountValue = 0;
@@ -343,7 +338,8 @@ async function createSingleInvoice(
       p_counter_ledger_id: counterLedgerId,
       p_warehouse_id: order.warehouse_id,
       p_invoice_date: invoiceDate,
-      p_payment_terms: paymentTermsOptions[randomInt(0, paymentTermsOptions.length - 1)],
+      p_payment_terms:
+        paymentTermsOptions[randomInt(0, paymentTermsOptions.length - 1)],
       p_due_date: dueDate,
       p_tax_type: taxType,
       p_discount_type: discountType,
@@ -488,7 +484,11 @@ export async function generateSalesInvoices(
     .eq("is_default", true)
     .single();
 
-  if (!customerLedgersList || customerLedgersList.length === 0 || !salesLedger) {
+  if (
+    !customerLedgersList ||
+    customerLedgersList.length === 0 ||
+    !salesLedger
+  ) {
     console.error("❌ Missing customer ledgers or Sales ledger.");
     return [];
   }
@@ -526,12 +526,16 @@ export async function generateSalesInvoices(
     if (invoice) {
       createdInvoices.push(invoice);
       if (createdInvoices.length % 10 === 0) {
-        console.log(`   ✅ Created ${createdInvoices.length}/${toCreate} sales invoices...`);
+        console.log(
+          `   ✅ Created ${createdInvoices.length}/${toCreate} sales invoices...`,
+        );
       }
     }
   }
 
-  console.log(`\n✨ Successfully created ${createdInvoices.length} sales invoices!\n`);
+  console.log(
+    `\n✨ Successfully created ${createdInvoices.length} sales invoices!\n`,
+  );
 
   return createdInvoices;
 }
@@ -635,7 +639,11 @@ export async function generatePurchaseInvoices(
     .eq("is_default", true)
     .single();
 
-  if (!supplierLedgersList || supplierLedgersList.length === 0 || !purchaseLedger) {
+  if (
+    !supplierLedgersList ||
+    supplierLedgersList.length === 0 ||
+    !purchaseLedger
+  ) {
     console.error("❌ Missing supplier ledgers or Purchase ledger.");
     return [];
   }
@@ -673,12 +681,16 @@ export async function generatePurchaseInvoices(
     if (invoice) {
       createdInvoices.push(invoice);
       if (createdInvoices.length % 10 === 0) {
-        console.log(`   ✅ Created ${createdInvoices.length}/${toCreate} purchase invoices...`);
+        console.log(
+          `   ✅ Created ${createdInvoices.length}/${toCreate} purchase invoices...`,
+        );
       }
     }
   }
 
-  console.log(`\n✨ Successfully created ${createdInvoices.length} purchase invoices!\n`);
+  console.log(
+    `\n✨ Successfully created ${createdInvoices.length} purchase invoices!\n`,
+  );
 
   return createdInvoices;
 }
@@ -714,12 +726,20 @@ export async function fetchChargeLedgers(
   }
 
   return {
-    freightOutward: chargeLedgers.find((l) => l.system_name === "freight_outward"),
-    freightInward: chargeLedgers.find((l) => l.system_name === "freight_inward"),
+    freightOutward: chargeLedgers.find(
+      (l) => l.system_name === "freight_outward",
+    ),
+    freightInward: chargeLedgers.find(
+      (l) => l.system_name === "freight_inward",
+    ),
     packaging: chargeLedgers.find((l) => l.system_name === "packaging_charges"),
-    agentCommission: chargeLedgers.find((l) => l.system_name === "agent_commission"),
+    agentCommission: chargeLedgers.find(
+      (l) => l.system_name === "agent_commission",
+    ),
     handling: chargeLedgers.find((l) => l.system_name === "handling_charges"),
-    loadingUnloading: chargeLedgers.find((l) => l.system_name === "loading_unloading_charges"),
+    loadingUnloading: chargeLedgers.find(
+      (l) => l.system_name === "loading_unloading_charges",
+    ),
     labour: chargeLedgers.find((l) => l.system_name === "labour_charges"),
   };
 }

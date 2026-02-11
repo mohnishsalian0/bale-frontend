@@ -262,6 +262,23 @@ CREATE TRIGGER trigger_reconcile_stock_on_adjustment_change
 
 COMMENT ON TRIGGER trigger_reconcile_stock_on_adjustment_change ON stock_unit_adjustments IS 'Triggers stock unit reconciliation when adjustments are created, updated, or deleted.';
 
+-- Trigger reconciliation from goods_convert_input_items insert/delete
+CREATE TRIGGER trigger_reconcile_stock_on_convert_item_insert_delete
+    AFTER INSERT OR DELETE ON goods_convert_input_items
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_stock_unit_reconciliation();
+
+COMMENT ON TRIGGER trigger_reconcile_stock_on_convert_item_insert_delete ON goods_convert_input_items IS 'Triggers stock unit reconciliation when convert input items are created or deleted.';
+
+-- Trigger reconciliation from goods_convert_input_items update (only when quantity changes)
+CREATE TRIGGER trigger_reconcile_stock_on_convert_item_quantity_update
+    AFTER UPDATE ON goods_convert_input_items
+    FOR EACH ROW
+    WHEN (OLD.quantity_consumed IS DISTINCT FROM NEW.quantity_consumed)
+    EXECUTE FUNCTION trigger_stock_unit_reconciliation();
+
+COMMENT ON TRIGGER trigger_reconcile_stock_on_convert_item_quantity_update ON goods_convert_input_items IS 'Triggers stock unit reconciliation when convert input item quantity is updated.';
+
 -- Helper function for convert-triggered reconciliation
 CREATE OR REPLACE FUNCTION trigger_stock_unit_reconciliation_for_convert()
 RETURNS TRIGGER AS $$
@@ -300,57 +317,3 @@ CREATE TRIGGER trigger_reconcile_stock_on_convert_cancellation
 COMMENT ON TRIGGER trigger_reconcile_stock_on_convert_cancellation ON goods_converts IS 'Triggers stock unit reconciliation when convert is cancelled.';
 
 -- Note: Transfer-related reconciliation triggers will be added when consolidating from 0037_goods_transfer_functions.sql
-
--- Old trigger (to be removed)
-DROP TRIGGER IF EXISTS trigger_reconcile_stock_unit
-    BEFORE INSERT OR UPDATE ON stock_units
-    FOR EACH ROW
-    EXECUTE FUNCTION reconcile_stock_unit();
-
--- =====================================================
--- TRIGGER RECONCILIATION FROM GOODS OUTWARD ITEMS CHANGES
--- =====================================================
-
--- Trigger stock_units reconciliation when goods_outward_items change
-CREATE OR REPLACE FUNCTION trigger_stock_unit_reconciliation()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_stock_unit_id UUID;
-BEGIN
-    -- Get the affected stock unit ID
-    v_stock_unit_id := COALESCE(NEW.stock_unit_id, OLD.stock_unit_id);
-
-    IF v_stock_unit_id IS NOT NULL THEN
-        -- Touch the stock_unit to trigger reconcile_stock_unit()
-        -- The BEFORE UPDATE trigger will recalculate remaining_quantity
-        UPDATE stock_units
-        SET updated_at = NOW()  -- Dummy update to trigger reconciliation
-        WHERE id = v_stock_unit_id;
-    END IF;
-
-    IF TG_OP = 'DELETE' THEN
-        RETURN OLD;
-    ELSE
-        RETURN NEW;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_reconcile_stock_on_outward_item_change
-    AFTER INSERT OR UPDATE OR DELETE ON goods_outward_items
-    FOR EACH ROW
-    EXECUTE FUNCTION trigger_stock_unit_reconciliation();
-
-COMMENT ON FUNCTION trigger_stock_unit_reconciliation() IS 'Triggers stock_units reconciliation when goods_outward_items are created, updated, or deleted. Uses dummy update pattern to recalculate remaining_quantity and status. Stock is automatically restored when outwards are cancelled because changes trigger this reconciliation. Note: stock_unit_adjustments also trigger reconciliation via their own trigger in migration 0065.';
-
-COMMENT ON TRIGGER trigger_reconcile_stock_unit ON stock_units IS 'Calculates remaining_quantity and status based on non-cancelled goods_outward_items and stock_unit_adjustments. Triggered by dummy updates from outward item changes. Cancelling an outward automatically triggers reconciliation.';
-
--- Trigger stock unit reconciliation when adjustments change
--- Reuses the same trigger_stock_unit_reconciliation() function from migration 0062
--- This ensures consistent reconciliation behavior across outward items and adjustments
-CREATE TRIGGER trigger_reconcile_stock_on_adjustment_change
-    AFTER INSERT OR UPDATE OR DELETE ON stock_unit_adjustments
-    FOR EACH ROW
-    EXECUTE FUNCTION trigger_stock_unit_reconciliation();
-
-COMMENT ON TRIGGER trigger_reconcile_stock_on_adjustment_change ON stock_unit_adjustments IS 'Triggers stock_units reconciliation when adjustments are created, updated, or deleted. Uses dummy update pattern to recalculate remaining_quantity and status including adjustments.';

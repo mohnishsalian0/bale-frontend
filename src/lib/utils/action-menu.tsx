@@ -19,6 +19,7 @@ import type {
   SalesOrderStatus,
   PartnerType,
   TransferStatus,
+  ConvertStatus,
 } from "@/types/database/enums";
 import type { Invoice } from "@/types/invoices.types";
 import type { Payment } from "@/types/payments.types";
@@ -998,6 +999,72 @@ export function getGoodsTransferActions(
     variant: "destructive",
     hidden: !isInTransit || isCancelled,
     permission: "inventory.goods_transfers.delete",
+  });
+
+  return items;
+}
+
+// ============================================================================
+// GOODS CONVERT ACTIONS
+// ============================================================================
+
+export interface GoodsConvertActionsCallbacks {
+  onEdit: () => void;
+  onComplete: () => void;
+  onCancel: () => void;
+  onDelete: () => void;
+}
+
+/**
+ * Get action items for goods convert
+ * Shows edit/complete/cancel/delete only for in_progress status
+ */
+export function getGoodsConvertActions(
+  status: ConvertStatus,
+  callbacks: GoodsConvertActionsCallbacks,
+): ContextMenuItem[] {
+  const items: ContextMenuItem[] = [];
+
+  const isInProgress = status === "in_progress";
+
+  // Primary CTA: Complete button - only for in_progress
+  items.push({
+    label: "Complete convert",
+    icon: IconCheck,
+    onClick: callbacks.onComplete,
+    variant: "default",
+    hidden: !isInProgress,
+    permission: "inventory.converts.update",
+  });
+
+  // Secondary CTA: Edit button - only for in_progress
+  items.push({
+    label: "Edit convert",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    variant: "outline",
+    hidden: !isInProgress,
+    permission: "inventory.converts.update",
+  });
+
+  // Dropdown menu items: Cancel - only for in_progress
+  items.push({
+    label: "Cancel convert",
+    icon: IconX,
+    onClick: callbacks.onCancel,
+    variant: "destructive",
+    hidden: !isInProgress,
+    permission: "inventory.converts.update",
+  });
+
+  // Dropdown menu items: Delete - only for in_progress
+  items.push({
+    label: "Delete convert",
+    icon: IconTrash,
+    onClick: callbacks.onDelete,
+    variant: "destructive",
+    hidden: !isInProgress,
+    permission: "inventory.converts.delete",
   });
 
   return items;

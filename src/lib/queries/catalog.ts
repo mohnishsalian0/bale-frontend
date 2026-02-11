@@ -41,8 +41,8 @@ export const buildPublicProductsQuery = (
         product_images,
         min_stock_threshold,
         inventory:product_inventory_aggregates!product_id(
-          in_stock_units,
-          in_stock_quantity,
+          available_units,
+          available_quantity,
           warehouse_id
         ),
         attributes:attributes!inner(id, name, group_name, color_hex)
@@ -154,11 +154,11 @@ export async function getPublicProducts(
         const warehouseInventory = product.inventory.find(
           (inv) => inv.warehouse_id === warehouseId,
         );
-        totalStock = Number(warehouseInventory?.in_stock_quantity || 0);
+        totalStock = Number(warehouseInventory?.available_quantity || 0);
       } else {
         // Sum across all warehouses
         totalStock = product.inventory.reduce(
-          (sum: number, inv) => sum + Number(inv.in_stock_quantity || 0),
+          (sum: number, inv) => sum + Number(inv.available_quantity || 0),
           0,
         );
       }

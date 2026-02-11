@@ -2,6 +2,7 @@ import type {
   Tables,
   TablesInsert,
   TablesUpdate,
+  Database,
 } from "@/types/database/supabase";
 import type { ProductAttributeGroup } from "@/types/database/enums";
 import type { QueryData } from "@supabase/supabase-js";
@@ -159,9 +160,9 @@ export interface ProductDetailView extends Product {
 export interface ProductWithInventoryListView extends ProductListView {
   inventory: Pick<
     ProductInventory,
-    | "in_stock_units"
-    | "in_stock_quantity"
-    | "in_stock_value"
+    | "available_units"
+    | "available_quantity"
+    | "available_value"
     | "pending_qr_units"
   >;
 }
@@ -205,9 +206,9 @@ export interface ProductInventoryDetailView extends ProductDetailView {
 export interface ProductInventoryView extends ProductListView {
   inventory: Pick<
     ProductInventory,
-    | "in_stock_units"
-    | "in_stock_quantity"
-    | "in_stock_value"
+    | "available_units"
+    | "available_quantity"
+    | "available_value"
     | "pending_qr_units"
   >;
   sales_orders: Pick<
@@ -225,3 +226,34 @@ export interface ProductInventoryView extends ProductListView {
     | "active_required_value"
   > | null;
 }
+
+// ============================================================================
+// PRODUCT ACTIVITY TYPES
+// ============================================================================
+
+export type ProductActivityEventType =
+  | "inward"
+  | "outward"
+  | "transfer_out"
+  | "transfer_in"
+  | "convert_in"
+  | "convert_out";
+
+// Raw shape derived from generated DB types — zero manual maintenance
+type ProductActivityRow =
+  Database["public"]["Functions"]["get_product_activity"]["Returns"][number];
+
+/**
+ * A single activity event for a product in a warehouse.
+ * Derived from get_product_activity RPC return type (migration 0071).
+ * event_type is narrowed from string to the known union.
+ * Used in: products/[product_number]/activity page
+ */
+export interface ProductActivityEvent extends Omit<
+  ProductActivityRow,
+  "event_type"
+> {
+  event_type: ProductActivityEventType;
+}
+
+export type ProductActivityTypeFilter = "all" | ProductActivityEventType;

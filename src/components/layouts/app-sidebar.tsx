@@ -16,6 +16,7 @@ import {
   IconBuilding,
   IconListDetails,
   IconTransfer,
+  IconTransform,
 } from "@tabler/icons-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -76,6 +77,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           path: `/warehouse/${warehouse.slug}/goods-transfer`,
           icon: IconTruckDelivery,
           permission: "inventory.goods_transfers.read",
+        },
+        {
+          label: "Goods Convert",
+          path: `/warehouse/${warehouse.slug}/goods-convert`,
+          icon: IconTransform,
+          permission: "inventory.goods_converts.read",
         },
         {
           label: "QR codes",
@@ -222,7 +229,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <SidebarMenuButton
                           asChild
                           isActive={isActive}
-                          size="lg"
+                          size="default"
                           onClick={handleClick}
                         >
                           <Link

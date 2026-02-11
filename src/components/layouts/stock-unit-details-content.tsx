@@ -24,6 +24,7 @@ import {
   useStockUnitMutations,
 } from "@/lib/query/hooks/stock-units";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { StockUnitEditForm } from "./StockUnitEditForm";
 import { StockUnitAdjustmentForm } from "./StockUnitAdjustmentForm";
 import { StockUnitDeleteConfirmation } from "./StockUnitDeleteConfirmation";
@@ -32,6 +33,11 @@ import type { StockUnitAdjustmentFormData } from "@/lib/validations/stock-unit-a
 import { useParams } from "next/navigation";
 import { useSession } from "@/contexts/session-context";
 import { StockStatusBadge } from "../ui/stock-status-badge";
+import {
+  ACTIVITY_EVENT_CONFIG,
+  getStockUnitActivityTitle,
+} from "@/lib/utils/stock-units";
+import type { StockUnitActivityEventType } from "@/types/stock-units.types";
 
 type StockUnit = Tables<"stock_units">;
 
@@ -429,105 +435,53 @@ export function StockUnitDetailsContent({
           ) : activities.length === 0 ? (
             <p className="text-sm text-gray-500">-</p>
           ) : (
-            <div className="space-y-2">
+            <div className="flex flex-col border-b border-dashed border-gray-300">
               {activities.map((activity) => {
-                // Determine event type label and color
-                const eventTypeConfig = {
-                  created: {
-                    label: "Created",
-                    color: "text-blue-600",
-                    bgColor: "bg-blue-50",
-                  },
-                  transfer: {
-                    label: "Transfer",
-                    color: "text-purple-600",
-                    bgColor: "bg-purple-50",
-                  },
-                  dispatched: {
-                    label: "Dispatched",
-                    color: "text-orange-600",
-                    bgColor: "bg-orange-50",
-                  },
-                  adjustment: {
-                    label: "Adjustment",
-                    color: "text-gray-600",
-                    bgColor: "bg-gray-50",
-                  },
-                };
-
-                const config =
-                  eventTypeConfig[
-                    activity.event_type as keyof typeof eventTypeConfig
-                  ];
+                const eventType =
+                  activity.event_type as StockUnitActivityEventType;
+                const config = ACTIVITY_EVENT_CONFIG[eventType];
+                const title = getStockUnitActivityTitle(activity);
+                const qty = Number(activity.quantity_change);
                 const quantityColor =
-                  activity.quantity_change > 0
-                    ? "text-green-600"
-                    : "text-red-600";
+                  eventType === "adjustment"
+                    ? qty >= 0
+                      ? "text-green-600"
+                      : "text-red-600"
+                    : config.quantityColor;
+                const subInfo = [
+                  activity.event_number,
+                  formatAbsoluteDate(activity.event_date),
+                  activity.notes,
+                ]
+                  .filter(Boolean)
+                  .join(" • ");
 
                 return (
                   <div
                     key={`${activity.event_type}-${activity.event_id}`}
-                    className="px-3 py-2 border border-gray-200 rounded-md"
+                    className="flex items-start gap-4 py-2 border-t border-dashed border-gray-300"
                   >
-                    <div className="space-y-1">
-                      {/* Event Type and Number */}
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span
-                          className={`text-xs font-semibold ${config.color}`}
+                        <p
+                          className="text-sm font-medium text-gray-700 truncate"
+                          title={title}
                         >
-                          {config.label}
-                        </span>
-                        {activity.event_number && (
-                          <span className="text-xs text-gray-500">
-                            {activity.event_number}
-                          </span>
-                        )}
-                        {activity.status !== "completed" && (
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded ${
-                              activity.status === "in_transit"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {activity.status}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* From/To Information */}
-                      {(activity.from_name || activity.to_name) && (
-                        <p className="text-xs text-gray-600">
-                          {activity.from_name && (
-                            <span title={activity.from_name}>
-                              From: {activity.from_name}
-                            </span>
-                          )}
-                          {activity.from_name && activity.to_name && (
-                            <span className="mx-1">→</span>
-                          )}
-                          {activity.to_name && (
-                            <span title={activity.to_name}>
-                              To: {activity.to_name}
-                            </span>
-                          )}
+                          {title}
                         </p>
-                      )}
-
-                      {/* Quantity, Date, and Notes */}
+                        <Badge color={config.badgeColor} className="shrink-0">
+                          {config.label}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">{subInfo}</p>
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      <p className={`text-sm font-semibold ${quantityColor}`}>
+                        {qty > 0 ? "+" : ""}
+                        {qty.toFixed(2)} {unitAbbr}
+                      </p>
                       <p className="text-xs text-gray-500">
-                        <span className={`font-semibold ${quantityColor}`}>
-                          {activity.quantity_change > 0 ? "+" : ""}
-                          {activity.quantity_change} {unitAbbr}
-                        </span>
-                        {" • "}
-                        <span>{formatAbsoluteDate(activity.event_date)}</span>
-                        {activity.notes && (
-                          <>
-                            {" • "}
-                            <span title={activity.notes}>{activity.notes}</span>
-                          </>
-                        )}
+                        {config.quantityLabel}
                       </p>
                     </div>
                   </div>

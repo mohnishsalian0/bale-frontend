@@ -33,6 +33,8 @@ export interface StockUnitSpec {
   manufactured_on?: Date;
   location?: string;
   notes?: string;
+  wastage_quantity?: number;
+  wastage_reason?: string;
   count: number; // for duplicate specs
 }
 

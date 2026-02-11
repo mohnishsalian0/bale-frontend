@@ -11,7 +11,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
+import type { Database } from "@/types/database/supabase";
 import { randomInt, randomFloat } from "./shared";
 
 // ============================================================================
@@ -99,8 +99,7 @@ function generateAdjustmentNoteItems(
       config.itemRateRange[1],
       2,
     );
-    const gst_rate =
-      config.gstRates[randomInt(0, config.gstRates.length - 1)];
+    const gst_rate = config.gstRates[randomInt(0, config.gstRates.length - 1)];
 
     return {
       product_id: productId,
@@ -172,9 +171,7 @@ async function createSingleAdjustmentNote(
   );
 
   if (error) {
-    console.error(
-      `   ❌ Failed to create adjustment note: ${error.message}`,
-    );
+    console.error(`   ❌ Failed to create adjustment note: ${error.message}`);
     return null;
   }
 
@@ -353,7 +350,9 @@ export async function generateSalesAdjustmentNotes(
     }
   }
 
-  console.log(`\n✨ Successfully created ${successCount} sales adjustment notes!`);
+  console.log(
+    `\n✨ Successfully created ${successCount} sales adjustment notes!`,
+  );
 
   // Apply cancellations
   if (createdSlugs.length > 0) {
@@ -377,7 +376,9 @@ export async function generateSalesAdjustmentNotes(
     .in("invoice_id", salesInvoiceIds)
     .order("created_at", { ascending: true });
 
-  console.log(`📊 Total sales adjustment notes: ${allSalesNotes?.length || 0}\n`);
+  console.log(
+    `📊 Total sales adjustment notes: ${allSalesNotes?.length || 0}\n`,
+  );
 
   return allSalesNotes || [];
 }

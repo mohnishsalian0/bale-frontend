@@ -80,7 +80,12 @@ export const STOCK_TYPES = ["roll", "batch"] as const;
 export type MeasuringUnit = "metre" | "yard" | "kilogram" | "unit";
 export const MEASURING_UNITS = ["metre", "yard", "kilogram", "unit"] as const;
 
-export type StockUnitStatus = "full" | "partial" | "empty" | "removed";
+export type StockUnitStatus = "available" | "in_transit" | "processing";
+export const STOCK_UNIT_STATUSES = [
+  "available",
+  "in_transit",
+  "processing",
+] as const;
 
 export type SalesOrderStatus =
   | "approval_pending"
@@ -130,6 +135,13 @@ export type OutwardLinkToType =
 
 export type TransferStatus = "in_transit" | "completed" | "cancelled";
 export const TRANSFER_STATUSES = ["in_transit", "completed", "cancelled"];
+
+export type ConvertStatus = "in_progress" | "completed" | "cancelled";
+export const CONVERT_STATUSES = [
+  "in_progress",
+  "completed",
+  "cancelled",
+] as const;
 
 export type TransportType = "road" | "rail" | "air" | "sea" | "courier";
 export const TRANSPORT_TYPES = [

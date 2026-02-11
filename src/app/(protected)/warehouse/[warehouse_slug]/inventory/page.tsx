@@ -17,6 +17,7 @@ import {
   IconTransferIn,
   IconTransferOut,
   IconScan,
+  IconTransform,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -200,6 +201,11 @@ export default function InventoryPage() {
       icon: IconTruckDelivery,
       label: "Goods transfer",
       href: `/warehouse/${warehouse.slug}/goods-transfer/create`,
+    },
+    {
+      icon: IconTransform,
+      label: "Goods convert",
+      href: `/warehouse/${warehouse.slug}/goods-convert/create`,
     },
     {
       icon: IconQrcode,
@@ -412,7 +418,7 @@ export default function InventoryPage() {
               const lowStock =
                 product.min_stock_alert &&
                 (product.min_stock_threshold ?? 0) >=
-                  (product.inventory.in_stock_quantity ?? 0);
+                  (product.inventory.available_quantity ?? 0);
 
               // Calculate order metrics
               const orderRequest =

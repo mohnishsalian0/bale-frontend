@@ -182,7 +182,7 @@ export const buildProductsWithInventoryQuery = (
       tax_type,
       gst_rate,
       attributes:attributes!inner(id, name, group_name, color_hex),
-      product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value, pending_qr_units, warehouse_id)
+      product_inventory_aggregates!inner(available_units, available_quantity, available_value, pending_qr_units, warehouse_id)
     `,
       { count: "exact" },
     )
@@ -323,7 +323,7 @@ export const buildProductsWithInventoryByIdsQuery = (
       tax_type,
       gst_rate,
       attributes:attributes!inner(id, name, group_name, color_hex),
-      product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value, pending_qr_units, warehouse_id)
+      product_inventory_aggregates!inner(available_units, available_quantity, available_value, pending_qr_units, warehouse_id)
     `,
     )
     .in("id", productIds)
@@ -366,7 +366,7 @@ export const buildProductsWithInventoryAndOrdersQuery = (
       tax_type,
       gst_rate,
       attributes:attributes!inner(id, name, group_name, color_hex),
-      product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value, pending_qr_units, warehouse_id),
+      product_inventory_aggregates!inner(available_units, available_quantity, available_value, pending_qr_units, warehouse_id),
       product_sales_order_aggregates(active_pending_quantity, active_required_quantity, active_pending_value, active_required_value),
       product_purchase_order_aggregates(active_pending_quantity, active_required_quantity, active_pending_value, active_required_value)
     `,
@@ -378,7 +378,7 @@ export const buildProductsWithInventoryAndOrdersQuery = (
 
   // Filter to products with stock > 0 for inventory page
   if (filters?.has_inventory) {
-    query = query.gt("product_inventory_aggregates.in_stock_quantity", 0);
+    query = query.gt("product_inventory_aggregates.available_quantity", 0);
   }
 
   // Filter to products with pending QR codes

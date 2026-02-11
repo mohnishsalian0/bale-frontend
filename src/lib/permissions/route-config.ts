@@ -92,10 +92,16 @@ export const routePermissions: Record<string, RouteConfig> = {
     description: "View product stock units",
   },
 
-  "products/[product_number]/stock-flow": {
+  "products/[product_number]/activity": {
     permission: "inventory.goods_inward.read",
     displayName: "Product Stock Flow",
     description: "View product movement history",
+  },
+
+  "products/[product_number]/orders": {
+    permission: "orders.sales_orders.read",
+    displayName: "Product Orders",
+    description: "View product orders history",
   },
 
   // QR Codes
@@ -203,6 +209,37 @@ export const routePermissions: Record<string, RouteConfig> = {
     permission: "inventory.goods_transfers.update",
     displayName: "Edit Goods Transfer",
     description: "Update transfer record",
+  },
+
+  // Goods convert
+  "goods-convert": {
+    permission: "inventory.goods_converts.read",
+    displayName: "Goods convert",
+    description: "View warehouse-to-warehouse converts",
+  },
+
+  "goods-convert/create": {
+    permission: "inventory.goods_converts.create",
+    displayName: "Create Goods convert",
+    description: "Create warehouse convert",
+  },
+
+  "goods-convert/[convert_number]": {
+    permission: "inventory.goods_converts.read",
+    displayName: "Goods convert Details",
+    description: "View convert details",
+  },
+
+  "goods-convert/[convert_number]/edit": {
+    permission: "inventory.goods_converts.update",
+    displayName: "Edit Goods convert",
+    description: "Update convert record",
+  },
+
+  "goods-convert/[convert_number]/complete": {
+    permission: "inventory.goods_converts.update",
+    displayName: "Complete Goods convert",
+    description: "Update convert record",
   },
 
   // ===== Orders Module =====
@@ -525,66 +562,36 @@ export const companyRoutes: Record<string, RouteConfig> = {
 };
 
 /**
- * Get route config for exact path match
- * Throws error if route is not defined in config
+ * Find route config for a given path, supporting both exact and dynamic routes.
+ * Tries exact match first, then falls back to dynamic pattern matching
+ * (e.g. "products/[product_number]" matching "products/42").
  *
- * @param path - Route path to look up (must match exactly)
+ * @param path - Route path to look up (relative to warehouse or company root)
  * @param isCompanyRoute - Whether this is a company-level route (default: false)
- * @returns Route configuration
- * @throws Error if route is not defined in routePermissions
+ * @returns RouteConfig if a match is found, null otherwise
  */
-export function getRouteConfig(
+export function findRouteConfig(
   path: string,
-  isCompanyRoute: boolean = false,
-): RouteConfig {
-  const config = isCompanyRoute ? companyRoutes[path] : routePermissions[path];
-
-  if (!config) {
-    const context = isCompanyRoute ? "company" : "warehouse";
-    throw new Error(
-      `Route "${path}" is not defined in ${context} route configuration. ` +
-        `All routes must be explicitly defined in routePermissions.`,
-    );
-  }
-
-  return config;
-}
-
-/**
- * Match dynamic route patterns
- * Converts dynamic route like "products/[product_number]" to match actual paths
- *
- * @param actualPath - The actual route path from the URL
- * @param isCompanyRoute - Whether this is a company-level route
- * @returns RouteConfig if match found, null otherwise
- */
-export function matchDynamicRoute(
-  actualPath: string,
   isCompanyRoute: boolean = false,
 ): RouteConfig | null {
   const routes = isCompanyRoute ? companyRoutes : routePermissions;
 
-  // First try exact match
-  if (routes[actualPath]) {
-    return routes[actualPath];
-  }
+  // 1. Exact match
+  if (routes[path]) return routes[path];
 
-  // Try dynamic pattern matching
-  const pathSegments = actualPath.split("/");
+  // 2. Dynamic pattern matching — e.g. "products/[product_number]"
+  const pathSegments = path.split("/");
 
   for (const [pattern, config] of Object.entries(routes)) {
     const patternSegments = pattern.split("/");
 
-    // Must have same number of segments
-    if (pathSegments.length !== patternSegments.length) continue;
+    if (patternSegments.length !== pathSegments.length) continue;
 
-    // Check if pattern matches
-    const matches = patternSegments.every((segment, i) => {
-      // Dynamic segment matches anything
-      if (segment.startsWith("[") && segment.endsWith("]")) return true;
-      // Static segment must match exactly
-      return segment === pathSegments[i];
-    });
+    const matches = patternSegments.every(
+      (segment, i) =>
+        (segment.startsWith("[") && segment.endsWith("]")) ||
+        segment === pathSegments[i],
+    );
 
     if (matches) return config;
   }

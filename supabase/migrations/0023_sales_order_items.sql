@@ -1,5 +1,5 @@
 
--- Bale Backend - Sales Order Management
+-- Bale Backend - Sales Order Items
 -- Customer order management with real-time fulfillment tracking
 
 -- =====================================================

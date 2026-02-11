@@ -24,14 +24,18 @@ BEGIN
         RAISE EXCEPTION 'Cannot edit goods convert - convert is deleted';
     END IF;
 
-    -- Rule 4: Cannot change warehouse_id after creation
+    -- Rule 4: Cannot change warehouse_id or output_product_id after creation
     IF NEW.warehouse_id IS DISTINCT FROM OLD.warehouse_id THEN
         RAISE EXCEPTION 'Cannot change warehouse after convert creation';
     END IF;
 
+    IF NEW.output_product_id IS DISTINCT FROM OLD.output_product_id THEN
+        RAISE EXCEPTION 'Cannot change output product after convert creation';
+    END IF;
+
     -- Rule 5: Cannot change critical fields if status = 'completed'
     IF OLD.status = 'completed' AND (
-        NEW.conversion_type IS DISTINCT FROM OLD.conversion_type OR
+        NEW.service_type_attribute_id IS DISTINCT FROM OLD.service_type_attribute_id OR
         NEW.start_date IS DISTINCT FROM OLD.start_date
     ) THEN
         RAISE EXCEPTION 'Cannot edit critical fields - convert is completed';

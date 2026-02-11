@@ -2,7 +2,7 @@
 
 import { use, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { IconBox } from "@tabler/icons-react";
+import { IconBox, IconTransferIn, IconTransform } from "@tabler/icons-react";
 import {
   Select,
   SelectContent,
@@ -19,12 +19,13 @@ import { StockUnitDetailsModal } from "@/components/layouts/stock-unit-modal";
 import { formatAbsoluteDate, formatRelativeDate } from "@/lib/utils/date";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { getStockUnitInfo } from "@/lib/utils/product";
+import { getMovementNumber } from "@/lib/utils/stock-flow";
+import { getConvertNumber } from "@/lib/utils/goods-convert";
 import { useSession } from "@/contexts/session-context";
 import { useProductWithInventoryAndOrdersByNumber } from "@/lib/query/hooks/products";
-import { useStockUnitsWithInward } from "@/lib/query/hooks/stock-units";
+import { useStockUnitsWithOrigin } from "@/lib/query/hooks/stock-units";
 import type { MeasuringUnit, StockUnitStatus } from "@/types/database/enums";
-import type { StockUnitWithInwardListView } from "@/types/stock-units.types";
-import type { InwardWithPartnerListView } from "@/types/stock-flow.types";
+import type { StockUnitWithOriginListView } from "@/types/stock-units.types";
 import { StockStatusBadge } from "@/components/ui/stock-status-badge";
 
 interface PageParams {
@@ -57,15 +58,15 @@ export default function StockUnitsPage({ params }: PageParams) {
   const { data: product, isLoading: productLoading } =
     useProductWithInventoryAndOrdersByNumber(product_number, warehouse.id);
 
-  // Fetch stock units with pagination
+  // Fetch stock units with pagination (show all available stock units)
   const {
     data: stockUnitsResponse,
     isLoading: stockUnitsLoading,
     isError: stockUnitsError,
     refetch: refetchStockUnits,
-  } = useStockUnitsWithInward(
+  } = useStockUnitsWithOrigin(
     warehouse.id,
-    { product_id: product?.id, status: ["full", "partial"] },
+    { product_id: product?.id },
     currentPage,
     PAGE_SIZE,
   );
@@ -129,30 +130,63 @@ export default function StockUnitsPage({ params }: PageParams) {
     return units;
   }, [stockUnits, sortBy, qrPendingOnly]);
 
-  // Group by goods inward
+  // Group by origin (goods inward or goods convert), sorted by date
   const groupedUnits = useMemo(() => {
-    const groups: Map<
+    const groups: Array<{
+      id: string;
+      type: "inward" | "convert";
+      sequence_number: number;
+      date: string;
+      units: StockUnitWithOriginListView[];
+    }> = [];
+    const groupMap = new Map<
       string,
       {
-        inward: InwardWithPartnerListView;
-        units: StockUnitWithInwardListView[];
+        id: string;
+        type: "inward" | "convert";
+        sequence_number: number;
+        date: string;
+        units: StockUnitWithOriginListView[];
       }
-    > = new Map();
+    >();
 
     filteredAndSortedUnits.forEach((unit) => {
-      if (!unit.goods_inward) return;
-
-      const key = unit.created_from_inward_id || "unknown";
-      if (!groups.has(key)) {
-        groups.set(key, {
-          inward: unit.goods_inward,
-          units: [],
-        });
+      if (unit.origin_type === "inward" && unit.goods_inward) {
+        const key = `inward-${unit.origin_inward_id}`;
+        if (!groupMap.has(key)) {
+          groupMap.set(key, {
+            id: key,
+            type: "inward",
+            sequence_number: unit.goods_inward.sequence_number,
+            date: unit.goods_inward.inward_date,
+            units: [],
+          });
+        }
+        groupMap.get(key)!.units.push(unit);
+      } else if (unit.origin_type === "convert" && unit.goods_convert) {
+        const key = `convert-${unit.origin_convert_id}`;
+        if (!groupMap.has(key)) {
+          groupMap.set(key, {
+            id: key,
+            type: "convert",
+            sequence_number: unit.goods_convert.sequence_number,
+            date:
+              unit.goods_convert.completion_date ||
+              unit.goods_convert.start_date,
+            units: [],
+          });
+        }
+        groupMap.get(key)!.units.push(unit);
       }
-      groups.get(key)!.units.push(unit);
     });
 
-    return Array.from(groups.values());
+    // Convert to array and sort by date (newest first)
+    groups.push(...Array.from(groupMap.values()));
+    groups.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+
+    return groups;
   }, [filteredAndSortedUnits]);
 
   if (loading) {
@@ -234,72 +268,85 @@ export default function StockUnitsPage({ params }: PageParams) {
             </p>
           </div>
         ) : (
-          groupedUnits.map((group) => (
-            <div key={group.inward.id} className="border-t border-gray-200">
-              {/* Inward Header */}
-              <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-gray-100">
-                <span className="text-sm font-semibold text-gray-700">
-                  GI-{group.inward.sequence_number}
-                </span>
-                <span className="text-xs text-gray-500">
-                  {formatAbsoluteDate(group.inward.inward_date)}
-                </span>
-              </div>
+          groupedUnits.map((group) => {
+            const groupLabel =
+              group.type === "inward"
+                ? getMovementNumber("inward", group.sequence_number)
+                : getConvertNumber(group.sequence_number);
 
-              {/* Stock Units */}
-              {group.units.map((unit) => {
-                return (
-                  <button
-                    key={unit.id}
-                    onClick={() => handleStockUnitClick(unit.id)}
-                    className="flex items-start justify-between gap-4 px-4 py-4 border-t border-dashed border-gray-200 hover:bg-gray-50 transition-colors w-full text-left cursor-pointer"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 text-base font-medium text-gray-700">
-                        <span>{unit.stock_number}</span>
-                        <span>
-                          <StockStatusBadge
-                            status={unit.status as StockUnitStatus}
-                          />
-                        </span>
+            const Icon =
+              group.type === "inward" ? IconTransferIn : IconTransform;
+
+            return (
+              <div key={group.id} className="border-t border-gray-200">
+                {/* Origin Header */}
+                <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-gray-100">
+                  <div className="flex items-center gap-2">
+                    <Icon className="size-4 text-gray-500" />
+                    <span className="text-sm font-semibold text-gray-700">
+                      {groupLabel}
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {formatAbsoluteDate(group.date)}
+                  </span>
+                </div>
+
+                {/* Stock Units */}
+                {group.units.map((unit) => {
+                  return (
+                    <button
+                      key={unit.id}
+                      onClick={() => handleStockUnitClick(unit.id)}
+                      className="flex items-start justify-between gap-4 px-4 py-4 border-t border-dashed border-gray-200 hover:bg-gray-50 transition-colors w-full text-left cursor-pointer"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 text-base font-medium text-gray-700">
+                          <span>{unit.stock_number}</span>
+                          <span>
+                            <StockStatusBadge
+                              status={unit.status as StockUnitStatus}
+                            />
+                          </span>
+                        </div>
+
+                        {/* Current Warehouse & QR Status */}
+                        <p className="text-sm mt-1 text-gray-500">
+                          {unit.warehouse.name}
+                          {" • "}
+                          <span
+                            className={`${
+                              !unit.qr_generated_at && "text-green-700"
+                            }`}
+                            title={
+                              unit.qr_generated_at
+                                ? formatAbsoluteDate(unit.qr_generated_at)
+                                : ""
+                            }
+                          >
+                            {unit.qr_generated_at
+                              ? `QR on ${formatRelativeDate(unit.qr_generated_at)}`
+                              : "QR pending"}
+                          </span>
+                        </p>
+
+                        {/* Additional Details */}
+                        <p className="text-xs text-gray-500">
+                          {getStockUnitInfo(unit)}
+                        </p>
                       </div>
 
-                      {/* Current Warehouse & QR Status */}
-                      <p className="text-sm mt-1 text-gray-500">
-                        {unit.warehouse.name}
-                        {" • "}
-                        <span
-                          className={`${
-                            !unit.qr_generated_at && "text-green-700"
-                          }`}
-                          title={
-                            unit.qr_generated_at
-                              ? formatAbsoluteDate(unit.qr_generated_at)
-                              : ""
-                          }
-                        >
-                          {unit.qr_generated_at
-                            ? `QR on ${formatRelativeDate(unit.qr_generated_at)}`
-                            : "QR pending"}
+                      <div className="shrink-0 text-right">
+                        <span className="text-sm font-semibold text-gray-700">
+                          {unit.remaining_quantity} {unitAbbr}
                         </span>
-                      </p>
-
-                      {/* Additional Details */}
-                      <p className="text-xs text-gray-500">
-                        {getStockUnitInfo(unit)}
-                      </p>
-                    </div>
-
-                    <div className="shrink-0 text-right">
-                      <span className="text-sm font-semibold text-gray-700">
-                        {unit.remaining_quantity} {unitAbbr}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          ))
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })
         )}
       </div>
 

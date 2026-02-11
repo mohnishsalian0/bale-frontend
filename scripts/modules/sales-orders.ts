@@ -2,17 +2,10 @@
  * Sales Orders Module
  * Handles sales order generation with idempotent pattern
  *
- * TODO: Migrate from load-setup.ts (lines 853-998)
- * - Creates 500 sales orders distributed across 12 months
- * - Seasonal variance factors
- * - Discount logic (70% get discount)
- * - 1-8 line items per order
- * - Payment terms: 15/30 days net, COD
- * - RPC: create_sales_order_with_items
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
+import type { Database } from "@/types/database/supabase";
 import { getRandomDate, randomInt, randomFloat, selectRandom } from "./shared";
 
 // ============================================================================
@@ -85,15 +78,25 @@ export async function generateSalesOrders(
 
   // Monthly targets for seasonal variance (proportional distribution)
   const monthlyTargets = [
-    50, 50, 50, // Jan-Mar (wedding season)
-    40, 40, 40, // Apr-Jun (summer)
-    30, 50, // Jul-Aug (monsoon dip then recovery)
-    40, 40, 40, // Sep-Nov (festive)
+    50,
+    50,
+    50, // Jan-Mar (wedding season)
+    40,
+    40,
+    40, // Apr-Jun (summer)
+    30,
+    50, // Jul-Aug (monsoon dip then recovery)
+    40,
+    40,
+    40, // Sep-Nov (festive)
     30, // Dec
   ];
 
   // Calculate sum for proportional distribution
-  const totalMonthlyTargets = monthlyTargets.reduce((sum, target) => sum + target, 0);
+  const totalMonthlyTargets = monthlyTargets.reduce(
+    (sum, target) => sum + target,
+    0,
+  );
 
   const createdOrders: SalesOrderResult[] = [];
   let totalCreated = 0;

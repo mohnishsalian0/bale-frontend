@@ -1,8 +1,4 @@
-import {
-  getRouteConfig,
-  matchDynamicRoute,
-  RouteConfig,
-} from "@/lib/permissions/route-config";
+import { findRouteConfig } from "@/lib/permissions/route-config";
 
 /**
  * Wildcard matcher using backtracking algorithm
@@ -100,41 +96,24 @@ export function checkRoutePermission(
   // Handle company-level routes
   if (pathname.startsWith("/company")) {
     const pathAfterCompany = pathname.replace(/^\/company\/?/, "") || "company";
+    const routeConfig = findRouteConfig(pathAfterCompany, true);
 
-    try {
-      // Try exact match first
-      let routeConfig: RouteConfig | null = getRouteConfig(
-        pathAfterCompany,
-        true,
-      );
-
-      // If not found, try dynamic route matching
-      if (!routeConfig) {
-        routeConfig = matchDynamicRoute(pathAfterCompany, true);
-      }
-
-      if (routeConfig) {
-        // Check if user has the required permission
-        if (!hasPermission(routeConfig.permission, userPermissions)) {
-          return {
-            allowed: false,
-            redirectTo: `/restricted?page=${encodeURIComponent(routeConfig.displayName)}`,
-            routeName: routeConfig.displayName,
-          };
-        }
-        return { allowed: true };
-      }
-    } catch (error) {
-      console.error("Company route permission check error:", error);
+    if (
+      routeConfig &&
+      !hasPermission(routeConfig.permission, userPermissions)
+    ) {
+      return {
+        allowed: false,
+        redirectTo: `/restricted?page=${encodeURIComponent(routeConfig.displayName)}`,
+        routeName: routeConfig.displayName,
+      };
     }
 
-    // Unknown company route - allow by default (or change to false for stricter security)
     return { allowed: true };
   }
 
   // Handle warehouse routes
   if (!warehouseSlug) {
-    // No warehouse slug but not a company route - might be warehouse selection page
     return { allowed: true };
   }
 
@@ -142,46 +121,18 @@ export function checkRoutePermission(
   const pathAfterWarehouse = pathname.split(`/warehouse/${warehouseSlug}/`)[1];
 
   if (!pathAfterWarehouse) {
-    // On warehouse root or warehouse selection page - allow
     return { allowed: true };
   }
 
-  try {
-    // Try exact match first
-    let routeConfig: RouteConfig | null = getRouteConfig(
-      pathAfterWarehouse,
-      false,
-    );
-    console.log(
-      "xcvxc",
-      routeConfig,
-      pathname,
-      pathAfterWarehouse,
-      userPermissions,
-    );
+  const routeConfig = findRouteConfig(pathAfterWarehouse, false);
 
-    // If not found, try dynamic route matching
-    if (!routeConfig) {
-      routeConfig = matchDynamicRoute(pathAfterWarehouse, false);
-    }
-
-    if (routeConfig) {
-      // Check if user has the required permission
-      if (!hasPermission(routeConfig.permission, userPermissions)) {
-        // Return redirect info
-        return {
-          allowed: false,
-          redirectTo: `/warehouse/${warehouseSlug}/restricted?page=${encodeURIComponent(routeConfig.displayName)}`,
-          routeName: routeConfig.displayName,
-        };
-      }
-      return { allowed: true };
-    }
-  } catch (error) {
-    // Route not in config
-    console.error("Route permission check error:", error);
+  if (routeConfig && !hasPermission(routeConfig.permission, userPermissions)) {
+    return {
+      allowed: false,
+      redirectTo: `/warehouse/${warehouseSlug}/restricted?page=${encodeURIComponent(routeConfig.displayName)}`,
+      routeName: routeConfig.displayName,
+    };
   }
 
-  // Unknown route - allow by default (or change to false for stricter security)
   return { allowed: true };
 }

@@ -10,7 +10,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
+import type { Database } from "@/types/database/supabase";
 import { randomInt } from "./shared";
 
 // ============================================================================
@@ -114,7 +114,7 @@ export async function generateQRBatches(
       .select("id")
       .eq("company_id", companyId)
       .eq("current_warehouse_id", warehouse.id)
-      .in("status", ["full", "partial"])
+      .eq("status", "available")
       .limit(100);
 
     if (

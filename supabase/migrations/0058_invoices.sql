@@ -519,6 +519,14 @@ USING (
 );
 
 -- =====================================================
+-- ADD MISSING FOREIGN KEY CONSTRAINTS
+-- =====================================================
+
+-- Add FK constraint from goods_converts to invoices
+ALTER TABLE goods_converts ADD CONSTRAINT fk_goods_convert_invoice
+    FOREIGN KEY (invoice_id) REFERENCES invoices(id);
+
+-- =====================================================
 -- GRANT PERMISSIONS
 -- =====================================================
 

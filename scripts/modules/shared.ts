@@ -1,7 +1,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
 import * as path from "path";
-import type { Database } from "@/types/database";
+import type { Database } from "@/types/database/supabase";
 
 // ============================================================================
 // TYPES

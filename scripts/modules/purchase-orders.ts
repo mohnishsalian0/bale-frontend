@@ -2,18 +2,10 @@
  * Purchase Orders Module
  * Handles purchase order generation with idempotent pattern
  *
- * TODO: Migrate from load-setup.ts (lines 1004-1170)
- * - Creates 400 purchase orders distributed across 12 months
- * - Seasonal variance factors
- * - 30% orders have associated agents
- * - Discount logic (60% get discount)
- * - 1-8 line items per order
- * - Payment terms: 15/30/45/60 days net, COD
- * - RPC: create_purchase_order_with_items
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
+import type { Database } from "@/types/database/supabase";
 import { getRandomDate, randomInt, randomFloat, selectRandom } from "./shared";
 
 // ============================================================================
@@ -87,15 +79,25 @@ export async function generatePurchaseOrders(
 
   // Monthly targets for seasonal variance (proportional distribution)
   const monthlyTargets = [
-    40, 40, 40, // Jan-Mar (wedding season - higher procurement)
-    30, 30, 30, // Apr-Jun (regular)
-    25, 35, // Jul-Aug (monsoon dip then recovery)
-    35, 35, 35, // Sep-Nov (festive season prep)
+    40,
+    40,
+    40, // Jan-Mar (wedding season - higher procurement)
+    30,
+    30,
+    30, // Apr-Jun (regular)
+    25,
+    35, // Jul-Aug (monsoon dip then recovery)
+    35,
+    35,
+    35, // Sep-Nov (festive season prep)
     25, // Dec
   ];
 
   // Calculate sum for proportional distribution
-  const totalMonthlyTargets = monthlyTargets.reduce((sum, target) => sum + target, 0);
+  const totalMonthlyTargets = monthlyTargets.reduce(
+    (sum, target) => sum + target,
+    0,
+  );
 
   const createdOrders: PurchaseOrderResult[] = [];
   let totalCreated = 0;

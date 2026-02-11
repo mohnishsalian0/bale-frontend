@@ -12,10 +12,9 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
+import type { Database } from "@/types/database/supabase";
 import type { TransportType } from "../config/goods-transfers.config";
 import { randomInt, selectRandom, updateRecords } from "./shared";
-import { applyStatusDistribution } from "./record-status";
 
 // ============================================================================
 // TYPES
@@ -35,12 +34,6 @@ export interface GoodsTransferResult {
 interface Warehouse {
   id: string;
   name: string;
-}
-
-interface StockUnitForTransfer {
-  id: string;
-  current_warehouse_id: string;
-  updated_at: string;
 }
 
 // ============================================================================
@@ -226,11 +219,12 @@ export async function generateGoodsTransfers(
   );
 
   // Fetch all stock units from source warehouses
+  // last_activity_date is included so transfer dates respect any convert/movement dates
   const { data: allStockUnits, error: stockError } = await supabase
     .from("stock_units")
-    .select("id, current_warehouse_id, updated_at")
+    .select("id, current_warehouse_id, updated_at, last_activity_date")
     .eq("company_id", companyId)
-    .in("status", ["full", "partial"])
+    .in("status", ["available"])
     .gt("remaining_quantity", 0)
     .in(
       "current_warehouse_id",
@@ -251,7 +245,6 @@ export async function generateGoodsTransfers(
   const createdTransfers: GoodsTransferResult[] = [];
   let totalCreated = 0;
   let skippedCount = 0;
-  let stockUnitIndex = 0;
 
   for (let i = 0; i < toCreate; i++) {
     // Select random source warehouse
@@ -286,9 +279,16 @@ export async function generateGoodsTransfers(
       (su) => !selectedStockUnitIds.includes(su.id),
     );
 
-    // Get the latest updated_at from selected stock units
+    // Get the latest effective date across selected stock units.
+    // Use MAX(updated_at, last_activity_date) so that output units from goods
+    // converts (which carry a future last_activity_date set to the convert's
+    // completion date) don't produce a transfer_date that precedes that date.
     const latestUpdatedAt = selectedStockUnits.reduce((latest, su) => {
-      const suDate = new Date(su.updated_at);
+      const updatedAt = new Date(su.updated_at);
+      const lastActivity = su.last_activity_date
+        ? new Date(su.last_activity_date)
+        : new Date(0);
+      const suDate = updatedAt > lastActivity ? updatedAt : lastActivity;
       return suDate > latest ? suDate : latest;
     }, new Date(0));
 

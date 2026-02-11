@@ -63,7 +63,7 @@ export function StockUnitScannerStep({
       // Fetch stock unit with product details in single query
       const stockUnitWithProduct = await getStockUnitWithProductDetail(
         decodedText,
-        { warehouseId, status: ["full", "partial"] },
+        { warehouseId, status: ["available"] },
       );
 
       if (!stockUnitWithProduct.product) {
