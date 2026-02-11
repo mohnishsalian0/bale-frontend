@@ -96,9 +96,7 @@ CREATE TRIGGER set_purchase_orders_modified_by
 CREATE OR REPLACE FUNCTION auto_generate_purchase_order_sequence()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.sequence_number IS NULL THEN
-        NEW.sequence_number := get_next_sequence('purchase_orders', NEW.company_id);
-    END IF;
+		NEW.sequence_number := get_next_sequence('purchase_orders', NEW.company_id);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -131,7 +129,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     (warehouse_id IS NULL OR has_warehouse_access(warehouse_id)) AND
-    authorize('purchase_orders.read')
+    authorize('orders.purchase_orders.read')
 );
 
 -- Authorized users can create purchase orders
@@ -142,7 +140,7 @@ TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     (warehouse_id IS NULL OR has_warehouse_access(warehouse_id)) AND
-		authorize('purchase_orders.create')
+		authorize('orders.purchase_orders.create')
 );
 
 -- Authorized users can update purchase orders
@@ -153,12 +151,12 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     (warehouse_id IS NULL OR has_warehouse_access(warehouse_id)) AND
-		authorize('purchase_orders.update')
+		authorize('orders.purchase_orders.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     (warehouse_id IS NULL OR has_warehouse_access(warehouse_id)) AND
-		authorize('purchase_orders.update')
+		authorize('orders.purchase_orders.update')
 );
 
 -- Authorized users can delete purchase orders
@@ -169,7 +167,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     (warehouse_id IS NULL OR has_warehouse_access(warehouse_id)) AND
-		authorize('purchase_orders.delete')
+		authorize('orders.purchase_orders.delete')
 );
 
 -- =====================================================

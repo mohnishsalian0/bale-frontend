@@ -145,7 +145,7 @@ ON partners
 FOR SELECT
 TO authenticated
 USING (
-    company_id = get_jwt_company_id() AND authorize('partners.read')
+    company_id = get_jwt_company_id() AND authorize('business.partners.read')
 );
 
 -- Authorized users can create partners
@@ -154,7 +154,7 @@ ON partners
 FOR INSERT
 TO authenticated
 WITH CHECK (
-    company_id = get_jwt_company_id() AND authorize('partners.create')
+    company_id = get_jwt_company_id() AND authorize('business.partners.create')
 );
 
 -- Authorized users can update partners
@@ -163,10 +163,10 @@ ON partners
 FOR UPDATE
 TO authenticated
 USING (
-    company_id = get_jwt_company_id() AND authorize('partners.update')
+    company_id = get_jwt_company_id() AND authorize('business.partners.update')
 )
 WITH CHECK (
-    company_id = get_jwt_company_id() AND authorize('partners.update')
+    company_id = get_jwt_company_id() AND authorize('business.partners.update')
 );
 
 -- Authorized users can delete partners
@@ -175,7 +175,7 @@ ON partners
 FOR DELETE
 TO authenticated
 USING (
-    company_id = get_jwt_company_id() AND authorize('partners.delete')
+    company_id = get_jwt_company_id() AND authorize('business.partners.delete')
 );
 
 -- =====================================================

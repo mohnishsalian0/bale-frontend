@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/browser";
-import type { TablesInsert, Database, Json } from "@/types/database/supabase";
+import type { Database, Json } from "@/types/database/supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   InwardFilters,
@@ -13,6 +13,10 @@ import type {
   OutwardItemWithOutwardDetailView,
   UpdateInwardData,
   UpdateOutwardData,
+  CreateInwardData,
+  CreateInwardStockUnitData,
+  CreateOutwardData,
+  CreateOutwardItemData,
 } from "@/types/stock-flow.types";
 
 // Re-export types for convenience
@@ -50,7 +54,6 @@ export const buildGoodsInwardsQuery = (
       `
       *,
       partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name),
-			from_warehouse:warehouses!from_warehouse_id(id, name),
       stock_units!inner(
         product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number),
         initial_quantity
@@ -59,6 +62,7 @@ export const buildGoodsInwardsQuery = (
       { count: "exact" },
     )
     .eq("warehouse_id", warehouseId)
+    .is("deleted_at", null)
     .order("inward_date", { ascending: false })
     .range(offset, offset + pageSize - 1);
 
@@ -106,7 +110,6 @@ export const buildGoodsOutwardsQuery = (
       `
       *,
       partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name),
-			to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(id, name),
       goods_outward_items!inner(
         quantity_dispatched,
         stock_unit:stock_units!inner(
@@ -117,6 +120,7 @@ export const buildGoodsOutwardsQuery = (
       { count: "exact" },
     )
     .eq("warehouse_id", warehouseId)
+    .is("deleted_at", null)
     .order("outward_date", { ascending: false })
     .range(offset, offset + pageSize - 1);
 
@@ -166,7 +170,6 @@ export const buildGoodsOutwardsBySalesOrderQuery = (
       `
       *,
       partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name),
-			to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(id, name),
 			sales_order:sales_orders!inner(id, sequence_number),
       goods_outward_items(
         quantity_dispatched,
@@ -200,7 +203,6 @@ export const buildGoodsInwardsByPurchaseOrderQuery = (
       `
       *,
       partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name),
-			from_warehouse:warehouses!from_warehouse_id(id, name),
 			purchase_order:purchase_orders!inner(id, sequence_number),
       stock_units(
         product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number),
@@ -230,12 +232,13 @@ export const buildGoodsInwardByNumberQuery = (
       partner:partners!goods_inwards_partner_id_fkey(first_name, last_name, display_name, company_name, shipping_same_as_billing, shipping_address_line1, shipping_address_line2, shipping_city, shipping_state, shipping_pin_code, shipping_country, billing_address_line1, billing_address_line2, billing_city, billing_state, billing_pin_code, billing_country),
       agent:partners!goods_inwards_agent_id_fkey(first_name, last_name, display_name, company_name),
       warehouse:warehouses!goods_inwards_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
-      from_warehouse:warehouses!goods_inwards_from_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       sales_order:sales_orders(sequence_number),
       job_work:job_works(sequence_number),
       stock_units(
         *,
-        product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number, hsn_code, gsm, gst_rate)
+				warehouse:warehouses(id, name),
+        product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number, hsn_code, gsm, gst_rate),
+        lot_number:attributes!lot_number_attribute_id(id, name, group_name)
       )
     `,
     )
@@ -258,20 +261,52 @@ export const buildGoodsOutwardByNumberQuery = (
       partner:partners!goods_outwards_partner_id_fkey(first_name, last_name, display_name, company_name, shipping_same_as_billing, shipping_address_line1, shipping_address_line2, shipping_city, shipping_state, shipping_pin_code, shipping_country, billing_address_line1, billing_address_line2, billing_city, billing_state, billing_pin_code, billing_country),
       agent:partners!goods_outwards_agent_id_fkey(first_name, last_name, display_name, company_name),
       warehouse:warehouses!goods_outwards_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
-      to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       sales_order:sales_orders(sequence_number),
       job_work:job_works(sequence_number),
       goods_outward_items(
         *,
         stock_unit:stock_units(
           *,
-          product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number, hsn_code, gsm, gst_rate)
+					warehouse:warehouses(id, name),
+          product:products(id, name, stock_type, measuring_unit, product_images, product_code, sequence_number, hsn_code, gsm, gst_rate),
+          lot_number:attributes!lot_number_attribute_id(id, name, group_name)
         )
       )
     `,
     )
     .eq("sequence_number", parseInt(sequenceNumber))
     .single();
+};
+
+/**
+ * Query builder for fetching outward items by product ID
+ */
+export const buildOutwardItemsByProductQuery = (
+  supabase: SupabaseClient<Database>,
+  productId: string,
+  page: number = 1,
+  pageSize: number = 20,
+) => {
+  const offset = (page - 1) * pageSize;
+
+  return supabase
+    .from("goods_outward_items")
+    .select(
+      `
+      *,
+      stock_unit:stock_units!inner(product_id),
+      outward:goods_outwards(
+        id, sequence_number, outward_date, outward_type,
+        partner:partners!goods_outwards_partner_id_fkey(
+          id, first_name, last_name, display_name, company_name
+        )
+      )
+    `,
+      { count: "exact" },
+    )
+    .eq("stock_unit.product_id", productId)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + pageSize - 1);
 };
 
 // ============================================================================
@@ -437,31 +472,12 @@ export async function getOutwardItemsByProduct(
 ): Promise<{ data: OutwardItemWithOutwardDetailView[]; totalCount: number }> {
   const supabase = createClient();
 
-  // Calculate pagination range
-  const offset = (page - 1) * pageSize;
-  const limit = pageSize;
-
-  const { data, error, count } = await supabase
-    .from("goods_outward_items")
-    .select(
-      `
-      *,
-      stock_unit:stock_units!inner(product_id),
-      outward:goods_outwards(
-        id, sequence_number, outward_date, outward_type,
-        partner:partners!goods_outwards_partner_id_fkey(
-          id, first_name, last_name, display_name, company_name
-        ),
-        to_warehouse:warehouses!goods_outwards_to_warehouse_id_fkey(
-          id, name
-        )
-      )
-    `,
-      { count: "exact" },
-    )
-    .eq("stock_unit.product_id", productId)
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+  const { data, error, count } = await buildOutwardItemsByProductQuery(
+    supabase,
+    productId,
+    page,
+    pageSize,
+  );
 
   if (error) {
     console.error("Error fetching outward items by product:", error);
@@ -469,7 +485,7 @@ export async function getOutwardItemsByProduct(
   }
 
   return {
-    data: (data as OutwardItemWithOutwardDetailView[]) || [],
+    data: data || [],
     totalCount: count || 0,
   };
 }
@@ -478,14 +494,8 @@ export async function getOutwardItemsByProduct(
  * Create a new goods inward with stock units atomically using RPC
  */
 export async function createGoodsInwardWithUnits(
-  inwardData: Omit<
-    TablesInsert<"goods_inwards">,
-    "created_by" | "sequence_number"
-  >,
-  stockUnits: Omit<
-    TablesInsert<"stock_units">,
-    "created_by" | "modified_by" | "sequence_number"
-  >[],
+  inwardData: CreateInwardData,
+  stockUnits: CreateInwardStockUnitData,
 ): Promise<string> {
   const supabase = createClient();
 
@@ -506,14 +516,8 @@ export async function createGoodsInwardWithUnits(
  * Create a new goods outward with items atomically using RPC
  */
 export async function createGoodsOutwardWithItems(
-  outwardData: Omit<
-    TablesInsert<"goods_outwards">,
-    "created_by" | "sequence_number"
-  >,
-  stockUnitItems: Array<{
-    stock_unit_id: string;
-    quantity: number;
-  }>,
+  outwardData: CreateOutwardData,
+  stockUnitItems: CreateOutwardItemData[],
 ): Promise<string> {
   const supabase = createClient();
 

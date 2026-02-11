@@ -1,4 +1,4 @@
-import type { Tables, TablesUpdate } from "./database/supabase";
+import type { Tables, TablesInsert, TablesUpdate } from "./database/supabase";
 import type { QueryData } from "@supabase/supabase-js";
 import {
   buildGoodsInwardsQuery,
@@ -7,6 +7,7 @@ import {
   buildGoodsInwardsByPurchaseOrderQuery,
   buildGoodsInwardByNumberQuery,
   buildGoodsOutwardByNumberQuery,
+  buildOutwardItemsByProductQuery,
 } from "@/lib/queries/stock-flow";
 
 // Base types from database (still needed for non-query uses)
@@ -32,6 +33,36 @@ export interface OutwardFilters extends Record<string, unknown> {
   date_to?: string;
   search_term?: string;
 }
+
+// =====================================================
+// INSERT TYPES
+// =====================================================
+
+/**
+ * Data for creating goods inward
+ */
+export type CreateInwardData = Omit<
+  TablesInsert<"goods_inwards">,
+  "created_by" | "sequence_number"
+>;
+
+export type CreateInwardStockUnitData = (Omit<
+  TablesInsert<"stock_units">,
+  "created_by" | "modified_by" | "sequence_number" | "status" | "stock_number"
+> & { stock_number: string | null })[];
+
+/**
+ * Data for creating goods outward
+ */
+export type CreateOutwardData = Omit<
+  TablesInsert<"goods_outwards">,
+  "created_by" | "sequence_number"
+>;
+
+export type CreateOutwardItemData = {
+  stock_unit_id: string;
+  quantity: number;
+};
 
 // =====================================================
 // UPDATE TYPES
@@ -141,24 +172,13 @@ export interface InwardWithPartnerListView extends Pick<
     Tables<"partners">,
     "id" | "first_name" | "last_name" | "company_name" | "display_name"
   > | null;
-  from_warehouse: Pick<Tables<"warehouses">, "id" | "name"> | null;
 }
 
 /**
  * Outward item with details for product detail page
+ * Type inferred from buildOutwardItemsByProductQuery
  * Shows outward flow history for a specific product
  */
-export interface OutwardItemWithOutwardDetailView extends Tables<"goods_outward_items"> {
-  outward:
-    | (Pick<
-        GoodsOutward,
-        "id" | "sequence_number" | "outward_date" | "outward_type"
-      > & {
-        partner: Pick<
-          Tables<"partners">,
-          "id" | "first_name" | "last_name" | "company_name" | "display_name"
-        > | null;
-        to_warehouse: Pick<Tables<"warehouses">, "id" | "name"> | null;
-      })
-    | null;
-}
+export type OutwardItemWithOutwardDetailView = QueryData<
+  ReturnType<typeof buildOutwardItemsByProductQuery>
+>[number];

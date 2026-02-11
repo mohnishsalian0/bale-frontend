@@ -12,15 +12,10 @@ import {
 import { InventoryProductListStep } from "./InventoryProductListStep";
 import { StockUnitListStep } from "./StockUnitListStep";
 import { StockUnitQuantitySheet } from "./StockUnitQuantitySheet";
-import { PieceQuantitySheet } from "./PieceQuantitySheet";
-import {
-  getStockUnits,
-  getStockUnitWithProductDetail,
-} from "@/lib/queries/stock-units";
-import type { ScannedStockUnit } from "./QRScannerStep";
+import { getStockUnitWithProductDetail } from "@/lib/queries/stock-units";
+import { toScannedStockUnit } from "@/lib/utils/stock-units";
 import type { ProductWithInventoryListView } from "@/types/products.types";
-import type { StockUnitWithProductDetailView } from "@/types/stock-units.types";
-import type { StockType } from "@/types/database/enums";
+import type { ScannedStockUnit } from "@/types/stock-units.types";
 
 type SelectInventoryStep = "products" | "stockUnits" | "quantity";
 
@@ -31,6 +26,7 @@ interface SelectInventorySheetProps {
   scannedUnits: ScannedStockUnit[];
   onScannedUnitsChange: (units: ScannedStockUnit[]) => void;
   orderProducts?: Record<string, number>; // productId -> requested_quantity
+  fullQuantity?: boolean; // If true, always transfer full quantity without showing quantity sheet
 }
 
 export function SelectInventorySheet({
@@ -40,6 +36,7 @@ export function SelectInventorySheet({
   scannedUnits,
   onScannedUnitsChange,
   orderProducts = {},
+  fullQuantity = false,
 }: SelectInventorySheetProps) {
   const [currentStep, setCurrentStep] =
     useState<SelectInventoryStep>("products");
@@ -47,8 +44,9 @@ export function SelectInventorySheet({
   // Selected state
   const [selectedProduct, setSelectedProduct] =
     useState<ProductWithInventoryListView | null>(null);
-  const [selectedStockUnit, setSelectedStockUnit] =
-    useState<StockUnitWithProductDetailView | null>(null);
+  const [selectedStockUnit, setSelectedStockUnit] = useState<
+    ScannedStockUnit["stockUnit"] | null
+  >(null);
 
   // Quantity sheet state
   const [showQuantitySheet, setShowQuantitySheet] = useState(false);
@@ -65,42 +63,41 @@ export function SelectInventorySheet({
 
   const handleProductSelect = async (product: ProductWithInventoryListView) => {
     setSelectedProduct(product);
-    const stockType = product.stock_type as StockType;
-
-    if (stockType === "piece") {
-      // For piece type: fetch the singleton stock unit and show quantity sheet
-      try {
-        // Fetch stock units for this product to get the singleton unit
-        const stockUnits = await getStockUnits(warehouseId, {
-          product_id: product.id,
-          status: ["full", "partial"],
-        });
-
-        if (stockUnits.length > 0) {
-          const pieceUnit = stockUnits[0]; // Get the singleton unit
-          const stockUnitDetail = await getStockUnitWithProductDetail(
-            pieceUnit.id,
-          );
-          setSelectedStockUnit(stockUnitDetail);
-          setShowQuantitySheet(true);
-        } else {
-          console.error("No stock unit found for piece product");
-          // Could show a toast here
-        }
-      } catch (error) {
-        console.error("Error fetching piece stock unit:", error);
-      }
-    } else {
-      // For roll/batch: show stock unit list
-      setCurrentStep("stockUnits");
-    }
+    // For roll/batch: show stock unit list
+    setCurrentStep("stockUnits");
   };
 
   const handleStockUnitSelect = async (stockUnitId: string) => {
     try {
       const stockUnitDetail = await getStockUnitWithProductDetail(stockUnitId);
-      setSelectedStockUnit(stockUnitDetail);
-      setShowQuantitySheet(true);
+
+      if (fullQuantity) {
+        // Auto-add with full quantity without showing quantity sheet
+        const existingIndex = scannedUnits.findIndex(
+          (unit) => unit.stockUnit.id === stockUnitDetail.id,
+        );
+
+        if (existingIndex !== -1) {
+          const updatedUnits = [...scannedUnits];
+          updatedUnits[existingIndex] = {
+            ...updatedUnits[existingIndex],
+            quantity: stockUnitDetail.remaining_quantity,
+          };
+          onScannedUnitsChange(updatedUnits);
+        } else {
+          onScannedUnitsChange([
+            ...scannedUnits,
+            {
+              stockUnit: toScannedStockUnit(stockUnitDetail),
+              quantity: stockUnitDetail.remaining_quantity,
+            },
+          ]);
+        }
+      } else {
+        // Show quantity sheet for partial quantity selection
+        setSelectedStockUnit(toScannedStockUnit(stockUnitDetail));
+        setShowQuantitySheet(true);
+      }
     } catch (error) {
       console.error("Error fetching stock unit:", error);
     }
@@ -108,13 +105,11 @@ export function SelectInventorySheet({
 
   const handleQuantityConfirm = (quantity: number) => {
     if (selectedStockUnit && selectedProduct) {
-      // Check if this stock unit already exists in scannedUnits
       const existingIndex = scannedUnits.findIndex(
         (unit) => unit.stockUnit.id === selectedStockUnit.id,
       );
 
       if (existingIndex !== -1) {
-        // Update existing unit
         const updatedUnits = [...scannedUnits];
         updatedUnits[existingIndex] = {
           ...updatedUnits[existingIndex],
@@ -122,7 +117,6 @@ export function SelectInventorySheet({
         };
         onScannedUnitsChange(updatedUnits);
       } else {
-        // Add new unit
         onScannedUnitsChange([
           ...scannedUnits,
           {
@@ -132,10 +126,7 @@ export function SelectInventorySheet({
         ]);
       }
 
-      // Close quantity sheet and reset to products step
       setShowQuantitySheet(false);
-      setCurrentStep("products");
-      setSelectedProduct(null);
       setSelectedStockUnit(null);
     }
   };
@@ -146,6 +137,13 @@ export function SelectInventorySheet({
       // If sheet is closed without confirming, just close it
       setShowQuantitySheet(false);
     }
+  };
+
+  const handleRemoveUnit = (stockUnitId: string) => {
+    const updatedUnits = scannedUnits.filter(
+      (unit) => unit.stockUnit.id !== stockUnitId,
+    );
+    onScannedUnitsChange(updatedUnits);
   };
 
   const handleBackToProducts = () => {
@@ -197,6 +195,8 @@ export function SelectInventorySheet({
                 warehouseId={warehouseId}
                 scannedUnits={scannedUnits}
                 onStockUnitSelect={handleStockUnitSelect}
+                onRemoveUnit={handleRemoveUnit}
+                fullQuantity={fullQuantity}
               />
             )}
 
@@ -228,27 +228,14 @@ export function SelectInventorySheet({
 
       {/* Quantity Selection Sheets - Outside main sheet to avoid nesting */}
       {showQuantitySheet && selectedStockUnit && (
-        <>
-          {selectedProduct?.stock_type === "piece" ? (
-            <PieceQuantitySheet
-              open={showQuantitySheet}
-              onOpenChange={handleQuantitySheetClose}
-              product={selectedProduct}
-              initialQuantity={getInitialQuantity()}
-              availableQuantity={selectedStockUnit.remaining_quantity}
-              onConfirm={handleQuantityConfirm}
-            />
-          ) : (
-            <StockUnitQuantitySheet
-              key={selectedStockUnit.id}
-              open={showQuantitySheet}
-              onOpenChange={handleQuantitySheetClose}
-              stockUnit={selectedStockUnit}
-              initialQuantity={getInitialQuantity()}
-              onConfirm={handleQuantityConfirm}
-            />
-          )}
-        </>
+        <StockUnitQuantitySheet
+          key={selectedStockUnit.id}
+          open={showQuantitySheet}
+          onOpenChange={handleQuantitySheetClose}
+          stockUnit={selectedStockUnit}
+          initialQuantity={getInitialQuantity()}
+          onConfirm={handleQuantityConfirm}
+        />
       )}
     </>
   );

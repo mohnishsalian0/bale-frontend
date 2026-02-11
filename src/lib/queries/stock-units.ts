@@ -4,11 +4,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   StockUnitFilters,
   StockUnitWithProductListView,
-  StockUnitWithInwardListView,
+  StockUnitWithOriginListView,
   StockUnitWithProductDetailView,
   StockUnitWithProductListViewRaw,
-  StockUnitWithInwardListViewRaw,
+  StockUnitWithOriginListViewRaw,
   StockUnitWithProductDetailViewRaw,
+  StockUnitActivity,
 } from "@/types/stock-units.types";
 import {
   transformProductListView,
@@ -34,6 +35,7 @@ export const buildStockUnitsQuery = (
       `
       id,
       sequence_number,
+      stock_number,
       initial_quantity,
       remaining_quantity,
       quality_grade,
@@ -42,8 +44,10 @@ export const buildStockUnitsQuery = (
       status,
       qr_generated_at,
       created_at,
-      created_from_inward_id,
-      supplier_number,
+      origin_type,
+      origin_inward_id,
+      origin_convert_id,
+			warehouse:warehouses(id, name),
       product:products(
         id,
         sequence_number,
@@ -60,11 +64,12 @@ export const buildStockUnitsQuery = (
         min_stock_threshold,
         tax_type,
         gst_rate,
-        attributes:product_attributes!inner(id, name, group_name, color_hex)
-      )
+        attributes:attributes!inner(id, name, group_name, color_hex)
+      ),
+      lot_number:attributes!lot_number_attribute_id(id, name, group_name)
     `,
     )
-    .eq("warehouse_id", warehouseId)
+    .eq("current_warehouse_id", warehouseId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
@@ -87,24 +92,21 @@ export const buildStockUnitsQuery = (
     query = query.not("qr_generated_at", "is", null);
   }
 
-  if (filters?.created_from_inward_id !== undefined) {
-    if (filters.created_from_inward_id === null) {
-      query = query.is("created_from_inward_id", null);
-    } else {
-      query = query.eq(
-        "created_from_inward_id",
-        filters.created_from_inward_id,
-      );
-    }
+  if (filters?.origin_inward_id) {
+    query = query.eq("origin_inward_id", filters.origin_inward_id);
+  }
+
+  if (filters?.origin_convert_id) {
+    query = query.eq("origin_convert_id", filters.origin_convert_id);
   }
 
   return query;
 };
 
 /**
- * Query builder for fetching stock units with inward details
+ * Query builder for fetching stock units with origin details (inward or convert)
  */
-export const buildStockUnitsWithInwardQuery = (
+export const buildStockUnitsWithOriginQuery = (
   supabase: SupabaseClient<Database>,
   warehouseId: string,
   filters?: StockUnitFilters,
@@ -128,8 +130,11 @@ export const buildStockUnitsWithInwardQuery = (
       status,
       qr_generated_at,
       created_at,
-      created_from_inward_id,
-      supplier_number,
+      origin_type,
+      origin_inward_id,
+      origin_convert_id,
+      stock_number,
+			warehouse:warehouses(id, name),
       product:products(
         id,
         sequence_number,
@@ -146,21 +151,25 @@ export const buildStockUnitsWithInwardQuery = (
         min_stock_threshold,
         tax_type,
         gst_rate,
-        attributes:product_attributes!inner(id, name, group_name, color_hex)
+        attributes:attributes!inner(id, name, group_name, color_hex)
       ),
-      goods_inward:goods_inwards!created_from_inward_id(
+      goods_inward:goods_inwards!origin_inward_id(
         id, sequence_number, inward_date, inward_type,
         partner:partners!goods_inwards_partner_id_fkey(
           id, first_name, last_name, display_name, company_name
-        ),
-        from_warehouse:warehouses!goods_inwards_from_warehouse_id_fkey(
-          id, name
         )
-      )
+      ),
+      goods_convert:goods_converts!origin_convert_id(
+        id, sequence_number, start_date, completion_date, status,
+        vendor:partners!vendor_id(
+          id, first_name, last_name, display_name, company_name
+        )
+      ),
+      lot_number:attributes!lot_number_attribute_id(id, name, group_name)
     `,
       { count: "exact" },
     )
-    .eq("warehouse_id", warehouseId)
+    .eq("current_warehouse_id", warehouseId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
@@ -184,15 +193,16 @@ export const buildStockUnitsWithInwardQuery = (
     query = query.not("qr_generated_at", "is", null);
   }
 
-  if (filters?.created_from_inward_id !== undefined) {
-    if (filters.created_from_inward_id === null) {
-      query = query.is("created_from_inward_id", null);
-    } else {
-      query = query.eq(
-        "created_from_inward_id",
-        filters.created_from_inward_id,
-      );
-    }
+  if (filters?.origin_inward_id) {
+    query = query.eq("origin_inward_id", filters.origin_inward_id);
+  }
+
+  if (filters?.origin_convert_id) {
+    query = query.eq("origin_convert_id", filters.origin_convert_id);
+  }
+
+  if (filters?.non_empty) {
+    query = query.gt("remaining_quantity", 0);
   }
 
   return query;
@@ -214,10 +224,12 @@ export const buildStockUnitWithProductDetailQuery = (
     .select(
       `
       *,
+			warehouse:warehouses(id, name),
       product:products(
         *,
-        attributes:product_attributes!inner(id, name, group_name, color_hex)
-      )
+        attributes:attributes!inner(id, name, group_name, color_hex)
+      ),
+      lot_number:attributes!lot_number_attribute_id(id, name, group_name)
     `,
     )
     .eq("id", stockUnitId)
@@ -225,7 +237,7 @@ export const buildStockUnitWithProductDetailQuery = (
 
   // Apply optional filters
   if (filters?.warehouseId) {
-    query = query.eq("warehouse_id", filters.warehouseId);
+    query = query.eq("current_warehouse_id", filters.warehouseId);
   }
 
   if (filters?.status) {
@@ -237,6 +249,23 @@ export const buildStockUnitWithProductDetailQuery = (
   }
 
   return query.single();
+};
+
+/**
+ * Query builder for fetching stock unit activity history
+ * Uses RPC function to get complete activity timeline including:
+ * - Creation (goods inward)
+ * - Transfers between warehouses
+ * - Outward dispatches
+ * - Quantity adjustments
+ */
+export const buildStockUnitActivityQuery = (
+  supabase: SupabaseClient<Database>,
+  stockUnitId: string,
+) => {
+  return supabase.rpc("get_stock_unit_activity", {
+    p_stock_unit_id: stockUnitId,
+  });
 };
 
 // ============================================================================
@@ -258,17 +287,23 @@ function transformStockUnitWithProductListView(
 }
 
 /**
- * Transform raw stock unit data with inward to StockUnitWithInwardListView
+ * Transform raw stock unit data with origin to StockUnitWithOriginListView
  */
-function transformStockUnitWithInwardListView(
-  raw: StockUnitWithInwardListViewRaw,
-): StockUnitWithInwardListView {
-  const { product: rawProduct, goods_inward, ...stockUnit } = raw;
+function transformStockUnitWithOriginListView(
+  raw: StockUnitWithOriginListViewRaw,
+): StockUnitWithOriginListView {
+  const {
+    product: rawProduct,
+    goods_inward,
+    goods_convert,
+    ...stockUnit
+  } = raw;
 
   return {
     ...stockUnit,
     product: rawProduct ? transformProductListView(rawProduct) : null,
-    goods_inward,
+    goods_inward: goods_inward,
+    goods_convert: goods_convert,
   };
 }
 
@@ -313,17 +348,17 @@ export async function getStockUnits(
 }
 
 /**
- * Fetch stock units for a product with full inward details
+ * Fetch stock units for a product with full origin details (inward or convert)
  * Useful for product detail page to show stock flow history
  */
-export async function getStockUnitsWithInward(
+export async function getStockUnitsWithOrigin(
   warehouseId: string,
   filters?: StockUnitFilters,
   page: number = 1,
   pageSize: number = 20,
-): Promise<{ data: StockUnitWithInwardListView[]; totalCount: number }> {
+): Promise<{ data: StockUnitWithOriginListView[]; totalCount: number }> {
   const supabase = createClient();
-  const { data, error, count } = await buildStockUnitsWithInwardQuery(
+  const { data, error, count } = await buildStockUnitsWithOriginQuery(
     supabase,
     warehouseId,
     filters,
@@ -332,11 +367,11 @@ export async function getStockUnitsWithInward(
   );
 
   if (error) {
-    console.error("Error fetching stock units with inward details:", error);
+    console.error("Error fetching stock units with origin details:", error);
     throw error;
   }
 
-  const transformedData = data?.map(transformStockUnitWithInwardListView) || [];
+  const transformedData = data?.map(transformStockUnitWithOriginListView) || [];
 
   return {
     data: transformedData,
@@ -375,27 +410,85 @@ export async function getStockUnitWithProductDetail(
 }
 
 /**
- * Update a single stock unit
+ * Update a stock unit with lot_number handling
+ * This function:
+ * 1. Updates the stock unit fields
+ * 2. Manages lot_number_attribute_id FK (find or create attribute, then set FK)
  */
 export async function updateStockUnit(
-  id: string,
+  stockUnitId: string,
   updates: TablesUpdate<"stock_units">,
+  lotNumber?: string | null,
 ): Promise<string> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
-    .from("stock_units")
-    .update(updates)
-    .eq("id", id)
-    .select("id")
-    .single<{ id: string }>();
+  // Step 1: Handle lot_number if provided
+  let lotNumberAttributeId: string | null = null;
 
-  if (error) {
-    console.error("Error updating stock unit:", error);
-    throw error;
+  if (lotNumber !== undefined) {
+    if (lotNumber) {
+      // Get company_id from stock_units table
+      const { data: stockUnit, error: fetchError } = await supabase
+        .from("stock_units")
+        .select("company_id")
+        .eq("id", stockUnitId)
+        .single();
+
+      if (fetchError) {
+        console.error("Error fetching stock unit:", fetchError);
+        throw fetchError;
+      }
+
+      const companyId = stockUnit.company_id;
+
+      // Find or create lot_number attribute
+      let { data: existingAttribute } = await supabase
+        .from("attributes")
+        .select("id")
+        .eq("company_id", companyId)
+        .eq("name", lotNumber)
+        .eq("group_name", "lot_number")
+        .maybeSingle();
+
+      if (existingAttribute) {
+        lotNumberAttributeId = existingAttribute.id;
+      } else {
+        // Create new attribute
+        const { data: newAttribute, error: createAttrError } = await supabase
+          .from("attributes")
+          .insert({
+            company_id: companyId,
+            name: lotNumber,
+            group_name: "lot_number",
+          })
+          .select("id")
+          .single();
+
+        if (createAttrError) {
+          console.error("Error creating lot attribute:", createAttrError);
+          throw createAttrError;
+        }
+
+        lotNumberAttributeId = newAttribute.id;
+      }
+    }
+
+    // Add lot_number_attribute_id to updates
+    updates = { ...updates, lot_number_attribute_id: lotNumberAttributeId };
   }
 
-  return data.id;
+  // Step 2: Update the stock unit with all fields including lot_number_attribute_id
+  const { error: updateError } = await supabase
+    .from("stock_units")
+    .update(updates)
+    .eq("id", stockUnitId);
+
+  if (updateError) {
+    console.error("Error updating stock unit:", updateError);
+    throw updateError;
+  }
+
+  return stockUnitId;
 }
 
 /**
@@ -437,4 +530,29 @@ export async function deleteStockUnit(id: string): Promise<void> {
     console.error("Error deleting stock unit:", error);
     throw error;
   }
+}
+
+/**
+ * Fetch complete activity history for a stock unit
+ * Returns chronological timeline of all events (newest first):
+ * - Creation via goods inward
+ * - Transfers between warehouses
+ * - Outward dispatches to partners
+ * - Quantity adjustments
+ */
+export async function getStockUnitActivity(
+  stockUnitId: string,
+): Promise<StockUnitActivity[]> {
+  const supabase = createClient();
+  const { data, error } = await buildStockUnitActivityQuery(
+    supabase,
+    stockUnitId,
+  );
+
+  if (error) {
+    console.error("Error fetching stock unit activity:", error);
+    throw error;
+  }
+
+  return data || [];
 }

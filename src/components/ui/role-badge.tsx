@@ -19,6 +19,8 @@ function getRoleConfig(role: UserRole): RoleConfig {
       return { color: "blue", variant: "secondary", label: "Admin" };
     case "staff":
       return { color: "green", variant: "secondary", label: "Staff" };
+    case "accountant":
+      return { color: "orange", variant: "secondary", label: "Staff" };
     default:
       return { color: "blue", variant: "secondary", label: role };
   }

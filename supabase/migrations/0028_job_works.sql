@@ -165,7 +165,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('job_works.read')
+    authorize('orders.job_works.read')
 );
 
 -- Admins can create job works for any warehouse, staff only for their assigned warehouse
@@ -174,7 +174,7 @@ ON job_works
 FOR INSERT
 TO authenticated
 WITH CHECK (
-    company_id = get_jwt_company_id() AND authorize('job_works.create')
+    company_id = get_jwt_company_id() AND authorize('orders.job_works.create')
 );
 
 -- Admins can update all job works, staff only in their assigned warehouse
@@ -183,10 +183,10 @@ ON job_works
 FOR UPDATE
 TO authenticated
 USING (
-    company_id = get_jwt_company_id() AND authorize('job_works.update')
+    company_id = get_jwt_company_id() AND authorize('orders.job_works.update')
 )
 WITH CHECK (
-    company_id = get_jwt_company_id() AND authorize('job_works.update')
+    company_id = get_jwt_company_id() AND authorize('orders.job_works.update')
 );
 
 -- Admins can delete job works, staff only in their assigned warehouse
@@ -195,7 +195,7 @@ ON job_works
 FOR DELETE
 TO authenticated
 USING (
-    company_id = get_jwt_company_id() AND authorize('job_works.delete')
+    company_id = get_jwt_company_id() AND authorize('orders.job_works.delete')
 );
 
 -- =====================================================
@@ -210,7 +210,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('job_work_raw_materials.read')
+    authorize('orders.job_works.read')
 );
 
 -- Authorized users can create job work raw materials
@@ -221,7 +221,7 @@ TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('job_work_raw_materials.create')
+    authorize('orders.job_works.create')
 );
 
 -- Authorized users can update job work raw materials
@@ -232,12 +232,12 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('job_work_raw_materials.update')
+    authorize('orders.job_works.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('job_work_raw_materials.update')
+    authorize('orders.job_works.update')
 );
 
 -- Authorized users can delete job work raw materials
@@ -248,7 +248,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('job_work_raw_materials.delete')
+    authorize('orders.job_works.delete')
 );
 
 -- =====================================================
@@ -263,7 +263,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('job_work_finished_goods.read')
+    authorize('orders.job_works.read')
 );
 
 -- Authorized users can create job work finished goods
@@ -274,7 +274,7 @@ TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('job_work_finished_goods.create')
+    authorize('orders.job_works.create')
 );
 
 -- Authorized users can update job work finished goods
@@ -285,12 +285,12 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('job_work_finished_goods.update')
+    authorize('orders.job_works.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('job_work_finished_goods.update')
+    authorize('orders.job_works.update')
 );
 
 -- Authorized users can delete job work finished goods
@@ -301,7 +301,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('job_work_finished_goods.delete')
+    authorize('orders.job_works.delete')
 );
 
 -- =====================================================

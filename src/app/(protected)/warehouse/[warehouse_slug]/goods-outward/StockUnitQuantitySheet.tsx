@@ -5,14 +5,14 @@ import { IconMinus, IconPlus } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
-import { StockUnitWithProductDetailView } from "@/types/stock-units.types";
+import { ScannedStockUnit } from "@/types/stock-units.types";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { InputWrapper } from "@/components/ui/input-wrapper";
 
 interface StockUnitQuantitySheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  stockUnit: StockUnitWithProductDetailView | null;
+  stockUnit: ScannedStockUnit["stockUnit"] | null;
   initialQuantity?: number;
   onConfirm: (quantity: number) => void;
 }

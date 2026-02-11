@@ -1,3 +1,4 @@
+-- Bale Backend - Invite functions
 
 -- =====================================================
 -- MULTI-WAREHOUSE INVITE AND USER CREATION FUNCTIONS

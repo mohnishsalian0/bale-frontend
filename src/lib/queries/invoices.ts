@@ -60,6 +60,11 @@ export const buildInvoicesQuery = (
           product:product_id(
             id, name, stock_type, measuring_unit, product_images, sequence_number
           )
+        ),
+        additional_charges:invoice_additional_charges(
+          id, ledger_id, charge_name, charge_type, charge_value, charge_amount,
+          gst_rate, cgst_rate, cgst_amount, sgst_rate, sgst_amount,
+          igst_rate, igst_amount, total_tax_amount, sequence_order
         )
       `,
       { count: "exact" },
@@ -153,7 +158,13 @@ export const buildInvoiceBySlugQuery = (
             id, name, stock_type, measuring_unit, product_images, sequence_number
           )
         ),
+        additional_charges:invoice_additional_charges(
+          id, ledger_id, charge_name, charge_type, charge_value, charge_amount,
+          gst_rate, cgst_rate, cgst_amount, sgst_rate, sgst_amount,
+          igst_rate, igst_amount, total_tax_amount, sequence_order
+        ),
         party_ledger:ledgers!party_ledger_id(id, name, partner_id),
+        counter_ledger:ledgers!counter_ledger_id(id, name, ledger_type, bank_name, account_number, ifsc_code, branch_name),
         warehouse:warehouses!warehouse_id(id, name)
       `,
     )
@@ -263,6 +274,8 @@ export async function createInvoice(
       p_source_purchase_order_id:
         invoiceData.source_purchase_order_id || undefined,
       p_goods_movement_ids: invoiceData.goods_movement_ids || undefined,
+      p_additional_charges:
+        (invoiceData.additional_charges as unknown as Json) || undefined,
       p_company_id: undefined, // Set by RPC from JWT
     },
   );
@@ -318,6 +331,8 @@ export async function updateInvoiceWithItems(
     p_notes: invoiceData.notes,
     p_attachments: undefined, // Attachments not implemented yet
     p_items: invoiceData.items as unknown as Json,
+    p_additional_charges:
+      (invoiceData.additional_charges as unknown as Json) || undefined,
   });
 
   if (error) throw error;

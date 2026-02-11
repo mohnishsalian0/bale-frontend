@@ -1,3 +1,4 @@
+-- Bale Backend - Invite warehouses link
 
 -- =====================================================
 -- INVITE_WAREHOUSES JUNCTION TABLE (MULTI-WAREHOUSE INVITES)

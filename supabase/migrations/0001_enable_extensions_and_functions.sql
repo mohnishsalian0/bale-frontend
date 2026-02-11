@@ -73,6 +73,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Function to set completed_at on UPDATE
+CREATE OR REPLACE FUNCTION set_completed_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.completed_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to set completed_by on UPDATE
+CREATE OR REPLACE FUNCTION set_completed_by()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.completed_by := get_jwt_user_id();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- =====================================================
 -- JWT HELPER FUNCTIONS
 -- =====================================================

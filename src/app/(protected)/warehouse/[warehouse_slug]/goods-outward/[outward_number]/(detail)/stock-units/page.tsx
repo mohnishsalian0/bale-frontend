@@ -7,26 +7,11 @@ import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { useGoodsOutwardBySequenceNumber } from "@/lib/query/hooks/stock-flow";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
-import { formatStockUnitNumber, getStockUnitInfo } from "@/lib/utils/product";
-import type { Tables } from "@/types/database/supabase";
+import { getStockUnitInfo } from "@/lib/utils/product";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { getProductIcon } from "@/lib/utils/product";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
 import { StockUnitDetailsModal } from "@/components/layouts/stock-unit-modal";
-import { useStockUnitWithProductDetail } from "@/lib/query/hooks/stock-units";
-import { Separator } from "@/components/ui/separator";
-
-type Product = Tables<"products">;
-type StockUnit = Tables<"stock_units">;
-type GoodsOutwardItem = Tables<"goods_outward_items">;
-
-interface OutwardItem extends GoodsOutwardItem {
-  stock_unit:
-    | (StockUnit & {
-        product: Product | null;
-      })
-    | null;
-}
 
 interface PageParams {
   params: Promise<{
@@ -50,16 +35,12 @@ export default function StockUnitsPage({ params }: PageParams) {
     isError: error,
   } = useGoodsOutwardBySequenceNumber(outward_number);
 
-  // Fetch stock unit detail when selected
-  const { data: stockUnitDetail } =
-    useStockUnitWithProductDetail(selectedStockUnitId);
-
   // Extract items from the fetched data
   const items = useMemo(() => {
     if (!outwardData) {
       return [];
     }
-    return (outwardData.goods_outward_items || []) as OutwardItem[];
+    return outwardData.goods_outward_items || [];
   }, [outwardData]);
 
   const handleStockUnitClick = (stockUnitId: string) => {
@@ -116,7 +97,7 @@ export default function StockUnitsPage({ params }: PageParams) {
             <li key={item.id}>
               <div
                 onClick={() => stockUnit && handleStockUnitClick(stockUnit.id)}
-                className="flex gap-3 p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                className="flex gap-3 p-4 hover:bg-gray-50 transition-colors cursor-pointer border-b border-border"
               >
                 {/* Product Image */}
                 <ImageWrapper
@@ -137,16 +118,13 @@ export default function StockUnitsPage({ params }: PageParams) {
                   </p>
 
                   <p className="text-sm text-gray-500">
-                    {stockUnit?.sequence_number
-                      ? formatStockUnitNumber(
-                          stockUnit.sequence_number,
-                          stockType,
-                        )
-                      : "No unit number"}
+                    {stockUnit?.stock_number || "No unit number"}
+                    {" • "}
+                    {stockUnit?.warehouse.name}
                   </p>
 
                   {/* Additional Details */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
+                  <div className="text-xs text-gray-500">
                     {getStockUnitInfo(stockUnit)}
                   </div>
                 </div>
@@ -160,7 +138,6 @@ export default function StockUnitsPage({ params }: PageParams) {
                   <p className="text-sm text-gray-500">Dispatched</p>
                 </div>
               </div>
-              <Separator />
             </li>
           );
         })}
@@ -170,7 +147,7 @@ export default function StockUnitsPage({ params }: PageParams) {
       <StockUnitDetailsModal
         open={modalOpen}
         onOpenChange={handleModalClose}
-        stockUnit={stockUnitDetail || null}
+        stockUnitId={selectedStockUnitId}
       />
     </>
   );

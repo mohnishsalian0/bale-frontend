@@ -60,7 +60,7 @@ export function AllSpecificationsSheet({
         units.map((unit) => {
           // Build details line
           const details: string[] = [today];
-          if (unit.supplier_number) details.push(`#${unit.supplier_number}`);
+          if (unit.stock_number) details.push(`#${unit.stock_number}`);
           if (unit.grade) details.push(unit.grade);
           if (unit.location) details.push(unit.location);
 

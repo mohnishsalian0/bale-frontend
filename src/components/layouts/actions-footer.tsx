@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { IconDotsVertical } from "@tabler/icons-react";
 import type { ContextMenuItem } from "@/lib/utils/action-menu";
+import { PermissionGate } from "@/components/auth/PermissionGate";
 
 interface ActionsFooterProps {
   items: ContextMenuItem[];
@@ -56,16 +57,24 @@ export function ActionsFooter({
 
               return (
                 <div key={index}>
-                  <DropdownMenuItem
-                    onClick={item.onClick}
-                    disabled={item.disabled}
-                    variant={
-                      item.variant === "destructive" ? "destructive" : undefined
-                    }
+                  <PermissionGate
+                    permission={item.permission || ""}
+                    mode="disable"
+                    actionName={item.label.toLowerCase()}
                   >
-                    <Icon />
-                    {item.label}
-                  </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={item.onClick}
+                      disabled={item.disabled}
+                      variant={
+                        item.variant === "destructive"
+                          ? "destructive"
+                          : undefined
+                      }
+                    >
+                      <Icon />
+                      {item.label}
+                    </DropdownMenuItem>
+                  </PermissionGate>
                   {showSeparator && <DropdownMenuSeparator />}
                 </div>
               );
@@ -76,35 +85,47 @@ export function ActionsFooter({
 
       {/* Secondary button (second item, flex-1) */}
       {secondaryButton && (
-        <Button
-          size={secondaryButton.size || "sm"}
-          variant={secondaryButton.variant || "outline"}
-          onClick={secondaryButton.onClick}
-          disabled={secondaryButton.disabled}
-          className="flex-1"
+        <PermissionGate
+          permission={secondaryButton.permission || ""}
+          mode="disable"
+          actionName={secondaryButton.label.toLowerCase()}
         >
-          {secondaryButton.content || secondaryButton.label}
-        </Button>
+          <Button
+            size={secondaryButton.size || "sm"}
+            variant={secondaryButton.variant || "outline"}
+            onClick={secondaryButton.onClick}
+            disabled={secondaryButton.disabled}
+            className="flex-1"
+          >
+            {secondaryButton.content || secondaryButton.label}
+          </Button>
+        </PermissionGate>
       )}
 
       {/* Primary button (first item, flex-2) */}
       {primaryButton && (
-        <Button
-          size={primaryButton.size || "sm"}
-          variant={primaryButton.variant || "default"}
-          onClick={primaryButton.onClick}
-          disabled={primaryButton.disabled}
-          className="flex-2"
+        <PermissionGate
+          permission={primaryButton.permission || ""}
+          mode="disable"
+          actionName={primaryButton.label.toLowerCase()}
         >
-          {primaryButton.content ? (
-            primaryButton.content
-          ) : (
-            <>
-              <primaryButton.icon />
-              {primaryButton.label}
-            </>
-          )}
-        </Button>
+          <Button
+            size={primaryButton.size || "sm"}
+            variant={primaryButton.variant || "default"}
+            onClick={primaryButton.onClick}
+            disabled={primaryButton.disabled}
+            className="flex-2"
+          >
+            {primaryButton.content ? (
+              primaryButton.content
+            ) : (
+              <>
+                <primaryButton.icon />
+                {primaryButton.label}
+              </>
+            )}
+          </Button>
+        </PermissionGate>
       )}
     </div>
   );

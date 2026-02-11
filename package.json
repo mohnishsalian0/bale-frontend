@@ -15,11 +15,13 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:reset": "npx supabase db reset",
     "db:types": "npx supabase gen types typescript --local > src/types/database/supabase.ts",
-    "setup:test": "npx tsx scripts/setup.ts local",
-    "setup:staging": "npx tsx scripts/setup.ts staging",
+    "setup:local": "npx tsx scripts/basic-setup.ts local",
+    "setup:staging": "npx tsx scripts/basic-setup.ts staging",
     "setup:company": "npx tsx scripts/setup-production-company.ts",
-    "load-setup:test": "npx tsx scripts/load-setup.ts local",
-    "load-setup:staging": "npx tsx scripts/load-setup.ts staging"
+    "load-setup:local": "npx tsx scripts/load-setup.ts local",
+    "load-setup:staging": "npx tsx scripts/load-setup.ts staging",
+    "invite:local": "npx tsx scripts/invite.ts local",
+    "invite:staging": "npx tsx scripts/invite.ts staging"
   },
   "repository": {
     "type": "git",

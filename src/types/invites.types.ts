@@ -1,4 +1,5 @@
 import type { Tables } from "@/types/database/supabase";
+import { UserRole } from "./database/enums";
 
 export type Invite = Tables<"invites">;
 
@@ -42,7 +43,7 @@ export interface InviteDetailView extends Invite {
 export interface InviteCreateParams {
   companyId: string;
   companyName: string;
-  role: "admin" | "staff";
+  role: UserRole;
   allWarehousesAccess: boolean;
   warehouseIds: string[];
   expiresAt: string; // ISO timestamp

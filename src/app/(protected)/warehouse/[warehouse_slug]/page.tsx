@@ -11,7 +11,7 @@ export default function RootPage() {
 
   useEffect(() => {
     // Redirect to dashboard
-    router.replace(`/warehouse/${warehouse.slug}/dashboard`);
+    router.replace(`/warehouse/${warehouse.slug}/inventory`);
   }, [router, warehouse.slug]);
 
   return <LoadingState />;

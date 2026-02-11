@@ -384,6 +384,41 @@ export type Database = {
           },
         ];
       };
+      attributes: {
+        Row: {
+          color_hex: string | null;
+          company_id: string;
+          created_at: string;
+          group_name: string;
+          id: string;
+          name: string;
+        };
+        Insert: {
+          color_hex?: string | null;
+          company_id?: string;
+          created_at?: string;
+          group_name: string;
+          id?: string;
+          name: string;
+        };
+        Update: {
+          color_hex?: string | null;
+          company_id?: string;
+          created_at?: string;
+          group_name?: string;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "attributes_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       catalog_configurations: {
         Row: {
           accepting_orders: boolean | null;
@@ -542,6 +577,205 @@ export type Database = {
         };
         Relationships: [];
       };
+      goods_convert_input_items: {
+        Row: {
+          company_id: string;
+          convert_id: string;
+          created_at: string;
+          id: string;
+          quantity_consumed: number;
+          stock_unit_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          company_id?: string;
+          convert_id: string;
+          created_at?: string;
+          id?: string;
+          quantity_consumed: number;
+          stock_unit_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          company_id?: string;
+          convert_id?: string;
+          created_at?: string;
+          id?: string;
+          quantity_consumed?: number;
+          stock_unit_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "goods_convert_input_items_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goods_convert_input_items_convert_id_fkey";
+            columns: ["convert_id"];
+            isOneToOne: false;
+            referencedRelation: "goods_converts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goods_convert_input_items_stock_unit_id_fkey";
+            columns: ["stock_unit_id"];
+            isOneToOne: false;
+            referencedRelation: "stock_units";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      goods_converts: {
+        Row: {
+          agent_id: string | null;
+          attachments: string[] | null;
+          cancellation_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          company_id: string;
+          completed_at: string | null;
+          completed_by: string | null;
+          completion_date: string | null;
+          created_at: string;
+          created_by: string;
+          deleted_at: string | null;
+          id: string;
+          invoice_id: string | null;
+          job_work_id: string | null;
+          modified_by: string | null;
+          notes: string | null;
+          output_product_id: string;
+          reference_number: string | null;
+          search_vector: unknown;
+          sequence_number: number;
+          service_type_attribute_id: string;
+          start_date: string;
+          status: string;
+          updated_at: string;
+          vendor_id: string;
+          warehouse_id: string;
+        };
+        Insert: {
+          agent_id?: string | null;
+          attachments?: string[] | null;
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          company_id?: string;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          completion_date?: string | null;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          id?: string;
+          invoice_id?: string | null;
+          job_work_id?: string | null;
+          modified_by?: string | null;
+          notes?: string | null;
+          output_product_id: string;
+          reference_number?: string | null;
+          search_vector?: unknown;
+          sequence_number: number;
+          service_type_attribute_id: string;
+          start_date: string;
+          status?: string;
+          updated_at?: string;
+          vendor_id: string;
+          warehouse_id: string;
+        };
+        Update: {
+          agent_id?: string | null;
+          attachments?: string[] | null;
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          company_id?: string;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          completion_date?: string | null;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          id?: string;
+          invoice_id?: string | null;
+          job_work_id?: string | null;
+          modified_by?: string | null;
+          notes?: string | null;
+          output_product_id?: string;
+          reference_number?: string | null;
+          search_vector?: unknown;
+          sequence_number?: number;
+          service_type_attribute_id?: string;
+          start_date?: string;
+          status?: string;
+          updated_at?: string;
+          vendor_id?: string;
+          warehouse_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fk_goods_convert_invoice";
+            columns: ["invoice_id"];
+            isOneToOne: false;
+            referencedRelation: "invoices";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goods_converts_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "partners";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goods_converts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goods_converts_job_work_id_fkey";
+            columns: ["job_work_id"];
+            isOneToOne: false;
+            referencedRelation: "job_works";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goods_converts_output_product_id_fkey";
+            columns: ["output_product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goods_converts_service_type_attribute_id_fkey";
+            columns: ["service_type_attribute_id"];
+            isOneToOne: false;
+            referencedRelation: "attributes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goods_converts_vendor_id_fkey";
+            columns: ["vendor_id"];
+            isOneToOne: false;
+            referencedRelation: "partners";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goods_converts_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       goods_inwards: {
         Row: {
           agent_id: string | null;
@@ -554,7 +788,6 @@ export type Database = {
           created_by: string;
           deleted_at: string | null;
           expected_delivery_date: string | null;
-          from_warehouse_id: string | null;
           has_invoice: boolean | null;
           id: string;
           inward_date: string;
@@ -564,7 +797,7 @@ export type Database = {
           modified_by: string | null;
           notes: string | null;
           other_reason: string | null;
-          partner_id: string | null;
+          partner_id: string;
           purchase_order_id: string | null;
           sales_order_id: string | null;
           search_vector: unknown;
@@ -585,7 +818,6 @@ export type Database = {
           created_by?: string;
           deleted_at?: string | null;
           expected_delivery_date?: string | null;
-          from_warehouse_id?: string | null;
           has_invoice?: boolean | null;
           id?: string;
           inward_date?: string;
@@ -595,7 +827,7 @@ export type Database = {
           modified_by?: string | null;
           notes?: string | null;
           other_reason?: string | null;
-          partner_id?: string | null;
+          partner_id: string;
           purchase_order_id?: string | null;
           sales_order_id?: string | null;
           search_vector?: unknown;
@@ -616,7 +848,6 @@ export type Database = {
           created_by?: string;
           deleted_at?: string | null;
           expected_delivery_date?: string | null;
-          from_warehouse_id?: string | null;
           has_invoice?: boolean | null;
           id?: string;
           inward_date?: string;
@@ -626,7 +857,7 @@ export type Database = {
           modified_by?: string | null;
           notes?: string | null;
           other_reason?: string | null;
-          partner_id?: string | null;
+          partner_id?: string;
           purchase_order_id?: string | null;
           sales_order_id?: string | null;
           search_vector?: unknown;
@@ -649,13 +880,6 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "goods_inwards_from_warehouse_id_fkey";
-            columns: ["from_warehouse_id"];
-            isOneToOne: false;
-            referencedRelation: "warehouses";
             referencedColumns: ["id"];
           },
           {
@@ -784,12 +1008,11 @@ export type Database = {
           other_reason: string | null;
           outward_date: string;
           outward_type: string;
-          partner_id: string | null;
+          partner_id: string;
           purchase_order_id: string | null;
           sales_order_id: string | null;
           search_vector: unknown;
           sequence_number: number;
-          to_warehouse_id: string | null;
           transport_reference_number: string | null;
           transport_type: string | null;
           updated_at: string;
@@ -815,12 +1038,11 @@ export type Database = {
           other_reason?: string | null;
           outward_date?: string;
           outward_type: string;
-          partner_id?: string | null;
+          partner_id: string;
           purchase_order_id?: string | null;
           sales_order_id?: string | null;
           search_vector?: unknown;
           sequence_number: number;
-          to_warehouse_id?: string | null;
           transport_reference_number?: string | null;
           transport_type?: string | null;
           updated_at?: string;
@@ -846,12 +1068,11 @@ export type Database = {
           other_reason?: string | null;
           outward_date?: string;
           outward_type?: string;
-          partner_id?: string | null;
+          partner_id?: string;
           purchase_order_id?: string | null;
           sales_order_id?: string | null;
           search_vector?: unknown;
           sequence_number?: number;
-          to_warehouse_id?: string | null;
           transport_reference_number?: string | null;
           transport_type?: string | null;
           updated_at?: string;
@@ -901,15 +1122,163 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "goods_outwards_to_warehouse_id_fkey";
-            columns: ["to_warehouse_id"];
+            foreignKeyName: "goods_outwards_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      goods_transfer_items: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          id: string;
+          quantity_transferred: number;
+          stock_unit_id: string;
+          transfer_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          company_id?: string;
+          created_at?: string;
+          id?: string;
+          quantity_transferred: number;
+          stock_unit_id: string;
+          transfer_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          id?: string;
+          quantity_transferred?: number;
+          stock_unit_id?: string;
+          transfer_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "goods_transfer_items_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goods_transfer_items_stock_unit_id_fkey";
+            columns: ["stock_unit_id"];
+            isOneToOne: false;
+            referencedRelation: "stock_units";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goods_transfer_items_transfer_id_fkey";
+            columns: ["transfer_id"];
+            isOneToOne: false;
+            referencedRelation: "goods_transfers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      goods_transfers: {
+        Row: {
+          attachments: string[] | null;
+          cancellation_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          company_id: string;
+          completed_at: string | null;
+          completed_by: string | null;
+          completion_date: string | null;
+          created_at: string;
+          created_by: string;
+          deleted_at: string | null;
+          expected_delivery_date: string | null;
+          from_warehouse_id: string;
+          id: string;
+          modified_by: string | null;
+          notes: string | null;
+          search_vector: unknown;
+          sequence_number: number;
+          status: string;
+          to_warehouse_id: string;
+          transfer_date: string;
+          transport_reference_number: string | null;
+          transport_type: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          attachments?: string[] | null;
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          company_id?: string;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          completion_date?: string | null;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          expected_delivery_date?: string | null;
+          from_warehouse_id: string;
+          id?: string;
+          modified_by?: string | null;
+          notes?: string | null;
+          search_vector?: unknown;
+          sequence_number: number;
+          status?: string;
+          to_warehouse_id: string;
+          transfer_date?: string;
+          transport_reference_number?: string | null;
+          transport_type?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          attachments?: string[] | null;
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          company_id?: string;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          completion_date?: string | null;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          expected_delivery_date?: string | null;
+          from_warehouse_id?: string;
+          id?: string;
+          modified_by?: string | null;
+          notes?: string | null;
+          search_vector?: unknown;
+          sequence_number?: number;
+          status?: string;
+          to_warehouse_id?: string;
+          transfer_date?: string;
+          transport_reference_number?: string | null;
+          transport_type?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "goods_transfers_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goods_transfers_from_warehouse_id_fkey";
+            columns: ["from_warehouse_id"];
             isOneToOne: false;
             referencedRelation: "warehouses";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "goods_outwards_warehouse_id_fkey";
-            columns: ["warehouse_id"];
+            foreignKeyName: "goods_transfers_to_warehouse_id_fkey";
+            columns: ["to_warehouse_id"];
             isOneToOne: false;
             referencedRelation: "warehouses";
             referencedColumns: ["id"];
@@ -1008,6 +1377,94 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      invoice_additional_charges: {
+        Row: {
+          cgst_amount: number | null;
+          cgst_rate: number | null;
+          charge_amount: number | null;
+          charge_name: string | null;
+          charge_type: Database["public"]["Enums"]["charge_type_enum"];
+          charge_value: number;
+          company_id: string;
+          created_at: string;
+          gst_rate: number | null;
+          id: string;
+          igst_amount: number | null;
+          igst_rate: number | null;
+          invoice_id: string;
+          ledger_id: string;
+          sequence_order: number;
+          sgst_amount: number | null;
+          sgst_rate: number | null;
+          total_tax_amount: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          cgst_amount?: number | null;
+          cgst_rate?: number | null;
+          charge_amount?: number | null;
+          charge_name?: string | null;
+          charge_type: Database["public"]["Enums"]["charge_type_enum"];
+          charge_value: number;
+          company_id?: string;
+          created_at?: string;
+          gst_rate?: number | null;
+          id?: string;
+          igst_amount?: number | null;
+          igst_rate?: number | null;
+          invoice_id: string;
+          ledger_id: string;
+          sequence_order?: number;
+          sgst_amount?: number | null;
+          sgst_rate?: number | null;
+          total_tax_amount?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          cgst_amount?: number | null;
+          cgst_rate?: number | null;
+          charge_amount?: number | null;
+          charge_name?: string | null;
+          charge_type?: Database["public"]["Enums"]["charge_type_enum"];
+          charge_value?: number;
+          company_id?: string;
+          created_at?: string;
+          gst_rate?: number | null;
+          id?: string;
+          igst_amount?: number | null;
+          igst_rate?: number | null;
+          invoice_id?: string;
+          ledger_id?: string;
+          sequence_order?: number;
+          sgst_amount?: number | null;
+          sgst_rate?: number | null;
+          total_tax_amount?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invoice_additional_charges_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoice_additional_charges_invoice_id_fkey";
+            columns: ["invoice_id"];
+            isOneToOne: false;
+            referencedRelation: "invoices";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoice_additional_charges_ledger_id_fkey";
+            columns: ["ledger_id"];
+            isOneToOne: false;
+            referencedRelation: "ledgers";
             referencedColumns: ["id"];
           },
         ];
@@ -2640,14 +3097,17 @@ export type Database = {
       product_attribute_assignments: {
         Row: {
           attribute_id: string;
+          company_id: string;
           product_id: string;
         };
         Insert: {
           attribute_id: string;
+          company_id?: string;
           product_id: string;
         };
         Update: {
           attribute_id?: string;
+          company_id?: string;
           product_id?: string;
         };
         Relationships: [
@@ -2655,7 +3115,14 @@ export type Database = {
             foreignKeyName: "product_attribute_assignments_attribute_id_fkey";
             columns: ["attribute_id"];
             isOneToOne: false;
-            referencedRelation: "product_attributes";
+            referencedRelation: "attributes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_attribute_assignments_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
             referencedColumns: ["id"];
           },
           {
@@ -2667,104 +3134,84 @@ export type Database = {
           },
         ];
       };
-      product_attributes: {
-        Row: {
-          color_hex: string | null;
-          company_id: string;
-          created_at: string;
-          group_name: string;
-          id: string;
-          name: string;
-        };
-        Insert: {
-          color_hex?: string | null;
-          company_id?: string;
-          created_at?: string;
-          group_name: string;
-          id?: string;
-          name: string;
-        };
-        Update: {
-          color_hex?: string | null;
-          company_id?: string;
-          created_at?: string;
-          group_name?: string;
-          id?: string;
-          name?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "product_attributes_company_id_fkey";
-            columns: ["company_id"];
-            isOneToOne: false;
-            referencedRelation: "companies";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       product_inventory_aggregates: {
         Row: {
+          available_quantity: number | null;
+          available_units: number | null;
+          available_value: number | null;
           company_id: string;
+          convert_origin_quantity: number | null;
+          convert_origin_units: number | null;
           created_at: string | null;
           deleted_at: string | null;
-          dispatched_quantity: number | null;
-          dispatched_units: number | null;
-          dispatched_value: number | null;
+          empty_units: number | null;
           id: string;
-          in_stock_quantity: number | null;
-          in_stock_units: number | null;
-          in_stock_value: number | null;
+          in_transit_quantity: number | null;
+          in_transit_units: number | null;
+          in_transit_value: number | null;
+          inward_origin_quantity: number | null;
+          inward_origin_units: number | null;
           is_low_stock: boolean | null;
           last_updated_at: string | null;
           pending_qr_units: number | null;
+          processing_quantity: number | null;
+          processing_units: number | null;
+          processing_value: number | null;
           product_id: string;
-          removed_quantity: number | null;
-          removed_units: number | null;
-          removed_value: number | null;
           total_quantity_received: number | null;
           total_units_received: number | null;
           warehouse_id: string;
         };
         Insert: {
+          available_quantity?: number | null;
+          available_units?: number | null;
+          available_value?: number | null;
           company_id: string;
+          convert_origin_quantity?: number | null;
+          convert_origin_units?: number | null;
           created_at?: string | null;
           deleted_at?: string | null;
-          dispatched_quantity?: number | null;
-          dispatched_units?: number | null;
-          dispatched_value?: number | null;
+          empty_units?: number | null;
           id?: string;
-          in_stock_quantity?: number | null;
-          in_stock_units?: number | null;
-          in_stock_value?: number | null;
+          in_transit_quantity?: number | null;
+          in_transit_units?: number | null;
+          in_transit_value?: number | null;
+          inward_origin_quantity?: number | null;
+          inward_origin_units?: number | null;
           is_low_stock?: boolean | null;
           last_updated_at?: string | null;
           pending_qr_units?: number | null;
+          processing_quantity?: number | null;
+          processing_units?: number | null;
+          processing_value?: number | null;
           product_id: string;
-          removed_quantity?: number | null;
-          removed_units?: number | null;
-          removed_value?: number | null;
           total_quantity_received?: number | null;
           total_units_received?: number | null;
           warehouse_id: string;
         };
         Update: {
+          available_quantity?: number | null;
+          available_units?: number | null;
+          available_value?: number | null;
           company_id?: string;
+          convert_origin_quantity?: number | null;
+          convert_origin_units?: number | null;
           created_at?: string | null;
           deleted_at?: string | null;
-          dispatched_quantity?: number | null;
-          dispatched_units?: number | null;
-          dispatched_value?: number | null;
+          empty_units?: number | null;
           id?: string;
-          in_stock_quantity?: number | null;
-          in_stock_units?: number | null;
-          in_stock_value?: number | null;
+          in_transit_quantity?: number | null;
+          in_transit_units?: number | null;
+          in_transit_value?: number | null;
+          inward_origin_quantity?: number | null;
+          inward_origin_units?: number | null;
           is_low_stock?: boolean | null;
           last_updated_at?: string | null;
           pending_qr_units?: number | null;
+          processing_quantity?: number | null;
+          processing_units?: number | null;
+          processing_value?: number | null;
           product_id?: string;
-          removed_quantity?: number | null;
-          removed_units?: number | null;
-          removed_value?: number | null;
           total_quantity_received?: number | null;
           total_units_received?: number | null;
           warehouse_id?: string;
@@ -3555,6 +4002,7 @@ export type Database = {
           id: string;
           image_url: string | null;
           modified_by: string | null;
+          page_size: string;
           pdf_url: string | null;
           updated_at: string;
           warehouse_id: string;
@@ -3568,6 +4016,7 @@ export type Database = {
           id?: string;
           image_url?: string | null;
           modified_by?: string | null;
+          page_size?: string;
           pdf_url?: string | null;
           updated_at?: string;
           warehouse_id: string;
@@ -3581,6 +4030,7 @@ export type Database = {
           id?: string;
           image_url?: string | null;
           modified_by?: string | null;
+          page_size?: string;
           pdf_url?: string | null;
           updated_at?: string;
           warehouse_id?: string;
@@ -3877,6 +4327,7 @@ export type Database = {
         Row: {
           adjustment_date: string;
           company_id: string;
+          convert_id: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -3891,6 +4342,7 @@ export type Database = {
         Insert: {
           adjustment_date: string;
           company_id?: string;
+          convert_id?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -3905,6 +4357,7 @@ export type Database = {
         Update: {
           adjustment_date?: string;
           company_id?: string;
+          convert_id?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -3917,6 +4370,13 @@ export type Database = {
           warehouse_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "fk_adjustment_convert";
+            columns: ["convert_id"];
+            isOneToOne: false;
+            referencedRelation: "goods_converts";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "stock_unit_adjustments_company_id_fkey";
             columns: ["company_id"];
@@ -3945,75 +4405,100 @@ export type Database = {
           company_id: string;
           created_at: string;
           created_by: string;
-          created_from_inward_id: string | null;
+          current_warehouse_id: string;
           deleted_at: string | null;
+          has_convert: boolean | null;
           has_outward: boolean | null;
+          has_transfers: boolean | null;
           id: string;
           initial_quantity: number;
+          last_activity_date: string | null;
+          lot_number_attribute_id: string | null;
           manufacturing_date: string | null;
           modified_by: string | null;
           notes: string | null;
+          origin_convert_id: string | null;
+          origin_inward_id: string | null;
+          origin_type: string;
           product_id: string;
           qr_generated_at: string | null;
           quality_grade: string | null;
           remaining_quantity: number;
           sequence_number: number;
-          status: string;
-          supplier_number: string | null;
+          status: Database["public"]["Enums"]["stock_unit_status_enum"];
+          stock_number: string;
           updated_at: string;
-          warehouse_id: string;
           warehouse_location: string | null;
         };
         Insert: {
           company_id?: string;
           created_at?: string;
           created_by?: string;
-          created_from_inward_id?: string | null;
+          current_warehouse_id: string;
           deleted_at?: string | null;
+          has_convert?: boolean | null;
           has_outward?: boolean | null;
+          has_transfers?: boolean | null;
           id?: string;
           initial_quantity: number;
+          last_activity_date?: string | null;
+          lot_number_attribute_id?: string | null;
           manufacturing_date?: string | null;
           modified_by?: string | null;
           notes?: string | null;
+          origin_convert_id?: string | null;
+          origin_inward_id?: string | null;
+          origin_type?: string;
           product_id: string;
           qr_generated_at?: string | null;
           quality_grade?: string | null;
           remaining_quantity: number;
           sequence_number: number;
-          status?: string;
-          supplier_number?: string | null;
+          status?: Database["public"]["Enums"]["stock_unit_status_enum"];
+          stock_number: string;
           updated_at?: string;
-          warehouse_id: string;
           warehouse_location?: string | null;
         };
         Update: {
           company_id?: string;
           created_at?: string;
           created_by?: string;
-          created_from_inward_id?: string | null;
+          current_warehouse_id?: string;
           deleted_at?: string | null;
+          has_convert?: boolean | null;
           has_outward?: boolean | null;
+          has_transfers?: boolean | null;
           id?: string;
           initial_quantity?: number;
+          last_activity_date?: string | null;
+          lot_number_attribute_id?: string | null;
           manufacturing_date?: string | null;
           modified_by?: string | null;
           notes?: string | null;
+          origin_convert_id?: string | null;
+          origin_inward_id?: string | null;
+          origin_type?: string;
           product_id?: string;
           qr_generated_at?: string | null;
           quality_grade?: string | null;
           remaining_quantity?: number;
           sequence_number?: number;
-          status?: string;
-          supplier_number?: string | null;
+          status?: Database["public"]["Enums"]["stock_unit_status_enum"];
+          stock_number?: string;
           updated_at?: string;
-          warehouse_id?: string;
           warehouse_location?: string | null;
         };
         Relationships: [
           {
-            foreignKeyName: "fk_stock_unit_inward";
-            columns: ["created_from_inward_id"];
+            foreignKeyName: "fk_stock_unit_origin_convert";
+            columns: ["origin_convert_id"];
+            isOneToOne: false;
+            referencedRelation: "goods_converts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fk_stock_unit_origin_inward";
+            columns: ["origin_inward_id"];
             isOneToOne: false;
             referencedRelation: "goods_inwards";
             referencedColumns: ["id"];
@@ -4026,17 +4511,24 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "stock_units_current_warehouse_id_fkey";
+            columns: ["current_warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_units_lot_number_attribute_id_fkey";
+            columns: ["lot_number_attribute_id"];
+            isOneToOne: false;
+            referencedRelation: "attributes";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "stock_units_product_id_fkey";
             columns: ["product_id"];
             isOneToOne: false;
             referencedRelation: "products";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "stock_units_warehouse_id_fkey";
-            columns: ["warehouse_id"];
-            isOneToOne: false;
-            referencedRelation: "warehouses";
             referencedColumns: ["id"];
           },
         ];
@@ -4257,7 +4749,19 @@ export type Database = {
         Returns: undefined;
       };
       authorize: { Args: { required_permission: string }; Returns: boolean };
+      cancel_goods_convert: {
+        Args: { p_cancellation_reason: string; p_convert_id: string };
+        Returns: undefined;
+      };
       cleanup_expired_tokens: { Args: never; Returns: number };
+      complete_goods_convert: {
+        Args: {
+          p_completion_date: string;
+          p_convert_id: string;
+          p_output_stock_units: Json[];
+        };
+        Returns: undefined;
+      };
       create_adjustment_note_with_items: {
         Args: {
           p_adjustment_date: string;
@@ -4273,6 +4777,10 @@ export type Database = {
         };
         Returns: string;
       };
+      create_goods_convert_with_items: {
+        Args: { p_convert_data: Json; p_input_stock_units: Json[] };
+        Returns: string;
+      };
       create_goods_inward_with_units: {
         Args: { p_inward_data: Json; p_stock_units: Json[] };
         Returns: string;
@@ -4281,8 +4789,13 @@ export type Database = {
         Args: { p_outward_data: Json; p_stock_unit_items: Json[] };
         Returns: string;
       };
+      create_goods_transfer_with_items: {
+        Args: { p_stock_unit_ids: string[]; p_transfer_data: Json };
+        Returns: string;
+      };
       create_invoice_with_items: {
         Args: {
+          p_additional_charges?: Json;
           p_attachments?: string[];
           p_company_id?: string;
           p_counter_ledger_id: string;
@@ -4388,37 +4901,48 @@ export type Database = {
           total_outstanding: number;
         }[];
       };
-      get_job_type_suggestions: {
-        Args: { company_id_param?: string; search_term?: string };
-        Returns: {
-          job_type: string;
-          usage_count: number;
-        }[];
-      };
       get_jwt_all_warehouses_access: { Args: never; Returns: boolean };
       get_jwt_company_id: { Args: never; Returns: string };
       get_jwt_user_id: { Args: never; Returns: string };
       get_jwt_user_role: { Args: never; Returns: string };
-      get_low_stock_products: {
-        Args: { p_limit?: number; p_warehouse_id: string };
-        Returns: Json[];
-      };
       get_next_sequence: {
         Args: { p_company_id?: string; p_table_name: string };
         Returns: number;
+      };
+      get_product_activity: {
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_product_id: string;
+          p_type_filter?: string;
+          p_warehouse_id: string;
+        };
+        Returns: {
+          counterparty_name: string;
+          event_date: string;
+          event_id: string;
+          event_type: string;
+          quantity: number;
+          reference_id: string;
+          reference_number: string;
+          status: string;
+          total_count: number;
+        }[];
+      };
+      get_product_aggregates: {
+        Args: never;
+        Returns: {
+          active_products: number;
+          live_products: number;
+          stock_type_breakdown: Json;
+          total_products: number;
+        }[];
       };
       get_purchase_order_aggregates: {
         Args: { p_warehouse_id: string };
         Returns: {
           order_count: number;
           pending_quantities: Json;
-        }[];
-      };
-      get_quality_grade_suggestions: {
-        Args: { company_id_param?: string; search_term?: string };
-        Returns: {
-          quality_grade: string;
-          usage_count: number;
         }[];
       };
       get_sales_order_aggregates: {
@@ -4428,11 +4952,23 @@ export type Database = {
           pending_quantities: Json;
         }[];
       };
-      get_tag_suggestions: {
-        Args: { company_id_param?: string; search_term?: string };
+      get_stock_unit_activity: {
+        Args: { p_stock_unit_id: string };
         Returns: {
-          tag: string;
-          usage_count: number;
+          created_at: string;
+          event_date: string;
+          event_id: string;
+          event_number: string;
+          event_type: string;
+          from_id: string;
+          from_name: string;
+          from_type: string;
+          notes: string;
+          quantity_change: number;
+          status: string;
+          to_id: string;
+          to_name: string;
+          to_type: string;
         }[];
       };
       get_user_company_id: { Args: never; Returns: string };
@@ -4490,8 +5026,25 @@ export type Database = {
         };
         Returns: undefined;
       };
+      update_goods_convert_with_items: {
+        Args: {
+          p_convert_data: Json;
+          p_convert_id: string;
+          p_input_stock_units: Json[];
+        };
+        Returns: undefined;
+      };
+      update_goods_transfer_with_items: {
+        Args: {
+          p_stock_unit_ids: string[];
+          p_transfer_data: Json;
+          p_transfer_id: string;
+        };
+        Returns: undefined;
+      };
       update_invoice_with_items: {
         Args: {
+          p_additional_charges?: Json;
           p_attachments?: string[];
           p_counter_ledger_id: string;
           p_discount_type: string;
@@ -4547,6 +5100,7 @@ export type Database = {
     Enums: {
       adjustment_type_enum: "credit" | "debit";
       allocation_type_enum: "against_ref" | "advance";
+      charge_type_enum: "percentage" | "flat_amount";
       direct_tax_type_enum: "none" | "tds" | "tcs";
       discount_type_enum: "none" | "percentage" | "flat_amount";
       dr_cr_enum: "debit" | "credit";
@@ -4573,6 +5127,7 @@ export type Database = {
         | "upi"
         | "card";
       product_tax_applicability_enum: "no_tax" | "gst";
+      stock_unit_status_enum: "available" | "in_transit" | "processing";
       tax_type_enum: "no_tax" | "gst" | "igst";
       voucher_type_enum: "payment" | "receipt";
     };
@@ -4710,6 +5265,7 @@ export const Constants = {
     Enums: {
       adjustment_type_enum: ["credit", "debit"],
       allocation_type_enum: ["against_ref", "advance"],
+      charge_type_enum: ["percentage", "flat_amount"],
       direct_tax_type_enum: ["none", "tds", "tcs"],
       discount_type_enum: ["none", "percentage", "flat_amount"],
       dr_cr_enum: ["debit", "credit"],
@@ -4738,6 +5294,7 @@ export const Constants = {
         "card",
       ],
       product_tax_applicability_enum: ["no_tax", "gst"],
+      stock_unit_status_enum: ["available", "in_transit", "processing"],
       tax_type_enum: ["no_tax", "gst", "igst"],
       voucher_type_enum: ["payment", "receipt"],
     },

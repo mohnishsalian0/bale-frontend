@@ -3,32 +3,27 @@
 import { useState, useMemo } from "react";
 import { IconBolt, IconTrash, IconPhoto } from "@tabler/icons-react";
 import { IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import ImageWrapper from "@/components/ui/image-wrapper";
 import { SelectInventorySheet } from "@/app/(protected)/warehouse/[warehouse_slug]/goods-outward/SelectInventorySheet";
 import { StockUnitQuantitySheet } from "@/app/(protected)/warehouse/[warehouse_slug]/goods-outward/StockUnitQuantitySheet";
-import { formatStockUnitNumber } from "@/lib/utils/product";
 import type { MeasuringUnit, StockType } from "@/types/database/enums";
 import {
   getMeasuringUnitAbbreviation,
   pluralizeMeasuringUnitAbbreviation,
 } from "@/lib/utils/measuring-units";
 import { getStockUnitWithProductDetail } from "@/lib/queries/stock-units";
-import { StockUnitWithProductDetailView } from "@/types/stock-units.types";
+import { ScannedStockUnit } from "@/types/stock-units.types";
+import { toScannedStockUnit } from "@/lib/utils/stock-units";
 
 const SCAN_DELAY: number = 1200;
-
-export interface ScannedStockUnit {
-  stockUnit: StockUnitWithProductDetailView;
-  quantity: number; // User-entered quantity to dispatch
-}
 
 interface StockUnitScannerStepProps {
   scannedUnits: ScannedStockUnit[];
   onScannedUnitsChange: (units: ScannedStockUnit[]) => void;
   warehouseId: string;
   orderProducts?: Record<string, number>; // productId -> requested_quantity
+  fullQuantity?: boolean; // If true, always transfer full quantity without showing quantity sheet
 }
 
 export function StockUnitScannerStep({
@@ -36,6 +31,7 @@ export function StockUnitScannerStep({
   onScannedUnitsChange,
   warehouseId,
   orderProducts = {},
+  fullQuantity = false,
 }: StockUnitScannerStepProps) {
   const [error, setError] = useState<string | null>(null);
   const [torch, setTorch] = useState(false);
@@ -43,7 +39,7 @@ export function StockUnitScannerStep({
   const [showInventorySheet, setShowInventorySheet] = useState(false);
   const [showQuantitySheet, setShowQuantitySheet] = useState(false);
   const [pendingStockUnit, setPendingStockUnit] = useState<{
-    stockUnit: StockUnitWithProductDetailView;
+    stockUnit: ScannedStockUnit["stockUnit"];
     editingIndex?: number;
     initialQuantity?: number;
   } | null>(null);
@@ -67,7 +63,7 @@ export function StockUnitScannerStep({
       // Fetch stock unit with product details in single query
       const stockUnitWithProduct = await getStockUnitWithProductDetail(
         decodedText,
-        { warehouseId, status: ["full", "partial"] },
+        { warehouseId, status: ["available"] },
       );
 
       if (!stockUnitWithProduct.product) {
@@ -92,31 +88,21 @@ export function StockUnitScannerStep({
         return;
       }
 
-      const stockType = stockUnitWithProduct.product.stock_type as StockType;
-
       // Check if already scanned
       const existingIndex = scannedUnits.findIndex(
         (unit) => unit.stockUnit.id === decodedText,
       );
 
       if (existingIndex !== -1) {
-        // For piece type: increment quantity by 1
-        if (stockType === "piece") {
+        if (fullQuantity) {
+          // For fullQuantity mode: update to full remaining quantity
           const updatedUnits = [...scannedUnits];
-          const maxQuantity =
-            updatedUnits[existingIndex].stockUnit.remaining_quantity;
-          const newQuantity = Math.min(
-            updatedUnits[existingIndex].quantity + 1,
-            maxQuantity,
-          );
-
           updatedUnits[existingIndex] = {
             ...updatedUnits[existingIndex],
-            quantity: newQuantity,
+            quantity: stockUnitWithProduct.remaining_quantity,
           };
 
           onScannedUnitsChange(updatedUnits);
-          toast.success(`Quantity increased to ${newQuantity}`);
 
           // Resume scanning immediately
           setPaused(false);
@@ -125,7 +111,7 @@ export function StockUnitScannerStep({
 
         // For roll/batch: reopen modal with current quantity
         setPendingStockUnit({
-          stockUnit: stockUnitWithProduct,
+          stockUnit: toScannedStockUnit(stockUnitWithProduct),
           editingIndex: existingIndex,
           initialQuantity: scannedUnits[existingIndex].quantity,
         });
@@ -134,16 +120,15 @@ export function StockUnitScannerStep({
       }
 
       // New scan
-      if (stockType === "piece") {
-        // For piece type: add directly with quantity 1, no modal
+      if (fullQuantity) {
+        // For fullQuantity mode: add directly with full remaining quantity
         onScannedUnitsChange([
           ...scannedUnits,
           {
-            stockUnit: stockUnitWithProduct,
-            quantity: 1,
+            stockUnit: toScannedStockUnit(stockUnitWithProduct),
+            quantity: stockUnitWithProduct.remaining_quantity,
           },
         ]);
-        toast.success("Added 1 piece");
 
         // Resume scanning immediately
         setPaused(false);
@@ -151,7 +136,9 @@ export function StockUnitScannerStep({
       }
 
       // For roll/batch: Open quantity sheet to select quantity
-      setPendingStockUnit({ stockUnit: stockUnitWithProduct });
+      setPendingStockUnit({
+        stockUnit: toScannedStockUnit(stockUnitWithProduct),
+      });
       setShowQuantitySheet(true);
       // Scanner remains paused until quantity sheet is closed
     } catch (err) {
@@ -336,10 +323,6 @@ export function StockUnitScannerStep({
                 unitAbbreviation,
               );
               const stockType = item.stockUnit.product?.stock_type as StockType;
-              const stockUnitNumber = formatStockUnitNumber(
-                item.stockUnit.sequence_number,
-                stockType,
-              );
               if (stockType !== "roll") {
                 maxQuantity = Math.floor(maxQuantity);
               }
@@ -367,10 +350,10 @@ export function StockUnitScannerStep({
                       {item.stockUnit.product?.name}
                     </p>
                     <p
-                      title={stockUnitNumber}
+                      title={item.stockUnit.stock_number}
                       className="text-xs text-gray-500 truncate"
                     >
-                      {stockUnitNumber}
+                      {item.stockUnit.stock_number}
                     </p>
                   </div>
 
@@ -381,6 +364,7 @@ export function StockUnitScannerStep({
                       type="button"
                       size="sm"
                       onClick={() => handleEditQuantity(index)}
+                      disabled={fullQuantity}
                     >
                       {item.quantity} / {maxQuantity} {pluralizedUnit}
                     </Button>
@@ -411,6 +395,7 @@ export function StockUnitScannerStep({
           scannedUnits={scannedUnits}
           onScannedUnitsChange={onScannedUnitsChange}
           orderProducts={orderProducts}
+          fullQuantity={fullQuantity}
         />
       )}
 
