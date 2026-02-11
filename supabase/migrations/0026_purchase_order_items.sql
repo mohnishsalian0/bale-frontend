@@ -1,5 +1,5 @@
 
--- Bale Backend - Purchase Order Management
+-- Bale Backend - Purchase Order Items
 -- Supplier order management with real-time fulfillment tracking
 
 -- =====================================================
@@ -89,7 +89,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('purchase_orders.read')
+    authorize('orders.purchase_orders.read')
 );
 
 -- Authorized users can create purchase order items
@@ -100,7 +100,7 @@ TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-		authorize('purchase_order_items.create')
+		authorize('orders.purchase_orders.create')
 );
 
 -- Authorized users can update purchase order items
@@ -111,12 +111,12 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-		authorize('purchase_order_items.update')
+		authorize('orders.purchase_orders.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-		authorize('purchase_order_items.update')
+		authorize('orders.purchase_orders.update')
 );
 
 -- Authorized users can delete purchase order items
@@ -127,7 +127,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-		authorize('purchase_order_items.delete')
+		authorize('orders.purchase_orders.delete')
 );
 
 -- =====================================================

@@ -7,6 +7,7 @@ import ImageWrapper from "@/components/ui/image-wrapper";
 import { getInitials } from "@/lib/utils/initials";
 import { RoleBadge } from "@/components/ui/role-badge";
 import type { StaffListView } from "@/types/staff.types";
+import { UserRole } from "@/types/database/enums";
 
 interface StaffMembersTabProps {
   staff: StaffListView[];
@@ -77,7 +78,7 @@ export function StaffMembersTab({
 
                     {/* Role Badge */}
                     <RoleBadge
-                      role={member.role as "admin" | "staff"}
+                      role={member.role as UserRole}
                       className="absolute top-4 right-4"
                     />
 

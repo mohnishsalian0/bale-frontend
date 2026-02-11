@@ -13,7 +13,7 @@ import type { StockType } from "@/types/database/enums";
 
 /**
  * Create stock unit schema with dynamic quantity validation
- * @param stockType - The type of stock (roll, batch, or piece)
+ * @param stockType - The type of stock (roll or batch)
  * @returns Zod schema for stock unit form
  */
 export const createStockUnitSchema = (stockType: StockType) => {
@@ -24,20 +24,23 @@ export const createStockUnitSchema = (stockType: StockType) => {
     })
     .positive({ message: "Quantity must be greater than 0" });
 
-  // For batch and piece types, quantity must be a whole number
-  if (stockType === "batch" || stockType === "piece") {
+  // For batch type, quantity must be a whole number
+  if (stockType === "batch") {
     quantitySchema = quantitySchema.int({
-      message: "Quantity must be a whole number for batch/piece items",
+      message: "Quantity must be a whole number for batch items",
     });
   }
 
   return z.object({
     quantity: quantitySchema,
-    supplier_number: optionalCodeSchema,
+    stock_number: optionalCodeSchema,
+    lot_number: z.string().trim().optional(),
     grade: optionalGradeSchema,
     manufactured_on: z.date().nullish(),
     location: optionalLocationSchema,
     notes: z.string().trim().optional(),
+    wastage_quantity: z.number().min(0).optional(),
+    wastage_reason: z.string().trim().optional(),
   });
 };
 
@@ -51,10 +54,11 @@ export type StockUnitFormData = z.infer<
 /**
  * Update stock unit schema - for editing existing stock units
  * Note: initial_quantity is excluded as it cannot be changed if has_outward is true
- * Other fields (grade, supplier_number, location, manufactured_on, notes) can always be edited
+ * Other fields (grade, stock_number, lot_number, location, manufactured_on, notes) can always be edited
  */
 export const updateStockUnitSchema = z.object({
-  supplier_number: optionalCodeSchema,
+  stock_number: optionalCodeSchema,
+  lot_number: z.string().trim().optional(),
   grade: optionalGradeSchema,
   manufactured_on: z.date().nullish(),
   location: optionalLocationSchema,

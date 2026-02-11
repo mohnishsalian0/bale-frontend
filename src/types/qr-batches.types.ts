@@ -57,7 +57,7 @@ export interface QRBatchProductSummary {
  */
 export interface QRBatchListView extends Pick<
   QRBatch,
-  "id" | "batch_name" | "image_url" | "created_at"
+  "id" | "batch_name" | "image_url" | "page_size" | "created_at"
 > {
   item_count: number;
   distinct_products: QRBatchProductSummary[];

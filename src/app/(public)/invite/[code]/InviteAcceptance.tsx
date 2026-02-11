@@ -8,8 +8,9 @@ import {
   IconBuildingWarehouse,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { RoleBadge } from "@/components/ui/role-badge";
+import { UserRole } from "@/types/database/enums";
 
 interface InviteAcceptanceProps {
   inviteCode: string;
@@ -115,9 +116,7 @@ export default function InviteAcceptance({
             </div>
 
             {/* Role Badge */}
-            <Badge color={role === "admin" ? "blue" : "green"}>
-              {role === "admin" ? "Admin" : "Staff"}
-            </Badge>
+            <RoleBadge role={role as UserRole} />
           </div>
         </div>
 

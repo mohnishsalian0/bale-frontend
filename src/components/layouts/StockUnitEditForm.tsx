@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { InputWrapper } from "@/components/ui/input-wrapper";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
+import MultipleSelector from "@/components/ui/multiple-selector";
 import {
   updateStockUnitSchema,
   type StockUnitUpdateFormData,
@@ -25,6 +26,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useState } from "react";
+import { useAttributes } from "@/lib/query/hooks/attributes";
 
 interface StockUnitEditFormProps {
   stockUnit: StockUnitWithProductDetailView;
@@ -39,6 +41,9 @@ export function StockUnitEditForm({
 }: StockUnitEditFormProps) {
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 
+  // Fetch lot numbers
+  const { data: lotNumbers = [] } = useAttributes("lot_number");
+
   const {
     register,
     handleSubmit,
@@ -47,7 +52,8 @@ export function StockUnitEditForm({
   } = useForm({
     resolver: zodResolver(updateStockUnitSchema),
     defaultValues: {
-      supplier_number: stockUnit.supplier_number || "",
+      stock_number: stockUnit.stock_number || "",
+      lot_number: stockUnit.lot_number?.name || "",
       grade: stockUnit.quality_grade || "",
       manufactured_on: stockUnit.manufacturing_date
         ? new Date(stockUnit.manufacturing_date)
@@ -72,8 +78,10 @@ export function StockUnitEditForm({
       <form
         id="stock-unit-edit-form"
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-6 p-4 md:px-0 overflow-y-auto"
+        className="flex flex-col gap-6 overflow-y-auto"
       >
+        <h2 className="text-lg font-semibold">Edit stock unit</h2>
+
         {/* Read-only Quantity Display */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-700">
@@ -96,15 +104,49 @@ export function StockUnitEditForm({
         </div>
 
         <div className="flex flex-col gap-4">
-          {/* Supplier Number - Full Width */}
+          {/* Stock Number - Full Width */}
           <InputWrapper
             type="text"
-            placeholder="Supplier number"
-            {...register("supplier_number")}
+            placeholder="Stock number"
+            {...register("stock_number")}
             icon={<IconHash />}
-            isError={!!errors.supplier_number?.message}
-            errorText={errors.supplier_number?.message}
+            isError={!!errors.stock_number?.message}
+            errorText={errors.stock_number?.message}
           />
+
+          {/* Lot Number - Full Width */}
+          <div className="flex flex-col gap-2">
+            <Controller
+              name="lot_number"
+              control={control}
+              render={({ field }) => (
+                <MultipleSelector
+                  value={
+                    field.value
+                      ? [{ value: field.value, label: field.value }]
+                      : []
+                  }
+                  onChange={(options) => {
+                    field.onChange(options[0]?.value || "");
+                  }}
+                  defaultOptions={lotNumbers.map((lot) => ({
+                    value: lot.name,
+                    label: lot.name,
+                  }))}
+                  placeholder="Lot number"
+                  maxSelected={1}
+                  creatable
+                  triggerSearchOnFocus
+                  hidePlaceholderWhenSelected
+                  emptyIndicator={
+                    <p className="text-center text-sm text-gray-500">
+                      No lot numbers found
+                    </p>
+                  }
+                />
+              )}
+            />
+          </div>
 
           <div className="flex gap-4">
             {/* Quality - Input with Icon */}
@@ -169,7 +211,7 @@ export function StockUnitEditForm({
       </form>
 
       {/* Action Buttons */}
-      <div className="flex gap-3 w-full pb-2 px-4 md:px-0">
+      <div className="flex gap-3 w-full py-4 md:pb-0">
         <Button
           type="button"
           variant="outline"

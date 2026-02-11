@@ -13,7 +13,8 @@ import {
   IconTruckLoading,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { ActiveOrdersSection } from "../dashboard/ActiveOrdersSection";
+import { ActiveSalesSection } from "../dashboard/ActiveSalesSection";
+import { ActivePurchaseSection } from "../dashboard/ActivePurchaseSection";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   useSalesOrderAggregates,
@@ -145,16 +146,14 @@ export default function OrdersPage() {
       </div>
 
       {/* Active Sales Orders Section */}
-      <ActiveOrdersSection
+      <ActiveSalesSection
         title={`Active sales orders ${salesOrderStats?.count ? `(${salesOrderStats.count})` : ""}`}
-        orderType="sales"
         warehouseSlug={warehouse.slug}
       />
 
       {/* Active Purchase Orders Section */}
-      <ActiveOrdersSection
+      <ActivePurchaseSection
         title={`Active purchase orders ${purchaseOrderStats?.count ? `(${purchaseOrderStats.count})` : ""}`}
-        orderType="purchase"
         warehouseSlug={warehouse.slug}
       />
     </div>

@@ -280,3 +280,32 @@ export function getDueTimeForDisplay(dueDate: Date | string): string | null {
   const years = Math.floor(diffDays / 365);
   return years === 1 ? "Due next year" : `Due in ${years} years`;
 }
+
+/**
+ * Get ordinal suffix for a day number
+ * Examples: 1 → "st", 2 → "nd", 3 → "rd", 4 → "th", 21 → "st"
+ *
+ * @param day - The day number (1-31)
+ * @returns The ordinal suffix (st, nd, rd, th)
+ */
+export function getOrdinalSuffix(day: number): string {
+  if (day === 1 || day === 21 || day === 31) return "st";
+  if (day === 2 || day === 22) return "nd";
+  if (day === 3 || day === 23) return "rd";
+  return "th";
+}
+
+/**
+ * Format date with ordinal day and full month name
+ * Examples: "1st January", "22nd December", "31st March"
+ *
+ * @param date - The date to format
+ * @returns Formatted date string with ordinal suffix
+ */
+export function formatDateWithOrdinal(date: Date | string): string {
+  const dateObj = typeof date === "string" ? new Date(date) : date;
+  const day = dateObj.getDate();
+  const suffix = getOrdinalSuffix(day);
+  const month = format(dateObj, "MMMM");
+  return `${day}${suffix} ${month}`;
+}

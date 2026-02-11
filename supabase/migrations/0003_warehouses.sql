@@ -120,7 +120,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(id) AND
-    authorize('warehouses.read')
+    authorize('business.warehouses.read')
 );
 
 -- Authorized users can create, update, delete warehouses
@@ -129,10 +129,10 @@ ON warehouses
 FOR ALL
 TO authenticated
 USING (
-    company_id = get_jwt_company_id() AND authorize('warehouses.update')
+    company_id = get_jwt_company_id() AND authorize('business.warehouses.update')
 )
 WITH CHECK (
-    company_id = get_jwt_company_id() AND authorize('warehouses.create')
+    company_id = get_jwt_company_id() AND authorize('business.warehouses.create')
 );
 
 -- =====================================================

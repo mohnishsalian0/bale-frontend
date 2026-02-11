@@ -55,7 +55,7 @@ export default function TopBar({
           {/* {isMobile && <SidebarTrigger className="size-10 text-gray-700" />} */}
           {isMobile && (
             <Link
-              href={`/warehouse/${warehouse.slug}/dashboard`}
+              href={`/warehouse/${warehouse.slug}/inventory`}
               className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg"
             >
               <Logo className="size-8" />

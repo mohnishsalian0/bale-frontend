@@ -8,23 +8,21 @@ interface StockStatusBadgeProps {
 }
 
 interface StockStatusConfig {
-  color: "blue" | "green" | "orange" | "red" | "gray";
+  color: "blue" | "green" | "orange" | "red" | "gray" | "yellow";
   variant: "default" | "secondary" | "outline";
   label: string;
 }
 
 function getStatusConfig(status: StockUnitStatus): StockStatusConfig {
   switch (status) {
-    case "full":
-      return { color: "blue", variant: "default", label: "Full" };
-    case "partial":
-      return { color: "blue", variant: "secondary", label: "Partial" };
-    case "empty":
-      return { color: "orange", variant: "secondary", label: "Empty" };
-    case "removed":
-      return { color: "gray", variant: "secondary", label: "Removed" };
+    case "available":
+      return { color: "blue", variant: "secondary", label: "Available" };
+    case "in_transit":
+      return { color: "yellow", variant: "secondary", label: "In transit" };
+    case "processing":
+      return { color: "orange", variant: "secondary", label: "Processing" };
     default:
-      return { color: "blue", variant: "secondary", label: status };
+      return { color: "gray", variant: "secondary", label: status };
   }
 }
 

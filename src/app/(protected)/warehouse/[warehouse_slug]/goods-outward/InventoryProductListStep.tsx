@@ -19,12 +19,12 @@ import {
 } from "@/lib/utils/measuring-units";
 import type { ProductWithInventoryListView } from "@/types/products.types";
 import type { StockType, MeasuringUnit } from "@/types/database/enums";
-import type { ScannedStockUnit } from "./QRScannerStep";
 import {
   useInfiniteProductsWithInventoryAndOrders,
   useProductAttributes,
   useProductsWithInventoryByIds,
 } from "@/lib/query/hooks/products";
+import { ScannedStockUnit } from "@/types/stock-units.types";
 
 interface InventoryProductListStepProps {
   warehouseId: string;
@@ -67,7 +67,7 @@ export function InventoryProductListStep({
     attributeFilters.push({ group: "color" as const, id: colorFilter });
   }
   if (tagsFilter !== "all") {
-    attributeFilters.push({ group: "tag" as const, id: tagsFilter });
+    attributeFilters.push({ group: "product_tag" as const, id: tagsFilter });
   }
 
   // Fetch products with inventory and infinite scroll
@@ -162,7 +162,10 @@ export function InventoryProductListStep({
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto">
+    <div
+      className="flex-1 flex flex-col overflow-y-auto"
+      onScroll={handleScroll}
+    >
       {/* Filters Section */}
       <div className="flex flex-col gap-3 px-4 py-4 shrink-0">
         <h3 className="text-lg font-semibold text-gray-900">Select product</h3>
@@ -229,7 +232,7 @@ export function InventoryProductListStep({
       </div>
 
       {/* Product List - Scrollable */}
-      <div className="flex-1" onScroll={handleScroll}>
+      <div className="flex-1">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-gray-500">Loading products...</p>
@@ -247,7 +250,7 @@ export function InventoryProductListStep({
                 const quantityDisplay = formatQuantityDisplay(product);
                 const requestedQuantity = orderProducts[product.id];
                 const availableQuantity =
-                  product.inventory.in_stock_quantity ?? 0;
+                  product.inventory.available_quantity ?? 0;
 
                 const unitAbbr = getMeasuringUnitAbbreviation(
                   product.measuring_unit as MeasuringUnit,
@@ -264,7 +267,7 @@ export function InventoryProductListStep({
                     type="button"
                     onClick={() => onProductSelect(product)}
                     disabled={orderProducts[product.id] == 0}
-                    className="flex items-center gap-3 p-4 border-t border-gray-200 hover:bg-gray-50 transition-colors text-left disabled:opacity-50"
+                    className="flex gap-3 p-4 border-t border-gray-200 hover:bg-gray-50 transition-colors text-left disabled:opacity-50"
                   >
                     {/* Product Image */}
                     <ImageWrapper
@@ -291,26 +294,32 @@ export function InventoryProductListStep({
                       >
                         {productInfoText}
                       </p>
-                      {/* Show requested quantity if product is from an order */}
-                      {requestedQuantity !== undefined && (
-                        <p
-                          className={`text-xs mt-1 ${
-                            isBelowRequested ? "text-red-700" : "text-gray-500"
-                          }`}
-                        >
-                          Pending request: {requestedQuantity} {unitAbbr} |
-                          Available: {availableQuantity} {unitAbbr}
+                      {/* Show quantity added if any */}
+                      {quantityDisplay && (
+                        <p className="text-sm font-medium text-green-700">
+                          {quantityDisplay}
                         </p>
                       )}
+                      <p
+                        className={`text-xs mt-1 ${
+                          isBelowRequested ? "text-red-700" : "text-gray-500"
+                        }`}
+                      >
+                        <span>
+                          Available: {availableQuantity} {unitAbbr}
+                        </span>
+                        {/* Show requested quantity if product is from an order */}
+                        {requestedQuantity !== undefined && (
+                          <span>
+                            {" | "}Pending request: {requestedQuantity}{" "}
+                            {unitAbbr}
+                          </span>
+                        )}
+                      </p>
                     </div>
 
-                    {/* Quantity and Right Chevron */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      {quantityDisplay && (
-                        <span className="text-sm font-medium text-green-700">
-                          {quantityDisplay}
-                        </span>
-                      )}
+                    {/* Right Chevron */}
+                    <div className="flex items-center shrink-0">
                       <IconChevronRight className="size-5 text-gray-400" />
                     </div>
                   </button>

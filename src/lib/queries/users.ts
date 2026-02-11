@@ -153,6 +153,46 @@ export async function getUserPermissions(roleName: string): Promise<string[]> {
 }
 
 /**
+ * Fetch all permissions for a user by their auth_user_id in a single query
+ * This is optimized for server-side use (middleware, server actions)
+ */
+export async function getUserPermissionsByAuthId(
+  supabase: SupabaseClient<Database>,
+  authUserId: string,
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("users")
+    .select(
+      `
+      role,
+      roles!inner(
+        id,
+        role_permissions!inner(
+          permissions!permission_id(permission_path)
+        )
+      )
+    `,
+    )
+    .eq("auth_user_id", authUserId)
+    .single();
+
+  if (error || !data) {
+    console.error("Error fetching user permissions:", error);
+    return [];
+  }
+
+  // Extract permission paths from nested structure
+  const rolePermissions = data.roles?.role_permissions as Array<{
+    permissions: { permission_path: string } | null;
+  }> | null;
+
+  const permissions =
+    rolePermissions?.map((rp) => rp.permissions?.permission_path) ?? [];
+
+  return permissions.filter((p): p is string => Boolean(p));
+}
+
+/**
  * Update user profile
  */
 export async function updateUser(

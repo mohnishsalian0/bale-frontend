@@ -1,6 +1,10 @@
 import type { Tables } from "./database/supabase";
 import type { QueryData } from "@supabase/supabase-js";
-import type { InvoiceStatus, InvoiceTaxType } from "./database/enums";
+import type {
+  InvoiceStatus,
+  InvoiceTaxType,
+  ChargeType,
+} from "./database/enums";
 import {
   buildInvoicesQuery,
   buildInvoiceBySlugQuery,
@@ -84,6 +88,17 @@ export interface CreateInvoiceItem {
 }
 
 /**
+ * Additional charge data for creating an invoice
+ * Used in: create invoice flow
+ * GST rate is automatically fetched from ledger
+ */
+export interface CreateInvoiceCharge {
+  ledger_id: string;
+  charge_type: ChargeType;
+  charge_value: number; // Percentage (e.g., 2 for 2%) or flat amount (e.g., 500 for ₹500)
+}
+
+/**
  * Data for creating a new invoice
  * Used in: create invoice flow
  */
@@ -105,4 +120,5 @@ export interface CreateInvoiceData {
   source_sales_order_id?: string;
   source_purchase_order_id?: string;
   goods_movement_ids?: string[];
+  additional_charges?: CreateInvoiceCharge[];
 }

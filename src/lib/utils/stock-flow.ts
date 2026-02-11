@@ -2,6 +2,7 @@ import {
   InwardWithStockUnitListView,
   OutwardWithOutwardItemListView,
 } from "@/types/stock-flow.types";
+import { TransferListView } from "@/types/goods-transfers.types";
 import { getPartnerName } from "./partner";
 
 import {
@@ -36,36 +37,22 @@ export function getMovementNumber(
 
 /**
  * Get formatted name for a sender
- * Returns partner name if received from partner, otherwise warehouse name if warehouse transfer
+ * Returns partner name (warehouse transfers handled separately)
  */
 export function getSenderName(
-  inward: Pick<InwardWithStockUnitListView, "partner" | "from_warehouse">,
+  inward: Pick<InwardWithStockUnitListView, "partner">,
 ): string {
-  let senderName: string = "Unknown sender";
-  if (inward.partner) {
-    senderName = getPartnerName(inward.partner);
-  } else if (inward.from_warehouse) {
-    senderName = inward.from_warehouse.name;
-  }
-
-  return senderName;
+  return inward.partner ? getPartnerName(inward.partner) : "Unknown sender";
 }
 
 /**
  * Get formatted name for a receiver
- * Returns partner name if sent to partner, otherwise warehouse name if warehouse transfer
+ * Returns partner name (warehouse transfers handled separately)
  */
 export function getReceiverName(
-  outward: Pick<OutwardWithOutwardItemListView, "partner" | "to_warehouse">,
+  outward: Pick<OutwardWithOutwardItemListView, "partner">,
 ): string {
-  let receiverName: string = "Unknown receiver";
-  if (outward.partner) {
-    receiverName = getPartnerName(outward.partner);
-  } else if (outward.to_warehouse) {
-    receiverName = outward.to_warehouse.name;
-  }
-
-  return receiverName;
+  return outward.partner ? getPartnerName(outward.partner) : "Unknown receiver";
 }
 
 /**
@@ -241,6 +228,107 @@ export function getOutwardQuantitiesByUnit(
 
     const measuringUnit = getMeasuringUnit(product);
     const qty = Number(item.quantity_dispatched) || 0;
+    quantitiesMap.set(
+      measuringUnit,
+      (quantitiesMap.get(measuringUnit) || 0) + qty,
+    );
+  });
+
+  return quantitiesMap;
+}
+
+/**
+ * Get formatted warehouse transfer name
+ * Returns "From Warehouse → To Warehouse"
+ */
+export function getTransferWarehousesName(
+  transfer: Pick<TransferListView, "from_warehouse" | "to_warehouse">,
+): string {
+  const fromWarehouse = transfer.from_warehouse?.name || "Unknown";
+  const toWarehouse = transfer.to_warehouse?.name || "Unknown";
+  return `${fromWarehouse} → ${toWarehouse}`;
+}
+
+/**
+ * Aggregates and formats product information for a given goods transfer.
+ * It groups items by product, sums their quantities, and
+ * returns a comma-separated string.
+ *
+ * @example
+ * // Returns "Cotton Denim (100 m), Polyester (50 units)"
+ *
+ * @param transfer - The goods transfer object, containing goods_transfer_items.
+ * @returns A formatted string summarizing products and quantities.
+ */
+export function getTransferProductsSummary(
+  transfer: Pick<TransferListView, "goods_transfer_items">,
+): string {
+  const items = transfer.goods_transfer_items || [];
+
+  if (items.length === 0) {
+    return "No products";
+  }
+
+  const productQuantities = new Map<
+    string,
+    { name: string; quantity: number; unit: MeasuringUnit }
+  >();
+
+  for (const item of items) {
+    const product = item.stock_unit?.product;
+    const quantity = item.quantity_transferred;
+
+    if (product?.id) {
+      const existing = productQuantities.get(product.id);
+      if (existing) {
+        existing.quantity += quantity;
+      } else {
+        productQuantities.set(product.id, {
+          name: product.name || "Unknown Product",
+          quantity: quantity,
+          unit: product.measuring_unit as MeasuringUnit,
+        });
+      }
+    }
+  }
+
+  const productStrings = Array.from(productQuantities.values()).map(
+    ({ name, quantity, unit }) => {
+      const unitAbbr = getMeasuringUnitAbbreviation(unit);
+      return `${name} (${quantity.toFixed(2)} ${unitAbbr})`;
+    },
+  );
+
+  return productStrings.join(", ");
+}
+
+/**
+ * Aggregates quantities by measuring unit for a goods transfer.
+ * Returns a Map of measuring units to total quantities
+ *
+ * @example
+ * // Returns Map { 'meter' => 100, 'kilogram' => 50 }
+ *
+ * @param transfer - The goods transfer object, containing goods_transfer_items.
+ * @returns A Map with quantities grouped by measuring unit.
+ */
+export function getTransferQuantitiesByUnit(
+  transfer: Pick<TransferListView, "goods_transfer_items">,
+): Map<MeasuringUnit, number> {
+  const items = transfer.goods_transfer_items || [];
+
+  if (items.length === 0) {
+    return new Map();
+  }
+
+  const quantitiesMap = new Map<MeasuringUnit, number>();
+  items.forEach((item) => {
+    const product = item.stock_unit?.product;
+
+    if (!product?.measuring_unit) return;
+
+    const measuringUnit = getMeasuringUnit(product);
+    const qty = Number(item.quantity_transferred) || 0;
     quantitiesMap.set(
       measuringUnit,
       (quantitiesMap.get(measuringUnit) || 0) + qty,

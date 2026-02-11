@@ -1,18 +1,45 @@
 import { ComponentType } from "react";
 import { MeasuringUnit, StockType } from "@/types/database/enums";
-import { IconCylinder, IconPackage, IconShirt } from "@tabler/icons-react";
-import type { ProductWithInventoryListView } from "@/types/products.types";
+import { IconCylinder, IconPackage } from "@tabler/icons-react";
+import type {
+  ProductWithInventoryListView,
+  ProductAttribute,
+} from "@/types/products.types";
 import { getMeasuringUnitAbbreviation } from "./measuring-units";
-import { pluralizeStockType } from "./pluralize";
 import { formatAbsoluteDate } from "./date";
-import { StockUnit } from "@/types/stock-units.types";
+import { StockUnitListView } from "@/types/stock-units.types";
 
-// Type for attribute objects (materials, colors, tags)
-interface ProductAttribute {
-  id: string;
-  name: string;
-  color_hex?: string | null;
+// Re-export ProductAttribute for convenience
+export type { ProductAttribute };
+
+// ============================================================================
+// ATTRIBUTE TRANSFORMATION
+// ============================================================================
+
+/**
+ * Transform attributes from nested assignments array to grouped arrays
+ * Groups attributes by group_name into materials, colors, and tags arrays
+ * Used in: products, catalog, and other product-related queries
+ */
+export function transformAttributes(product: {
+  attributes: ProductAttribute[] | null;
+}) {
+  const allAttributes = (product.attributes || []).filter(
+    (attr): attr is ProductAttribute => attr !== null,
+  );
+
+  const materials = allAttributes.filter(
+    (attr) => attr.group_name === "material",
+  );
+  const colors = allAttributes.filter((attr) => attr.group_name === "color");
+  const tags = allAttributes.filter((attr) => attr.group_name === "tag");
+
+  return { materials, colors, tags };
 }
+
+// ============================================================================
+// PRODUCT DISPLAY UTILITIES
+// ============================================================================
 
 /**
  * Get icon component for a product based on stock type
@@ -22,7 +49,6 @@ export function getProductIcon(
 ): ComponentType<{ className?: string }> {
   if (stock_type === "roll") return IconCylinder;
   if (stock_type === "batch") return IconPackage;
-  if (stock_type === "piece") return IconShirt;
   return IconPackage; // default
 }
 
@@ -117,8 +143,6 @@ export function getStockTypeDisplay(
       return "Roll";
     case "batch":
       return "Batch";
-    case "piece":
-      return "Piece";
     default:
       return stockType.charAt(0).toUpperCase() + stockType.slice(1);
   }
@@ -132,8 +156,7 @@ export function getAvailableStockText(
   product: ProductWithInventoryListView,
 ): string {
   const stockType = product.stock_type as StockType;
-  const units = product.inventory.in_stock_units as number;
-  const quantity = product.inventory.in_stock_quantity as number;
+  const quantity = product.inventory.available_quantity as number;
   const unitAbbreviation = getMeasuringUnitAbbreviation(
     product.measuring_unit as MeasuringUnit | null,
   );
@@ -142,8 +165,6 @@ export function getAvailableStockText(
     return `${quantity.toFixed(0)} ${unitAbbreviation}`;
   } else if (stockType === "batch") {
     return `${quantity.toFixed(0)} units`;
-  } else if (stockType === "piece") {
-    return `${pluralizeStockType(units, stockType)}`;
   } else {
     return "";
   }
@@ -154,42 +175,15 @@ export function getAvailableStockText(
 // ============================================================================
 
 /**
- * Format stock unit number with appropriate prefix based on stock type
- * @param sequenceNumber - The stock unit sequence number
- * @param stockType - The type of stock (roll, batch, piece)
- * @returns Formatted string like "ROLL-123", "BATCH-456", "PIECE-789"
- * @example
- * formatStockUnitNumber(123, 'roll') // "ROLL-123"
- * formatStockUnitNumber(456, 'batch') // "BATCH-456"
- * formatStockUnitNumber(789, 'piece') // "PIECE-789"
- * formatStockUnitNumber(111, null) // "SU-111"
- */
-export function formatStockUnitNumber(
-  sequenceNumber: number,
-  stockType: StockType | null | undefined,
-): string {
-  const prefix =
-    stockType === "roll"
-      ? "ROLL"
-      : stockType === "batch"
-        ? "BATCH"
-        : stockType === "piece"
-          ? "PIECE"
-          : "SU"; // fallback to generic SU if type unknown
-
-  return `${prefix}-${sequenceNumber}`;
-}
-
-/**
  * Get formatted stock unit info string
- * Format: Grade: {quality_grade} • Supplier #: {supplier_number} • Location: {warehouse_location}
+ * Format: Grade: {quality_grade} • Stock #: {stock_number} • Location: {warehouse_location}
  */
 export function getStockUnitInfo(
   stockUnit:
     | Pick<
-        StockUnit,
+        StockUnitListView,
+        | "lot_number"
         | "quality_grade"
-        | "supplier_number"
         | "warehouse_location"
         | "manufacturing_date"
       >
@@ -200,12 +194,12 @@ export function getStockUnitInfo(
 
   const parts: string[] = [];
 
-  if (stockUnit.quality_grade) {
-    parts.push(`Grade: ${stockUnit.quality_grade}`);
+  if (stockUnit.lot_number?.name) {
+    parts.push(`Lot #: ${stockUnit.lot_number.name}`);
   }
 
-  if (stockUnit.supplier_number) {
-    parts.push(`Supplier #: ${stockUnit.supplier_number}`);
+  if (stockUnit.quality_grade) {
+    parts.push(`Grade: ${stockUnit.quality_grade}`);
   }
 
   if (stockUnit.warehouse_location) {
