@@ -112,17 +112,20 @@ export async function generateGoodsInwards(
     console.log(
       `📝 Updating ${posToUpdate.length} purchase orders to 'in_progress'...`,
     );
-    const { error: updateError } = await supabase
-      .from("purchase_orders")
-      .update({ status: "in_progress" })
-      .in(
-        "id",
-        posToUpdate.map((po) => po.id),
-      );
+    // Chunk IDs to avoid "URI too long" errors from large .in() query strings
+    const chunkSize = 100;
+    const poIds = posToUpdate.map((po) => po.id);
+    for (let i = 0; i < poIds.length; i += chunkSize) {
+      const chunk = poIds.slice(i, i + chunkSize);
+      const { error: updateError } = await supabase
+        .from("purchase_orders")
+        .update({ status: "in_progress" })
+        .in("id", chunk);
 
-    if (updateError) {
-      console.error("❌ Failed to update purchase orders:", updateError);
-      throw updateError;
+      if (updateError) {
+        console.error("❌ Failed to update purchase orders:", updateError);
+        throw updateError;
+      }
     }
   }
 

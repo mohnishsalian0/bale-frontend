@@ -373,7 +373,6 @@ export async function generateSalesAdjustmentNotes(
     .from("adjustment_notes")
     .select("id, slug, adjustment_type, is_cancelled, invoice_id")
     .eq("company_id", companyId)
-    .in("invoice_id", salesInvoiceIds)
     .order("created_at", { ascending: true });
 
   console.log(
@@ -530,7 +529,6 @@ export async function generatePurchaseAdjustmentNotes(
     .from("adjustment_notes")
     .select("id, slug, adjustment_type, is_cancelled, invoice_id")
     .eq("company_id", companyId)
-    .in("invoice_id", purchaseInvoiceIds)
     .order("created_at", { ascending: true });
 
   console.log(

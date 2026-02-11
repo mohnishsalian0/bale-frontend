@@ -496,23 +496,9 @@ export async function generatePaymentReceipts(
     .eq("voucher_type", "receipt")
     .order("created_at", { ascending: true });
 
-  // Filter to only those linked to sales invoices
-  const allReceiptIds = allReceipts?.map((r) => r.id) || [];
-  const { data: allReceiptAllocations } = await supabase
-    .from("payment_allocations")
-    .select("payment_id, invoice_id")
-    .in("payment_id", allReceiptIds)
-    .in("invoice_id", salesInvoiceIds);
+  console.log(`📊 Total payment receipts: ${(allReceipts || []).length}\n`);
 
-  const allLinkedReceiptIds = new Set(
-    allReceiptAllocations?.map((a) => a.payment_id) || [],
-  );
-  const allSalesReceipts =
-    allReceipts?.filter((r) => allLinkedReceiptIds.has(r.id)) || [];
-
-  console.log(`📊 Total payment receipts: ${allSalesReceipts.length}\n`);
-
-  return allSalesReceipts;
+  return allReceipts || [];
 }
 
 /**
@@ -710,21 +696,7 @@ export async function generatePaymentMade(
     .eq("voucher_type", "payment")
     .order("created_at", { ascending: true });
 
-  // Filter to only those linked to purchase invoices
-  const allPaymentIds = allPayments?.map((p) => p.id) || [];
-  const { data: allPaymentAllocations } = await supabase
-    .from("payment_allocations")
-    .select("payment_id, invoice_id")
-    .in("payment_id", allPaymentIds)
-    .in("invoice_id", purchaseInvoiceIds);
+  console.log(`📊 Total payment made: ${(allPayments || []).length}\n`);
 
-  const allLinkedPaymentIds = new Set(
-    allPaymentAllocations?.map((a) => a.payment_id) || [],
-  );
-  const allPurchasePayments =
-    allPayments?.filter((p) => allLinkedPaymentIds.has(p.id)) || [];
-
-  console.log(`📊 Total payment made: ${allPurchasePayments.length}\n`);
-
-  return allPurchasePayments;
+  return allPayments || [];
 }

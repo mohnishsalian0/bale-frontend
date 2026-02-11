@@ -31,6 +31,7 @@ interface StockUnitAllocation {
   stock_unit_id: string;
   quantity: number;
   updated_at?: string;
+  last_activity_date: string | null;
 }
 
 // ============================================================================
@@ -51,7 +52,9 @@ async function selectStockUnitsForDispatch(
 ): Promise<StockUnitAllocation[]> {
   const { data: stockUnits, error } = await supabase
     .from("stock_units")
-    .select("id, remaining_quantity, quality_grade, created_at, updated_at")
+    .select(
+      "id, remaining_quantity, quality_grade, created_at, updated_at, last_activity_date",
+    )
     .eq("company_id", companyId)
     .eq("current_warehouse_id", warehouseId)
     .eq("product_id", productId)
@@ -76,6 +79,7 @@ async function selectStockUnitsForDispatch(
       stock_unit_id: unit.id,
       quantity: dispatchQty,
       updated_at: unit.updated_at,
+      last_activity_date: unit.last_activity_date,
     });
     remaining -= dispatchQty;
   }
@@ -169,17 +173,20 @@ export async function generateGoodsOutwards(
     console.log(
       `📝 Updating ${sosToUpdate.length} sales orders to 'in_progress'...`,
     );
-    const { error: updateError } = await supabase
-      .from("sales_orders")
-      .update({ status: "in_progress" })
-      .in(
-        "id",
-        sosToUpdate.map((so) => so.id),
-      );
+    // Chunk IDs to avoid "URI too long" errors from large .in() query strings
+    const chunkSize = 100;
+    const soIds = sosToUpdate.map((so) => so.id);
+    for (let i = 0; i < soIds.length; i += chunkSize) {
+      const chunk = soIds.slice(i, i + chunkSize);
+      const { error: updateError } = await supabase
+        .from("sales_orders")
+        .update({ status: "in_progress" })
+        .in("id", chunk);
 
-    if (updateError) {
-      console.error("❌ Failed to update sales orders:", updateError);
-      throw updateError;
+      if (updateError) {
+        console.error("❌ Failed to update sales orders:", updateError);
+        throw updateError;
+      }
     }
   }
 
@@ -230,8 +237,8 @@ export async function generateGoodsOutwards(
     // Calculate outward date as max(SO order_date, latest stock unit updated_at) + random offset
     const soDate = new Date(so.order_date);
     const latestStockUpdatedAt = stockUnitItems.reduce((latest, item) => {
-      if (!item.updated_at) return latest;
-      const itemDate = new Date(item.updated_at);
+      if (!item.last_activity_date) return latest;
+      const itemDate = new Date(item.last_activity_date);
       return itemDate > latest ? itemDate : latest;
     }, soDate);
 
