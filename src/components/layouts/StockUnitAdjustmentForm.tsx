@@ -74,8 +74,10 @@ export function StockUnitAdjustmentForm({
       <form
         id="stock-unit-adjustment-form"
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-6 p-4 md:px-0 overflow-y-auto"
+        className="flex flex-col gap-6 overflow-y-auto"
       >
+        <h2 className="text-lg font-semibold">Create adjustment</h2>
+
         {/* Quantity Input */}
         <div className="flex gap-4">
           <div className="flex flex-1 items-center gap-2 shrink-0">
@@ -149,7 +151,7 @@ export function StockUnitAdjustmentForm({
       </form>
 
       {/* Action Buttons */}
-      <div className="flex gap-3 w-full pb-2 px-4 md:px-0">
+      <div className="flex gap-3 w-full py-4 md:pb-0">
         <Button
           type="button"
           variant="outline"

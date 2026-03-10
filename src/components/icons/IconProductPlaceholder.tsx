@@ -1,5 +1,5 @@
 import { StockType } from "@/types/database/enums";
-import { IconCylinder, IconPackage, IconShirt } from "@tabler/icons-react";
+import { IconCylinder, IconPackage } from "@tabler/icons-react";
 
 export default function IconProductPlaceholder({
   stock_type,
@@ -12,7 +12,5 @@ export default function IconProductPlaceholder({
     return <IconCylinder className={className} />;
   } else if (stock_type === "batch") {
     return <IconPackage className={className} />;
-  } else if (stock_type === "piece") {
-    return <IconShirt className={className} />;
   }
 }

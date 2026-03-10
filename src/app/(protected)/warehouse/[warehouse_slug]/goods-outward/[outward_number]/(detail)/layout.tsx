@@ -76,7 +76,7 @@ export default function GoodsOutwardDetailLayout({
     deleteOutward.mutate(outward.id, {
       onSuccess: () => {
         toast.success("Goods outward deleted successfully");
-        router.push(`/warehouse/${warehouse.slug}/stock-flow`);
+        router.push(`/warehouse/${warehouse.slug}/goods-movement`);
         setShowDeleteDialog(false);
       },
       onError: (error) => {

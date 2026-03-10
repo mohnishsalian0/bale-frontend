@@ -36,6 +36,8 @@ export const buildLedgersQuery = (
       is_default,
       is_active,
       partner_id,
+      gst_applicable,
+      gst_rate,
       parent_group:parent_groups(id, name, category),
       partner:partners(first_name, last_name, company_name)
     `,

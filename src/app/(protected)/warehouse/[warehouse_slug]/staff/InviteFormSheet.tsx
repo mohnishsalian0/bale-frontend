@@ -108,9 +108,16 @@ export function InviteFormSheet({ open, onOpenChange }: InviteFormSheetProps) {
                 : "our inventory system";
             })();
 
+      const roleDisplay =
+        formData.role === "admin"
+          ? "Admin"
+          : formData.role === "accountant"
+            ? "Accountant"
+            : "Staff";
+
       const whatsappMessage = `Hi,
 
-You've been invited to join ${company?.name || "Unknown company"} and get access to ${systemDescription} as ${formData.role === "admin" ? "Admin" : "Staff"}.
+You've been invited to join ${company?.name || "Unknown company"} and get access to ${systemDescription} as ${roleDisplay}.
 
 Here's your invite link:
 🔗 ${inviteUrl}
@@ -184,6 +191,9 @@ The Bale Team`;
                 >
                   <RadioGroupItemPills value="admin">Admin</RadioGroupItemPills>
                   <RadioGroupItemPills value="staff">Staff</RadioGroupItemPills>
+                  <RadioGroupItemPills value="accountant">
+                    Accountant
+                  </RadioGroupItemPills>
                 </RadioGroupPills>
               </div>
 

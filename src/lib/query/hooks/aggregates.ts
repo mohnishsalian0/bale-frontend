@@ -7,7 +7,9 @@ import {
   getInvoiceAggregates,
   getSalesOrderAggregates,
   getPurchaseOrderAggregates,
+  getJobWorkAggregates,
   getInventoryAggregates,
+  getProductAggregates,
 } from "@/lib/queries/aggregates";
 import type { InvoiceAggregateFilters } from "@/types/aggregates.types";
 
@@ -77,6 +79,28 @@ export function usePurchaseOrderAggregates({
 }
 
 // =====================================================
+// JOB WORK AGGREGATES
+// =====================================================
+
+export function useJobWorkAggregates({
+  warehouseId,
+  enabled = true,
+}: {
+  warehouseId: string;
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: queryKeys.dashboard.jobWorkStats(warehouseId),
+    queryFn: () =>
+      getJobWorkAggregates({
+        warehouse_id: warehouseId,
+      }),
+    ...getQueryOptions(STALE_TIME.AGGREGATES, GC_TIME.AGGREGATES),
+    enabled: enabled && !!warehouseId,
+  });
+}
+
+// =====================================================
 // INVENTORY AGGREGATES
 // =====================================================
 
@@ -95,5 +119,20 @@ export function useInventoryAggregates({
       }),
     ...getQueryOptions(STALE_TIME.AGGREGATES, GC_TIME.AGGREGATES),
     enabled: enabled && !!warehouseId,
+  });
+}
+
+// =====================================================
+// PRODUCT AGGREGATES
+// =====================================================
+
+export function useProductAggregates({
+  enabled = true,
+}: { enabled?: boolean } = {}) {
+  return useQuery({
+    queryKey: queryKeys.products.aggregates(),
+    queryFn: () => getProductAggregates(),
+    ...getQueryOptions(STALE_TIME.AGGREGATES, GC_TIME.AGGREGATES),
+    enabled,
   });
 }

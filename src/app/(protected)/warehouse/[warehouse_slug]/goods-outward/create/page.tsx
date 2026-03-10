@@ -3,24 +3,25 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  StockUnitScannerStep,
-  ScannedStockUnit,
-} from "@/components/layouts/stock-unit-scanner-step";
-import { PartnerSelectionStep } from "@/app/(protected)/warehouse/[warehouse_slug]/stock-flow/PartnerSelectionStep";
+import { StockUnitScannerStep } from "@/components/layouts/stock-unit-scanner-step";
+import { ScannedStockUnit } from "@/types/stock-units.types";
+import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
 import { OutwardLinkToStep, OutwardLinkToData } from "../OutwardLinkToStep";
 import { OutwardDetailsStep } from "../OutwardDetailsStep";
 import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useStockFlowMutations } from "@/lib/query/hooks/stock-flow";
 import { useSalesOrderById } from "@/lib/query/hooks/sales-orders";
 import { usePurchaseOrderById } from "@/lib/query/hooks/purchase-orders";
-import type { TablesInsert } from "@/types/database/supabase";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import { dateToISOString } from "@/lib/utils/date";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
+import {
+  CreateOutwardData,
+  CreateOutwardItemData,
+} from "@/types/stock-flow.types";
 
 interface DetailsFormData {
   outwardDate: string;
@@ -50,14 +51,8 @@ export default function CreateGoodsOutwardPage() {
   const [saving, setSaving] = useState(false);
   const [showCreatePartner, setShowCreatePartner] = useState(false);
 
-  // Partner/Warehouse selection state
-  const [dispatchToType, setDispatchToType] = useState<"partner" | "warehouse">(
-    "partner",
-  );
+  // Partner selection state
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(
-    null,
-  );
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string | null>(
     null,
   );
 
@@ -142,32 +137,15 @@ export default function CreateGoodsOutwardPage() {
     if (!salesOrderId || !salesOrder || selectedPartnerId) return;
 
     setSelectedPartnerId(salesOrder.customer_id);
-    setDispatchToType("partner");
   }, [salesOrderId, salesOrder, selectedPartnerId]);
 
-  // Partner selection handlers with auto-advance
-  const handleSelectPartner = (partnerId: string) => {
+  // Partner selection handler with auto-advance
+  const handleSelectPartner = (partnerId: string, _ledgerId: string) => {
     setSelectedPartnerId(partnerId);
-    setSelectedWarehouseId(null);
     // Auto-advance to next step after selection
     setTimeout(() => {
       setCurrentStep("linkTo");
     }, 300);
-  };
-
-  const handleSelectWarehouse = (warehouseId: string) => {
-    setSelectedWarehouseId(warehouseId);
-    setSelectedPartnerId(null);
-    // Auto-advance to next step after selection
-    setTimeout(() => {
-      setCurrentStep("linkTo");
-    }, 300);
-  };
-
-  const handlePartnerTypeChange = (type: "partner" | "warehouse") => {
-    setDispatchToType(type);
-    setSelectedPartnerId(null);
-    setSelectedWarehouseId(null);
   };
 
   // Validation for each step
@@ -177,10 +155,8 @@ export default function CreateGoodsOutwardPage() {
   );
 
   const canProceedFromPartner = useMemo(
-    () =>
-      (dispatchToType === "partner" && selectedPartnerId !== null) ||
-      (dispatchToType === "warehouse" && selectedWarehouseId !== null),
-    [dispatchToType, selectedPartnerId, selectedWarehouseId],
+    () => selectedPartnerId !== null,
+    [selectedPartnerId],
   );
 
   const canProceedFromLinkTo = useMemo(() => {
@@ -223,19 +199,16 @@ export default function CreateGoodsOutwardPage() {
   };
 
   const handleCancel = () => {
-    router.push(`/warehouse/${warehouse.slug}/stock-flow`);
+    router.push(`/warehouse/${warehouse.slug}/goods-movement/outward`);
   };
 
   const handleSubmit = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || !selectedPartnerId) return;
     setSaving(true);
 
     try {
       // Prepare outward data - direct field mapping with aligned enums
-      const outwardData: Omit<
-        TablesInsert<"goods_outwards">,
-        "created_by" | "sequence_number"
-      > = {
+      const outwardData: CreateOutwardData = {
         warehouse_id: warehouse.id,
         outward_type: linkToData.linkToType as
           | "sales_order"
@@ -247,24 +220,19 @@ export default function CreateGoodsOutwardPage() {
         transport_reference_number:
           detailsFormData.transportReferenceNumber || undefined,
         notes: detailsFormData.notes || undefined,
-        partner_id:
-          dispatchToType === "partner"
-            ? selectedPartnerId || undefined
-            : undefined,
-        to_warehouse_id:
-          dispatchToType === "warehouse"
-            ? selectedWarehouseId || undefined
-            : undefined,
+        partner_id: selectedPartnerId,
         sales_order_id: linkToData.sales_order_id || undefined,
         purchase_order_id: linkToData.purchase_order_id || undefined,
         other_reason: linkToData.other_reason || undefined,
       };
 
       // Prepare stock unit items from scannedUnits
-      const stockUnitItems = scannedUnits.map((item) => ({
-        stock_unit_id: item.stockUnit.id,
-        quantity: item.quantity,
-      }));
+      const stockUnitItems: CreateOutwardItemData[] = scannedUnits.map(
+        (item) => ({
+          stock_unit_id: item.stockUnit.id,
+          quantity: item.quantity,
+        }),
+      );
 
       // Use mutation to create outward with items atomically
       await createOutwardWithItems.mutateAsync({
@@ -274,7 +242,7 @@ export default function CreateGoodsOutwardPage() {
 
       // Success! Show toast and redirect to stock flow
       toast.success("Goods outward created successfully");
-      router.push(`/warehouse/${warehouse.slug}/stock-flow`);
+      router.push(`/warehouse/${warehouse.slug}/goods-movement`);
     } catch (error) {
       console.error("Error creating goods outward:", error);
       toast.error("Failed to create goods outward");
@@ -309,17 +277,9 @@ export default function CreateGoodsOutwardPage() {
         <div className="flex-1 flex-col overflow-y-auto flex">
           {currentStep === "partner" && (
             <PartnerSelectionStep
-              partnerTypes={["supplier", "vendor", "customer"]} // Supplier and vendor for purchase return
-              selectedType={dispatchToType}
+              partnerType="customer"
               selectedPartnerId={selectedPartnerId}
-              selectedWarehouseId={selectedWarehouseId}
-              currentWarehouseId={warehouse.id}
-              onTypeChange={handlePartnerTypeChange}
               onSelectPartner={handleSelectPartner}
-              onSelectWarehouse={handleSelectWarehouse}
-              onAddNewPartner={() => setShowCreatePartner(true)}
-              title="Dispatch to"
-              buttonLabel="New customer"
             />
           )}
 
@@ -329,7 +289,6 @@ export default function CreateGoodsOutwardPage() {
               selectedPartnerId={selectedPartnerId}
               linkToData={linkToData}
               onLinkToChange={setLinkToData}
-              isWarehouseTransfer={dispatchToType === "warehouse"}
             />
           )}
 

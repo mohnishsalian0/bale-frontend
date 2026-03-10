@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   IconChevronDown,
   IconCurrencyRupee,
@@ -23,10 +23,10 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
-import { createClient } from "@/lib/supabase/browser";
-import type { Tables } from "@/types/database/supabase";
 import { DatePicker } from "@/components/ui/date-picker";
 import { dateToISOString } from "@/lib/utils/date";
+import { usePartners } from "@/lib/query/hooks/partners";
+import { useWarehouses } from "@/lib/query/hooks/warehouses";
 import type { DiscountType, TaxType } from "@/types/database/enums";
 import { PAYMENT_TERMS } from "@/types/database/enums";
 import { Badge } from "@/components/ui/badge";
@@ -56,52 +56,10 @@ export function PurchaseOrderDetailsStep({
   formData,
   setFormData,
 }: PurchaseOrderDetailsStepProps) {
-  const [warehouses, setWarehouses] = useState<Tables<"warehouses">[]>([]);
-  const [agents, setAgents] = useState<Tables<"partners">[]>([]);
   const [showFinancialDetails, setShowFinancialDetails] = useState(true);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
-
-  // Load warehouses and agents on mount
-  useEffect(() => {
-    loadWarehouses();
-    loadAgents();
-  }, []);
-
-  const loadWarehouses = async () => {
-    try {
-      const supabase = createClient();
-
-      // Fetch warehouses - RLS automatically filters based on user's warehouse access
-      const { data, error } = await supabase
-        .from("warehouses")
-        .select("*")
-        .order("created_at");
-
-      if (error) throw error;
-
-      setWarehouses(data || []);
-    } catch (error) {
-      console.error("Error loading warehouses:", error);
-    }
-  };
-
-  const loadAgents = async () => {
-    try {
-      const supabase = createClient();
-
-      // Load agents
-      const { data: agentsData, error: agentsError } = await supabase
-        .from("partners")
-        .select("*")
-        .eq("partner_type", "agent")
-        .order("first_name", { ascending: true });
-
-      if (agentsError) throw agentsError;
-      setAgents(agentsData || []);
-    } catch (error) {
-      console.error("Error loading agents:", error);
-    }
-  };
+  const { data: warehouses = [] } = useWarehouses();
+  const { data: agents = [] } = usePartners({ partner_type: "agent" });
 
   // const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
   //   const files = Array.from(e.target.files || []);

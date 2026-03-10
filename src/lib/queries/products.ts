@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/browser";
 import type { Database, TablesInsert } from "@/types/database/supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
+import type {
   ProductAttribute,
   ProductListView,
   ProductDetailView,
@@ -18,8 +18,9 @@ import {
   ProductInventoryViewRaw,
   ProductInventoryDetailViewRaw,
 } from "@/types/products.types";
-import type { AttributeGroup } from "@/types/database/enums";
 import { uploadProductImage, deleteProductImagesByUrls } from "@/lib/storage";
+import { getAttributes } from "@/lib/queries/attributes";
+import { transformAttributes } from "@/lib/utils/product";
 
 // Re-export raw types for other modules
 export type {
@@ -65,7 +66,7 @@ export const buildProductsQuery = (
       min_stock_threshold,
       tax_type,
       gst_rate,
-      attributes:product_attributes!inner(id, name, group_name, color_hex)
+      attributes:attributes!inner(id, name, group_name, color_hex)
     `,
       { count: "exact" },
     )
@@ -74,6 +75,13 @@ export const buildProductsQuery = (
 
   if (filters?.is_active) {
     query = query.is("is_active", filters.is_active);
+  }
+
+  if (filters?.search_term && filters.search_term.trim() !== "") {
+    query = query.textSearch("search_vector", filters.search_term.trim(), {
+      type: "websearch",
+      config: "english",
+    });
   }
 
   if (filters?.attributes && filters.attributes.length > 0) {
@@ -101,7 +109,7 @@ export const buildProductByIdQuery = (
     .select(
       `
       *,
-      attributes:product_attributes!inner(id, name, group_name, color_hex)
+      attributes:attributes!inner(id, name, group_name, color_hex)
     `,
     )
     .eq("id", productId)
@@ -121,7 +129,7 @@ export const buildProductByNumberQuery = (
     .select(
       `
       *,
-      attributes:product_attributes!inner(id, name, group_name, color_hex)
+      attributes:attributes!inner(id, name, group_name, color_hex)
     `,
     )
     .eq("sequence_number", sequenceNumber)
@@ -141,7 +149,7 @@ export const buildProductByCodeQuery = (
     .select(
       `
       *,
-      attributes:product_attributes!inner(id, name, group_name, color_hex)
+      attributes:attributes!inner(id, name, group_name, color_hex)
     `,
     )
     .eq("product_code", productCode)
@@ -180,8 +188,8 @@ export const buildProductsWithInventoryQuery = (
       min_stock_threshold,
       tax_type,
       gst_rate,
-      attributes:product_attributes!inner(id, name, group_name, color_hex),
-      product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value, pending_qr_units, warehouse_id)
+      attributes:attributes!inner(id, name, group_name, color_hex),
+      product_inventory_aggregates!inner(available_units, available_quantity, available_value, pending_qr_units, warehouse_id)
     `,
       { count: "exact" },
     )
@@ -226,7 +234,7 @@ export const buildProductWithInventoryByIdQuery = (
     .select(
       `
       *,
-      attributes:product_attributes!inner(id, name, group_name, color_hex),
+      attributes:attributes!inner(id, name, group_name, color_hex),
       product_inventory_aggregates!inner(*)
     `,
     )
@@ -249,7 +257,7 @@ export const buildProductWithInventoryAndOrdersByNumberQuery = (
     .select(
       `
       *,
-      attributes:product_attributes!inner(id, name, group_name, color_hex),
+      attributes:attributes!inner(id, name, group_name, color_hex),
       product_inventory_aggregates!inner(*),
       product_sales_order_aggregates(*),
       product_purchase_order_aggregates(*)
@@ -287,7 +295,7 @@ export const buildProductsByIdsQuery = (
       min_stock_threshold,
       tax_type,
       gst_rate,
-      attributes:product_attributes!inner(id, name, group_name, color_hex)
+      attributes:attributes!inner(id, name, group_name, color_hex)
     `,
     )
     .in("id", productIds)
@@ -321,8 +329,8 @@ export const buildProductsWithInventoryByIdsQuery = (
       min_stock_threshold,
       tax_type,
       gst_rate,
-      attributes:product_attributes!inner(id, name, group_name, color_hex),
-      product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value, pending_qr_units, warehouse_id)
+      attributes:attributes!inner(id, name, group_name, color_hex),
+      product_inventory_aggregates!inner(available_units, available_quantity, available_value, pending_qr_units, warehouse_id)
     `,
     )
     .in("id", productIds)
@@ -364,8 +372,8 @@ export const buildProductsWithInventoryAndOrdersQuery = (
       min_stock_threshold,
       tax_type,
       gst_rate,
-      attributes:product_attributes!inner(id, name, group_name, color_hex),
-      product_inventory_aggregates!inner(in_stock_units, in_stock_quantity, in_stock_value, pending_qr_units, warehouse_id),
+      attributes:attributes!inner(id, name, group_name, color_hex),
+      product_inventory_aggregates!inner(available_units, available_quantity, available_value, pending_qr_units, warehouse_id),
       product_sales_order_aggregates(active_pending_quantity, active_required_quantity, active_pending_value, active_required_value),
       product_purchase_order_aggregates(active_pending_quantity, active_required_quantity, active_pending_value, active_required_value)
     `,
@@ -377,7 +385,7 @@ export const buildProductsWithInventoryAndOrdersQuery = (
 
   // Filter to products with stock > 0 for inventory page
   if (filters?.has_inventory) {
-    query = query.gt("product_inventory_aggregates.in_stock_quantity", 0);
+    query = query.gt("product_inventory_aggregates.available_quantity", 0);
   }
 
   // Filter to products with pending QR codes
@@ -417,26 +425,6 @@ export const buildProductsWithInventoryAndOrdersQuery = (
 // ============================================================================
 // TRANSFORM FUNCTIONS
 // ============================================================================
-
-/**
- * Helper to transform attributes from nested assignments
- * Groups attributes by group_name into materials, colors, and tags arrays
- */
-export function transformAttributes(product: {
-  attributes: ProductAttribute[] | null;
-}) {
-  const allAttributes = (product.attributes || []).filter(
-    (attr): attr is ProductAttribute => attr !== null,
-  );
-
-  const materials = allAttributes.filter(
-    (attr) => attr.group_name === "material",
-  );
-  const colors = allAttributes.filter((attr) => attr.group_name === "color");
-  const tags = allAttributes.filter((attr) => attr.group_name === "tag");
-
-  return { materials, colors, tags };
-}
 
 /**
  * Transform raw product data to ProductListView
@@ -805,47 +793,19 @@ export async function getProductsWithInventoryAndOrders(
 }
 
 /**
- * Get all attributes, optionally filtered by group_name (RLS filters by company)
- */
-export async function getProductAttributes(
-  groupName?: AttributeGroup,
-): Promise<ProductAttribute[]> {
-  const supabase = createClient();
-
-  let query = supabase
-    .from("product_attributes")
-    .select("id, name, group_name, color_hex")
-    .order("name", { ascending: true });
-
-  if (groupName) {
-    query = query.eq("group_name", groupName);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error("Error fetching attributes:", error);
-    return [];
-  }
-
-  return (data as ProductAttribute[]) || [];
-}
-
-/**
- * Get all attribute lists in a single call, grouped by type
+ * Get all product attribute lists in parallel, grouped by type
+ * Uses the generic getAttributes function from attributes.ts
  */
 export async function getProductAttributeLists(): Promise<{
   materials: ProductAttribute[];
   colors: ProductAttribute[];
   tags: ProductAttribute[];
 }> {
-  const allAttributes = await getProductAttributes();
-
-  const materials = allAttributes.filter(
-    (attr) => attr.group_name === "material",
-  );
-  const colors = allAttributes.filter((attr) => attr.group_name === "color");
-  const tags = allAttributes.filter((attr) => attr.group_name === "tag");
+  const [materials, colors, tags] = await Promise.all([
+    getAttributes("material"),
+    getAttributes("color"),
+    getAttributes("product_tag"),
+  ]);
 
   return { materials, colors, tags };
 }
@@ -853,33 +813,6 @@ export async function getProductAttributeLists(): Promise<{
 // ============================================================================
 // MUTATION FUNCTIONS
 // ============================================================================
-
-/**
- * Create a new product attribute
- */
-export async function createProductAttribute(
-  name: string,
-  groupName: AttributeGroup,
-): Promise<string> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("product_attributes")
-    .insert({ name, group_name: groupName })
-    .select("id")
-    .single<{ id: string }>();
-
-  if (error) {
-    console.error("Error creating attribute:", error);
-    throw error;
-  }
-
-  if (!data) {
-    throw new Error("Failed to create attribute");
-  }
-
-  return data.id;
-}
 
 /**
  * Create a new product with attribute assignments
@@ -1106,106 +1039,4 @@ export async function updateProductActiveStatus(
     console.error("Error marking product as inactive:", error);
     throw error;
   }
-}
-
-// ============================================================================
-// LOW STOCK PRODUCTS
-// ============================================================================
-
-/**
- * Raw type from get_low_stock_products RPC function (JSONB response)
- */
-type LowStockProductRaw = {
-  id: string;
-  sequence_number: number;
-  product_code: string | null;
-  name: string;
-  show_on_catalog: boolean;
-  is_active: boolean;
-  stock_type: string;
-  measuring_unit: string;
-  cost_price_per_unit: number | null;
-  selling_price_per_unit: number | null;
-  product_images: string[] | null;
-  min_stock_alert: boolean;
-  min_stock_threshold: number | null;
-  tax_type: string;
-  gst_rate: number | null;
-  inventory: {
-    in_stock_units: number;
-    in_stock_quantity: number;
-    in_stock_value: number;
-    pending_qr_units: number | null;
-  };
-  attributes: Array<{
-    id: string;
-    name: string;
-    group_name: string;
-    color_hex: string | null;
-  }>;
-};
-
-/**
- * Transform RPC JSONB response to ProductWithInventoryListView
- */
-function transformLowStockProduct(
-  raw: LowStockProductRaw,
-): ProductWithInventoryListView {
-  // Group attributes by type
-  const materials = raw.attributes.filter(
-    (attr) => attr.group_name === "material",
-  );
-  const colors = raw.attributes.filter((attr) => attr.group_name === "color");
-  const tags = raw.attributes.filter((attr) => attr.group_name === "tag");
-
-  return {
-    id: raw.id,
-    sequence_number: raw.sequence_number,
-    product_code: raw.product_code,
-    name: raw.name,
-    show_on_catalog: raw.show_on_catalog,
-    is_active: raw.is_active,
-    stock_type: raw.stock_type,
-    measuring_unit: raw.measuring_unit,
-    cost_price_per_unit: raw.cost_price_per_unit,
-    selling_price_per_unit: raw.selling_price_per_unit,
-    product_images: raw.product_images,
-    min_stock_alert: raw.min_stock_alert,
-    tax_type: raw.tax_type,
-    gst_rate: raw.gst_rate,
-    min_stock_threshold: raw.min_stock_threshold,
-    materials,
-    colors,
-    tags,
-    inventory: raw.inventory,
-  };
-}
-
-/**
- * Fetch products with low stock (below minimum threshold)
- * Limited to specified number of products
- * Uses RPC function that returns complete product data in a single query
- * Returns products in ProductWithInventoryListView format
- */
-export async function getLowStockProducts(
-  warehouseId: string,
-  limit: number = 5,
-): Promise<ProductWithInventoryListView[]> {
-  const supabase = createClient();
-
-  // RPC function returns complete product data with materials, colors, tags, and inventory
-  const { data, error } = await supabase.rpc("get_low_stock_products", {
-    p_warehouse_id: warehouseId,
-    p_limit: limit,
-  });
-
-  if (error) {
-    console.error("Error fetching low stock products:", error);
-    throw error;
-  }
-
-  if (!data) return [];
-
-  // Transform JSONB response to ProductWithInventoryListView[]
-  return (data as LowStockProductRaw[]).map(transformLowStockProduct);
 }

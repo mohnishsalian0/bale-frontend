@@ -190,8 +190,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     userLoading,
     permissionsLoading,
     warehouseLoading,
-    router,
-    updateUserWarehouse,
     isWarehouseSelectionPage,
   ]);
 
@@ -201,6 +199,8 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     permissionsLoading ||
     (!isWarehouseSelectionPage && warehouseLoading) ||
     updateUserWarehouse.isPending;
+
+  // console.log(loading, user, warehouse);
 
   if (loading) {
     return <LoadingState />;

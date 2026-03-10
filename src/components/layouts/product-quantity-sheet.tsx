@@ -104,7 +104,7 @@ export function ProductQuantitySheet({
             value={quantity}
             label={`Quantity`}
             rightText={unitAbbreviation}
-            helpText={`${product.inventory.in_stock_quantity} ${unitAbbreviation} available`}
+            helpText={`${product.inventory.available_quantity} ${unitAbbreviation} available`}
             min="0"
             step={product.stock_type === "roll" ? "0.1" : "1"}
             placeholder={product.stock_type === "roll" ? "0.0" : "0"}

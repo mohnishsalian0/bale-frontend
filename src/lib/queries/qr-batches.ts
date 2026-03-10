@@ -40,6 +40,7 @@ export const buildQRBatchesQuery = (
       id,
       batch_name,
       image_url,
+      page_size,
       created_at,
       qr_batch_items!inner (
         stock_unit:stock_units!inner (
@@ -59,7 +60,7 @@ export const buildQRBatchesQuery = (
             min_stock_threshold,
             tax_type,
             gst_rate,
-            attributes:product_attributes!inner(id, name, group_name, color_hex)
+            attributes:attributes!inner(id, name, group_name, color_hex)
           )
         )
       )
@@ -95,10 +96,12 @@ export const buildQRBatchByIdQuery = (
         *,
         stock_unit:stock_units (
           *,
+					warehouse:warehouses(id, name),
           product:products(
             *,
-            attributes:product_attributes!inner(id, name, group_name, color_hex)
-          )
+            attributes:attributes!inner(id, name, group_name, color_hex)
+          ),
+					lot_number:attributes!lot_number_attribute_id(id, name, group_name)
         )
       )
     `,

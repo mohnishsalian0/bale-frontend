@@ -10,8 +10,9 @@ import { queryKeys } from "../keys";
 import { STALE_TIME, GC_TIME, getQueryOptions } from "../config";
 import {
   getStockUnits,
-  getStockUnitsWithInward,
+  getStockUnitsWithOrigin,
   getStockUnitWithProductDetail,
+  getStockUnitActivity,
   updateStockUnit,
   updateStockUnits,
   deleteStockUnit,
@@ -36,10 +37,10 @@ export function useStockUnits(warehouseId: string, filters?: StockUnitFilters) {
 }
 
 /**
- * Fetch stock units for a product with full inward details
+ * Fetch stock units for a product with full origin details (inward or convert)
  * Useful for product detail page to show stock flow history
  */
-export function useStockUnitsWithInward(
+export function useStockUnitsWithOrigin(
   warehouseId: string,
   filters?: StockUnitFilters,
   page: number = 1,
@@ -49,7 +50,7 @@ export function useStockUnitsWithInward(
   return useQuery({
     queryKey: queryKeys.stockUnits.all(warehouseId, filters, page),
     queryFn: () =>
-      getStockUnitsWithInward(warehouseId, filters, page, pageSize),
+      getStockUnitsWithOrigin(warehouseId, filters, page, pageSize),
     ...getQueryOptions(STALE_TIME.STOCK_UNITS, GC_TIME.TRANSACTIONAL),
     placeholderData: keepPreviousData,
     enabled,
@@ -70,6 +71,23 @@ export function useStockUnitWithProductDetail(stockUnitId: string | null) {
 }
 
 /**
+ * Fetch complete activity history for a stock unit
+ * Returns chronological timeline of all events (newest first):
+ * - Creation via goods inward
+ * - Transfers between warehouses
+ * - Outward dispatches to partners
+ * - Quantity adjustments
+ */
+export function useStockUnitActivity(stockUnitId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.stockUnits.activity(stockUnitId || ""),
+    queryFn: () => getStockUnitActivity(stockUnitId!),
+    ...getQueryOptions(STALE_TIME.STOCK_UNITS, GC_TIME.TRANSACTIONAL),
+    enabled: !!stockUnitId,
+  });
+}
+
+/**
  * Stock unit mutations (update)
  */
 export function useStockUnitMutations(_warehouseId: string) {
@@ -79,14 +97,17 @@ export function useStockUnitMutations(_warehouseId: string) {
     mutationFn: ({
       id,
       data,
+      lotNumber,
     }: {
       id: string;
       data: TablesUpdate<"stock_units">;
-    }) => updateStockUnit(id, data),
+      lotNumber?: string | null;
+    }) => updateStockUnit(id, data, lotNumber),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stock-units"] });
       queryClient.invalidateQueries({ queryKey: ["products"] }); // Inventory counts may change
       queryClient.invalidateQueries({ queryKey: ["dashboard"] }); // Dashboard stats may change
+      queryClient.invalidateQueries({ queryKey: ["attributes"] }); // Lot numbers may have been created
     },
   });
 

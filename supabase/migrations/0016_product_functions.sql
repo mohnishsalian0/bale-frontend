@@ -23,10 +23,10 @@ BEGIN
     END IF;
 
     -- Get all attribute names for this product
-    SELECT STRING_AGG(pa.name, ' ')
+    SELECT STRING_AGG(a.name, ' ')
     INTO attribute_names
     FROM product_attribute_assignments paa
-    JOIN product_attributes pa ON pa.id = paa.attribute_id
+    JOIN attributes a ON a.id = paa.attribute_id
     WHERE paa.product_id = NEW.id;
 
     -- Build weighted search vector
@@ -65,48 +65,80 @@ RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    -- Only cascade if name field changed
-    IF OLD.name IS DISTINCT FROM NEW.name THEN
+    -- Update goods_inwards via stock_units where this product is referenced
+    UPDATE goods_inwards gi
+    SET updated_at = NOW()
+    WHERE EXISTS (
+        SELECT 1 FROM stock_units su
+        WHERE su.origin_inward_id = gi.id
+        AND su.product_id = NEW.id
+    );
 
-        -- Update goods_inwards via stock_units where this product is referenced
-        UPDATE goods_inwards gi
-        SET updated_at = NOW()
-        WHERE EXISTS (
-            SELECT 1 FROM stock_units su
-            WHERE su.created_from_inward_id = gi.id
-            AND su.product_id = NEW.id
-        );
+    -- Update goods_outwards via goods_outward_items where this product is referenced
+    UPDATE goods_outwards go
+    SET updated_at = NOW()
+    WHERE EXISTS (
+        SELECT 1 FROM goods_outward_items goi
+        JOIN stock_units su ON su.id = goi.stock_unit_id
+        WHERE goi.outward_id = go.id
+        AND su.product_id = NEW.id
+    );
 
-        -- Update goods_outwards via goods_outward_items where this product is referenced
-        UPDATE goods_outwards go
-        SET updated_at = NOW()
-        WHERE EXISTS (
-            SELECT 1 FROM goods_outward_items goi
-            JOIN stock_units su ON su.id = goi.stock_unit_id
-            WHERE goi.outward_id = go.id
-            AND su.product_id = NEW.id
-        );
+    -- Update goods_transfers via goods_transfer_items where this product is referenced
+    UPDATE goods_transfers gt
+    SET updated_at = NOW()
+    WHERE EXISTS (
+        SELECT 1 FROM goods_transfer_items gti
+        JOIN stock_units su ON su.id = gti.stock_unit_id
+        WHERE gti.transfer_id = gt.id
+        AND su.product_id = NEW.id
+    );
 
-        -- Update sales_orders via sales_order_items where this product is referenced
-        UPDATE sales_orders so
-        SET updated_at = NOW()
-        WHERE EXISTS (
-            SELECT 1 FROM sales_order_items soi
-            WHERE soi.sales_order_id = so.id
-            AND soi.product_id = NEW.id
-        );
-    END IF;
+    -- Update goods_converts where this product is the output product
+    UPDATE goods_converts gc
+    SET updated_at = NOW()
+    WHERE gc.output_product_id = NEW.id;
+
+    -- Update goods_converts where this product is used in input items
+    UPDATE goods_converts gc
+    SET updated_at = NOW()
+    WHERE EXISTS (
+        SELECT 1 FROM goods_convert_input_items gcii
+        JOIN stock_units su ON su.id = gcii.stock_unit_id
+        WHERE gcii.convert_id = gc.id
+        AND su.product_id = NEW.id
+    );
+
+    -- Update sales_orders via sales_order_items where this product is referenced
+    UPDATE sales_orders so
+    SET updated_at = NOW()
+    WHERE EXISTS (
+        SELECT 1 FROM sales_order_items soi
+        WHERE soi.sales_order_id = so.id
+        AND soi.product_id = NEW.id
+    );
+
+    -- Update purchase_orders via purchase_order_items where this product is referenced
+    UPDATE purchase_orders po
+    SET updated_at = NOW()
+    WHERE EXISTS (
+        SELECT 1 FROM purchase_order_items poi
+        WHERE poi.purchase_order_id = po.id
+        AND poi.product_id = NEW.id
+    );
 
     RETURN NEW;
 END;
 $$;
 
--- Trigger to cascade updates
+-- Trigger to cascade updates (only when name changes)
 CREATE TRIGGER trigger_cascade_product_search_updates
     AFTER UPDATE ON products
-    FOR EACH ROW EXECUTE FUNCTION cascade_product_search_updates();
+    FOR EACH ROW
+    WHEN (OLD.name IS DISTINCT FROM NEW.name)
+    EXECUTE FUNCTION cascade_product_search_updates();
 
-COMMENT ON FUNCTION cascade_product_search_updates() IS 'Cascades search vector updates to dependent tables (goods_inwards, goods_outwards, sales_orders) when product name changes';
+COMMENT ON FUNCTION cascade_product_search_updates() IS 'Cascades search vector updates to dependent tables (goods_inwards, goods_outwards, goods_transfers, goods_converts, sales_orders, purchase_orders) when product name changes';
 
 -- =====================================================
 -- TRIGGER SEARCH VECTOR UPDATE ON ATTRIBUTE CHANGES

@@ -44,7 +44,7 @@ export function QRProductSelectionStep({
     attributeFilters.push({ group: "color" as const, id: colorFilter });
   }
   if (tagsFilter !== "all") {
-    attributeFilters.push({ group: "tag" as const, id: tagsFilter });
+    attributeFilters.push({ group: "product_tag" as const, id: tagsFilter });
   }
 
   // Fetch products with inventory and attributes

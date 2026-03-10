@@ -219,17 +219,7 @@ export interface SalesOrderListView extends Pick<
 }
 ```
 
-2. **Never use `*` in queries** - Always specify exact fields to keep types and queries in sync
-
-```typescript
-// ❌ Bad - Uses wildcard
-.select('*, customer:partners(*)')
-
-// ✅ Good - Explicit fields matching type
-.select('id, sequence_number, status, customer:partners(first_name, last_name)')
-```
-
-3. **Only add `| null` if FK is nullable in schema** - Check database migration to verify
+2. **Only add `| null` if FK is nullable in schema** - Check database migration to verify
 
 ```typescript
 // If agent_id is NULLABLE in database:
@@ -239,7 +229,7 @@ agent: Pick<Partner, "id" | "name"> | null;
 customer: Pick<Partner, "id" | "name">;
 ```
 
-4. **Don't create new field interfaces** - Use `Pick<>` unless fields are derived/computed
+3. **Don't create new field interfaces** - Use `Pick<>` unless fields are derived/computed
 
 ```typescript
 // ❌ Bad - Creates new interface for DB fields
@@ -258,7 +248,7 @@ export interface SalesOrderItemListView extends Pick<
 }
 ```
 
-5. **Naming convention** - All view types end with "View" suffix
+4. **Naming convention** - All view types end with "View" suffix
 
 ```typescript
 // ✅ Good naming
@@ -267,7 +257,7 @@ export interface SalesOrderDetailView {}
 export interface PartnerListView {}
 ```
 
-6. **Consolidate to 2 types per domain** - ListView and DetailView (unless bespoke requirement)
+5. **Consolidate to 2 types per domain** - ListView and DetailView (unless bespoke requirement)
 
 ```typescript
 // For most domains, keep it simple:
@@ -296,11 +286,5 @@ partner: Pick<Partner, "first_name" | "last_name" | "company_name"> | null;
 #### Documentation
 
 - **Add JSDoc comments** - Explain what each view type represents and where it's used
-
-```typescript
-/**
- * Sales order with minimal details for list views
- * Used in: sales order list page, partner detail page
- */
-export interface SalesOrderListView {}
-```
+- **Update REQUIREMENTS.md** - The requirements document should be up to date on the features and modules
+- **Update ACCOUNTING_REQUIREMENTS.md** - The accounting requirements document should be up to date on the features of accounting moudle

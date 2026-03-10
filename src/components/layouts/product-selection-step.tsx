@@ -43,6 +43,7 @@ interface ProductSelectionStepProps {
   >;
   onQuantityChange: (productId: string, quantity: number, rate: number) => void;
   onRemoveProduct: (productId: string) => void;
+  maxSelections?: number;
 }
 
 export function ProductSelectionStep({
@@ -51,6 +52,7 @@ export function ProductSelectionStep({
   productSelections,
   onQuantityChange,
   onRemoveProduct,
+  maxSelections,
 }: ProductSelectionStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
@@ -72,6 +74,10 @@ export function ProductSelectionStep({
         .map(([productId]) => productId),
     [productSelections],
   );
+
+  // Check if selection limit is reached (for single/limited selection mode)
+  const selectionLimitReached =
+    maxSelections !== undefined && selectedProductIds.length >= maxSelections;
 
   // Fetch selected products with inventory by IDs using TanStack Query
   const { data: fetchedProductsById, isLoading: fetchingByIds } =
@@ -98,7 +104,7 @@ export function ProductSelectionStep({
     attributeFilters.push({ group: "color" as const, id: colorFilter });
   }
   if (tagsFilter !== "all") {
-    attributeFilters.push({ group: "tag" as const, id: tagsFilter });
+    attributeFilters.push({ group: "product_tag" as const, id: tagsFilter });
   }
 
   // Fetch products and attributes
@@ -180,8 +186,8 @@ export function ProductSelectionStep({
 
     const existingSelection = productSelections[selectedProduct.id];
 
-    // If an existing selection for this product has a rate, use it.
-    if (existingSelection) {
+    // If an existing active selection for this product has a rate, use it.
+    if (existingSelection?.selected) {
       return existingSelection.rate;
     }
 
@@ -198,7 +204,10 @@ export function ProductSelectionStep({
   }, [selectedProduct, productSelections, contextType]);
 
   return (
-    <>
+    <div
+      className="flex-1 flex flex-col overflow-y-auto"
+      onScroll={handleScroll}
+    >
       {/* Header Section */}
       <div className="flex flex-col gap-3 p-4 shrink-0">
         <div className="flex items-center justify-between">
@@ -269,7 +278,7 @@ export function ProductSelectionStep({
       </div>
 
       {/* Product List - Scrollable */}
-      <div className="flex-1" onScroll={handleScroll}>
+      <div className="flex-1">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-gray-500">Loading products...</p>
@@ -347,6 +356,7 @@ export function ProductSelectionStep({
                           type="button"
                           variant="outline"
                           size="sm"
+                          disabled={selectionLimitReached}
                           onClick={() => handleOpenQuantitySheet(product)}
                         >
                           <IconPlus />
@@ -401,6 +411,6 @@ export function ProductSelectionStep({
         open={showCreateProduct}
         onOpenChange={setShowCreateProduct}
       />
-    </>
+    </div>
   );
 }

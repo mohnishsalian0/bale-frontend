@@ -28,10 +28,13 @@ export interface StockUnitSpec {
   id: string; // temp ID for UI
   quantity: number;
   grade?: string;
-  supplier_number?: string;
+  stock_number?: string;
+  lot_number?: string;
   manufactured_on?: Date;
   location?: string;
   notes?: string;
+  wastage_quantity?: number;
+  wastage_reason?: string;
   count: number; // for duplicate specs
 }
 
@@ -85,7 +88,7 @@ export function ProductSelectionStep({
     attributeFilters.push({ group: "color" as const, id: colorFilter });
   }
   if (tagsFilter !== "all") {
-    attributeFilters.push({ group: "tag" as const, id: tagsFilter });
+    attributeFilters.push({ group: "product_tag" as const, id: tagsFilter });
   }
 
   // Fetch products and attributes
@@ -179,7 +182,10 @@ export function ProductSelectionStep({
   }, [products]);
 
   return (
-    <>
+    <div
+      className="flex-1 flex flex-col overflow-y-auto"
+      onScroll={handleScroll}
+    >
       {/* Filters Section */}
       <div className="flex flex-col gap-3 px-4 py-4 shrink-0">
         <div className="flex items-center justify-between">
@@ -254,7 +260,7 @@ export function ProductSelectionStep({
       </div>
 
       {/* Product List - Scrollable */}
-      <div className="flex-1" onScroll={handleScroll}>
+      <div className="flex-1">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-gray-500">Loading products...</p>
@@ -271,14 +277,11 @@ export function ProductSelectionStep({
 
                 const hasUnits = product.units.length > 0;
 
-                // For piece type: show total quantity (pieces), for others: show count of units
-                const totalUnits =
-                  product.stock_type === "piece"
-                    ? product.units.reduce(
-                        (sum, unit) => sum + unit.quantity,
-                        0,
-                      )
-                    : product.units.reduce((sum, unit) => sum + unit.count, 0);
+                // Show count of units
+                const totalUnits = product.units.reduce(
+                  (sum, unit) => sum + unit.count,
+                  0,
+                );
 
                 const productInfoText = getProductInfo(product);
 
@@ -375,6 +378,6 @@ export function ProductSelectionStep({
           </>
         )}
       </div>
-    </>
+    </div>
   );
 }

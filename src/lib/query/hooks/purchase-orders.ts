@@ -14,7 +14,6 @@ import {
   getPurchaseOrderByNumber,
   getPurchaseOrderById,
   createPurchaseOrder,
-  approvePurchaseOrder,
   cancelPurchaseOrder,
   completePurchaseOrder,
   updatePurchaseOrder,
@@ -128,24 +127,6 @@ export function usePurchaseOrderMutations(warehouseId: string | null) {
     },
   });
 
-  const approve = useMutation({
-    mutationFn: ({
-      orderId,
-      orderData,
-      lineItems,
-    }: {
-      orderId: string;
-      orderData: UpdatePurchaseOrderData;
-      lineItems: CreatePurchaseOrderLineItem[];
-    }) => approvePurchaseOrder(orderId, orderData, lineItems),
-    onSuccess: () => {
-      // Invalidate all purchase order queries
-      queryClient.invalidateQueries({
-        queryKey: ["purchase-orders"],
-      });
-    },
-  });
-
   const cancel = useMutation({
     mutationFn: ({
       orderId,
@@ -240,7 +221,6 @@ export function usePurchaseOrderMutations(warehouseId: string | null) {
 
   return {
     create,
-    approve,
     cancel,
     complete,
     update,

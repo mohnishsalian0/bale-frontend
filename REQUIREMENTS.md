@@ -69,13 +69,22 @@ The app uses Next.js App Router with two main route groups for clean separation 
 - `/warehouse/[warehouse_slug]/inventory` - Product catalog
 - `/warehouse/[warehouse_slug]/partners` - Partners management
 - `/warehouse/[warehouse_slug]/sales-orders` - Sales orders
-- `/warehouse/[warehouse_slug]/stock-flow` - Stock flow (inward/outward)
+- `/warehouse/[warehouse_slug]/goods-movement` - Goods movement (inward/outward)
+- `/warehouse/[warehouse_slug]/goods-transfer` - Goods transfer
 - `/warehouse/[warehouse_slug]/qr-codes` - QR code batches
 - `/warehouse/[warehouse_slug]/staff` - Staff management
 - `/warehouse/[warehouse_slug]/goods-inward/create` - Create goods inward (chrome-less)
 - `/warehouse/[warehouse_slug]/goods-outward/create` - Create goods outward (chrome-less)
 - `/warehouse/[warehouse_slug]/qr-codes/create` - Create QR batch (chrome-less)
 - `/warehouse/[warehouse_slug]/sales-orders/create` - Create sales order (chrome-less)
+- `/warehouse/[warehouse_slug]/purchase-orders` - Purchase orders
+- `/warehouse/[warehouse_slug]/purchase-orders/create` - Create purchase order (chrome-less)
+- `/warehouse/[warehouse_slug]/purchase-orders/[purchase_number]/details` - Purchase order details
+- `/warehouse/[warehouse_slug]/purchase-orders/[purchase_number]/edit` - Edit purchase order (chrome-less)
+- `/warehouse/[warehouse_slug]/job-works` - Job works
+- `/warehouse/[warehouse_slug]/job-works/create` - Create job work (chrome-less)
+- `/warehouse/[warehouse_slug]/job-works/[job_work_number]/details` - Job work details
+- `/warehouse/[warehouse_slug]/job-works/[job_work_number]/edit` - Edit job work (chrome-less)
 - `/company` - Company settings
 
 #### (public)/ - Public Routes
@@ -555,11 +564,10 @@ Permissions are organized hierarchically with the following top-level categories
   - Thread count (optional, in cms)
   - Tags (multi-select for categorization)
 - **Stock Information:**
-  - Stock Type (required: 'roll', 'batch', 'piece' - defines how the product is tracked)
+  - Stock Type (required: 'roll', 'batch' - defines how the product is tracked)
   - Measuring Unit (conditional based on stock type):
     - For 'roll': metre, yard, or kilogram
     - For 'batch': unit
-    - For 'piece': NULL (no measuring unit)
   - Cost Price Per Unit (optional, for margin calculation)
   - Selling Price Per Unit (optional, for quotations)
   - Product Images (max 5 images, 2MB each)
@@ -603,7 +611,7 @@ Permissions are organized hierarchically with the following top-level categories
 
 - **Stock Entry**: Stock units can ONLY be added to inventory via Goods Inward process
 - **Stock Removal**: Stock units can ONLY be removed from inventory via Goods Outward process
-- **Traceability**: Every stock unit must be linked to its originating goods inward (created_from_inward_id)
+- **Traceability**: Every stock unit must be linked to its originating goods inward or convert (origin_type, origin_inward_id & origin_convert_id)
 - **Special Case Inwards**: For opening stock, adjustments, and manual additions, use link_type = 'other' with descriptive other_reference (e.g., "Opening Stock - System Setup", "Stock Adjustment - Found Inventory")
 
 **Unit Creation Methods**
@@ -625,6 +633,13 @@ Permissions are organized hierarchically with the following top-level categories
 - **Location Tracking:**
   - Location Description (free-form text field, e.g., "Section A Rack 5", "Left Corner")
 - **Additional Information:**
+  - Lot Number (optional, user-defined text field)
+    - Custom format determined by user's business practices (e.g., LOT-123456, BATCH-2024-A, L001, etc.)
+    - Shared across multiple stock units from the same batch/shipment
+    - All stock units from a single goods inward typically share the same lot number
+    - Assigned during goods inward creation
+    - Stored as attribute in consolidated attributes table with group_name = 'lot_number'
+    - Linked via stock_unit_attribute_assignments junction table
   - Barcode generated (boolean, default false, auto updates when barcode is generated for this stock unit)
   - Barcode generated at (time, auto updates when barcode is generated for this stock unit)
   - Quality Grade (custom text field with auto-suggestions from previously used values)
@@ -1055,7 +1070,7 @@ Permissions are organized hierarchically with the following top-level categories
 
 #### 7.1 Job Work Order Processing
 
-**Feature Description**: Job work coordination with goods outward and inward integration but without sales order integration
+**Feature Description**: Job work coordination with goods convert integration for tracking outsourced processing (dyeing, embroidery, printing, etc.)
 
 **Specifications:**
 
@@ -1080,20 +1095,20 @@ Permissions are organized hierarchically with the following top-level categories
 
 **Finished Goods Specification**
 
-- Finished Goods Request Quantity (from assigned warehouse stock only)
-- Finished Goods Received Quantity (from this warehouse)
-- Finished Goods Pending Quantity (updated via linked goods inward)
-- Finished Goods Pending Quantity (auto-calculated: Finished goods Request Quantity - Received Quantity)
-- Total Completion in % (auto-calculated: (Finished Goods Received Quantity/ Finished Goods Request Quantity) \*100)
+- Finished Goods Expected Quantity (per product line item)
+- Finished Goods Received Quantity (auto-calculated from linked completed goods converts via reconciliation triggers)
+- Finished Goods Pending Quantity (auto-calculated: Expected Quantity - Received Quantity)
+- Total Completion in % (auto-calculated: (Received Quantity / Expected Quantity) \*100)
+- `has_convert` flag (boolean, auto-set by reconciliation trigger when any goods convert is linked)
 
 **Linked Transactions**
 
-- Goods Outward List (raw materials sent to vendor)
-- Goods Inward List (finished goods received from vendor)
+- Goods Converts List (linked via `job_work_id` on goods_converts table, tracks processing/transformation)
 
 **Job Work Status Workflow**
 
-- **in_progress** - Default status, work is active with vendor
+- **approval_pending** - Initial status for all new job works, awaiting approval
+- **in_progress** - Job work approved and active with vendor
 - **completed** - Job work finished, goods received back (requires completion notes)
 - **cancelled** - Job work cancelled before completion (requires cancellation reason)
 
@@ -1128,9 +1143,84 @@ Permissions are organized hierarchically with the following top-level categories
 
 **Business Rules**
 
-- Raw material quantities are not allocated from inventory only highlighted
-- Pending quantities update based on actual goods outward/inward transactions
+- Pending quantities auto-update via reconciliation triggers when linked goods converts complete
 - Job work can exist independently without sales order linkage
+- Cannot cancel job work if `has_convert = true` (must delete linked converts first)
+- Cannot edit warehouse or start_date if `has_convert = true`
+- Cannot change vendor after approval (status != `approval_pending`)
+- Over-receipt prevention: received_quantity cannot exceed expected_quantity (enforced by trigger)
+
+#### 7.2 Job Work Creation Flow (3-Step)
+
+**Feature Description**: Guided 3-step wizard for creating job works (chrome-less immersive flow)
+
+**Step 1: Vendor Selection**
+
+- Reuses `PartnerSelectionStep` with `partnerType="vendor"`
+- Auto-advances to step 2 on vendor selection
+
+**Step 2: Output Product Selection**
+
+- Reuses `ProductSelectionStep` with single product limit (`maxSelections={1}`)
+- User must remove current selection before adding a different product
+- Uses `contextType="purchase"` (cost price as default rate)
+
+**Step 3: Job Work Details**
+
+- **Main Fields:**
+  - Warehouse selector (required)
+  - Service Type selector (required, auto-suggest with create new, stores attribute ID)
+  - Start Date (required) + Due Date (optional) side by side
+  - Agent selector (optional, from Partners with type=Agent)
+- **Financial Details (collapsible):**
+  - Tax Type (radio: No Tax / GST / IGST)
+  - Advance Amount
+  - Discount Type (None / Percentage / Flat Amount) + Discount Value
+- **Additional Details (collapsible):**
+  - Notes textarea
+
+**Validation**: Requires vendor, start date, and service type before submission.
+
+#### 7.3 Job Work Edit Flow (3-Step)
+
+**Feature Description**: Edit existing job works using the same 3-step wizard pattern as creation
+
+**Behavior:**
+
+- Initializes all form fields from the existing job work data
+- Pre-selects the current vendor, product (with quantity/rate), and all detail fields
+- **Vendor change restricted** when status is not `approval_pending`
+- **Editable in both** `approval_pending` and `in_progress` statuses
+- Single product selection enforced (same as create)
+- Cancel and success both navigate back to the job work details page
+- Uses `updateWithItems` mutation for atomic order + line item update
+
+#### 7.4 Job Work Dashboard & Tracking
+
+**Specifications:**
+
+**List View (Warehouse-Filtered):**
+
+- Auto-filtered to show only job works for the current warehouse
+- Filter by status (approval_pending, in_progress, overdue, completed, cancelled), product, vendor, date range
+- Aggregate stats in header: active order count + pending quantities by measuring unit
+- Grouped by start date (month/year), shows "JW-{number}" prefix
+- Uses dedicated `JobWorkStatusBadge` component (decoupled from purchase order badge)
+
+**Detail View:**
+
+- **Header**: JW-{sequence_number} with status badge, service type in subtitle separated by dot, progress bar
+- **Sections**:
+  - Goods Converts: List of linked goods convert records with GC-{number}, status, and clickable navigation
+  - Line Items: expected/received/pending quantities with financial breakdown
+  - Vendor details
+  - Agent (conditionally shown)
+  - Payment Details: item total, discount, GST, total, advance
+  - Warehouse
+  - Important Dates: start date, due date
+  - Notes + cancellation reason (conditionally shown)
+- **Actions Footer**: Approve, Edit, Create Convert, Create Invoice, Complete, Share, Cancel, Delete (visibility based on status)
+- **Dialogs**: Reuses ApprovalDialog (with "JW" type), CancelDialog, CompleteDialog, DeleteDialog
 
 ### 8. Inventory Movement System
 
@@ -1268,11 +1358,17 @@ Permissions are organized hierarchically with the following top-level categories
 
 **Stock Units Creation**
 
-- User directly creates stock units with complete details (size, quality grade, location, etc.)
+- User directly creates stock units with complete details (size, quality grade, location, lot number, etc.)
 - Each stock unit created with full specifications during inward process
 - If multiple units have identical details, user can specify quantity to create multiple at once
 - Stock units created with status as 'in_stock'
-- All units automatically linked to this goods inward via created_from_inward_id
+- All units automatically linked to this goods inward via origin_inward_id
+- **Lot Number Assignment:**
+  - User can optionally assign a lot number during goods inward creation (format: LOT-XXXXXX)
+  - All stock units from the same goods inward typically share the same lot number
+  - Lot numbers are stored as attributes (group_name = 'lot_number') in the consolidated attributes table
+  - Assignment handled automatically via stock_unit_attribute_assignments junction table
+  - If lot number doesn't exist, it's created automatically during the inward process
 
 **Staff Access Controls**
 
@@ -1324,6 +1420,176 @@ Permissions are organized hierarchically with the following top-level categories
   - Notes: Inward notes
 - **Stock Units Tab**: List of created stock units with product images, SU-{number}, initial quantity with unit
 
+#### 8.3 Goods Convert
+
+**Feature Description**: Fabric conversion and processing management for job work operations like dyeing, embroidery, printing, etc. Tracks input stock units consumed and output stock units created, with wastage tracking.
+
+**Use Case**: User sends fabric rolls for processing (dyeing/embroidery) to a vendor. After processing, the vendor returns finished goods. This feature tracks the conversion process, wastage, and creates new stock units for the finished goods.
+
+**Specifications:**
+
+**Convert Header**
+
+**Conversion Details**
+
+- Conversion Type (required, text input with suggestions: Dyeing, Embroidery, Printing, Stitching, Washing, Finishing, etc.)
+- Vendor (optional, dropdown from partners list - vendors/suppliers performing the work)
+- Agent (optional, dropdown from partners with type=Agent)
+- Start Date (required, date when conversion/processing started)
+- Reference Number (optional, Form GST ITC-04, delivery challan, or other reference)
+- Job Work (optional, link to system job work for future fulfillment tracking)
+- Invoice (optional, link to purchase invoice for job work charges - added later when invoice is created)
+- Notes (additional information about the conversion process)
+- Add files (attachments for challans, reports, quality certificates)
+
+**Input Stock Units**
+
+- Stock Units (selected from available inventory via barcode scan or list selection)
+- Quantity Consumed (per stock unit, can be partial or full quantity)
+- Real-time stock validation (warehouse-scoped, status must be 'available')
+- Stock unit status automatically changes to 'processing' when convert is created
+- Chronological validation: Cannot use stock units in conversion if they have activity after the start date
+
+**Conversion Process States**
+
+- **In Progress**: Conversion created, input stock units marked as 'processing', quantities NOT yet deducted
+- **Completed**: Conversion finished, output stock units created, wastage recorded, input quantities deducted, status returns to 'available'
+- **Cancelled**: Conversion cancelled, input stock units restored to 'available' status, no quantity changes
+
+**Completion Flow**
+
+When completing a conversion, user provides:
+
+**Output Stock Units Creation**
+
+- Product (required, can be same or different from input product)
+- Initial Quantity (required, quantity of finished goods created)
+- Lot Number (optional, typically same as input for traceability)
+- Quality Grade (optional, quality assessment of finished goods)
+- Stock Number (optional, custom identifier or auto-generated)
+- Warehouse Location (optional, storage location within warehouse)
+- Manufacturing Date (optional, processing completion date)
+- Notes (optional, additional details about output unit)
+- Wastage Quantity (optional, material lost during processing for this output unit)
+- Wastage Reason (optional, explanation of wastage - shrinkage, defects, offcuts, etc.)
+
+**Wastage Tracking**
+
+- Wastage is recorded per output stock unit via stock_unit_adjustments table
+- Each wastage creates a negative adjustment linked to the convert via convert_id
+- Wastage adjustments are automatically created when convert is completed
+- Adjustment date matches the conversion completion_date
+- Wastage quantities are deducted from output stock unit's remaining quantity
+
+**Completion Date**
+
+- Completion Date (auto-set to current date, can be overridden)
+- Used for chronological validation and reconciliation
+- Sets completion timestamp and user who completed
+
+**Staff Access Controls**
+
+- Can only create conversions in assigned warehouse
+- Can only use stock units from assigned warehouse inventory
+- All conversion operations warehouse-scoped via RLS
+
+**Audit Information**
+
+- Unique ID (auto-generated, UUID)
+- Sequence Number (auto-generated: 1, 2, etc.)
+- Created on (timestamptz, auto-generated)
+- Updated on (timestamptz, auto-updated)
+- Created by (user UUID, auto-captured)
+- Modified by (user UUID, auto-updated on edits)
+- Completed at (timestamptz, when status changed to completed)
+- Completed by (user UUID, who completed the conversion)
+- Cancelled at (timestamptz, when status changed to cancelled)
+- Cancelled by (user UUID, who cancelled the conversion)
+- Deleted at (soft delete timestamp)
+
+**Business Rules**
+
+**Stock Unit Origin Tracking**
+
+- Stock units can originate from two sources: 'inward' or 'convert'
+- Origin tracked via origin_type, origin_inward_id, and origin_convert_id fields
+- Output stock units created from conversion have origin_type = 'convert'
+- Critical fields (product_id, origin fields, initial_quantity) are permanently locked - never editable
+
+**Status and Reconciliation**
+
+- Stock unit status hierarchy: in_transit > processing > available
+- Stock unit is 'processing' if it has any goods convert with status = 'in_progress'
+- Stock unit is 'available' when no active transfers or conversions
+- Remaining quantity ONLY reduced when convert is 'completed' (not during 'in_progress')
+- Quantity reconciliation: initial_quantity - outwards - completed_converts + adjustments >= 0
+
+**Chronological Validation**
+
+- Cannot create conversion with start_date before stock unit's last_activity_date
+- last_activity_date tracks latest: outward_date, completion_date (for converts), transfer_date, adjustment_date
+- Ensures proper timeline: cannot backdate conversions after subsequent operations
+
+**Edit/Delete Guards**
+
+- Cannot edit conversion if status = 'completed' or 'cancelled'
+- Cannot edit conversion if soft-deleted
+- Cannot change warehouse_id after creation
+- Cannot delete if status = 'completed' or 'cancelled' (use soft delete)
+- Can delete 'in_progress' conversions (cascade deletes input items)
+
+**Cancellation Rules**
+
+- Can only cancel if status = 'in_progress'
+- Cancellation reason required (text field)
+- Automatically restores input stock unit status to 'available'
+- Quantities remain unchanged (cancelled conversions don't affect quantities)
+- Cannot re-open after cancellation (terminal state)
+
+**Completion Validation**
+
+- Can only complete if status = 'in_progress'
+- Must provide at least one output stock unit
+- Output quantities can be less than input (wastage), but total cannot exceed input without explanation
+- Each output unit can have associated wastage
+- Completion automatically deducts consumed quantities from input stock units
+
+**Convert Details Page:**
+
+- **Layout**: Tabbed interface with "Convert details", "Input units", and "Output units" tabs
+- **Header**: GC-{sequence_number} title with conversion type and status badge subtitle
+- **Details Tab Sections**:
+  - Conversion Info: Type (with icon), start date, completion date (if completed)
+  - Vendor: Vendor details with company name, contact, initials (if vendor assigned)
+  - Processing Warehouse: Warehouse where conversion happened with full address
+  - Job Work Link: Shows linked job work (JW-{number}) if associated
+  - Invoice Link: Shows linked invoice (INV-{number}) if job work charges invoiced
+  - Reference: Reference number (challan/ITC-04) if provided
+  - Agent: Conditionally shown if agent_id exists
+  - Notes: Conversion notes
+  - Status: In Progress / Completed / Cancelled with appropriate color coding
+- **Input Units Tab**: List of consumed stock units with product images, SU-{number}, quantity consumed
+- **Output Units Tab**: List of created stock units with product images, SU-{number}, initial quantity, wastage (if any)
+
+**Integration Notes:**
+
+- **With Goods Inward**: Use recommended workflow: Receive stock at vendor's warehouse (create as separate warehouse like "Dyeing House"), then create goods inward from vendor, then create goods convert
+- **With Goods Transfer**: Alternative workflow: Transfer stock to vendor warehouse first, then create goods convert at vendor warehouse
+- **With Job Work**: Future enhancement - conversions can be linked to job work orders for fulfillment tracking
+- **With Invoices**: Job work processing charges can be invoiced separately and linked via invoice_id
+
+**Warehouse Recommendation for Vendor Processing:**
+
+For users sending stock to external vendors for processing:
+
+1. Create a warehouse representing the vendor's facility (e.g., "ABC Dyeing House")
+2. Use Goods Inward to receive stock at the vendor warehouse (if supplier sends directly to vendor)
+3. OR use Goods Transfer to send stock from your warehouse to vendor warehouse
+4. Create Goods Convert at the vendor warehouse to track the processing
+5. Once processing is complete, create Goods Inward to receive finished goods back to your warehouse
+
+This approach maintains proper inventory tracking across all locations and processing stages.
+
 ### 9. Barcode Generation System
 
 #### 9.1 Barcode Generation Workflow
@@ -1358,11 +1624,24 @@ Permissions are organized hierarchically with the following top-level categories
 
 **Print Format**
 
+**Page Size Selection:**
+
+- **A4 Paper (210×297 mm)**: Best for printing multiple labels on office printer
+  - 2 labels per row in grid layout
+  - Dynamic rows based on number of stock units
+  - Professional formatting with borders for cutting
+- **Label (4×6 inch)**: Best for thermal/label printers
+  - 1 label per page (288×432 points)
+  - Optimized for direct label printer output
+  - No cutting required
+- Page size preference saved in localStorage for next session
+- Page size stored in database for batch regeneration
+
 **Print Layout:**
 
-- Fixed format with 10-20 barcodes per A4 sheet
-- Dashed reference lines for cutting guidance
-- Optimized for sticky paper printing
+- QR code (100×100 points) with selected fields
+- Company logo (40×40 points) positioned bottom-right
+- Border lines for A4 sheet cutting guidance
 - Professional formatting for easy application
 
 **Output Options:**
@@ -1370,6 +1649,7 @@ Permissions are organized hierarchically with the following top-level categories
 - Save as PDF for printing
 - Email PDF directly to specified address
 - WhatsApp sharing capability
+- Regenerate PDF from batch history with original page size
 
 **Post-Generation Workflow**
 

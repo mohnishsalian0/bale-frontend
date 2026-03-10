@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { IconTrash } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import ImageWrapper from "@/components/ui/image-wrapper";
@@ -8,13 +9,35 @@ import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import type { Tables } from "@/types/database/supabase";
 import type { ProductListView } from "@/types/products.types";
-import type { MeasuringUnit, StockType } from "@/types/database/enums";
-import { StockUnitWithProductDetailView } from "@/types/stock-units.types";
+import type {
+  MeasuringUnit,
+  StockType,
+  StockUnitStatus,
+} from "@/types/database/enums";
 import {
   useStockUnitAdjustments,
   useStockUnitAdjustmentMutations,
 } from "@/lib/query/hooks/stock-unit-adjustments";
+import {
+  useStockUnitActivity,
+  useStockUnitWithProductDetail,
+  useStockUnitMutations,
+} from "@/lib/query/hooks/stock-units";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { StockUnitEditForm } from "./StockUnitEditForm";
+import { StockUnitAdjustmentForm } from "./StockUnitAdjustmentForm";
+import { StockUnitDeleteConfirmation } from "./StockUnitDeleteConfirmation";
+import type { StockUnitUpdateFormData } from "@/lib/validations/stock-unit";
+import type { StockUnitAdjustmentFormData } from "@/lib/validations/stock-unit-adjustment";
+import { useParams } from "next/navigation";
+import { useSession } from "@/contexts/session-context";
+import { StockStatusBadge } from "../ui/stock-status-badge";
+import {
+  ACTIVITY_EVENT_CONFIG,
+  getStockUnitActivityTitle,
+} from "@/lib/utils/stock-units";
+import type { StockUnitActivityEventType } from "@/types/stock-units.types";
 
 type StockUnit = Tables<"stock_units">;
 
@@ -22,60 +45,148 @@ export interface StockUnitWithProduct extends StockUnit {
   product: ProductListView | null;
 }
 
+type ModalMode = "view" | "edit" | "adjustment" | "delete";
+
 interface StockUnitDetailsContentProps {
-  stockUnit: StockUnitWithProductDetailView;
   /**
-   * Whether to show the action buttons
+   * The ID of the stock unit to display
    */
-  showActions?: boolean;
+  stockUnitId: string;
   /**
-   * Custom action handlers
+   * Callback when the stock unit is successfully deleted
    */
-  onAdjustment?: () => void;
-  onEdit?: () => void;
-  onDelete?: () => void;
+  onDeleted?: () => void;
 }
 
 export function StockUnitDetailsContent({
-  stockUnit,
-  showActions = true,
-  onAdjustment,
-  onEdit,
-  onDelete,
+  stockUnitId,
+  onDeleted,
 }: StockUnitDetailsContentProps) {
-  const product = stockUnit.product;
+  const params = useParams();
+  const warehouseSlug = params.warehouse_slug as string;
+  const { warehouse } = useSession();
+
+  const [mode, setMode] = useState<ModalMode>("view");
+
+  // Fetch stock unit with product details
+  const { data: stockUnit, isLoading: stockUnitLoading } =
+    useStockUnitWithProductDetail(stockUnitId);
+
+  // Fetch adjustments for this stock unit
+  const { data: adjustments = [], isLoading: adjustmentsLoading } =
+    useStockUnitAdjustments(stockUnitId);
+
+  // Fetch activity history for this stock unit
+  const { data: activities = [], isLoading: activitiesLoading } =
+    useStockUnitActivity(stockUnitId);
+
+  // Mutations
+  const { update, delete: deleteMutation } =
+    useStockUnitMutations(warehouseSlug);
+  const { delete: deleteAdjustment, create: createAdjustment } =
+    useStockUnitAdjustmentMutations();
+
+  // Notify parent of mode changes
+  const handleModeChange = (newMode: ModalMode) => {
+    setMode(newMode);
+  };
+
+  const product = stockUnit?.product;
   const unitAbbr = product?.measuring_unit
     ? getMeasuringUnitAbbreviation(product.measuring_unit as MeasuringUnit)
     : "units";
   const productInfoText = product ? getProductInfo(product) : "";
 
-  // Fetch adjustments for this stock unit
-  const { data: adjustments = [], isLoading: adjustmentsLoading } =
-    useStockUnitAdjustments(stockUnit.id);
-  const { delete: deleteAdjustment } = useStockUnitAdjustmentMutations();
-
-  const handleAdjustment = () => {
-    if (onAdjustment) {
-      onAdjustment();
-    } else {
-      console.log("Add adjustment");
-    }
-  };
+  // Check if stock unit belongs to current warehouse
+  const isInCurrentWarehouse = stockUnit?.current_warehouse_id === warehouse.id;
 
   const handleEdit = () => {
-    if (onEdit) {
-      onEdit();
-    } else {
-      console.log("Edit stock unit");
-    }
+    handleModeChange("edit");
+  };
+
+  const handleAdjustment = () => {
+    handleModeChange("adjustment");
   };
 
   const handleDelete = () => {
-    if (onDelete) {
-      onDelete();
-    } else {
-      console.log("Delete stock unit");
+    if (stockUnit?.has_outward) {
+      toast.error("Cannot delete stock unit with outward history");
+      return;
     }
+    handleModeChange("delete");
+  };
+
+  const handleCancel = () => {
+    handleModeChange("view");
+  };
+
+  const handleSaveEdit = (data: StockUnitUpdateFormData) => {
+    if (!stockUnit) return;
+
+    update.mutate(
+      {
+        id: stockUnit.id,
+        data: {
+          stock_number: data.stock_number || undefined,
+          quality_grade: data.grade || null,
+          manufacturing_date: data.manufactured_on
+            ? data.manufactured_on.toISOString().split("T")[0]
+            : null,
+          warehouse_location: data.location || null,
+          notes: data.notes || null,
+        },
+        lotNumber: data.lot_number || null,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Stock unit updated successfully");
+          handleModeChange("view");
+        },
+        onError: (error) => {
+          console.error("Error updating stock unit:", error);
+          toast.error(error.message || "Failed to update stock unit");
+        },
+      },
+    );
+  };
+
+  const handleSaveAdjustment = (data: StockUnitAdjustmentFormData) => {
+    if (!stockUnit) return;
+
+    createAdjustment.mutate(
+      {
+        stock_unit_id: stockUnit.id,
+        quantity_adjusted: data.quantity_adjusted,
+        adjustment_date: data.adjustment_date.toISOString().split("T")[0],
+        reason: data.reason,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Adjustment recorded successfully");
+          handleModeChange("view");
+        },
+        onError: (error) => {
+          console.error("Error creating adjustment:", error);
+          toast.error(error.message || "Failed to record adjustment");
+        },
+      },
+    );
+  };
+
+  const confirmDelete = () => {
+    if (!stockUnit) return;
+
+    deleteMutation.mutate(stockUnit.id, {
+      onSuccess: () => {
+        toast.success("Stock unit deleted successfully");
+        handleModeChange("view");
+        onDeleted?.();
+      },
+      onError: (error) => {
+        console.error("Error deleting stock unit:", error);
+        toast.error(error.message || "Failed to delete stock unit");
+      },
+    });
   };
 
   const handleDeleteAdjustment = (adjustmentId: string) => {
@@ -90,10 +201,72 @@ export function StockUnitDetailsContent({
     });
   };
 
+  // Loading state
+  if (stockUnitLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-sm text-gray-500">Loading stock unit...</p>
+      </div>
+    );
+  }
+
+  // Error state
+  if (!stockUnit) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-sm text-gray-500">Stock unit not found</p>
+      </div>
+    );
+  }
+
+  // Show edit form
+  if (mode === "edit") {
+    return (
+      <StockUnitEditForm
+        stockUnit={stockUnit}
+        onCancel={handleCancel}
+        onSave={handleSaveEdit}
+      />
+    );
+  }
+
+  // Show adjustment form
+  if (mode === "adjustment") {
+    return (
+      <StockUnitAdjustmentForm
+        stockUnit={stockUnit}
+        onCancel={handleCancel}
+        onSave={handleSaveAdjustment}
+      />
+    );
+  }
+
+  // Show delete confirmation
+  if (mode === "delete") {
+    return (
+      <StockUnitDeleteConfirmation
+        onCancel={handleCancel}
+        onConfirm={confirmDelete}
+        loading={deleteMutation.isPending}
+      />
+    );
+  }
+
+  // Show view mode (default)
   return (
     <>
       {/* Content */}
-      <div className="flex flex-col gap-6 p-4 md:px-0 overflow-y-auto">
+      <div className="flex flex-col gap-6 overflow-y-auto">
+        {/* Stock unit number & Status */}
+        <h2 className="flex gap-2 items-center text-lg leading-none font-semibold">
+          {/* {formatStockUnitNumber( */}
+          {/*   stockUnit.sequence_number, */}
+          {/*   stockUnit.product?.stock_type as StockType, */}
+          {/* )} */}
+          {stockUnit.stock_number}
+          <StockStatusBadge status={stockUnit.status as StockUnitStatus} />
+        </h2>
+
         {/* Product Header */}
         {product && (
           <div className="flex items-center gap-3">
@@ -144,15 +317,21 @@ export function StockUnitDetailsContent({
         <div className="space-y-3">
           <h3 className="text-sm font-medium text-gray-500">Stock Details</h3>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-700">Quality grade</span>
+            <span className="text-gray-700">Current warehouse</span>
             <span className="font-semibold text-gray-700">
-              {stockUnit.quality_grade || "-"}
+              {stockUnit.warehouse.name}
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-700">Supplier number</span>
+            <span className="text-gray-700">Lot number</span>
             <span className="font-semibold text-gray-700">
-              {stockUnit.supplier_number || "-"}
+              {stockUnit.lot_number?.name || "-"}
+            </span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-700">Quality grade</span>
+            <span className="font-semibold text-gray-700">
+              {stockUnit.quality_grade || "-"}
             </span>
           </div>
           <div className="flex justify-between text-sm">
@@ -172,7 +351,7 @@ export function StockUnitDetailsContent({
             )}
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-700">QR generated at</span>
+            <span className="text-gray-700">QR on</span>
             {stockUnit.qr_generated_at ? (
               <span className="font-semibold text-gray-700">
                 {formatAbsoluteDate(stockUnit.qr_generated_at)}
@@ -245,11 +424,77 @@ export function StockUnitDetailsContent({
             </div>
           )}
         </div>
+
+        {/* Activity History Section */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-500">
+            Activity History
+          </h3>
+          {activitiesLoading ? (
+            <p className="text-sm text-gray-500">Loading activity...</p>
+          ) : activities.length === 0 ? (
+            <p className="text-sm text-gray-500">-</p>
+          ) : (
+            <div className="flex flex-col border-b border-dashed border-gray-300">
+              {activities.map((activity) => {
+                const eventType =
+                  activity.event_type as StockUnitActivityEventType;
+                const config = ACTIVITY_EVENT_CONFIG[eventType];
+                const title = getStockUnitActivityTitle(activity);
+                const qty = Number(activity.quantity_change);
+                const quantityColor =
+                  eventType === "adjustment"
+                    ? qty >= 0
+                      ? "text-green-600"
+                      : "text-red-600"
+                    : config.quantityColor;
+                const subInfo = [
+                  activity.event_number,
+                  formatAbsoluteDate(activity.event_date),
+                  activity.notes,
+                ]
+                  .filter(Boolean)
+                  .join(" • ");
+
+                return (
+                  <div
+                    key={`${activity.event_type}-${activity.event_id}`}
+                    className="flex items-start gap-4 py-2 border-t border-dashed border-gray-300"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p
+                          className="text-sm font-medium text-gray-700 truncate"
+                          title={title}
+                        >
+                          {title}
+                        </p>
+                        <Badge color={config.badgeColor} className="shrink-0">
+                          {config.label}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">{subInfo}</p>
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      <p className={`text-sm font-semibold ${quantityColor}`}>
+                        {qty > 0 ? "+" : ""}
+                        {qty.toFixed(2)} {unitAbbr}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {config.quantityLabel}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Action Buttons */}
-      {showActions && (
-        <div className="flex gap-3 w-full pb-2 px-4 md:px-0">
+      {isInCurrentWarehouse && (
+        <div className="flex gap-3 w-full py-4 md:pb-0">
           <Button
             type="button"
             variant="destructive"

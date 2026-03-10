@@ -10,11 +10,14 @@ import {
   IconCash,
   IconReceiptRefund,
   IconShoppingCart,
-  IconTruck,
+  IconTruckDelivery,
   IconTruckLoading,
   IconShirt,
   IconBuilding,
   IconListDetails,
+  IconTransfer,
+  IconTransform,
+  IconNeedleThread,
 } from "@tabler/icons-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -62,13 +65,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           label: "Products",
           path: `/warehouse/${warehouse.slug}/products`,
           icon: IconShirt,
-          permission: "inventory.products.read",
+          permission: "business.products.read",
         },
         {
-          label: "Goods movement",
-          path: `/warehouse/${warehouse.slug}/stock-flow`,
-          icon: IconTruck,
-          permission: "movement.read",
+          label: "Goods In & Out",
+          path: `/warehouse/${warehouse.slug}/goods-movement`,
+          icon: IconTransfer,
+          permission: "inventory.goods_inward.read",
+        },
+        {
+          label: "Goods Transfer",
+          path: `/warehouse/${warehouse.slug}/goods-transfer`,
+          icon: IconTruckDelivery,
+          permission: "inventory.goods_transfers.read",
+        },
+        {
+          label: "Goods Convert",
+          path: `/warehouse/${warehouse.slug}/goods-convert`,
+          icon: IconTransform,
+          permission: "inventory.goods_converts.read",
         },
         {
           label: "QR codes",
@@ -85,13 +100,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           label: "Sales orders",
           path: `/warehouse/${warehouse.slug}/sales-orders`,
           icon: IconShoppingCart,
-          permission: "sales_orders.read",
+          permission: "orders.sales_orders.read",
         },
         {
           label: "Purchase orders",
           path: `/warehouse/${warehouse.slug}/purchase-orders`,
           icon: IconTruckLoading,
-          permission: "purchase_orders.read",
+          permission: "orders.purchase_orders.read",
+        },
+        {
+          label: "Job works",
+          path: `/warehouse/${warehouse.slug}/job-works`,
+          icon: IconNeedleThread,
+          permission: "orders.job_works.read",
         },
       ],
     },
@@ -102,25 +123,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           label: "Invoices",
           path: `/warehouse/${warehouse.slug}/invoices`,
           icon: IconReceipt,
-          permission: "invoices.read",
+          permission: "accounting.invoices.read",
         },
         {
           label: "Payments",
           path: `/warehouse/${warehouse.slug}/payments`,
           icon: IconCash,
-          permission: "payments.read",
+          permission: "accounting.payments.read",
         },
         {
           label: "Adjustment Notes",
           path: `/warehouse/${warehouse.slug}/adjustment-notes`,
           icon: IconReceiptRefund,
-          permission: "invoices.read",
+          permission: "accounting.adjustment_notes.read",
         },
         {
           label: "Chart of Accounts",
           path: `/warehouse/${warehouse.slug}/accounting/ledgers`,
           icon: IconListDetails,
-          permission: "invoices.read",
+          permission: "accounting.ledgers.read",
         },
       ],
     },
@@ -131,19 +152,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           label: "Partners",
           path: `/warehouse/${warehouse.slug}/partners`,
           icon: IconUsers,
-          permission: "partners.read",
+          permission: "business.partners.read",
         },
         {
           label: "Staff",
           path: `/warehouse/${warehouse.slug}/staff`,
           icon: IconIdBadge2,
-          permission: "users.read",
+          permission: "business.users.read",
         },
         {
           label: "Company",
           path: "/company",
           icon: IconBuilding,
-          permission: "companies.read",
+          permission: "business.companies.read",
         },
       ],
     },
@@ -215,7 +236,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <SidebarMenuButton
                           asChild
                           isActive={isActive}
-                          size="lg"
+                          size="default"
                           onClick={handleClick}
                         >
                           <Link

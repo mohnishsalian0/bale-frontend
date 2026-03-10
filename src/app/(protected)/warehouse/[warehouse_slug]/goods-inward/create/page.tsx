@@ -4,26 +4,27 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ProductSelectionStep, StockUnitSpec } from "../ProductSelectionStep";
-import { StockUnitFormSheet } from "../StockUnitFormSheet";
+import { StockUnitFormSheet } from "@/components/layouts/stock-unit-form-sheet";
 import { AllSpecificationsSheet } from "../AllSpecificationsSheet";
-import { PieceQuantitySheet } from "../PieceQuantitySheet";
-import { PartnerSelectionStep } from "@/app/(protected)/warehouse/[warehouse_slug]/stock-flow/PartnerSelectionStep";
+import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
 import { InwardLinkToStep, InwardLinkToData } from "../InwardLinkToStep";
 import { InwardDetailsStep } from "../InwardDetailsStep";
 import { ProductFormSheet } from "../../products/ProductFormSheet";
 import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useStockFlowMutations } from "@/lib/query/hooks/stock-flow";
-import type { TablesInsert } from "@/types/database/supabase";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
 import { ProductListView } from "@/types/products.types";
-import { StockUnitStatus } from "@/types/database/enums";
 import { dateToISOString } from "@/lib/utils/date";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
 import { usePurchaseOrderById } from "@/lib/query/hooks/purchase-orders";
 import { useSalesOrderById } from "@/lib/query/hooks/sales-orders";
+import {
+  CreateInwardData,
+  CreateInwardStockUnitData,
+} from "@/types/stock-flow.types";
 
 interface DetailsFormData {
   inwardDate: string;
@@ -69,20 +70,13 @@ export default function CreateGoodsInwardPage() {
   // Unit entry sheet state
   const [showUnitEntrySheet, setShowUnitEntrySheet] = useState(false);
   const [showAllSpecsSheet, setShowAllSpecsSheet] = useState(false);
-  const [showPieceQuantitySheet, setShowPieceQuantitySheet] = useState(false);
   const [showCreateProduct, setShowCreateProduct] = useState(false);
   const [showCreatePartner, setShowCreatePartner] = useState(false);
   const [selectedProduct, setSelectedProduct] =
     useState<ProductListView | null>(null);
 
-  // Partner/Warehouse selection state
-  const [receivedFromType, setReceivedFromType] = useState<
-    "partner" | "warehouse"
-  >("partner");
+  // Partner selection state
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(
-    null,
-  );
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string | null>(
     null,
   );
 
@@ -135,7 +129,6 @@ export default function CreateGoodsInwardPage() {
     if (!purchaseOrderId || !purchaseOrder || selectedPartnerId) return;
 
     setSelectedPartnerId(purchaseOrder.supplier_id);
-    setReceivedFromType("partner");
   }, [purchaseOrderId, purchaseOrder, selectedPartnerId]);
 
   // Compute orderProducts with pending quantities for ProductSelectionStep
@@ -166,10 +159,7 @@ export default function CreateGoodsInwardPage() {
   ) => {
     setSelectedProduct(product);
 
-    // For piece type, always open the quantity sheet (simpler flow, no specifications)
-    if (product.stock_type === "piece") {
-      setShowPieceQuantitySheet(true);
-    } else if (hasExistingUnits) {
+    if (hasExistingUnits) {
       setShowAllSpecsSheet(true);
     } else {
       setShowUnitEntrySheet(true);
@@ -245,48 +235,13 @@ export default function CreateGoodsInwardPage() {
     setShowUnitEntrySheet(true);
   };
 
-  // Handle piece quantity confirmation
-  const handlePieceQuantityConfirm = (quantity: number) => {
-    if (!selectedProduct) return;
-
-    // For piece type, we store a single unit with the total quantity
-    // Count will be 1 because we're tracking total pieces in quantity field
-    const newUnit: StockUnitSpec = {
-      id: `temp-${Date.now()}-${Math.random()}`,
-      quantity,
-      grade: "A", // Default grade for pieces
-      count: 1, // Always 1 for pieces, quantity represents total pieces
-    };
-
-    setProductUnits((prev) => ({
-      ...prev,
-      [selectedProduct.id]: [newUnit], // Replace any existing unit (singleton)
-    }));
-  };
-
   // Partner selection handlers
-  const handleSelectPartner = (partnerId: string) => {
+  const handleSelectPartner = (partnerId: string, _ledgerId: string) => {
     setSelectedPartnerId(partnerId);
-    setSelectedWarehouseId(null);
     // Auto-advance to next step after selection
     setTimeout(() => {
       setCurrentStep("linkTo");
     }, 300);
-  };
-
-  const handleSelectWarehouse = (warehouseId: string) => {
-    setSelectedWarehouseId(warehouseId);
-    setSelectedPartnerId(null);
-    // Auto-advance to next step after selection
-    setTimeout(() => {
-      setCurrentStep("linkTo");
-    }, 300);
-  };
-
-  const handlePartnerTypeChange = (type: "partner" | "warehouse") => {
-    setReceivedFromType(type);
-    setSelectedPartnerId(null);
-    setSelectedWarehouseId(null);
   };
 
   // Validation for each step
@@ -296,10 +251,8 @@ export default function CreateGoodsInwardPage() {
   );
 
   const canProceedFromPartner = useMemo(
-    () =>
-      (receivedFromType === "partner" && selectedPartnerId !== null) ||
-      (receivedFromType === "warehouse" && selectedWarehouseId !== null),
-    [receivedFromType, selectedPartnerId, selectedWarehouseId],
+    () => selectedPartnerId !== null,
+    [selectedPartnerId],
   );
 
   const canProceedFromLinkTo = useMemo(() => {
@@ -342,18 +295,15 @@ export default function CreateGoodsInwardPage() {
   };
 
   const handleCancel = () => {
-    router.push(`/warehouse/${warehouse.slug}/stock-flow`);
+    router.push(`/warehouse/${warehouse.slug}/goods-movement/inward`);
   };
 
   const handleSubmit = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || !selectedPartnerId) return;
     setSaving(true);
 
     // Prepare inward data - direct field mapping with aligned enums
-    const inwardData: Omit<
-      TablesInsert<"goods_inwards">,
-      "created_by" | "sequence_number"
-    > = {
+    const inwardData: CreateInwardData = {
       warehouse_id: warehouse.id,
       inward_type: linkToData.linkToType as
         | "purchase_order"
@@ -364,25 +314,15 @@ export default function CreateGoodsInwardPage() {
       transport_type: detailsFormData.transportType || undefined,
       transport_reference_number:
         detailsFormData.transportReferenceNumber || undefined,
-      partner_id:
-        receivedFromType === "partner"
-          ? selectedPartnerId || undefined
-          : undefined,
-      from_warehouse_id:
-        receivedFromType === "warehouse"
-          ? selectedWarehouseId || undefined
-          : undefined,
+      partner_id: selectedPartnerId,
       sales_order_id: linkToData.sales_order_id || undefined,
       purchase_order_id: linkToData.purchase_order_id || undefined,
       other_reason: linkToData.other_reason || undefined,
       notes: detailsFormData.notes || undefined,
     };
 
-    // Prepare stock units for all products (RPC handles piece vs non-piece)
-    const stockUnits: Omit<
-      TablesInsert<"stock_units">,
-      "created_by" | "modified_by" | "sequence_number"
-    >[] = [];
+    // Prepare stock units for all products
+    const stockUnits: CreateInwardStockUnitData = [];
 
     for (const [productId, units] of Object.entries(productUnits)) {
       if (units.length === 0) continue;
@@ -391,17 +331,15 @@ export default function CreateGoodsInwardPage() {
         // We don't have stock_type here, but the backend RPC will handle it
         // For now, just use unit.count as-is
         const unitCount = unit.count;
-        const stockStatus: StockUnitStatus = "full";
 
         for (let i = 0; i < unitCount; i++) {
           stockUnits.push({
-            warehouse_id: warehouse.id,
+            current_warehouse_id: warehouse.id,
             product_id: productId,
             initial_quantity: unit.quantity,
             remaining_quantity: unit.quantity,
-            status: stockStatus,
             quality_grade: unit.grade || null,
-            supplier_number: unit.supplier_number || null,
+            stock_number: unit.stock_number || null,
             warehouse_location: unit.location || null,
             notes: unit.notes || null,
           });
@@ -415,7 +353,7 @@ export default function CreateGoodsInwardPage() {
       {
         onSuccess: () => {
           toast.success("Goods inward created successfully");
-          router.push(`/warehouse/${warehouse.slug}/stock-flow`);
+          router.push(`/warehouse/${warehouse.slug}/goods-movement`);
         },
         onError: (error) => {
           console.error("Error creating goods inward:", error);
@@ -455,17 +393,9 @@ export default function CreateGoodsInwardPage() {
         <div className="flex-1 flex-col overflow-y-auto flex">
           {currentStep === "partner" && (
             <PartnerSelectionStep
-              partnerTypes={["supplier", "vendor", "customer"]} // Customer for sales return
-              selectedType={receivedFromType}
+              partnerType="supplier"
               selectedPartnerId={selectedPartnerId}
-              selectedWarehouseId={selectedWarehouseId}
-              currentWarehouseId={warehouse.id}
-              onTypeChange={handlePartnerTypeChange}
               onSelectPartner={handleSelectPartner}
-              onSelectWarehouse={handleSelectWarehouse}
-              onAddNewPartner={() => setShowCreatePartner(true)}
-              title="Received from"
-              buttonLabel="New supplier"
             />
           )}
 
@@ -474,7 +404,6 @@ export default function CreateGoodsInwardPage() {
               partnerId={selectedPartnerId}
               linkToData={linkToData}
               onLinkToChange={setLinkToData}
-              isWarehouseTransfer={receivedFromType === "warehouse"}
             />
           )}
 
@@ -576,20 +505,6 @@ export default function CreateGoodsInwardPage() {
           onUpdateUnitCount={handleUpdateUnitCount}
           onDeleteUnit={handleDeleteUnit}
           onAddNewUnit={handleAddNewUnitFromAllSpecs}
-        />
-      )}
-
-      {showPieceQuantitySheet && selectedProduct && (
-        <PieceQuantitySheet
-          open={showPieceQuantitySheet}
-          onOpenChange={setShowPieceQuantitySheet}
-          product={selectedProduct}
-          initialQuantity={
-            currentProductUnits.length > 0
-              ? currentProductUnits[0].quantity
-              : undefined
-          }
-          onConfirm={handlePieceQuantityConfirm}
         />
       )}
 

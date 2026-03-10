@@ -6,6 +6,7 @@ import type {
   OrderAggregateResult,
   InventoryAggregateFilters,
   InventoryAggregateResult,
+  ProductAggregateResult,
 } from "@/types/aggregates.types";
 import type { MeasuringUnit } from "@/types/database/enums";
 import type { Database } from "@/types/database/supabase";
@@ -140,6 +141,51 @@ export async function getPurchaseOrderAggregates(
 }
 
 // =====================================================
+// JOB WORK AGGREGATES
+// =====================================================
+
+/**
+ * Get job work aggregates (count and pending quantities by unit)
+ * Calls PostgreSQL function for server-side aggregation
+ */
+export async function getJobWorkAggregates(
+  filters: Pick<OrderAggregateFilters, "warehouse_id">,
+): Promise<OrderAggregateResult> {
+  const supabase = createClient();
+
+  if (!filters.warehouse_id) {
+    throw new Error("warehouse_id is required for job work aggregates");
+  }
+
+  const { data, error } = await supabase.rpc("get_job_work_aggregates", {
+    p_warehouse_id: filters.warehouse_id,
+  });
+
+  if (error) throw error;
+
+  const typedData = data as
+    | Database["public"]["Functions"]["get_job_work_aggregates"]["Returns"]
+    | null;
+  const result = typedData?.[0];
+
+  // Convert JSONB array to Map<MeasuringUnit, number>
+  const quantitiesArray = (result?.pending_quantities || []) as Array<{
+    unit: MeasuringUnit;
+    quantity: number;
+  }>;
+
+  const unitMap = new Map<MeasuringUnit, number>();
+  quantitiesArray.forEach(({ unit, quantity }) => {
+    unitMap.set(unit, quantity);
+  });
+
+  return {
+    count: Number(result?.order_count || 0),
+    pending_quantities_by_unit: unitMap,
+  };
+}
+
+// =====================================================
 // INVENTORY AGGREGATES
 // =====================================================
 
@@ -181,5 +227,40 @@ export async function getInventoryAggregates(
   return {
     product_count: Number(result?.product_count || 0),
     total_quantities_by_unit: unitMap,
+  };
+}
+
+// =====================================================
+// PRODUCT AGGREGATES
+// =====================================================
+
+/**
+ * Get product aggregates (counts and stock type breakdown)
+ * Calls PostgreSQL function for server-side aggregation
+ * Company is automatically scoped via RLS/JWT token
+ */
+export async function getProductAggregates(): Promise<ProductAggregateResult> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.rpc("get_product_aggregates");
+
+  if (error) throw error;
+
+  const typedData = data as
+    | Database["public"]["Functions"]["get_product_aggregates"]["Returns"]
+    | null;
+  const result = typedData?.[0];
+
+  // Convert JSONB array to typed array
+  const stockTypeArray = (result?.stock_type_breakdown || []) as Array<{
+    type: string;
+    count: number;
+  }>;
+
+  return {
+    total_products: Number(result?.total_products || 0),
+    active_products: Number(result?.active_products || 0),
+    live_products: Number(result?.live_products || 0),
+    stock_type_breakdown: stockTypeArray,
   };
 }

@@ -5,8 +5,8 @@
 
 import type { Database } from "./supabase";
 
-export type UserRole = "admin" | "staff";
-export const USER_ROLES = ["admin", "staff"] as const;
+export type UserRole = "admin" | "staff" | "accountant";
+export const USER_ROLES = ["admin", "staff", "accountant"] as const;
 
 export type PartnerType = "customer" | "vendor" | "supplier" | "agent";
 export const PARTNER_TYPES = [
@@ -16,8 +16,12 @@ export const PARTNER_TYPES = [
   "agent",
 ] as const;
 
-export type AttributeGroup = "material" | "color" | "tag";
-export const ATTRIBUTE_GROUPS = ["material", "color", "tag"] as const;
+export type ProductAttributeGroup = "material" | "color" | "product_tag";
+export const PRODUCT_ATTRIBUTE_GROUPS = [
+  "material",
+  "color",
+  "product_tag",
+] as const;
 
 export type ProductStockStatus = "in_stock" | "low_stock" | "out_of_stock";
 
@@ -70,19 +74,18 @@ export type MaterialType =
   | "Blend"
   | "Custom";
 
-export type StockType = "roll" | "batch" | "piece";
-export const STOCK_TYPES = ["roll", "batch", "piece"] as const;
+export type StockType = "roll" | "batch";
+export const STOCK_TYPES = ["roll", "batch"] as const;
 
-export type MeasuringUnit = "metre" | "yard" | "kilogram" | "unit" | "piece";
-export const MEASURING_UNITS = [
-  "metre",
-  "yard",
-  "kilogram",
-  "unit",
-  "piece",
+export type MeasuringUnit = "metre" | "yard" | "kilogram" | "unit";
+export const MEASURING_UNITS = ["metre", "yard", "kilogram", "unit"] as const;
+
+export type StockUnitStatus = "available" | "in_transit" | "processing";
+export const STOCK_UNIT_STATUSES = [
+  "available",
+  "in_transit",
+  "processing",
 ] as const;
-
-export type StockUnitStatus = "full" | "partial" | "empty" | "removed";
 
 export type SalesOrderStatus =
   | "approval_pending"
@@ -99,6 +102,9 @@ export type PurchaseOrderStatus =
 export type DiscountType = "none" | "percentage" | "flat_amount";
 export const DISCOUNT_TYPES = ["none", "percentage", "flat_amount"] as const;
 
+export type ChargeType = "percentage" | "flat_amount";
+export const CHARGE_TYPES = ["percentage", "flat_amount"] as const;
+
 export const PAYMENT_TERMS = [
   "Due on receipt",
   "NET 7",
@@ -110,7 +116,7 @@ export const PAYMENT_TERMS = [
 ] as const;
 
 export type JobWorkStatus =
-  | "pending"
+  | "approval_pending"
   | "in_progress"
   | "completed"
   | "cancelled";
@@ -126,6 +132,16 @@ export type OutwardLinkToType =
   | "job_work"
   | "purchase_return"
   | "other";
+
+export type TransferStatus = "in_transit" | "completed" | "cancelled";
+export const TRANSFER_STATUSES = ["in_transit", "completed", "cancelled"];
+
+export type ConvertStatus = "in_progress" | "completed" | "cancelled";
+export const CONVERT_STATUSES = [
+  "in_progress",
+  "completed",
+  "cancelled",
+] as const;
 
 export type TransportType = "road" | "rail" | "air" | "sea" | "courier";
 export const TRANSPORT_TYPES = [

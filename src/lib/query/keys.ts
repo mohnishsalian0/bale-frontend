@@ -48,7 +48,13 @@ export const queryKeys = {
     materials: () => ["products", "materials"] as const,
     colors: () => ["products", "colors"] as const,
     tags: () => ["products", "tags"] as const,
-    attributes: () => ["products", "attributes"] as const,
+    aggregates: () => ["products", "aggregates"] as const,
+  },
+
+  // Attributes (shared across products and partners)
+  attributes: {
+    all: () => ["attributes"] as const,
+    byGroup: (groupName: string) => ["attributes", groupName] as const,
   },
 
   // Partners (companyId removed - RLS handles scoping, user in single company)
@@ -84,6 +90,15 @@ export const queryKeys = {
       ["purchase-orders", "supplier", supplierId] as const,
   },
 
+  // Job Works
+  jobWorks: {
+    all: (filters?: Record<string, unknown>, page?: number) =>
+      ["job-works", filters, page] as const,
+    detail: (sequenceNumber: string) =>
+      ["job-works", "detail", sequenceNumber] as const,
+    vendor: (vendorId: string) => ["job-works", "vendor", vendorId] as const,
+  },
+
   // Warehouses (companyId removed - RLS handles scoping, user in single company)
   warehouses: {
     all: () => ["warehouses"] as const,
@@ -101,9 +116,22 @@ export const queryKeys = {
     ) => ["stock-units", warehouseId, filters, page] as const,
     byId: (stockUnitId: string) =>
       ["stock-units", "product", stockUnitId] as const,
+    activity: (stockUnitId: string) =>
+      ["stock-units", "activity", stockUnitId] as const,
   },
 
-  // Stock Flow (Goods Inward/Outward)
+  // Product Activity (product-level movement feed via get_product_activity RPC)
+  productActivity: {
+    byProduct: (
+      productId: string,
+      warehouseId: string,
+      typeFilter?: string,
+      page?: number,
+    ) =>
+      ["product-activity", productId, warehouseId, typeFilter, page] as const,
+  },
+
+  // Stock Flow (Goods Inward/Outward/Transfers/Converts)
   stockFlow: {
     inwards: (
       warehouseId: string,
@@ -115,6 +143,16 @@ export const queryKeys = {
       filters?: Record<string, unknown>,
       page?: number,
     ) => ["stock-flow", "outwards", warehouseId, filters, page] as const,
+    transfers: (
+      warehouseId: string,
+      filters?: Record<string, unknown>,
+      page?: number,
+    ) => ["stock-flow", "transfers", warehouseId, filters, page] as const,
+    converts: (
+      warehouseId: string,
+      filters?: Record<string, unknown>,
+      page?: number,
+    ) => ["stock-flow", "converts", warehouseId, filters, page] as const,
     inwardsByPurchaseOrder: (orderNumber: string, page?: number) =>
       ["stock-flow", "inwards", orderNumber, page] as const,
     outwardsBySalesOrder: (orderNumber: string, page?: number) =>
@@ -123,6 +161,12 @@ export const queryKeys = {
       ["stock-flow", "inward", "detail", sequenceNumber] as const,
     outwardDetail: (sequenceNumber: string) =>
       ["stock-flow", "outward", "detail", sequenceNumber] as const,
+    transferDetail: (sequenceNumber: string) =>
+      ["stock-flow", "transfer", "detail", sequenceNumber] as const,
+    convertDetail: (sequenceNumber: string) =>
+      ["stock-flow", "convert", "detail", sequenceNumber] as const,
+    convertById: (convertId: string) =>
+      ["stock-flow", "convert", "id", convertId] as const,
     outwardItemsByProduct: (productId: string, page?: number) =>
       ["stock-flow", "outward-items", "product", productId, page] as const,
   },
@@ -155,6 +199,8 @@ export const queryKeys = {
       ["dashboard", "sales-orders-stats", warehouseId] as const,
     purchaseOrderStats: (warehouseId: string) =>
       ["dashboard", "purchase-orders-stats", warehouseId] as const,
+    jobWorkStats: (warehouseId: string) =>
+      ["dashboard", "job-works-stats", warehouseId] as const,
     inventoryStats: (warehouseId: string) =>
       ["dashboard", "inventory-stats", warehouseId] as const,
   },

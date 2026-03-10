@@ -13,7 +13,7 @@ import {
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/layouts/loading-state";
-import { OrderConfirmationPDF } from "@/components/pdf/OrderConfirmationPDF";
+import { SalesOrderPDF } from "@/components/pdf/SalesOrderPDF";
 import { pdf } from "@react-pdf/renderer";
 import { toast } from "sonner";
 import { Section } from "@/components/layouts/section";
@@ -74,7 +74,7 @@ export default function OrderConfirmationPage() {
     try {
       setDownloading(true);
       const blob = await pdf(
-        <OrderConfirmationPDF company={company} order={order} />,
+        <SalesOrderPDF company={company} order={order} />,
       ).toBlob();
 
       const url = URL.createObjectURL(blob);

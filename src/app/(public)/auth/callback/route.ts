@@ -136,7 +136,7 @@ export async function GET(request: Request) {
     await supabase.auth.refreshSession();
 
     // Redirect to original destination or dashboard
-    console.log("🎉 Success! Redirecting to", redirectTo);
+    console.log("✅ Success! Redirecting to", redirectTo);
     return NextResponse.redirect(`${requestUrl.origin}${redirectTo}`);
   }
 

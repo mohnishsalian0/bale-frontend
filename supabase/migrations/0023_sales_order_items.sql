@@ -1,5 +1,5 @@
 
--- Bale Backend - Sales Order Management
+-- Bale Backend - Sales Order Items
 -- Customer order management with real-time fulfillment tracking
 
 -- =====================================================
@@ -89,7 +89,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-    authorize('sales_orders.read')
+    authorize('orders.sales_orders.read')
 );
 
 -- Authorized users can create sales order items
@@ -100,7 +100,7 @@ TO authenticated
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-		authorize('sales_order_items.create')
+		authorize('orders.sales_orders.create')
 );
 
 -- Authorized users can update sales order items
@@ -111,12 +111,12 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-		authorize('sales_order_items.update')
+		authorize('orders.sales_orders.update')
 )
 WITH CHECK (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-		authorize('sales_order_items.update')
+		authorize('orders.sales_orders.update')
 );
 
 -- Authorized users can delete sales order items
@@ -127,7 +127,7 @@ TO authenticated
 USING (
     company_id = get_jwt_company_id() AND
     has_warehouse_access(warehouse_id) AND
-		authorize('sales_order_items.delete')
+		authorize('orders.sales_orders.delete')
 );
 
 -- =====================================================

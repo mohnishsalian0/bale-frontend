@@ -313,6 +313,10 @@ const MultipleSelector = React.forwardRef<
             const newOptions = [...selected, { value, label: value }];
             setSelected(newOptions);
             onChange?.(newOptions);
+            // Close dropdown if we've reached the max limit
+            if (newOptions.length >= maxSelected) {
+              setOpen(false);
+            }
           }}
         >
           {`Create "${inputValue}"`}
@@ -514,6 +518,10 @@ const MultipleSelector = React.forwardRef<
                             const newOptions = [...selected, option];
                             setSelected(newOptions);
                             onChange?.(newOptions);
+                            // Close dropdown if we've reached the max limit
+                            if (newOptions.length >= maxSelected) {
+                              setOpen(false);
+                            }
                           }}
                           className={cn(
                             "cursor-pointer",

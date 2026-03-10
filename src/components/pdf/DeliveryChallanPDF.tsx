@@ -257,33 +257,16 @@ export function DeliveryChallanPDF({
     }
   };
 
-  // Determine destination details (partner or warehouse)
-  const hasPartner = outward.partner_id && outward.partner;
-  const hasToWarehouse = outward.to_warehouse_id && outward.to_warehouse;
+  // Determine destination details (always partner, warehouse transfers handled separately)
+  const destinationName = outward.partner
+    ? outward.partner.display_name ||
+      outward.partner.company_name ||
+      `${outward.partner.first_name} ${outward.partner.last_name}`
+    : "-";
 
-  const destinationName = hasPartner
-    ? outward.partner?.display_name ||
-      outward.partner?.company_name ||
-      `${outward.partner?.first_name} ${outward.partner?.last_name}`
-    : hasToWarehouse
-      ? outward.to_warehouse?.name
-      : "-";
-
-  const destinationAddress = hasPartner
+  const destinationAddress = outward.partner
     ? getFormattedAddress(getPartnerShippingAddress(outward.partner)).join(", ")
-    : hasToWarehouse
-      ? [
-          outward.to_warehouse?.address_line1,
-          outward.to_warehouse?.address_line2,
-          outward.to_warehouse?.city && outward.to_warehouse?.pin_code
-            ? `${outward.to_warehouse.city} - ${outward.to_warehouse.pin_code}`
-            : outward.to_warehouse?.city || outward.to_warehouse?.pin_code,
-          outward.to_warehouse?.state,
-          outward.to_warehouse?.country,
-        ]
-          .filter(Boolean)
-          .join(", ")
-      : "-";
+    : "-";
 
   // Group items by product
   const groupedItems = groupItemsByProduct(outward.goods_outward_items);

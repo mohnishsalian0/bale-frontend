@@ -146,7 +146,8 @@ export const buildPurchaseOrderByNumberQuery = (
           measuring_unit,
           product_images,
           product_code,
-          sequence_number
+          sequence_number,
+          hsn_code
         )
 			)
 		`,
@@ -185,7 +186,8 @@ export const buildPurchaseOrderByIdQuery = (
           measuring_unit,
           product_images,
           product_code,
-          sequence_number
+          sequence_number,
+          hsn_code
         )
 			)
 		`,
@@ -277,26 +279,6 @@ export async function createPurchaseOrder(
   if (!sequenceNumber) throw new Error("No sequence number returned");
 
   return sequenceNumber as number;
-}
-
-/**
- * Approve and update a purchase order with new data and line items
- * Uses RPC function for atomic transaction with validation
- */
-export async function approvePurchaseOrder(
-  orderId: string,
-  orderData: UpdatePurchaseOrderData,
-  lineItems: CreatePurchaseOrderLineItem[],
-): Promise<void> {
-  const supabase = createClient();
-
-  const { error } = await supabase.rpc("approve_purchase_order_with_items", {
-    p_order_id: orderId,
-    p_order_data: orderData as unknown as Json,
-    p_line_items: lineItems as unknown as Json[],
-  });
-
-  if (error) throw error;
 }
 
 /**

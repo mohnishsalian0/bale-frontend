@@ -1,11 +1,11 @@
-import { getRouteConfig } from "@/lib/permissions/route-config";
+import { findRouteConfig } from "@/lib/permissions/route-config";
 
 /**
  * Wildcard matcher using backtracking algorithm
  * Matches required permission against granted permission pattern
  * Supports greedy wildcards: 'inventory.*' or 'inventory.*.view'
  */
-function matchesWildcard(
+export function matchesWildcard(
   requiredPermission: string,
   grantedPattern: string,
 ): boolean {
@@ -60,6 +60,11 @@ export function hasPermission(
   permission: string,
   userPermissions: string[],
 ): boolean {
+  // Empty string means no permission check required - always return true
+  if (permission === "") {
+    return true;
+  }
+
   // Check for exact match first (most common, fastest)
   if (userPermissions.includes(permission)) {
     return true;
@@ -79,40 +84,55 @@ export function hasPermission(
  * Check if user has permission to access a route
  *
  * @param pathname - Full pathname (e.g., "/warehouse/wh-123/inventory")
- * @param warehouseSlug - Warehouse slug to extract route path
+ * @param warehouseSlug - Warehouse slug to extract route path (optional for company routes)
  * @param userPermissions - Set of user's granted permissions
  * @returns Object with allowed flag and optional redirect info
  */
 export function checkRoutePermission(
   pathname: string,
-  warehouseSlug: string,
+  warehouseSlug: string | null,
   userPermissions: string[],
-): { allowed: boolean; redirectTo?: string } {
-  // Extract route path relative to /warehouse/[warehouse_slug]/
-  const pathAfterWarehouse = pathname.split(`/warehouse/${warehouseSlug}/`)[1];
+): { allowed: boolean; redirectTo?: string; routeName?: string } {
+  // Handle company-level routes
+  if (pathname.startsWith("/company")) {
+    const pathAfterCompany = pathname.replace(/^\/company\/?/, "") || "company";
+    const routeConfig = findRouteConfig(pathAfterCompany, true);
 
-  if (!pathAfterWarehouse) {
-    // On warehouse root or warehouse selection page - allow
-    return { allowed: true };
-  }
-
-  try {
-    const routeConfig = getRouteConfig(pathAfterWarehouse);
-
-    // Check if user has the required permission
-    if (!hasPermission(routeConfig.permission, userPermissions)) {
-      // Return redirect info
+    if (
+      routeConfig &&
+      !hasPermission(routeConfig.permission, userPermissions)
+    ) {
       return {
         allowed: false,
-        redirectTo: `/warehouse/${warehouseSlug}/restricted?page=${encodeURIComponent(routeConfig.displayName)}`,
+        redirectTo: `/restricted?page=${encodeURIComponent(routeConfig.displayName)}`,
+        routeName: routeConfig.displayName,
       };
     }
 
     return { allowed: true };
-  } catch (error) {
-    // Route not in config - throw error in development
-    console.error(error);
-    // You might want to handle this differently in production
-    return { allowed: true }; // or false, depending on your security preference
   }
+
+  // Handle warehouse routes
+  if (!warehouseSlug) {
+    return { allowed: true };
+  }
+
+  // Extract route path relative to /warehouse/[warehouse_slug]/
+  const pathAfterWarehouse = pathname.split(`/warehouse/${warehouseSlug}/`)[1];
+
+  if (!pathAfterWarehouse) {
+    return { allowed: true };
+  }
+
+  const routeConfig = findRouteConfig(pathAfterWarehouse, false);
+
+  if (routeConfig && !hasPermission(routeConfig.permission, userPermissions)) {
+    return {
+      allowed: false,
+      redirectTo: `/warehouse/${warehouseSlug}/restricted?page=${encodeURIComponent(routeConfig.displayName)}`,
+      routeName: routeConfig.displayName,
+    };
+  }
+
+  return { allowed: true };
 }

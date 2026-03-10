@@ -9,7 +9,6 @@ export const MEASURING_UNIT_ABBREVIATIONS: Record<MeasuringUnit, string> = {
   yard: "yd",
   kilogram: "kg",
   unit: "unit",
-  piece: "pc",
 };
 /**
  * Get the measuring unit from a product
@@ -36,7 +35,7 @@ export function getMeasuringUnitAbbreviation(
 
 /**
  * Pluralize an abbreviated measuring unit based on quantity
- * Only 'pc' (piece) and 'unit' get pluralized
+ * Only 'unit' gets pluralized
  */
 export function pluralizeMeasuringUnitAbbreviation(
   quantity: number,
@@ -45,7 +44,6 @@ export function pluralizeMeasuringUnitAbbreviation(
   if (quantity === 1) return abbreviation;
 
   // Handle special cases that need pluralization
-  if (abbreviation === "pc") return "pcs";
   if (abbreviation === "unit") return "units";
 
   // Other abbreviations (m, yd, kg) don't change
@@ -82,13 +80,7 @@ export function aggregateQuantitiesByUnit(
 export function formatMeasuringUnitQuantities(
   unitMap: Map<MeasuringUnit, number>,
 ): string {
-  const unitOrder: MeasuringUnit[] = [
-    "metre",
-    "yard",
-    "kilogram",
-    "unit",
-    "piece",
-  ];
+  const unitOrder: MeasuringUnit[] = ["metre", "yard", "kilogram", "unit"];
 
   const sortedUnits = Array.from(unitMap.entries())
     .filter(([_, qty]) => qty > 0)

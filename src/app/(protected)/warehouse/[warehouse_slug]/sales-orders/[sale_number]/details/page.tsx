@@ -24,11 +24,10 @@ import ImageWrapper from "@/components/ui/image-wrapper";
 import { Section } from "@/components/layouts/section";
 import { ActionsFooter } from "@/components/layouts/actions-footer";
 import { CancelDialog } from "@/components/layouts/cancel-dialog";
-import { CompleteOrderDialog } from "../CompleteOrderDialog";
 import { ApprovalDialog } from "@/components/layouts/approval-dialog";
 import { DeleteDialog } from "@/components/layouts/delete-dialog";
 import { GoodsOutwardSelectionDialog } from "../GoodsOutwardSelectionDialog";
-import { OrderConfirmationPDF } from "@/components/pdf/OrderConfirmationPDF";
+import { SalesOrderPDF } from "@/components/pdf/SalesOrderPDF";
 import { useSession } from "@/contexts/session-context";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { formatCurrency } from "@/lib/utils/financial";
@@ -74,6 +73,7 @@ import type {
   InvoiceStatus,
 } from "@/types/database/enums";
 import IconGoodsOutward from "@/components/icons/IconGoodsOutward";
+import { CompleteDialog } from "@/components/layouts/complete-dialog";
 
 interface PageParams {
   params: Promise<{
@@ -243,13 +243,17 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
     try {
       setDownloading(true);
       const blob = await pdf(
-        <OrderConfirmationPDF company={company} order={order} />,
+        <SalesOrderPDF
+          order={order}
+          company={company}
+          linkedOutwards={outwards}
+        />,
       ).toBlob();
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `order-${order.sequence_number}.pdf`;
+      link.download = `sales-order-${order.sequence_number}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -755,10 +759,13 @@ export default function SalesOrderDetailsPage({ params }: PageParams) {
             loading={cancelOrder.isPending}
           />
 
-          <CompleteOrderDialog
+          <CompleteDialog
             open={showCompleteDialog}
+            title="Mark order as complete"
+            description="This will mark the sales order as completed. You can optionally add completion notes."
             onOpenChange={setShowCompleteDialog}
-            onConfirm={handleComplete}
+            onComplete={handleComplete}
+            hasNotes={true}
             loading={completeOrder.isPending}
           />
 
