@@ -91,6 +91,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Function to set approved_at on UPDATE
+CREATE OR REPLACE FUNCTION set_approved_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.approved_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to set approved_by on UPDATE
+CREATE OR REPLACE FUNCTION set_approved_by()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.approved_by := get_jwt_user_id();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- =====================================================
 -- JWT HELPER FUNCTIONS
 -- =====================================================

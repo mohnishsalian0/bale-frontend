@@ -6,7 +6,6 @@ import {
   IconCurrencyRupee,
   IconPercentage,
 } from "@tabler/icons-react";
-import { Input } from "@/components/ui/input";
 import { InputWrapper } from "@/components/ui/input-wrapper";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -25,52 +24,45 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group-pills";
 import { DatePicker } from "@/components/ui/date-picker";
 import { dateToISOString } from "@/lib/utils/date";
+import MultipleSelector from "@/components/ui/multiple-selector";
 import { usePartners } from "@/lib/query/hooks/partners";
 import { useWarehouses } from "@/lib/query/hooks/warehouses";
+import { useAttributes } from "@/lib/query/hooks/attributes";
 import type { DiscountType, TaxType } from "@/types/database/enums";
-import { PAYMENT_TERMS } from "@/types/database/enums";
-import { Badge } from "@/components/ui/badge";
 
-interface OrderFormData {
+export interface JobWorkFormData {
   warehouseId: string;
-  supplierId: string;
+  vendorId: string;
   agentId: string;
-  orderDate: string;
-  deliveryDueDate: string;
+  serviceTypeAttributeId: string;
+  startDate: string;
+  dueDate: string;
   taxType: TaxType;
   advanceAmount: string;
   discountType: DiscountType;
   discount: string;
-  paymentTerms: string;
-  supplierInvoiceNumber: string;
   notes: string;
-  files: File[];
 }
 
-interface PurchaseOrderDetailsStepProps {
-  formData: OrderFormData;
-  setFormData: (data: Partial<OrderFormData>) => void;
+interface JobWorkDetailsStepProps {
+  formData: JobWorkFormData;
+  setFormData: (data: Partial<JobWorkFormData>) => void;
 }
 
-export function PurchaseOrderDetailsStep({
+export function JobWorkDetailsStep({
   formData,
   setFormData,
-}: PurchaseOrderDetailsStepProps) {
+}: JobWorkDetailsStepProps) {
   const [showFinancialDetails, setShowFinancialDetails] = useState(true);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
   const { data: warehouses = [] } = useWarehouses();
   const { data: agents = [] } = usePartners({ partner_type: "agent" });
+  const { data: serviceTypes = [] } = useAttributes("service_type");
 
-  // const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const files = Array.from(e.target.files || []);
-  //   // Filter for images and PDFs only
-  //   const validFiles = files.filter((file) => {
-  //     const isImage = file.type.startsWith("image/");
-  //     const isPDF = file.type === "application/pdf";
-  //     return isImage || isPDF;
-  //   });
-  //   setFormData({ files: [...formData.files, ...validFiles] });
-  // };
+  // Find the selected service type name for display
+  const selectedServiceType = serviceTypes.find(
+    (st) => st.id === formData.serviceTypeAttributeId,
+  );
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -94,6 +86,76 @@ export function PurchaseOrderDetailsStep({
           </SelectContent>
         </Select>
 
+        {/* Service Type */}
+        <div className="flex flex-col gap-2">
+          <Label className="text-sm font-medium text-gray-700">
+            Service type <span className="text-red-500">*</span>
+          </Label>
+          <MultipleSelector
+            value={
+              selectedServiceType
+                ? [
+                    {
+                      value: selectedServiceType.id,
+                      label: selectedServiceType.name,
+                    },
+                  ]
+                : []
+            }
+            onChange={(options) => {
+              setFormData({
+                serviceTypeAttributeId: options[0]?.value || "",
+              });
+            }}
+            options={serviceTypes.map((st) => ({
+              value: st.id,
+              label: st.name,
+            }))}
+            placeholder="Select service type"
+            maxSelected={1}
+            creatable
+            triggerSearchOnFocus
+            hidePlaceholderWhenSelected
+            emptyIndicator={
+              <p className="text-center text-sm text-gray-500">
+                No service types found
+              </p>
+            }
+          />
+        </div>
+
+        {/* Date Fields */}
+        <div className="flex gap-3">
+          {/* Start Date */}
+          <DatePicker
+            label="Start date"
+            placeholder="Pick a date"
+            value={
+              formData.startDate ? new Date(formData.startDate) : undefined
+            }
+            onChange={(date) =>
+              setFormData({
+                startDate: date ? dateToISOString(date) : "",
+              })
+            }
+            required
+            className="flex-1"
+          />
+
+          {/* Due Date */}
+          <DatePicker
+            label="Due date"
+            placeholder="Pick a date"
+            value={formData.dueDate ? new Date(formData.dueDate) : undefined}
+            onChange={(date) =>
+              setFormData({
+                dueDate: date ? dateToISOString(date) : "",
+              })
+            }
+            className="flex-1"
+          />
+        </div>
+
         {/* Agent Dropdown */}
         <Select
           value={formData.agentId || undefined}
@@ -111,53 +173,6 @@ export function PurchaseOrderDetailsStep({
             ))}
           </SelectContent>
         </Select>
-
-        {/* Date Fields */}
-        <div className="flex gap-3">
-          {/* Order Date */}
-          <DatePicker
-            label="Order date"
-            placeholder="Pick a date"
-            value={
-              formData.orderDate ? new Date(formData.orderDate) : undefined
-            }
-            onChange={(date) =>
-              setFormData({
-                orderDate: date ? dateToISOString(date) : "",
-              })
-            }
-            required
-            className="flex-1"
-          />
-
-          {/* Delivery Due Date */}
-          <DatePicker
-            label="Delivery due date"
-            placeholder="Pick a date"
-            value={
-              formData.deliveryDueDate
-                ? new Date(formData.deliveryDueDate)
-                : undefined
-            }
-            onChange={(date) =>
-              setFormData({
-                deliveryDueDate: date ? dateToISOString(date) : "",
-              })
-            }
-            required
-            className="flex-1"
-          />
-        </div>
-
-        {/* Supplier Invoice Number */}
-        <Input
-          type="text"
-          placeholder="Supplier invoice number (Optional)"
-          value={formData.supplierInvoiceNumber}
-          onChange={(e) =>
-            setFormData({ supplierInvoiceNumber: e.target.value })
-          }
-        />
       </div>
 
       {/* Financial Details Section */}
@@ -268,77 +283,13 @@ export function PurchaseOrderDetailsStep({
 
         <CollapsibleContent>
           <div className="flex flex-col gap-6">
-            {/* Payment Terms */}
-            <div className="space-y-2">
-              <Input
-                type="text"
-                placeholder="Payment terms (Optional)"
-                value={formData.paymentTerms}
-                onChange={(e) => setFormData({ paymentTerms: e.target.value })}
-              />
-              <div className="flex flex-wrap gap-2">
-                {PAYMENT_TERMS.map((term) => (
-                  <Badge
-                    key={term}
-                    variant="secondary"
-                    color="gray"
-                    onClick={() => setFormData({ paymentTerms: term })}
-                    className="cursor-pointer hover:bg-gray-200"
-                  >
-                    {term}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
             {/* Notes */}
             <Textarea
-              placeholder="Enter instructions, special requirements, order source, etc..."
+              placeholder="Enter instructions, special requirements, etc..."
               value={formData.notes}
               onChange={(e) => setFormData({ notes: e.target.value })}
               className="min-h-32"
             />
-
-            {/* Add Files */}
-            {/* <label className="border border-primary-700 rounded-lg h-11 flex items-center justify-center gap-3 cursor-pointer text-primary-700 hover:bg-primary-50 transition-colors shadow-gray-sm"> */}
-            {/*   <IconPhoto className="size-4" /> */}
-            {/*   <span className="text-sm font-normal">Add files</span> */}
-            {/*   <input */}
-            {/*     type="file" */}
-            {/*     accept="image/*,.pdf" */}
-            {/*     multiple */}
-            {/*     onChange={handleFileSelect} */}
-            {/*     className="sr-only" */}
-            {/*   /> */}
-            {/* </label> */}
-
-            {/* File List */}
-            {/* {formData.files.length > 0 && ( */}
-            {/*   <div className="flex flex-col gap-2"> */}
-            {/*     {formData.files.map((file, index) => ( */}
-            {/*       <div */}
-            {/*         key={index} */}
-            {/*         className="text-sm text-gray-700 flex items-center justify-between" */}
-            {/*       > */}
-            {/*         <span title={file.name} className="truncate"> */}
-            {/*           {file.name} */}
-            {/*         </span> */}
-            {/*         <button */}
-            {/*           type="button" */}
-            {/*           onClick={() => { */}
-            {/*             const newFiles = formData.files.filter( */}
-            {/*               (_, i) => i !== index, */}
-            {/*             ); */}
-            {/*             setFormData({ files: newFiles }); */}
-            {/*           }} */}
-            {/*           className="text-red-600 hover:text-red-700 ml-2" */}
-            {/*         > */}
-            {/*           Remove */}
-            {/*         </button> */}
-            {/*       </div> */}
-            {/*     ))} */}
-            {/*   </div> */}
-            {/* )} */}
           </div>
         </CollapsibleContent>
       </Collapsible>

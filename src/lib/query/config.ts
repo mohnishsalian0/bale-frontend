@@ -18,6 +18,7 @@ export const STALE_TIME = {
   STOCK_UNITS: 2 * 60 * 1000, // 2 minutes
   SALES_ORDERS: 3 * 60 * 1000, // 3 minutes
   PURCHASE_ORDERS: 3 * 60 * 1000, // 3 minutes
+  JOB_WORKS: 3 * 60 * 1000, // 3 minutes
   STOCK_FLOW: 3 * 60 * 1000, // 3 minutes (goods inward/outward)
   INVOICES: 3 * 60 * 1000, // 3 minutes
   PAYMENTS: 3 * 60 * 1000, // 3 minutes

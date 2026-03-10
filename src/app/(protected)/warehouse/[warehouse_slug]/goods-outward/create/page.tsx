@@ -199,7 +199,7 @@ export default function CreateGoodsOutwardPage() {
   };
 
   const handleCancel = () => {
-    router.push(`/warehouse/${warehouse.slug}/goods-movement`);
+    router.push(`/warehouse/${warehouse.slug}/goods-movement/outward`);
   };
 
   const handleSubmit = async () => {

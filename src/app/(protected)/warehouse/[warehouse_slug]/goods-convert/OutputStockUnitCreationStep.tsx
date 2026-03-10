@@ -7,7 +7,7 @@ import {
   IconPackage,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { InputWrapper } from "@/components/ui/input-wrapper";
 import type { StockUnitSpec } from "../goods-inward/ProductSelectionStep";
 import type { ProductListView } from "@/types/products.types";
 import { getMeasuringUnitAbbreviation } from "@/lib/utils/measuring-units";
@@ -131,7 +131,7 @@ export function OutputStockUnitCreationStep({
                     </Button>
 
                     {/* Count */}
-                    <Input
+                    <InputWrapper
                       type="number"
                       value={unit.count}
                       onChange={(e) =>
@@ -140,7 +140,7 @@ export function OutputStockUnitCreationStep({
                           Math.max(1, parseInt(e.target.value) || 1),
                         )
                       }
-                      className="text-center h-9 w-16"
+                      className="w-16"
                       min="1"
                     />
 

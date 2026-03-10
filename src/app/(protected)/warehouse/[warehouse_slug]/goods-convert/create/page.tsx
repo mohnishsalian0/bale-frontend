@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { StockUnitScannerStep } from "@/components/layouts/stock-unit-scanner-step";
 import { ScannedStockUnit } from "@/types/stock-units.types";
@@ -11,6 +11,7 @@ import { JobWorkLinkToStep } from "../JobWorkLinkToStep";
 import { ConvertDetailsStep } from "../ConvertDetailsStep";
 import { PartnerFormSheet } from "../../partners/PartnerFormSheet";
 import { useGoodsConvertMutations } from "@/lib/query/hooks/goods-converts";
+import { useJobWorkById } from "@/lib/query/hooks/job-works";
 import { useSession } from "@/contexts/session-context";
 import { useAppChrome } from "@/contexts/app-chrome-context";
 import { toast } from "sonner";
@@ -38,11 +39,18 @@ type FormStep =
 
 export default function CreateGoodsConvertPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
 
-  // State
-  const [currentStep, setCurrentStep] = useState<FormStep>("vendor");
+  // Read URL params for job work prefill
+  const jobWorkIdFromUrl = searchParams.get("job_work");
+  const isPrefilled = !!jobWorkIdFromUrl;
+
+  // Skip vendor, jobWork, and outputProduct steps if coming from job work
+  const [currentStep, setCurrentStep] = useState<FormStep>(
+    jobWorkIdFromUrl ? "inputUnits" : "vendor",
+  );
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
   const [selectedJobWorkId, setSelectedJobWorkId] = useState<string | null>(
     null,
@@ -68,11 +76,45 @@ export default function CreateGoodsConvertPage() {
   // Mutations
   const { createConvertWithItems } = useGoodsConvertMutations(warehouse.id);
 
+  // Fetch job work data if coming from job work details
+  const { data: jobWorkData } = useJobWorkById(jobWorkIdFromUrl);
+
   // Hide chrome for immersive flow experience
   useEffect(() => {
     hideChrome();
     return () => showChromeUI(); // Restore chrome on unmount
   }, [hideChrome, showChromeUI]);
+
+  // Prefill job work ID from URL param
+  useEffect(() => {
+    if (!jobWorkIdFromUrl || selectedJobWorkId) return;
+    setSelectedJobWorkId(jobWorkIdFromUrl);
+  }, [jobWorkIdFromUrl, selectedJobWorkId]);
+
+  // Prefill vendor, output product, and details when job work data loads
+  useEffect(() => {
+    if (!jobWorkIdFromUrl || !jobWorkData) return;
+
+    if (!selectedVendorId) {
+      setSelectedVendorId(jobWorkData.vendor_id);
+    }
+
+    if (!selectedOutputProductId && jobWorkData.job_work_items?.length > 0) {
+      setSelectedOutputProductId(jobWorkData.job_work_items[0].product.id);
+    }
+
+    setDetailsFormData((prev) => ({
+      ...prev,
+      serviceType: prev.serviceType || jobWorkData.service_type?.name || "",
+      startDate:
+        prev.startDate || jobWorkData.start_date || dateToISOString(new Date()),
+    }));
+  }, [
+    jobWorkIdFromUrl,
+    jobWorkData,
+    selectedVendorId,
+    selectedOutputProductId,
+  ]);
 
   // Partner selection handler with auto-advance
   const handleSelectVendor = (vendorId: string, _ledgerId: string) => {
@@ -152,9 +194,9 @@ export default function CreateGoodsConvertPage() {
   const handleBack = () => {
     if (currentStep === "details") {
       setCurrentStep("inputUnits");
-    } else if (currentStep === "inputUnits") {
+    } else if (currentStep === "inputUnits" && !isPrefilled) {
       setCurrentStep("outputProduct");
-    } else if (currentStep === "outputProduct") {
+    } else if (currentStep === "outputProduct" && !isPrefilled) {
       setCurrentStep("jobWork");
     } else if (currentStep === "jobWork") {
       setCurrentStep("vendor");
@@ -208,8 +250,12 @@ export default function CreateGoodsConvertPage() {
   };
 
   // Calculate step number
-  const stepNumber =
-    currentStep === "vendor"
+  const totalSteps = isPrefilled ? 2 : 5;
+  const stepNumber = isPrefilled
+    ? currentStep === "inputUnits"
+      ? 1
+      : 2
+    : currentStep === "vendor"
       ? 1
       : currentStep === "jobWork"
         ? 2
@@ -226,7 +272,7 @@ export default function CreateGoodsConvertPage() {
         <FormHeader
           title="New Goods Convert"
           currentStep={stepNumber}
-          totalSteps={5}
+          totalSteps={totalSteps}
           onCancel={handleCancel}
           disableCancel={saving}
         />
@@ -276,7 +322,10 @@ export default function CreateGoodsConvertPage() {
 
         {/* Bottom Action Bar - Fixed at bottom */}
         <FormFooter>
-          {currentStep !== "vendor" && (
+          {!(
+            currentStep === "vendor" ||
+            (isPrefilled && currentStep === "inputUnits")
+          ) && (
             <Button
               variant="outline"
               onClick={handleBack}

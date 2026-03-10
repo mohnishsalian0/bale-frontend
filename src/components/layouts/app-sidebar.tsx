@@ -17,6 +17,7 @@ import {
   IconListDetails,
   IconTransfer,
   IconTransform,
+  IconNeedleThread,
 } from "@tabler/icons-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -106,6 +107,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           path: `/warehouse/${warehouse.slug}/purchase-orders`,
           icon: IconTruckLoading,
           permission: "orders.purchase_orders.read",
+        },
+        {
+          label: "Job works",
+          path: `/warehouse/${warehouse.slug}/job-works`,
+          icon: IconNeedleThread,
+          permission: "orders.job_works.read",
         },
       ],
     },

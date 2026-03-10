@@ -103,41 +103,12 @@ export async function generateGoodsInwards(
     `📦 Creating ${toCreate} new goods inwards (${existingCount} already exist)...`,
   );
 
-  // Step 1: Update purchase orders to "in_progress" status (those that haven't been updated)
-  const posToUpdate = allPOs
-    .filter((po) => po.status === "approval_pending")
-    .slice(0, targetCount);
-
-  if (posToUpdate.length > 0) {
-    console.log(
-      `📝 Updating ${posToUpdate.length} purchase orders to 'in_progress'...`,
-    );
-    // Chunk IDs to avoid "URI too long" errors from large .in() query strings
-    const chunkSize = 100;
-    const poIds = posToUpdate.map((po) => po.id);
-    for (let i = 0; i < poIds.length; i += chunkSize) {
-      const chunk = poIds.slice(i, i + chunkSize);
-      const { error: updateError } = await supabase
-        .from("purchase_orders")
-        .update({ status: "in_progress" })
-        .in("id", chunk);
-
-      if (updateError) {
-        console.error("❌ Failed to update purchase orders:", updateError);
-        throw updateError;
-      }
-    }
-  }
-
-  // Step 2: Get purchase orders that are now in_progress
+  // Get purchase orders that are in_progress (status transitions handled by purchase-orders module)
   const posWithItems = allPOs
-    .filter(
-      (po) =>
-        po.status === "in_progress" || posToUpdate.some((p) => p.id === po.id),
-    )
+    .filter((po) => po.status === "in_progress")
     .slice(0, targetCount);
 
-  // Step 3: Create goods inwards
+  // Create goods inwards
   const createdInwards: GoodsInwardResult[] = [];
   let totalCreated = 0;
 
