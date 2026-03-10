@@ -17,6 +17,8 @@ export interface GoodsConvertsConfig {
   completionDaysAfterStart: { min: number; max: number };
   /** Output quantity as a fraction of total input quantity consumed */
   outputQuantityRatio: { min: number; max: number };
+  /** Ratio of in_progress job works to link converts to (0.0-1.0) */
+  jobWorkLinkRate: number;
 }
 
 export const GOODS_CONVERTS_CONFIG: GoodsConvertsConfig = {
@@ -26,6 +28,7 @@ export const GOODS_CONVERTS_CONFIG: GoodsConvertsConfig = {
   unitsPerConvert: { min: 3, max: 5 },
   completionDaysAfterStart: { min: 7, max: 30 },
   outputQuantityRatio: { min: 0.8, max: 0.95 },
+  jobWorkLinkRate: 0.8,
 } as const;
 
 /**

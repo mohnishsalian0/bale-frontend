@@ -55,7 +55,12 @@ import {
 import { generateQRBatches } from "./modules/qr-batches";
 import { ALL_WAREHOUSES } from "./config/warehouses.config";
 import { ALL_TEST_PARTNERS } from "./config/partners.config";
-import { MATERIALS, COLORS, TAGS } from "./config/attributes.config";
+import {
+  MATERIALS,
+  COLORS,
+  TAGS,
+  SERVICE_TYPES,
+} from "./config/attributes.config";
 import { PRODUCT_TEMPLATES } from "./config/product-templates.config";
 import { LOT_NUMBERS } from "./config/lot-numbers.config";
 import { GOODS_INWARDS_CONFIG } from "./config/goods-inwards.config";
@@ -65,6 +70,8 @@ import { GOODS_CONVERTS_CONFIG } from "./config/goods-converts.config";
 import { ADJUSTMENT_NOTES_CONFIG } from "./config/adjustment-notes.config";
 import { PAYMENTS_CONFIG } from "./config/payments.config";
 import { QR_BATCHES_CONFIG } from "./config/qr-batches.config";
+import { generateJobWorks } from "./modules/job-works";
+import { JOB_WORKS_CONFIG } from "./config/job-works.config";
 
 // ============================================================================
 // MAIN SETUP FUNCTION
@@ -111,13 +118,14 @@ async function runSetup() {
       ALL_TEST_PARTNERS,
     );
 
-    // Step 6: Attributes (materials, colors, tags)
+    // Step 6: Attributes (materials, colors, tags, service types)
     const attributes = await ensureAllAttributes(
       supabase,
       companyId,
       MATERIALS,
       COLORS,
       TAGS,
+      SERVICE_TYPES,
     );
 
     // Create attribute ID mappings for product creation
@@ -128,6 +136,11 @@ async function runSetup() {
       colors: Object.fromEntries(attributes.colors.map((c) => [c.name, c.id])),
       tags: Object.fromEntries(attributes.tags.map((t) => [t.name, t.id])),
     };
+
+    // Service type ID mappings for job work creation
+    const serviceTypeIds = Object.fromEntries(
+      attributes.serviceTypes.map((st) => [st.name, st.id]),
+    );
 
     // Step 7: Products (100 from templates)
     const products = await ensureProducts(
@@ -183,6 +196,7 @@ async function runSetup() {
       {
         totalOrders: 50,
         year: currentYear,
+        inProgressRatio: 0.8,
       },
     );
 
@@ -198,6 +212,7 @@ async function runSetup() {
       {
         totalOrders: 40,
         year: currentYear,
+        inProgressRatio: 0.8,
       },
     );
 
@@ -210,7 +225,7 @@ async function runSetup() {
       GOODS_INWARDS_CONFIG,
     );
 
-    // Step 11: Goods Transfers - Warehouse to Factory (15 transfers)
+    // Step 11: Complete 50% of purchase orders
     const purchaseOrderCompletionRecords = Object.fromEntries(
       purchaseOrders
         .filter(() => Math.random() < 0.5)
@@ -236,7 +251,22 @@ async function runSetup() {
       },
     );
 
-    // Step 12.5: Goods Converts — raw materials → finished goods at factory warehouses
+    // Step 12.5: Job Works (15 for minimal setup)
+    const jobWorks = await generateJobWorks(
+      supabase,
+      companyId,
+      warehouses,
+      userId,
+      vendorIds,
+      agentIds,
+      finishedProductIds,
+      serviceTypeIds,
+      { totalOrders: 15, year: currentYear },
+      JOB_WORKS_CONFIG,
+    );
+
+    // Step 13: Goods Converts — raw materials → finished goods at factory warehouses
+    // Internally fetches in_progress job works for linking
     const goodsConverts = await generateGoodsConverts(
       supabase,
       companyId,
@@ -380,6 +410,7 @@ async function runSetup() {
     console.log(
       `   Goods Transfers: ${transfersToFactory.length} total warehouse→factory`,
     );
+    console.log(`   Job Works: ${jobWorks.length}`);
     console.log(`   Goods Converts: ${goodsConverts.length}`);
     console.log(
       `   Goods Transfers: ${transfersToWarehouse.length} total factory→warehouse`,

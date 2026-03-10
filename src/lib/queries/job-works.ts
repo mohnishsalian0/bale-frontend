@@ -2,27 +2,27 @@ import { createClient } from "@/lib/supabase/browser";
 import type { Database, Json } from "@/types/database/supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
-  PurchaseOrderFilters,
-  PurchaseOrderListView,
-  PurchaseOrderDetailView,
-  CreatePurchaseOrderData,
-  CreatePurchaseOrderLineItem,
-  UpdatePurchaseOrderData,
-  CancelPurchaseOrderData,
-  CompletePurchaseOrderData,
-  PurchaseOrder,
-} from "@/types/purchase-orders.types";
+  JobWorkFilters,
+  JobWorkListView,
+  JobWorkDetailView,
+  CreateJobWorkData,
+  CreateJobWorkLineItem,
+  UpdateJobWorkData,
+  CancelJobWorkData,
+  CompleteJobWorkData,
+  JobWork,
+} from "@/types/job-works.types";
 
 // Re-export types for convenience
 export type {
-  PurchaseOrderFilters,
-  PurchaseOrderListView,
-  PurchaseOrderDetailView,
-  CreatePurchaseOrderData,
-  CreatePurchaseOrderLineItem,
-  UpdatePurchaseOrderData,
-  CancelPurchaseOrderData,
-  CompletePurchaseOrderData,
+  JobWorkFilters,
+  JobWorkListView,
+  JobWorkDetailView,
+  CreateJobWorkData,
+  CreateJobWorkLineItem,
+  UpdateJobWorkData,
+  CancelJobWorkData,
+  CompleteJobWorkData,
 };
 
 // ============================================================================
@@ -30,11 +30,11 @@ export type {
 // ============================================================================
 
 /**
- * Query builder for fetching purchase orders with optional filters and pagination
+ * Query builder for fetching job works with optional filters and pagination
  */
-export const buildPurchaseOrdersQuery = (
+export const buildJobWorksQuery = (
   supabase: SupabaseClient<Database>,
-  filters?: PurchaseOrderFilters,
+  filters?: JobWorkFilters,
   page: number = 1,
   pageSize: number = 25,
 ) => {
@@ -42,17 +42,20 @@ export const buildPurchaseOrdersQuery = (
   const limit = filters?.limit ? filters.limit : pageSize;
 
   let query = supabase
-    .from("purchase_orders")
+    .from("job_works")
     .select(
       `
         *,
-        supplier:partners!supplier_id(
+        vendor:partners!vendor_id(
           id, first_name, last_name, display_name, company_name
         ),
         agent:partners!agent_id(
           id, first_name, last_name, display_name, company_name
         ),
-        purchase_order_items!inner(
+        service_type:attributes!service_type_attribute_id(
+          id, name
+        ),
+        job_work_items!inner(
           *,
           product:products!product_id!inner(
             id, name, stock_type, measuring_unit, product_images, sequence_number, product_code
@@ -64,9 +67,7 @@ export const buildPurchaseOrdersQuery = (
     .is("deleted_at", null);
 
   if (filters?.warehouseId) {
-    query = query.or(
-      `warehouse_id.eq.${filters.warehouseId},warehouse_id.is.null`,
-    );
+    query = query.eq("warehouse_id", filters.warehouseId);
   }
 
   if (filters?.status) {
@@ -75,15 +76,15 @@ export const buildPurchaseOrdersQuery = (
     } else {
       if (filters.status === "overdue") {
         query = query.eq("status", "in_progress");
-        query = query.lt("delivery_due_date", new Date().toISOString());
+        query = query.lt("due_date", new Date().toISOString());
       } else {
         query = query.eq("status", filters.status);
       }
     }
   }
 
-  if (filters?.supplierId) {
-    query = query.eq("supplier_id", filters.supplierId);
+  if (filters?.vendorId) {
+    query = query.eq("vendor_id", filters.vendorId);
   }
 
   if (filters?.agentId) {
@@ -91,7 +92,7 @@ export const buildPurchaseOrdersQuery = (
   }
 
   if (filters?.productId) {
-    query = query.eq("purchase_order_items.product.id", filters.productId);
+    query = query.eq("job_work_items.product.id", filters.productId);
   }
 
   if (filters?.search_term && filters.search_term.trim() !== "") {
@@ -102,13 +103,13 @@ export const buildPurchaseOrdersQuery = (
   }
 
   if (filters?.date_from) {
-    query = query.gte("order_date", filters.date_from);
+    query = query.gte("start_date", filters.date_from);
   }
   if (filters?.date_to) {
-    query = query.lte("order_date", filters.date_to);
+    query = query.lte("start_date", filters.date_to);
   }
 
-  const orderBy = filters?.order_by || "order_date";
+  const orderBy = filters?.order_by || "start_date";
   const ascending = !!filters?.ascending;
   query = query.order(orderBy, { ascending });
 
@@ -118,18 +119,18 @@ export const buildPurchaseOrdersQuery = (
 };
 
 /**
- * Query builder for fetching a single purchase order by sequence number
+ * Query builder for fetching a single job work by sequence number
  */
-export const buildPurchaseOrderByNumberQuery = (
+export const buildJobWorkByNumberQuery = (
   supabase: SupabaseClient<Database>,
   sequenceNumber: string,
 ) => {
   return supabase
-    .from("purchase_orders")
+    .from("job_works")
     .select(
       `
 			*,
-			supplier:partners!supplier_id(
+			vendor:partners!vendor_id(
 				*,
 				ledger:ledgers!partner_id(id, name)
 			),
@@ -137,7 +138,10 @@ export const buildPurchaseOrderByNumberQuery = (
 				id, first_name, last_name, display_name, company_name
 			),
 			warehouse:warehouses!warehouse_id(*),
-			purchase_order_items(
+			service_type:attributes!service_type_attribute_id(
+				id, name
+			),
+			job_work_items(
 				*,
 				product:products!product_id(
           id,
@@ -158,18 +162,18 @@ export const buildPurchaseOrderByNumberQuery = (
 };
 
 /**
- * Query builder for fetching a single purchase order by ID
+ * Query builder for fetching a single job work by ID
  */
-export const buildPurchaseOrderByIdQuery = (
+export const buildJobWorkByIdQuery = (
   supabase: SupabaseClient<Database>,
   orderId: string,
 ) => {
   return supabase
-    .from("purchase_orders")
+    .from("job_works")
     .select(
       `
 			*,
-			supplier:partners!supplier_id(
+			vendor:partners!vendor_id(
 				*,
 				ledger:ledgers!partner_id(id, name)
 			),
@@ -177,7 +181,10 @@ export const buildPurchaseOrderByIdQuery = (
 				id, first_name, last_name, display_name, company_name
 			),
 			warehouse:warehouses!warehouse_id(*),
-			purchase_order_items(
+			service_type:attributes!service_type_attribute_id(
+				id, name
+			),
+			job_work_items(
 				*,
 				product:products!product_id(
           id,
@@ -202,15 +209,15 @@ export const buildPurchaseOrderByIdQuery = (
 // ============================================================================
 
 /**
- * Fetch purchase orders for a warehouse with optional filters
+ * Fetch job works with optional filters
  */
-export async function getPurchaseOrders(
-  filters?: PurchaseOrderFilters,
+export async function getJobWorks(
+  filters?: JobWorkFilters,
   page: number = 1,
   pageSize: number = 25,
-): Promise<{ data: PurchaseOrderListView[]; totalCount: number }> {
+): Promise<{ data: JobWorkListView[]; totalCount: number }> {
   const supabase = createClient();
-  const { data, error, count } = await buildPurchaseOrdersQuery(
+  const { data, error, count } = await buildJobWorksQuery(
     supabase,
     filters,
     page,
@@ -226,49 +233,49 @@ export async function getPurchaseOrders(
 }
 
 /**
- * Fetch a single purchase order by sequence number
+ * Fetch a single job work by sequence number
  */
-export async function getPurchaseOrderByNumber(
+export async function getJobWorkByNumber(
   sequenceNumber: string,
-): Promise<PurchaseOrderDetailView> {
+): Promise<JobWorkDetailView> {
   const supabase = createClient();
-  const { data, error } = await buildPurchaseOrderByNumberQuery(
+  const { data, error } = await buildJobWorkByNumberQuery(
     supabase,
     sequenceNumber,
   );
 
   if (error) throw error;
-  if (!data) throw new Error("Order not found");
+  if (!data) throw new Error("Job work not found");
 
   return data;
 }
 
 /**
- * Fetch a single purchase order by ID (UUID)
+ * Fetch a single job work by ID (UUID)
  */
-export async function getPurchaseOrderById(
+export async function getJobWorkById(
   orderId: string,
-): Promise<PurchaseOrderDetailView> {
+): Promise<JobWorkDetailView> {
   const supabase = createClient();
-  const { data, error } = await buildPurchaseOrderByIdQuery(supabase, orderId);
+  const { data, error } = await buildJobWorkByIdQuery(supabase, orderId);
 
   if (error) throw error;
-  if (!data) throw new Error("Order not found");
+  if (!data) throw new Error("Job work not found");
 
   return data;
 }
 
 /**
- * Create a new purchase order with line items
+ * Create a new job work with line items
  */
-export async function createPurchaseOrder(
-  orderData: CreatePurchaseOrderData,
-  lineItems: CreatePurchaseOrderLineItem[],
+export async function createJobWork(
+  orderData: CreateJobWorkData,
+  lineItems: CreateJobWorkLineItem[],
 ): Promise<number> {
   const supabase = createClient();
 
   const { data: sequenceNumber, error } = await supabase.rpc(
-    "create_purchase_order_with_items",
+    "create_job_work_with_items",
     {
       p_order_data: orderData as unknown as Json,
       p_line_items: lineItems as unknown as Json[],
@@ -282,11 +289,11 @@ export async function createPurchaseOrder(
 }
 
 /**
- * Cancel a purchase order with reason
+ * Cancel a job work with reason
  */
-export async function cancelPurchaseOrder(
+export async function cancelJobWork(
   orderId: string,
-  cancelData: CancelPurchaseOrderData,
+  cancelData: CancelJobWorkData,
 ): Promise<void> {
   const supabase = createClient();
 
@@ -294,19 +301,11 @@ export async function cancelPurchaseOrder(
     throw new Error("Cancellation reason is required");
   }
 
-  // Get current user ID for status tracking
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not authenticated");
-
   const { error } = await supabase
-    .from("purchase_orders")
+    .from("job_works")
     .update({
       status: "cancelled",
-      status_notes: cancelData.reason,
-      status_changed_at: new Date().toISOString(),
-      status_changed_by: user.id,
+      cancellation_reason: cancelData.reason,
     })
     .eq("id", orderId);
 
@@ -314,27 +313,19 @@ export async function cancelPurchaseOrder(
 }
 
 /**
- * Complete a purchase order with optional notes
+ * Complete a job work with optional notes
  */
-export async function completePurchaseOrder(
+export async function completeJobWork(
   orderId: string,
-  completeData: CompletePurchaseOrderData,
+  completeData: CompleteJobWorkData,
 ): Promise<void> {
   const supabase = createClient();
 
-  // Get current user ID for status tracking
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not authenticated");
-
   const { error } = await supabase
-    .from("purchase_orders")
+    .from("job_works")
     .update({
       status: "completed",
-      status_notes: completeData.notes || null,
-      status_changed_at: new Date().toISOString(),
-      status_changed_by: user.id,
+      notes: completeData.notes || null,
     })
     .eq("id", orderId);
 
@@ -342,16 +333,16 @@ export async function completePurchaseOrder(
 }
 
 /**
- * Update purchase order fields (generic update for any fields)
+ * Update job work fields (generic update for any fields)
  */
-export async function updatePurchaseOrder(
+export async function updateJobWork(
   orderId: string,
-  data: Partial<PurchaseOrder>,
+  data: Partial<JobWork>,
 ): Promise<void> {
   const supabase = createClient();
 
   const { error } = await supabase
-    .from("purchase_orders")
+    .from("job_works")
     .update(data)
     .eq("id", orderId);
 
@@ -359,13 +350,13 @@ export async function updatePurchaseOrder(
 }
 
 /**
- * Update line items for a purchase order (only when in approval_pending status)
- * Deletes all existing items and inserts new ones in a transaction
- * @deprecated Use updatePurchaseOrderWithItems instead for atomic updates
+ * Update job work with items atomically via RPC function
+ * Validates business rules. Deletes old items and inserts new ones in a single transaction.
  */
-export async function updatePurchaseOrderLineItems(
+export async function updateJobWorkWithItems(
   orderId: string,
-  lineItems: CreatePurchaseOrderLineItem[],
+  orderData: UpdateJobWorkData,
+  lineItems: CreateJobWorkLineItem[],
 ): Promise<void> {
   const supabase = createClient();
 
@@ -373,47 +364,7 @@ export async function updatePurchaseOrderLineItems(
     throw new Error("At least one line item is required");
   }
 
-  // Delete all existing line items
-  const { error: deleteError } = await supabase
-    .from("purchase_order_items")
-    .delete()
-    .eq("purchase_order_id", orderId);
-
-  if (deleteError) throw deleteError;
-
-  // Insert new line items
-  const lineItemsToInsert = lineItems.map((item) => ({
-    purchase_order_id: orderId,
-    product_id: item.product_id,
-    required_quantity: item.required_quantity,
-    unit_rate: item.unit_rate,
-    received_quantity: 0,
-  }));
-
-  const { error: insertError } = await supabase
-    .from("purchase_order_items")
-    .insert(lineItemsToInsert);
-
-  if (insertError) throw insertError;
-}
-
-/**
- * Update purchase order with items atomically via RPC function
- * Validates business rules (approval_pending status, no inward records)
- * Deletes old items and inserts new ones in a single transaction
- */
-export async function updatePurchaseOrderWithItems(
-  orderId: string,
-  orderData: UpdatePurchaseOrderData,
-  lineItems: CreatePurchaseOrderLineItem[],
-): Promise<void> {
-  const supabase = createClient();
-
-  if (lineItems.length === 0) {
-    throw new Error("At least one line item is required");
-  }
-
-  const { error } = await supabase.rpc("update_purchase_order_with_items", {
+  const { error } = await supabase.rpc("update_job_work_with_items", {
     p_order_id: orderId,
     p_order_data: orderData as unknown as Json,
     p_line_items: lineItems as unknown as Json[],
@@ -423,13 +374,13 @@ export async function updatePurchaseOrderWithItems(
 }
 
 /**
- * Delete purchase order (soft delete)
+ * Delete job work (soft delete)
  */
-export async function deletePurchaseOrder(orderId: string): Promise<void> {
+export async function deleteJobWork(orderId: string): Promise<void> {
   const supabase = createClient();
 
   const { error } = await supabase
-    .from("purchase_orders")
+    .from("job_works")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", orderId);
 

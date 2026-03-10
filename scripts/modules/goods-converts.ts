@@ -43,6 +43,13 @@ export interface GoodsConvertResult {
   status: string;
 }
 
+/** Job work data needed for linking converts to job works */
+export interface JobWorkForLinking {
+  id: string;
+  status: string;
+  items: Array<{ product_id: string; expected_quantity: number }>;
+}
+
 interface Warehouse {
   id: string;
   name: string;
@@ -172,6 +179,36 @@ export async function generateGoodsConverts(
   );
 
   // ------------------------------------------------------------------
+  // Fetch in_progress job works for linking (same pattern as goods-inwards fetching POs)
+  // ------------------------------------------------------------------
+  const { data: jobWorkRows } = await supabase
+    .from("job_works")
+    .select("id, status, job_work_items(product_id, expected_quantity)")
+    .eq("company_id", companyId)
+    .eq("status", "in_progress")
+    .is("deleted_at", null);
+
+  const inProgressJobWorks: JobWorkForLinking[] = (jobWorkRows || [])
+    .filter((jw) => jw.job_work_items.length > 0)
+    .map((jw) => ({
+      id: jw.id,
+      status: jw.status,
+      items: jw.job_work_items,
+    }));
+
+  const linkableCount = Math.floor(
+    inProgressJobWorks.length * config.jobWorkLinkRate,
+  );
+  const linkableJobWorks = inProgressJobWorks.slice(0, linkableCount);
+  let linkedCount = 0;
+
+  if (linkableJobWorks.length > 0) {
+    console.log(
+      `   Linkable job works: ${linkableJobWorks.length}/${inProgressJobWorks.length} in_progress (${config.jobWorkLinkRate * 100}%)`,
+    );
+  }
+
+  // ------------------------------------------------------------------
   // Create converts
   // ------------------------------------------------------------------
   let totalCreated = 0;
@@ -237,9 +274,20 @@ export async function generateGoodsConverts(
 
     // Derive service type and pick output product + vendor
     const serviceType = deriveServiceType(warehouse.name);
-    const outputProductId =
+    let outputProductId =
       finishedProductIds[randomInt(0, finishedProductIds.length - 1)];
     const vendorId = vendorIds[randomInt(0, vendorIds.length - 1)];
+
+    // Link to a job work if any available (always link, control volume via queue size)
+    let linkedJobWork: JobWorkForLinking | undefined;
+    if (linkableJobWorks.length > 0) {
+      linkedJobWork = linkableJobWorks.shift();
+      if (linkedJobWork) {
+        // Use the job work's product as output to ensure reconciliation works
+        outputProductId = linkedJobWork.items[0].product_id;
+        linkedCount++;
+      }
+    }
 
     // Create convert
     const { data: convertId, error: createError } = await supabase.rpc(
@@ -251,6 +299,7 @@ export async function generateGoodsConverts(
           service_type: serviceType,
           output_product_id: outputProductId,
           vendor_id: vendorId,
+          job_work_id: linkedJobWork?.id,
           start_date: startDateStr,
           notes: `${serviceType} of raw material — auto-generated test data`,
           created_by: userId,
@@ -357,6 +406,9 @@ export async function generateGoodsConverts(
   }
 
   console.log(`\n✨ Successfully created ${totalCreated} new goods converts!`);
+  if (linkedCount > 0) {
+    console.log(`   • Linked to job works: ${linkedCount}`);
+  }
   if (skippedCount > 0) {
     console.log(
       `   • Skipped (no raw material stock at factory): ${skippedCount}`,

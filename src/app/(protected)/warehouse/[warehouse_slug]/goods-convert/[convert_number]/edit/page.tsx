@@ -249,7 +249,7 @@ export default function EditGoodsConvertPage({
       // Success! Show toast and redirect
       toast.success("Goods convert updated successfully");
       router.push(
-        `/warehouse/${warehouse.slug}/goods-convert/${convert_number}`,
+        `/warehouse/${warehouse.slug}/goods-convert/${convert_number}/details`,
       );
     } catch (error) {
       console.error("Error updating goods convert:", error);

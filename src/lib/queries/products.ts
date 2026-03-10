@@ -77,6 +77,13 @@ export const buildProductsQuery = (
     query = query.is("is_active", filters.is_active);
   }
 
+  if (filters?.search_term && filters.search_term.trim() !== "") {
+    query = query.textSearch("search_vector", filters.search_term.trim(), {
+      type: "websearch",
+      config: "english",
+    });
+  }
+
   if (filters?.attributes && filters.attributes.length > 0) {
     filters.attributes.forEach((filter) => {
       query = query.filter("attributes.id", "eq", filter.id);

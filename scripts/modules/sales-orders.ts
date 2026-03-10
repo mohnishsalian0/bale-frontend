@@ -15,6 +15,8 @@ import { getRandomDate, randomInt, randomFloat, selectRandom } from "./shared";
 export interface SalesOrdersConfig {
   totalOrders: number;
   year: number;
+  /** Ratio of orders to transition to in_progress (0.0-1.0) */
+  inProgressRatio?: number;
 }
 
 export interface SalesOrderResult {
@@ -203,6 +205,47 @@ export async function generateSalesOrders(
 
   // Return all orders (existing + created)
   const allOrders = [...(existing || []), ...createdOrders];
+
+  // ------------------------------------------------------------------
+  // Status transitions: move a portion to in_progress
+  // ------------------------------------------------------------------
+  const inProgressRatio = config.inProgressRatio ?? 0;
+
+  if (inProgressRatio > 0) {
+    const approvalPending = allOrders.filter(
+      (o) => o.status === "approval_pending",
+    );
+    const toUpdate = approvalPending.slice(
+      0,
+      Math.floor(approvalPending.length * inProgressRatio),
+    );
+
+    if (toUpdate.length > 0) {
+      console.log(
+        `📝 Updating ${toUpdate.length} sales orders to 'in_progress'...`,
+      );
+      const chunkSize = 100;
+      const ids = toUpdate.map((o) => o.id);
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize);
+        const { error: updateError } = await supabase
+          .from("sales_orders")
+          .update({ status: "in_progress" })
+          .in("id", chunk);
+
+        if (updateError) {
+          console.error(
+            "❌ Failed to update sales orders to in_progress:",
+            updateError,
+          );
+        }
+      }
+      // Update local status
+      for (const o of toUpdate) {
+        o.status = "in_progress";
+      }
+    }
+  }
 
   console.log(`📊 Total sales orders: ${allOrders.length}\n`);
 

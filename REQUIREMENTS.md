@@ -77,6 +77,14 @@ The app uses Next.js App Router with two main route groups for clean separation 
 - `/warehouse/[warehouse_slug]/goods-outward/create` - Create goods outward (chrome-less)
 - `/warehouse/[warehouse_slug]/qr-codes/create` - Create QR batch (chrome-less)
 - `/warehouse/[warehouse_slug]/sales-orders/create` - Create sales order (chrome-less)
+- `/warehouse/[warehouse_slug]/purchase-orders` - Purchase orders
+- `/warehouse/[warehouse_slug]/purchase-orders/create` - Create purchase order (chrome-less)
+- `/warehouse/[warehouse_slug]/purchase-orders/[purchase_number]/details` - Purchase order details
+- `/warehouse/[warehouse_slug]/purchase-orders/[purchase_number]/edit` - Edit purchase order (chrome-less)
+- `/warehouse/[warehouse_slug]/job-works` - Job works
+- `/warehouse/[warehouse_slug]/job-works/create` - Create job work (chrome-less)
+- `/warehouse/[warehouse_slug]/job-works/[job_work_number]/details` - Job work details
+- `/warehouse/[warehouse_slug]/job-works/[job_work_number]/edit` - Edit job work (chrome-less)
 - `/company` - Company settings
 
 #### (public)/ - Public Routes
@@ -1062,7 +1070,7 @@ Permissions are organized hierarchically with the following top-level categories
 
 #### 7.1 Job Work Order Processing
 
-**Feature Description**: Job work coordination with goods outward and inward integration but without sales order integration
+**Feature Description**: Job work coordination with goods convert integration for tracking outsourced processing (dyeing, embroidery, printing, etc.)
 
 **Specifications:**
 
@@ -1087,20 +1095,20 @@ Permissions are organized hierarchically with the following top-level categories
 
 **Finished Goods Specification**
 
-- Finished Goods Request Quantity (from assigned warehouse stock only)
-- Finished Goods Received Quantity (from this warehouse)
-- Finished Goods Pending Quantity (updated via linked goods inward)
-- Finished Goods Pending Quantity (auto-calculated: Finished goods Request Quantity - Received Quantity)
-- Total Completion in % (auto-calculated: (Finished Goods Received Quantity/ Finished Goods Request Quantity) \*100)
+- Finished Goods Expected Quantity (per product line item)
+- Finished Goods Received Quantity (auto-calculated from linked completed goods converts via reconciliation triggers)
+- Finished Goods Pending Quantity (auto-calculated: Expected Quantity - Received Quantity)
+- Total Completion in % (auto-calculated: (Received Quantity / Expected Quantity) \*100)
+- `has_convert` flag (boolean, auto-set by reconciliation trigger when any goods convert is linked)
 
 **Linked Transactions**
 
-- Goods Outward List (raw materials sent to vendor)
-- Goods Inward List (finished goods received from vendor)
+- Goods Converts List (linked via `job_work_id` on goods_converts table, tracks processing/transformation)
 
 **Job Work Status Workflow**
 
-- **in_progress** - Default status, work is active with vendor
+- **approval_pending** - Initial status for all new job works, awaiting approval
+- **in_progress** - Job work approved and active with vendor
 - **completed** - Job work finished, goods received back (requires completion notes)
 - **cancelled** - Job work cancelled before completion (requires cancellation reason)
 
@@ -1135,9 +1143,84 @@ Permissions are organized hierarchically with the following top-level categories
 
 **Business Rules**
 
-- Raw material quantities are not allocated from inventory only highlighted
-- Pending quantities update based on actual goods outward/inward transactions
+- Pending quantities auto-update via reconciliation triggers when linked goods converts complete
 - Job work can exist independently without sales order linkage
+- Cannot cancel job work if `has_convert = true` (must delete linked converts first)
+- Cannot edit warehouse or start_date if `has_convert = true`
+- Cannot change vendor after approval (status != `approval_pending`)
+- Over-receipt prevention: received_quantity cannot exceed expected_quantity (enforced by trigger)
+
+#### 7.2 Job Work Creation Flow (3-Step)
+
+**Feature Description**: Guided 3-step wizard for creating job works (chrome-less immersive flow)
+
+**Step 1: Vendor Selection**
+
+- Reuses `PartnerSelectionStep` with `partnerType="vendor"`
+- Auto-advances to step 2 on vendor selection
+
+**Step 2: Output Product Selection**
+
+- Reuses `ProductSelectionStep` with single product limit (`maxSelections={1}`)
+- User must remove current selection before adding a different product
+- Uses `contextType="purchase"` (cost price as default rate)
+
+**Step 3: Job Work Details**
+
+- **Main Fields:**
+  - Warehouse selector (required)
+  - Service Type selector (required, auto-suggest with create new, stores attribute ID)
+  - Start Date (required) + Due Date (optional) side by side
+  - Agent selector (optional, from Partners with type=Agent)
+- **Financial Details (collapsible):**
+  - Tax Type (radio: No Tax / GST / IGST)
+  - Advance Amount
+  - Discount Type (None / Percentage / Flat Amount) + Discount Value
+- **Additional Details (collapsible):**
+  - Notes textarea
+
+**Validation**: Requires vendor, start date, and service type before submission.
+
+#### 7.3 Job Work Edit Flow (3-Step)
+
+**Feature Description**: Edit existing job works using the same 3-step wizard pattern as creation
+
+**Behavior:**
+
+- Initializes all form fields from the existing job work data
+- Pre-selects the current vendor, product (with quantity/rate), and all detail fields
+- **Vendor change restricted** when status is not `approval_pending`
+- **Editable in both** `approval_pending` and `in_progress` statuses
+- Single product selection enforced (same as create)
+- Cancel and success both navigate back to the job work details page
+- Uses `updateWithItems` mutation for atomic order + line item update
+
+#### 7.4 Job Work Dashboard & Tracking
+
+**Specifications:**
+
+**List View (Warehouse-Filtered):**
+
+- Auto-filtered to show only job works for the current warehouse
+- Filter by status (approval_pending, in_progress, overdue, completed, cancelled), product, vendor, date range
+- Aggregate stats in header: active order count + pending quantities by measuring unit
+- Grouped by start date (month/year), shows "JW-{number}" prefix
+- Uses dedicated `JobWorkStatusBadge` component (decoupled from purchase order badge)
+
+**Detail View:**
+
+- **Header**: JW-{sequence_number} with status badge, service type in subtitle separated by dot, progress bar
+- **Sections**:
+  - Goods Converts: List of linked goods convert records with GC-{number}, status, and clickable navigation
+  - Line Items: expected/received/pending quantities with financial breakdown
+  - Vendor details
+  - Agent (conditionally shown)
+  - Payment Details: item total, discount, GST, total, advance
+  - Warehouse
+  - Important Dates: start date, due date
+  - Notes + cancellation reason (conditionally shown)
+- **Actions Footer**: Approve, Edit, Create Convert, Create Invoice, Complete, Share, Cancel, Delete (visibility based on status)
+- **Dialogs**: Reuses ApprovalDialog (with "JW" type), CancelDialog, CompleteDialog, DeleteDialog
 
 ### 8. Inventory Movement System
 

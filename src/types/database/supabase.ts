@@ -2011,16 +2011,19 @@ export type Database = {
           },
         ];
       };
-      job_work_finished_goods: {
+      job_work_items: {
         Row: {
           company_id: string;
           created_at: string;
           expected_quantity: number;
           id: string;
           job_work_id: string;
+          line_total: number | null;
+          notes: string | null;
           pending_quantity: number | null;
           product_id: string;
           received_quantity: number | null;
+          unit_rate: number;
           updated_at: string;
           warehouse_id: string;
         };
@@ -2030,9 +2033,12 @@ export type Database = {
           expected_quantity: number;
           id?: string;
           job_work_id: string;
+          line_total?: number | null;
+          notes?: string | null;
           pending_quantity?: number | null;
           product_id: string;
           received_quantity?: number | null;
+          unit_rate: number;
           updated_at?: string;
           warehouse_id: string;
         };
@@ -2042,104 +2048,39 @@ export type Database = {
           expected_quantity?: number;
           id?: string;
           job_work_id?: string;
+          line_total?: number | null;
+          notes?: string | null;
           pending_quantity?: number | null;
           product_id?: string;
           received_quantity?: number | null;
+          unit_rate?: number;
           updated_at?: string;
           warehouse_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "job_work_finished_goods_company_id_fkey";
+            foreignKeyName: "job_work_items_company_id_fkey";
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "job_work_finished_goods_job_work_id_fkey";
+            foreignKeyName: "job_work_items_job_work_id_fkey";
             columns: ["job_work_id"];
             isOneToOne: false;
             referencedRelation: "job_works";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "job_work_finished_goods_product_id_fkey";
+            foreignKeyName: "job_work_items_product_id_fkey";
             columns: ["product_id"];
             isOneToOne: false;
             referencedRelation: "products";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "job_work_finished_goods_warehouse_id_fkey";
-            columns: ["warehouse_id"];
-            isOneToOne: false;
-            referencedRelation: "warehouses";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      job_work_raw_materials: {
-        Row: {
-          company_id: string;
-          created_at: string;
-          dispatched_quantity: number | null;
-          id: string;
-          job_work_id: string;
-          pending_quantity: number | null;
-          product_id: string;
-          required_quantity: number;
-          updated_at: string;
-          warehouse_id: string;
-        };
-        Insert: {
-          company_id?: string;
-          created_at?: string;
-          dispatched_quantity?: number | null;
-          id?: string;
-          job_work_id: string;
-          pending_quantity?: number | null;
-          product_id: string;
-          required_quantity: number;
-          updated_at?: string;
-          warehouse_id: string;
-        };
-        Update: {
-          company_id?: string;
-          created_at?: string;
-          dispatched_quantity?: number | null;
-          id?: string;
-          job_work_id?: string;
-          pending_quantity?: number | null;
-          product_id?: string;
-          required_quantity?: number;
-          updated_at?: string;
-          warehouse_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "job_work_raw_materials_company_id_fkey";
-            columns: ["company_id"];
-            isOneToOne: false;
-            referencedRelation: "companies";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "job_work_raw_materials_job_work_id_fkey";
-            columns: ["job_work_id"];
-            isOneToOne: false;
-            referencedRelation: "job_works";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "job_work_raw_materials_product_id_fkey";
-            columns: ["product_id"];
-            isOneToOne: false;
-            referencedRelation: "products";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "job_work_raw_materials_warehouse_id_fkey";
+            foreignKeyName: "job_work_items_warehouse_id_fkey";
             columns: ["warehouse_id"];
             isOneToOne: false;
             referencedRelation: "warehouses";
@@ -2149,70 +2090,106 @@ export type Database = {
       };
       job_works: {
         Row: {
+          advance_amount: number | null;
           agent_id: string | null;
+          approved_at: string | null;
+          approved_by: string | null;
           attachments: string[] | null;
+          cancellation_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
           company_id: string;
+          completed_at: string | null;
+          completed_by: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
+          discount_amount: number | null;
+          discount_type: Database["public"]["Enums"]["discount_type_enum"];
+          discount_value: number | null;
           due_date: string | null;
+          gst_amount: number | null;
+          has_convert: boolean | null;
           id: string;
-          job_type: string;
           modified_by: string | null;
           notes: string | null;
-          sales_order_id: string | null;
+          search_vector: unknown;
           sequence_number: number;
+          service_type_attribute_id: string;
           start_date: string;
           status: string;
-          status_changed_at: string | null;
-          status_changed_by: string | null;
-          status_notes: string | null;
+          tax_type: Database["public"]["Enums"]["tax_type_enum"] | null;
+          total_amount: number | null;
           updated_at: string;
           vendor_id: string;
           warehouse_id: string;
         };
         Insert: {
+          advance_amount?: number | null;
           agent_id?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
           attachments?: string[] | null;
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
           company_id?: string;
+          completed_at?: string | null;
+          completed_by?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
+          discount_amount?: number | null;
+          discount_type?: Database["public"]["Enums"]["discount_type_enum"];
+          discount_value?: number | null;
           due_date?: string | null;
+          gst_amount?: number | null;
+          has_convert?: boolean | null;
           id?: string;
-          job_type: string;
           modified_by?: string | null;
           notes?: string | null;
-          sales_order_id?: string | null;
+          search_vector?: unknown;
           sequence_number: number;
+          service_type_attribute_id: string;
           start_date: string;
           status?: string;
-          status_changed_at?: string | null;
-          status_changed_by?: string | null;
-          status_notes?: string | null;
+          tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
+          total_amount?: number | null;
           updated_at?: string;
           vendor_id: string;
           warehouse_id: string;
         };
         Update: {
+          advance_amount?: number | null;
           agent_id?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
           attachments?: string[] | null;
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
           company_id?: string;
+          completed_at?: string | null;
+          completed_by?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
+          discount_amount?: number | null;
+          discount_type?: Database["public"]["Enums"]["discount_type_enum"];
+          discount_value?: number | null;
           due_date?: string | null;
+          gst_amount?: number | null;
+          has_convert?: boolean | null;
           id?: string;
-          job_type?: string;
           modified_by?: string | null;
           notes?: string | null;
-          sales_order_id?: string | null;
+          search_vector?: unknown;
           sequence_number?: number;
+          service_type_attribute_id?: string;
           start_date?: string;
           status?: string;
-          status_changed_at?: string | null;
-          status_changed_by?: string | null;
-          status_notes?: string | null;
+          tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
+          total_amount?: number | null;
           updated_at?: string;
           vendor_id?: string;
           warehouse_id?: string;
@@ -2233,10 +2210,10 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "job_works_sales_order_id_fkey";
-            columns: ["sales_order_id"];
+            foreignKeyName: "job_works_service_type_attribute_id_fkey";
+            columns: ["service_type_attribute_id"];
             isOneToOne: false;
-            referencedRelation: "sales_orders";
+            referencedRelation: "attributes";
             referencedColumns: ["id"];
           },
           {
@@ -4740,10 +4717,6 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      approve_purchase_order_with_items: {
-        Args: { p_line_items: Json[]; p_order_data: Json; p_order_id: string };
-        Returns: undefined;
-      };
       approve_sales_order_with_items: {
         Args: { p_line_items: Json[]; p_order_data: Json; p_order_id: string };
         Returns: undefined;
@@ -4817,6 +4790,10 @@ export type Database = {
           p_warehouse_id: string;
         };
         Returns: string;
+      };
+      create_job_work_with_items: {
+        Args: { p_line_items: Json[]; p_order_data: Json };
+        Returns: number;
       };
       create_payment_with_allocations: {
         Args: {
@@ -4899,6 +4876,13 @@ export type Database = {
         Returns: {
           invoice_count: number;
           total_outstanding: number;
+        }[];
+      };
+      get_job_work_aggregates: {
+        Args: { p_warehouse_id: string };
+        Returns: {
+          order_count: number;
+          pending_quantities: Json;
         }[];
       };
       get_jwt_all_warehouses_access: { Args: never; Returns: boolean };
@@ -5061,6 +5045,10 @@ export type Database = {
           p_tax_type: string;
           p_warehouse_id: string;
         };
+        Returns: undefined;
+      };
+      update_job_work_with_items: {
+        Args: { p_line_items: Json[]; p_order_data: Json; p_order_id: string };
         Returns: undefined;
       };
       update_payment_with_allocations: {

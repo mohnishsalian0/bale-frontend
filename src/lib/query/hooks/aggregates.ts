@@ -7,6 +7,7 @@ import {
   getInvoiceAggregates,
   getSalesOrderAggregates,
   getPurchaseOrderAggregates,
+  getJobWorkAggregates,
   getInventoryAggregates,
   getProductAggregates,
 } from "@/lib/queries/aggregates";
@@ -70,6 +71,28 @@ export function usePurchaseOrderAggregates({
     queryFn: () =>
       getPurchaseOrderAggregates({
         order_type: "purchase",
+        warehouse_id: warehouseId,
+      }),
+    ...getQueryOptions(STALE_TIME.AGGREGATES, GC_TIME.AGGREGATES),
+    enabled: enabled && !!warehouseId,
+  });
+}
+
+// =====================================================
+// JOB WORK AGGREGATES
+// =====================================================
+
+export function useJobWorkAggregates({
+  warehouseId,
+  enabled = true,
+}: {
+  warehouseId: string;
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: queryKeys.dashboard.jobWorkStats(warehouseId),
+    queryFn: () =>
+      getJobWorkAggregates({
         warehouse_id: warehouseId,
       }),
     ...getQueryOptions(STALE_TIME.AGGREGATES, GC_TIME.AGGREGATES),

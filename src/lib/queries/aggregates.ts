@@ -141,6 +141,51 @@ export async function getPurchaseOrderAggregates(
 }
 
 // =====================================================
+// JOB WORK AGGREGATES
+// =====================================================
+
+/**
+ * Get job work aggregates (count and pending quantities by unit)
+ * Calls PostgreSQL function for server-side aggregation
+ */
+export async function getJobWorkAggregates(
+  filters: Pick<OrderAggregateFilters, "warehouse_id">,
+): Promise<OrderAggregateResult> {
+  const supabase = createClient();
+
+  if (!filters.warehouse_id) {
+    throw new Error("warehouse_id is required for job work aggregates");
+  }
+
+  const { data, error } = await supabase.rpc("get_job_work_aggregates", {
+    p_warehouse_id: filters.warehouse_id,
+  });
+
+  if (error) throw error;
+
+  const typedData = data as
+    | Database["public"]["Functions"]["get_job_work_aggregates"]["Returns"]
+    | null;
+  const result = typedData?.[0];
+
+  // Convert JSONB array to Map<MeasuringUnit, number>
+  const quantitiesArray = (result?.pending_quantities || []) as Array<{
+    unit: MeasuringUnit;
+    quantity: number;
+  }>;
+
+  const unitMap = new Map<MeasuringUnit, number>();
+  quantitiesArray.forEach(({ unit, quantity }) => {
+    unitMap.set(unit, quantity);
+  });
+
+  return {
+    count: Number(result?.order_count || 0),
+    pending_quantities_by_unit: unitMap,
+  };
+}
+
+// =====================================================
 // INVENTORY AGGREGATES
 // =====================================================
 

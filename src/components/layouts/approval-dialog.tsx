@@ -5,7 +5,7 @@ interface ApprovalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   orderNumber: number;
-  orderType: "SO" | "PO";
+  orderType: "SO" | "PO" | "JW";
   onConfirm: () => void;
   loading?: boolean;
 }
@@ -18,7 +18,12 @@ export function ApprovalDialog({
   onConfirm,
   loading = false,
 }: ApprovalDialogProps) {
-  const actionContext = orderType === "SO" ? "dispatch" : "receiving goods";
+  const actionContext =
+    orderType === "SO"
+      ? "dispatch"
+      : orderType === "JW"
+        ? "processing"
+        : "receiving goods";
 
   return (
     <ResponsiveDialog

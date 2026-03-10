@@ -26,10 +26,16 @@ export interface TagResult {
   name: string;
 }
 
+export interface ServiceTypeResult {
+  id: string;
+  name: string;
+}
+
 export interface AttributesResult {
   materials: MaterialResult[];
   colors: ColorResult[];
   tags: TagResult[];
+  serviceTypes: ServiceTypeResult[];
 }
 
 // ============================================================================
@@ -232,7 +238,72 @@ export async function ensureTags(
 }
 
 /**
- * Ensure all attributes exist (materials, colors, tags)
+ * Ensure service types exist (idempotent with quantity handling)
+ * Takes expected service types from config, fetches existing, creates difference
+ * Returns all service types (existing + newly created)
+ * Service types are identified by name (unique identifier)
+ */
+export async function ensureServiceTypes(
+  supabase: SupabaseClient<Database>,
+  companyId: string,
+  serviceTypeNames: readonly string[],
+): Promise<ServiceTypeResult[]> {
+  console.log(`🔧 Ensuring ${serviceTypeNames.length} service types exist...`);
+
+  // Fetch existing service types for this company
+  const { data: existing, error: fetchError } = await supabase
+    .from("attributes")
+    .select("id, name")
+    .eq("company_id", companyId)
+    .eq("group_name", "service_type")
+    .order("name", { ascending: true });
+
+  if (fetchError) {
+    console.error("❌ Error fetching service types:", fetchError);
+    throw fetchError;
+  }
+
+  const existingCount = existing?.length || 0;
+
+  // If count matches expected, return existing service types
+  if (existingCount === serviceTypeNames.length) {
+    console.log(`✅ All ${existingCount} service types already exist`);
+    return existing!;
+  }
+
+  // Determine which service types are missing by filtering out existing names
+  const existingNames = new Set(existing?.map((s) => s.name) || []);
+  const toCreate = serviceTypeNames.filter((name) => !existingNames.has(name));
+
+  console.log(
+    `📦 Creating ${toCreate.length} new service types (${existingCount} already exist)...`,
+  );
+
+  const { data: created, error: createError } = await supabase
+    .from("attributes")
+    .insert(
+      toCreate.map((name) => ({
+        company_id: companyId,
+        name,
+        group_name: "service_type",
+      })),
+    )
+    .select("id, name");
+
+  if (createError || !created) {
+    console.error("❌ Failed to create service types:", createError);
+    throw createError || new Error("Failed to create service types");
+  }
+
+  console.log(`✅ Created ${created.length} new service types`);
+
+  // Return all service types (existing + created)
+  const allServiceTypes = [...(existing || []), ...created];
+  return allServiceTypes;
+}
+
+/**
+ * Ensure all attributes exist (materials, colors, tags, service types)
  * Convenience function that creates all attributes in one call
  */
 export async function ensureAllAttributes(
@@ -241,20 +312,25 @@ export async function ensureAllAttributes(
   materialNames: readonly string[],
   colorNames: readonly string[],
   tagNames: readonly string[],
+  serviceTypeNames?: readonly string[],
 ): Promise<AttributesResult> {
   console.log("🎯 Ensuring all attributes exist...\n");
 
   const materials = await ensureMaterials(supabase, companyId, materialNames);
   const colors = await ensureColors(supabase, companyId, colorNames);
   const tags = await ensureTags(supabase, companyId, tagNames);
+  const serviceTypes = serviceTypeNames
+    ? await ensureServiceTypes(supabase, companyId, serviceTypeNames)
+    : [];
 
   console.log(
-    `\n📊 Total attributes: ${materials.length} materials, ${colors.length} colors, ${tags.length} tags\n`,
+    `\n📊 Total attributes: ${materials.length} materials, ${colors.length} colors, ${tags.length} tags, ${serviceTypes.length} service types\n`,
   );
 
   return {
     materials,
     colors,
     tags,
+    serviceTypes,
   };
 }

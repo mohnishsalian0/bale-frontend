@@ -164,37 +164,10 @@ export async function generateGoodsOutwards(
     `📦 Creating ${toCreate} new goods outwards (${existingCount} already exist)...`,
   );
 
-  // Step 1: Update sales orders to "in_progress" status (those that haven't been updated)
-  const sosToUpdate = allSOs
-    .filter((so) => so.status === "approval_pending")
-    .slice(0, targetCount);
+  // Get sales orders that are in_progress (status transitions handled by sales-orders module)
+  const sosWithItems = allSOs.filter((so) => so.status === "in_progress");
 
-  if (sosToUpdate.length > 0) {
-    console.log(
-      `📝 Updating ${sosToUpdate.length} sales orders to 'in_progress'...`,
-    );
-    // Chunk IDs to avoid "URI too long" errors from large .in() query strings
-    const chunkSize = 100;
-    const soIds = sosToUpdate.map((so) => so.id);
-    for (let i = 0; i < soIds.length; i += chunkSize) {
-      const chunk = soIds.slice(i, i + chunkSize);
-      const { error: updateError } = await supabase
-        .from("sales_orders")
-        .update({ status: "in_progress" })
-        .in("id", chunk);
-
-      if (updateError) {
-        console.error("❌ Failed to update sales orders:", updateError);
-        throw updateError;
-      }
-    }
-  }
-
-  // Step 2: Get sales orders that are now in_progress (combine already in_progress + newly updated)
-  const alreadyInProgress = allSOs.filter((so) => so.status === "in_progress");
-  const sosWithItems = [...alreadyInProgress, ...sosToUpdate];
-
-  // Step 3: Create goods outwards
+  // Create goods outwards
   const createdOutwards: GoodsOutwardResult[] = [];
   let totalCreated = 0;
 
