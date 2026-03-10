@@ -51,3 +51,15 @@ export const TAGS = [
   "printed",
   "colorful",
 ] as const;
+
+/**
+ * Service types for job work processing
+ */
+export const SERVICE_TYPES = [
+  "Dyeing",
+  "Knitting",
+  "Weaving",
+  "Processing",
+  "Embroidery",
+  "Printing",
+] as const;

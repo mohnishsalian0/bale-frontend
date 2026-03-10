@@ -11,14 +11,17 @@ import {
   IconBolt,
   IconShoppingCart,
   IconTruckLoading,
+  IconNeedleThread,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { ActiveSalesSection } from "../dashboard/ActiveSalesSection";
 import { ActivePurchaseSection } from "../dashboard/ActivePurchaseSection";
+import { ActiveJobWorkSection } from "../dashboard/ActiveJobWorkSection";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   useSalesOrderAggregates,
   usePurchaseOrderAggregates,
+  useJobWorkAggregates,
 } from "@/lib/query/hooks/aggregates";
 import { formatMeasuringUnitQuantities } from "@/lib/utils/measuring-units";
 
@@ -36,15 +39,24 @@ export default function OrdersPage() {
     warehouseId: warehouse.id,
   });
 
+  const { data: jobWorkStats } = useJobWorkAggregates({
+    warehouseId: warehouse.id,
+  });
+
   // Calculate totals
   const totalPendingOrders =
-    (salesOrderStats?.count || 0) + (purchaseOrderStats?.count || 0);
+    (salesOrderStats?.count || 0) +
+    (purchaseOrderStats?.count || 0) +
+    (jobWorkStats?.count || 0);
 
-  // Merge quantities from both sales and purchase orders
+  // Merge quantities from sales, purchase orders, and job works
   const combinedQuantities = new Map(
     salesOrderStats?.pending_quantities_by_unit || [],
   );
   purchaseOrderStats?.pending_quantities_by_unit.forEach((qty, unit) => {
+    combinedQuantities.set(unit, (combinedQuantities.get(unit) || 0) + qty);
+  });
+  jobWorkStats?.pending_quantities_by_unit.forEach((qty, unit) => {
     combinedQuantities.set(unit, (combinedQuantities.get(unit) || 0) + qty);
   });
 
@@ -66,6 +78,11 @@ export default function OrdersPage() {
       icon: IconTruckLoading,
       label: "Purchase order",
       href: `/warehouse/${warehouse.slug}/purchase-orders/create`,
+    },
+    {
+      icon: IconNeedleThread,
+      label: "Job work",
+      href: `/warehouse/${warehouse.slug}/job-works/create`,
     },
   ];
 
@@ -143,6 +160,13 @@ export default function OrdersPage() {
         >
           All purchases
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => router.push(`/warehouse/${warehouse.slug}/job-works`)}
+        >
+          All job works
+        </Button>
       </div>
 
       {/* Active Sales Orders Section */}
@@ -154,6 +178,12 @@ export default function OrdersPage() {
       {/* Active Purchase Orders Section */}
       <ActivePurchaseSection
         title={`Active purchase orders ${purchaseOrderStats?.count ? `(${purchaseOrderStats.count})` : ""}`}
+        warehouseSlug={warehouse.slug}
+      />
+
+      {/* Active Job Works Section */}
+      <ActiveJobWorkSection
+        title={`Active job works ${jobWorkStats?.count ? `(${jobWorkStats.count})` : ""}`}
         warehouseSlug={warehouse.slug}
       />
     </div>

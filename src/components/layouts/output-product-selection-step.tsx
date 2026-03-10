@@ -107,7 +107,7 @@ export function OutputProductSelectionStep({
   };
 
   return (
-    <div className="relative flex flex-col flex-1">
+    <div className="relative flex flex-col flex-1 overflow-hidden">
       {/* Disable Overlay */}
       {disableProductChange && (
         <div className="absolute inset-0 bg-white/50 z-10 cursor-not-allowed" />

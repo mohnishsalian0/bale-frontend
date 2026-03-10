@@ -295,7 +295,7 @@ export default function CreateGoodsInwardPage() {
   };
 
   const handleCancel = () => {
-    router.push(`/warehouse/${warehouse.slug}/goods-movement`);
+    router.push(`/warehouse/${warehouse.slug}/goods-movement/inward`);
   };
 
   const handleSubmit = async () => {

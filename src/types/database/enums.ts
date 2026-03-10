@@ -116,7 +116,7 @@ export const PAYMENT_TERMS = [
 ] as const;
 
 export type JobWorkStatus =
-  | "pending"
+  | "approval_pending"
   | "in_progress"
   | "completed"
   | "cancelled";

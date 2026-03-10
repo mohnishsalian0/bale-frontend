@@ -17,6 +17,7 @@ import {
 } from "@tabler/icons-react";
 import type {
   SalesOrderStatus,
+  JobWorkStatus,
   PartnerType,
   TransferStatus,
   ConvertStatus,
@@ -453,6 +454,107 @@ export function getPurchaseOrderActions(
       displayStatus === "completed" ||
       displayStatus === "cancelled",
     permission: "orders.purchase_orders.update",
+  });
+
+  return items;
+}
+
+// =====================================================
+// JOB WORK ACTIONS
+// =====================================================
+
+export interface JobWorkActionsCallbacks {
+  onApprove: () => void;
+  onEdit: () => void;
+  onCreateConvert: () => void;
+  onCreateInvoice: () => void;
+  onComplete: () => void;
+  onShare: () => void;
+  onCancel: () => void;
+  onDelete: () => void;
+}
+
+export function getJobWorkActions(
+  displayStatus: JobWorkStatus | "overdue",
+  has_convert: boolean,
+  callbacks: JobWorkActionsCallbacks,
+): ContextMenuItem[] {
+  const items: ContextMenuItem[] = [];
+
+  // Primary CTA
+  items.push({
+    label: "Approve order",
+    icon: IconCheck,
+    onClick: callbacks.onApprove,
+    variant: "default",
+    hidden: !(displayStatus === "approval_pending"),
+    permission: "orders.job_works.update",
+  });
+
+  items.push({
+    label: "Create convert",
+    icon: IconPlus,
+    onClick: callbacks.onCreateConvert,
+    variant: "default",
+    hidden: !(displayStatus === "in_progress" || displayStatus === "overdue"),
+    permission: "inventory.goods_convert.create",
+  });
+
+  // Create invoice
+  items.push({
+    label: "Create invoice",
+    icon: IconReceiptRupee,
+    onClick: callbacks.onCreateInvoice,
+    variant: "outline",
+    hidden:
+      displayStatus === "approval_pending" || displayStatus === "cancelled",
+    permission: "accounting.invoices.create",
+  });
+
+  // Dropdown menu items
+  items.push({
+    label: "Edit order",
+    icon: IconEdit,
+    onClick: callbacks.onEdit,
+    hidden: displayStatus === "completed" || displayStatus === "cancelled",
+    permission: "orders.job_works.update",
+  });
+
+  items.push({
+    label: "Mark as complete",
+    icon: IconCheck,
+    onClick: callbacks.onComplete,
+    hidden: !(displayStatus === "in_progress" || displayStatus === "overdue"),
+    permission: "orders.job_works.update",
+  });
+
+  items.push({
+    label: "Share",
+    icon: IconShare,
+    onClick: callbacks.onShare,
+    variant: "outline",
+  });
+
+  // Delete order
+  items.push({
+    label: "Delete order",
+    icon: IconTrash,
+    onClick: callbacks.onDelete,
+    variant: "destructive",
+    hidden: displayStatus !== "approval_pending",
+    permission: "orders.job_works.delete",
+  });
+
+  items.push({
+    label: "Cancel order",
+    icon: IconX,
+    onClick: callbacks.onCancel,
+    variant: "destructive",
+    hidden:
+      displayStatus === "approval_pending" ||
+      displayStatus === "completed" ||
+      displayStatus === "cancelled",
+    permission: "orders.job_works.update",
   });
 
   return items;

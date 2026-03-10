@@ -43,6 +43,7 @@ interface ProductSelectionStepProps {
   >;
   onQuantityChange: (productId: string, quantity: number, rate: number) => void;
   onRemoveProduct: (productId: string) => void;
+  maxSelections?: number;
 }
 
 export function ProductSelectionStep({
@@ -51,6 +52,7 @@ export function ProductSelectionStep({
   productSelections,
   onQuantityChange,
   onRemoveProduct,
+  maxSelections,
 }: ProductSelectionStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
@@ -72,6 +74,10 @@ export function ProductSelectionStep({
         .map(([productId]) => productId),
     [productSelections],
   );
+
+  // Check if selection limit is reached (for single/limited selection mode)
+  const selectionLimitReached =
+    maxSelections !== undefined && selectedProductIds.length >= maxSelections;
 
   // Fetch selected products with inventory by IDs using TanStack Query
   const { data: fetchedProductsById, isLoading: fetchingByIds } =
@@ -180,8 +186,8 @@ export function ProductSelectionStep({
 
     const existingSelection = productSelections[selectedProduct.id];
 
-    // If an existing selection for this product has a rate, use it.
-    if (existingSelection) {
+    // If an existing active selection for this product has a rate, use it.
+    if (existingSelection?.selected) {
       return existingSelection.rate;
     }
 
@@ -350,6 +356,7 @@ export function ProductSelectionStep({
                           type="button"
                           variant="outline"
                           size="sm"
+                          disabled={selectionLimitReached}
                           onClick={() => handleOpenQuantitySheet(product)}
                         >
                           <IconPlus />
