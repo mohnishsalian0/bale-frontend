@@ -135,7 +135,13 @@ export function useGoodsTransferMutations(warehouseId: string) {
   });
 
   const completeTransfer = useMutation({
-    mutationFn: (transferId: string) => completeGoodsTransfer(transferId),
+    mutationFn: ({
+      transferId,
+      completionDate,
+    }: {
+      transferId: string;
+      completionDate: string;
+    }) => completeGoodsTransfer(transferId, completionDate),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["stock-flow", "transfers"],

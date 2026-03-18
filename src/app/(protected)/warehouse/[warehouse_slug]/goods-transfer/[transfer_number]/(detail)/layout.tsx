@@ -18,7 +18,10 @@ import { DeleteDialog } from "@/components/layouts/delete-dialog";
 import { TransferStatusBadge } from "@/components/ui/transfer-status-badge";
 import { toast } from "sonner";
 import { TransferStatus } from "@/types/database/enums";
-import { CompleteDialog } from "@/components/layouts/complete-dialog";
+import {
+  CompleteDialog,
+  type CompleteDialogData,
+} from "@/components/layouts/complete-dialog";
 
 interface LayoutParams {
   params: Promise<{
@@ -64,19 +67,25 @@ export default function GoodsTransferDetailLayout({
   };
 
   // Handler functions
-  const handleComplete = () => {
-    if (!transfer) return;
+  const handleComplete = ({ completionDate }: CompleteDialogData) => {
+    if (!transfer || !completionDate) return;
 
-    completeTransfer.mutate(transfer.id, {
-      onSuccess: () => {
-        toast.success("Goods transfer completed successfully");
-        setShowCompleteDialog(false);
+    completeTransfer.mutate(
+      {
+        transferId: transfer.id,
+        completionDate: completionDate.toISOString().split("T")[0],
       },
-      onError: (error) => {
-        console.error("Error completing goods transfer:", error);
-        toast.error("Failed to complete goods transfer");
+      {
+        onSuccess: () => {
+          toast.success("Goods transfer completed successfully");
+          setShowCompleteDialog(false);
+        },
+        onError: (error) => {
+          console.error("Error completing goods transfer:", error);
+          toast.error("Failed to complete goods transfer");
+        },
       },
-    });
+    );
   };
 
   const handleCancel = (reason: string) => {
@@ -179,6 +188,7 @@ export default function GoodsTransferDetailLayout({
               onComplete={handleComplete}
               title="Complete goods transfer"
               description={`Are you sure you want to mark GT-${transfer.sequence_number} as completed? Stock units will be updated to the destination warehouse.`}
+              hasDate
               loading={completeTransfer.isPending}
             />
 

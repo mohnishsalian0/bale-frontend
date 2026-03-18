@@ -154,7 +154,39 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION reconcile_stock_unit_tracking() IS 'Maintains has_outward, has_convert, has_transfers flags and calculates last_activity_date from all stock movements.';
 
 -- =====================================================
--- 3. OPERATIONAL STATUS RECONCILIATION
+-- 3. LOCATION RECONCILIATION
+-- =====================================================
+
+-- Updates current_warehouse_id based on completed transfers
+CREATE OR REPLACE FUNCTION reconcile_stock_unit_location()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_latest_transfer RECORD;
+BEGIN
+    -- Find the most recent completed transfer involving this stock unit
+    SELECT gt.to_warehouse_id, gt.completion_date
+    INTO v_latest_transfer
+    FROM goods_transfer_items gti
+    INNER JOIN goods_transfers gt ON gt.id = gti.transfer_id
+    WHERE gti.stock_unit_id = NEW.id
+      AND gt.status = 'completed'
+      AND gt.deleted_at IS NULL
+    ORDER BY gt.completion_date DESC NULLS LAST, gt.transfer_date DESC
+    LIMIT 1;
+
+    -- If there's a completed transfer, update warehouse to destination
+    IF v_latest_transfer IS NOT NULL THEN
+        NEW.current_warehouse_id := v_latest_transfer.to_warehouse_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+COMMENT ON FUNCTION reconcile_stock_unit_location() IS 'Updates current_warehouse_id to the destination warehouse of the most recent completed transfer.';
+
+-- =====================================================
+-- 4. OPERATIONAL STATUS RECONCILIATION
 -- =====================================================
 
 -- Determines operational status based on active operations
@@ -215,7 +247,11 @@ CREATE TRIGGER trigger_reconcile_stock_unit_status
     FOR EACH ROW
     EXECUTE FUNCTION reconcile_stock_unit_status();
 
--- Note: Location reconciliation (trigger_reconcile_stock_unit_location) will be added when we consolidate from 0037
+-- Trigger: Reconcile location
+CREATE TRIGGER trigger_reconcile_stock_unit_location
+    BEFORE INSERT OR UPDATE ON stock_units
+    FOR EACH ROW
+    EXECUTE FUNCTION reconcile_stock_unit_location();
 
 -- =====================================================
 -- CASCADE RECONCILIATION TRIGGERS
@@ -316,4 +352,47 @@ CREATE TRIGGER trigger_reconcile_stock_on_convert_cancellation
 
 COMMENT ON TRIGGER trigger_reconcile_stock_on_convert_cancellation ON goods_converts IS 'Triggers stock unit reconciliation when convert is cancelled.';
 
--- Note: Transfer-related reconciliation triggers will be added when consolidating from 0037_goods_transfer_functions.sql
+-- Trigger reconciliation from goods_transfer_items changes
+CREATE TRIGGER trigger_reconcile_stock_on_transfer_item_change
+    AFTER INSERT OR UPDATE OR DELETE ON goods_transfer_items
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_stock_unit_reconciliation();
+
+COMMENT ON TRIGGER trigger_reconcile_stock_on_transfer_item_change ON goods_transfer_items IS 'Triggers stock unit reconciliation when transfer items are created, updated, or deleted.';
+
+-- Helper function for transfer-triggered reconciliation (status changes)
+CREATE OR REPLACE FUNCTION trigger_stock_unit_reconciliation_for_transfer()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_stock_unit_id UUID;
+BEGIN
+    -- Reconcile all stock units from this transfer
+    FOR v_stock_unit_id IN
+        SELECT stock_unit_id FROM goods_transfer_items WHERE transfer_id = NEW.id
+    LOOP
+        UPDATE stock_units
+        SET updated_at = NOW()
+        WHERE id = v_stock_unit_id;
+    END LOOP;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger reconciliation when transfer completes
+CREATE TRIGGER trigger_reconcile_stock_on_transfer_completion
+    AFTER UPDATE ON goods_transfers
+    FOR EACH ROW
+    WHEN (OLD.status = 'in_transit' AND NEW.status = 'completed')
+    EXECUTE FUNCTION trigger_stock_unit_reconciliation_for_transfer();
+
+COMMENT ON TRIGGER trigger_reconcile_stock_on_transfer_completion ON goods_transfers IS 'Triggers stock unit reconciliation when transfer is completed - updates warehouse location.';
+
+-- Trigger reconciliation when transfer is cancelled
+CREATE TRIGGER trigger_reconcile_stock_on_transfer_cancellation
+    AFTER UPDATE ON goods_transfers
+    FOR EACH ROW
+    WHEN (OLD.status != 'cancelled' AND NEW.status = 'cancelled')
+    EXECUTE FUNCTION trigger_stock_unit_reconciliation_for_transfer();
+
+COMMENT ON TRIGGER trigger_reconcile_stock_on_transfer_cancellation ON goods_transfers IS 'Triggers stock unit reconciliation when transfer is cancelled - reverts warehouse location and status.';
