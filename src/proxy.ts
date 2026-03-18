@@ -4,7 +4,7 @@ import { checkRoutePermission } from "@/lib/utils/permissions";
 import { getUserPermissionsByAuthId } from "@/lib/queries/users";
 import type { Database } from "@/types/database/supabase";
 
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
