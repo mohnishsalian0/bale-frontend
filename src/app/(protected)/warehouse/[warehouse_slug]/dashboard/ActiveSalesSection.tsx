@@ -119,7 +119,7 @@ export function ActiveSalesSection({
     setShowCompleteDialog(true);
   };
 
-  const handleConfirmComplete = (notes?: string) => {
+  const handleConfirmComplete = ({ notes }: { notes?: string }) => {
     if (!selectedOrder) return;
 
     completeSalesOrder.mutate(

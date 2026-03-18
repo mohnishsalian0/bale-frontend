@@ -249,12 +249,15 @@ export async function updateGoodsTransfer(
  * Changes status from 'in_transit' to 'completed'
  * Triggers will update stock unit locations
  */
-export async function completeGoodsTransfer(transferId: string): Promise<void> {
+export async function completeGoodsTransfer(
+  transferId: string,
+  completionDate: string,
+): Promise<void> {
   const supabase = createClient();
 
   const { error } = await supabase
     .from("goods_transfers")
-    .update({ status: "completed" })
+    .update({ status: "completed", completion_date: completionDate })
     .eq("id", transferId);
 
   if (error) {

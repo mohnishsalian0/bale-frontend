@@ -118,7 +118,7 @@ export function ActivePurchaseSection({
     setShowCompleteDialog(true);
   };
 
-  const handleConfirmComplete = (notes?: string) => {
+  const handleConfirmComplete = ({ notes }: { notes?: string }) => {
     if (!selectedOrder) return;
 
     completePurchaseOrder.mutate(

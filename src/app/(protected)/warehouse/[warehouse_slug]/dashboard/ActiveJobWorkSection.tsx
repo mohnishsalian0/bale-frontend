@@ -106,7 +106,7 @@ export function ActiveJobWorkSection({
     setShowCompleteDialog(true);
   };
 
-  const handleConfirmComplete = (notes?: string) => {
+  const handleConfirmComplete = ({ notes }: { notes?: string }) => {
     if (!selectedOrder) return;
 
     completeJobWork.mutate(

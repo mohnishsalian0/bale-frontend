@@ -150,7 +150,7 @@ export default function JobWorkDetailsPage({ params }: PageParams) {
     );
   };
 
-  const handleComplete = (notes?: string) => {
+  const handleComplete = ({ notes }: { notes?: string }) => {
     if (!order) return;
     completeOrder.mutate(
       { orderId: order.id, completeData: { notes } },
