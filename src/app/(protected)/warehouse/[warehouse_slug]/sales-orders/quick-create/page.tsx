@@ -171,7 +171,8 @@ export default function QuickCreateOrderPage() {
             ? parseFloat(detailsFormData.discount)
             : 0,
         payment_terms: detailsFormData.paymentTerms || null,
-        transport_reference_number: detailsFormData.transportReferenceNumber || null,
+        transport_reference_number:
+          detailsFormData.transportReferenceNumber || null,
         notes: detailsFormData.notes || null,
         attachments: [],
         status: "completed",
