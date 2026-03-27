@@ -198,7 +198,7 @@ export function ActiveSalesSection({
     });
 
     router.push(
-      `/warehouse/${warehouseSlug}/invoices/create/sales?${params.toString()}`,
+      `/warehouse/${warehouseSlug}/invoices/quick-create/sales?${params.toString()}`,
     );
   };
 
@@ -207,11 +207,10 @@ export function ActiveSalesSection({
 
     const params = new URLSearchParams({
       order: selectedOrder.sequence_number.toString(),
-      full_order: "true",
     });
 
     router.push(
-      `/warehouse/${warehouseSlug}/invoices/create/sales?${params.toString()}`,
+      `/warehouse/${warehouseSlug}/invoices/quick-create/sales?${params.toString()}`,
     );
   };
 

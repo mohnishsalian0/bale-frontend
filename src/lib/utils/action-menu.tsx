@@ -949,7 +949,7 @@ export function getGoodsInwardActions(
     icon: IconX,
     onClick: callbacks.onCancel,
     variant: "destructive",
-    hidden: isCancelled || hasInvoice,
+    hidden: hasInvoice || isCancelled,
     permission: "inventory.goods_inward.update",
   });
 

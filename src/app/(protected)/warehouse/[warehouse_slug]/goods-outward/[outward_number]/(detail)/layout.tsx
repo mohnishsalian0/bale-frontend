@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
 import { TabUnderline } from "@/components/ui/tab-underline";
+import { Badge } from "@/components/ui/badge";
 import { formatAbsoluteDate } from "@/lib/utils/date";
 import { useSession } from "@/contexts/session-context";
 import {
@@ -142,9 +143,18 @@ export default function GoodsOutwardDetailLayout({
         {/* Header */}
         <div className="p-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              GO-{outward.sequence_number}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1
+                className={`text-2xl font-bold ${outward.is_cancelled ? "text-gray-400" : "text-gray-900"}`}
+              >
+                GO-{outward.sequence_number}
+              </h1>
+              {outward.is_cancelled && (
+                <Badge color="gray" variant="secondary">
+                  Cancelled
+                </Badge>
+              )}
+            </div>
             <p className="text-sm text-gray-500">
               Goods outward on {formatAbsoluteDate(outward.outward_date)}
             </p>

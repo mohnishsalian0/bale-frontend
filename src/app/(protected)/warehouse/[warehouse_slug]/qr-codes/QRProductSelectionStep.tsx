@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { IconSearch, IconChevronRight } from "@tabler/icons-react";
+import { IconSearch, IconChevronRight, IconQrcode } from "@tabler/icons-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,6 +19,7 @@ import {
   useInfiniteProductsWithInventoryAndOrders,
   useProductAttributes,
 } from "@/lib/query/hooks/products";
+import { Toggle } from "@/components/ui/toggle";
 import { useSession } from "@/contexts/session-context";
 
 interface QRProductSelectionStepProps {
@@ -34,6 +35,7 @@ export function QRProductSelectionStep({
   const [materialFilter, setMaterialFilter] = useState<string>("all");
   const [colorFilter, setColorFilter] = useState<string>("all");
   const [tagsFilter, setTagsFilter] = useState<string>("all");
+  const [pendingQrFilter, setPendingQrFilter] = useState<boolean>(false);
 
   // Build attribute filters
   const attributeFilters = [];
@@ -58,6 +60,7 @@ export function QRProductSelectionStep({
     is_active: true,
     search_term: debouncedSearchQuery || undefined,
     attributes: attributeFilters.length > 0 ? attributeFilters : undefined,
+    has_pending_qr: pendingQrFilter || undefined,
   });
 
   const { data: attributesData, isLoading: attributesLoading } =
@@ -101,6 +104,15 @@ export function QRProductSelectionStep({
 
         {/* Filter Dropdowns */}
         <div className="flex gap-3 p-1 overflow-x-auto shrink-0">
+          <Toggle
+            aria-label="Pending QR filter"
+            variant="outline"
+            pressed={pendingQrFilter}
+            onPressedChange={setPendingQrFilter}
+            title="Pending QR"
+          >
+            <IconQrcode className="size-5" />
+          </Toggle>
           <Select value={materialFilter} onValueChange={setMaterialFilter}>
             <SelectTrigger className="flex-1 h-10 min-w-34">
               <SelectValue placeholder="Material" />

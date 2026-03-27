@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ProductSelectionStep } from "@/components/layouts/product-selection-step";
 import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
@@ -41,6 +41,7 @@ type FormStep = "partner" | "products" | "details" | "review";
 
 export default function CreateInvoicePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
   const params = useParams();
@@ -56,7 +57,11 @@ export default function CreateInvoicePage() {
     ? "Sales invoice created successfully"
     : "Purchase invoice created successfully";
 
-  const [currentStep, setCurrentStep] = useState<FormStep>("partner");
+  const preselectedPartnerId = searchParams.get("partner");
+  const preselectedLedgerId = searchParams.get("ledger");
+  const [currentStep, setCurrentStep] = useState<FormStep>(
+    preselectedPartnerId && preselectedLedgerId ? "products" : "partner",
+  );
 
   // Invoice mutations
   const { create: createInvoice } = useInvoiceMutations();
@@ -74,7 +79,7 @@ export default function CreateInvoicePage() {
   >({});
 
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(
-    null,
+    preselectedPartnerId,
   );
 
   // Track additional charges
@@ -90,7 +95,7 @@ export default function CreateInvoicePage() {
 
   const [formData, setFormData] = useState<InvoiceFormData>({
     warehouseId: warehouse.id,
-    partyLedgerId: "",
+    partyLedgerId: preselectedLedgerId || "",
     invoiceDate: "",
     dueDate: "",
     paymentTerms: "",

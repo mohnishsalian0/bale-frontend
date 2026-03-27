@@ -15,7 +15,7 @@ CREATE TABLE invites (
     company_name VARCHAR(255) NOT NULL,
 
     -- Invitation details
-    role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'staff')),
+    role VARCHAR(20) NOT NULL REFERENCES roles(name) ON UPDATE CASCADE ON DELETE RESTRICT,
     all_warehouses_access BOOLEAN DEFAULT FALSE NOT NULL,
 
     -- Usage tracking

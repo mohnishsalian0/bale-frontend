@@ -2,6 +2,7 @@
 
 import { use } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   IconNote,
   IconBuildingWarehouse,
@@ -9,6 +10,7 @@ import {
   IconShoppingCart,
   IconCalendar,
   IconHash,
+  IconFileInvoice,
 } from "@tabler/icons-react";
 import IconJobWork from "@/components/icons/IconJobWork";
 import { LoadingState } from "@/components/layouts/loading-state";
@@ -37,7 +39,7 @@ interface PageParams {
 
 export default function InwardDetailsPage({ params }: PageParams) {
   const router = useRouter();
-  const { inward_number } = use(params);
+  const { warehouse_slug, inward_number } = use(params);
 
   // Fetch goods inward using TanStack Query (cached from layout)
   const {
@@ -64,13 +66,19 @@ export default function InwardDetailsPage({ params }: PageParams) {
   // Determine reason for inward
   let reasonTitle = "Unknown";
   let ReasonIcon: ComponentType<{ className?: string }> = IconNote;
+  let reasonLink: string | null = null;
 
-  if (inward.inward_type === "job_work" && inward.job_work) {
+  if (inward.inward_type === "purchase_order" && inward.purchase_order) {
+    reasonTitle = `PO-${inward.purchase_order.sequence_number}`;
+    ReasonIcon = IconFileInvoice;
+    reasonLink = `/warehouse/${warehouse_slug}/purchase-orders/${inward.purchase_order.sequence_number}/details`;
+  } else if (inward.inward_type === "job_work" && inward.job_work) {
     reasonTitle = `JW-${inward.job_work.sequence_number}`;
     ReasonIcon = IconJobWork;
   } else if (inward.inward_type === "sales_return" && inward.sales_order) {
     reasonTitle = `SO-${inward.sales_order.sequence_number}`;
     ReasonIcon = IconShoppingCart;
+    reasonLink = `/warehouse/${warehouse_slug}/sales-orders/${inward.sales_order.sequence_number}/details`;
   } else if (inward.inward_type === "other" && inward.other_reason) {
     reasonTitle = inward.other_reason;
     ReasonIcon = IconNote;
@@ -91,7 +99,16 @@ export default function InwardDetailsPage({ params }: PageParams) {
         title={reasonTitle}
         subtitle="Reason for inward"
         icon={ReasonIcon}
-      />
+      >
+        {reasonLink && (
+          <Link
+            href={reasonLink}
+            className="text-sm text-primary-700 hover:underline"
+          >
+            View details →
+          </Link>
+        )}
+      </Section>
 
       {/* Source Section (Sender) */}
       <Section
