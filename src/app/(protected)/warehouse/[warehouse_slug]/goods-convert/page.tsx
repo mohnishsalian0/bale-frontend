@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { IconSearch, IconRecycle } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
+import { useDebounce } from "@/hooks/use-debounce";
 import {
   Select,
   SelectContent,
@@ -61,12 +62,15 @@ export default function GoodsConvertPage() {
   const { warehouse } = useSession();
   const isMobile = useIsMobile();
 
+  // Local search state with debounce
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
   // Get filters from URL
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const selectedStatus = searchParams.get("status");
   const selectedVendor = searchParams.get("vendor");
   const selectedProduct = searchParams.get("product");
-  const searchQuery = searchParams.get("search");
   const dateFrom = searchParams.get("date_from");
   const dateTo = searchParams.get("date_to");
 
@@ -86,7 +90,7 @@ export default function GoodsConvertPage() {
     status: selectedStatus || undefined,
     vendor_id: selectedVendor || undefined,
     product_id: selectedProduct || undefined,
-    search_term: searchQuery || undefined,
+    search_term: debouncedSearchQuery || undefined,
     date_from: dateFrom || undefined,
     date_to: dateTo || undefined,
   };
@@ -201,10 +205,6 @@ export default function GoodsConvertPage() {
     );
   };
 
-  const handleSearchChange = (value: string) => {
-    updateFilters({ search: value || undefined });
-  };
-
   const handleStatusChange = (value: string) => {
     updateFilters({ status: value });
   };
@@ -264,8 +264,8 @@ export default function GoodsConvertPage() {
             <Input
               type="text"
               placeholder="Search by convert number"
-              value={searchQuery || ""}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pr-10"
             />
             <IconSearch className="absolute right-3 top-1/2 -translate-y-1/2 size-5 text-gray-700" />

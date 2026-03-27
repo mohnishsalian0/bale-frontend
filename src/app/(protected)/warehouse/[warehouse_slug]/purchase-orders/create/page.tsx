@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ProductSelectionStep } from "@/components/layouts/product-selection-step";
 import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
@@ -35,9 +35,13 @@ type FormStep = "supplier" | "products" | "details";
 
 export default function CreatePurchaseOrderPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
-  const [currentStep, setCurrentStep] = useState<FormStep>("supplier");
+  const preselectedSupplierId = searchParams.get("supplier");
+  const [currentStep, setCurrentStep] = useState<FormStep>(
+    preselectedSupplierId ? "products" : "supplier",
+  );
 
   // Purchase order mutations
   const { create: createOrder } = usePurchaseOrderMutations(warehouse.id);
@@ -48,7 +52,7 @@ export default function CreatePurchaseOrderPage() {
   >({});
 
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(
-    null,
+    preselectedSupplierId,
   );
 
   // Hide chrome for immersive flow experience
@@ -59,7 +63,7 @@ export default function CreatePurchaseOrderPage() {
 
   const [formData, setFormData] = useState<OrderFormData>({
     warehouseId: warehouse.id,
-    supplierId: "",
+    supplierId: preselectedSupplierId || "",
     agentId: "",
     orderDate: "",
     deliveryDueDate: "",

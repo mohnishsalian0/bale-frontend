@@ -10,11 +10,13 @@ interface CompletionDetailsFormData {
 interface CompletionDetailsStepProps {
   formData: CompletionDetailsFormData;
   onChange: (data: Partial<CompletionDetailsFormData>) => void;
+  minDate?: string;
 }
 
 export function CompletionDetailsStep({
   formData,
   onChange,
+  minDate,
 }: CompletionDetailsStepProps) {
   return (
     <div className="flex-1 overflow-y-auto flex flex-col gap-6 py-4">
@@ -32,6 +34,11 @@ export function CompletionDetailsStep({
             onChange({
               completionDate: date ? dateToISOString(date) : "",
             })
+          }
+          disabled={
+            minDate
+              ? (date) => date < new Date(minDate)
+              : undefined
           }
           required
         />

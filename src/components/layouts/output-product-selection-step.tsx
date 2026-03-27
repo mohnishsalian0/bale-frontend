@@ -17,6 +17,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import {
   useInfiniteProducts,
   useProductAttributes,
+  useProductsByIds,
 } from "@/lib/query/hooks/products";
 import type { StockType } from "@/types/database/enums";
 import { ProductFormSheet } from "@/app/(protected)/warehouse/[warehouse_slug]/products/ProductFormSheet";
@@ -73,27 +74,41 @@ export function OutputProductSelectionStep({
   const { data: attributesData, isLoading: attributesLoading } =
     useProductAttributes();
 
+  // Fetch selected product by ID to ensure it's always available
+  const { data: selectedProducts, isLoading: selectedProductLoading } =
+    useProductsByIds(selectedProductId ? [selectedProductId] : []);
+
   // Flatten infinite query pages
   const flatProducts = productsData?.pages.flatMap((page) => page.data) || [];
 
   const materials = attributesData?.materials || [];
   const colors = attributesData?.colors || [];
   const tags = attributesData?.tags || [];
-  const loading = productsLoading || attributesLoading;
+  const loading = productsLoading || attributesLoading || selectedProductLoading;
 
-  // Filter and sort products
+  // Combine selected product with infinite scroll results, deduplicating
   const filteredProducts = useMemo(() => {
-    let filtered = [...flatProducts];
+    const result = [];
+    const seenIds = new Set<string>();
 
-    // Sort: selected product first, then alphabetically
-    filtered.sort((a, b) => {
-      if (a.id === selectedProductId) return -1;
-      if (b.id === selectedProductId) return 1;
-      return (a.name || "").localeCompare(b.name || "");
+    // First: Add selected product (always at top)
+    if (selectedProducts.length > 0) {
+      selectedProducts.forEach((product) => {
+        seenIds.add(product.id);
+        result.push(product);
+      });
+    }
+
+    // Second: Add infinite scroll products (skip duplicates)
+    flatProducts.forEach((product) => {
+      if (!seenIds.has(product.id)) {
+        seenIds.add(product.id);
+        result.push(product);
+      }
     });
 
-    return filtered;
-  }, [flatProducts, selectedProductId]);
+    return result;
+  }, [flatProducts, selectedProducts]);
 
   // Handle scroll to trigger infinite loading
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {

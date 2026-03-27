@@ -249,6 +249,7 @@ export default function CompleteGoodsConvertPage({
               onChange={(updates) =>
                 setCompletionFormData((prev) => ({ ...prev, ...updates }))
               }
+              minDate={convert.start_date}
             />
           )}
         </div>

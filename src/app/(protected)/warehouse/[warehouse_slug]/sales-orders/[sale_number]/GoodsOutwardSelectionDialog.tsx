@@ -106,7 +106,7 @@ export function GoodsOutwardSelectionDialog({
               <button
                 key={movement.id}
                 onClick={() => handleToggleMovement(movement.id)}
-                className="flex items-center gap-3 p-4 border border-border rounded-lg hover:bg-gray-50 transition-colors text-left"
+                className="flex items-center gap-3 px-4 py-3 border border-border rounded-lg hover:bg-gray-50 transition-colors text-left"
               >
                 {/* Movement Info */}
                 <div className="flex-1 min-w-0">

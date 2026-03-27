@@ -72,7 +72,7 @@ export default function OutwardDetailsPage({ params }: PageParams) {
   if (outward.outward_type === "sales_order" && outward.sales_order) {
     reasonTitle = `SO-${outward.sales_order.sequence_number}`;
     ReasonIcon = IconShoppingCart;
-    reasonLink = `/warehouse/${warehouse.slug}/sales-orders/${outward.sales_order.sequence_number}`;
+    reasonLink = `/warehouse/${warehouse.slug}/sales-orders/${outward.sales_order.sequence_number}/details`;
   } else if (outward.outward_type === "job_work" && outward.job_work) {
     reasonTitle = `JW-${outward.job_work.sequence_number}`;
     ReasonIcon = IconJobWork;

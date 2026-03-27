@@ -233,6 +233,7 @@ export const buildGoodsInwardByNumberQuery = (
       agent:partners!goods_inwards_agent_id_fkey(first_name, last_name, display_name, company_name),
       warehouse:warehouses!goods_inwards_warehouse_id_fkey(name, address_line1, address_line2, city, state, pin_code, country),
       sales_order:sales_orders(sequence_number),
+      purchase_order:purchase_orders(sequence_number),
       job_work:job_works(sequence_number),
       stock_units(
         *,

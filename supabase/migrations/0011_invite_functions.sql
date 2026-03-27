@@ -23,15 +23,15 @@ DECLARE
     v_token TEXT;
     v_warehouse_id UUID;
 BEGIN
-    -- Validate role
-    IF p_role NOT IN ('admin', 'staff') THEN
+    -- Validate role exists in roles table
+    IF NOT EXISTS (SELECT 1 FROM roles WHERE name = p_role) THEN
         RAISE EXCEPTION 'Invalid role: %', p_role;
     END IF;
 
-    -- Validate warehouse assignment for staff role
+    -- Validate warehouse assignment for non-admin roles
     -- If not all_warehouses_access, must have specific warehouse assignments
-    IF p_role = 'staff' AND NOT p_all_warehouses_access AND (p_warehouse_ids IS NULL OR array_length(p_warehouse_ids, 1) = 0) THEN
-        RAISE EXCEPTION 'Staff role requires either all_warehouses_access or at least one warehouse assignment';
+    IF p_role != 'admin' AND NOT p_all_warehouses_access AND (p_warehouse_ids IS NULL OR array_length(p_warehouse_ids, 1) = 0) THEN
+        RAISE EXCEPTION 'Non-admin roles require either all_warehouses_access or at least one warehouse assignment';
     END IF;
 
     -- Generate unique token

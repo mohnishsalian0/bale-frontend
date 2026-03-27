@@ -197,7 +197,7 @@ export function ActivePurchaseSection({
     });
 
     router.push(
-      `/warehouse/${warehouseSlug}/invoices/create/purchase?${params.toString()}`,
+      `/warehouse/${warehouseSlug}/invoices/quick-create/purchase?${params.toString()}`,
     );
   };
 
@@ -206,11 +206,10 @@ export function ActivePurchaseSection({
 
     const params = new URLSearchParams({
       order: selectedOrder.sequence_number.toString(),
-      full_order: "true",
     });
 
     router.push(
-      `/warehouse/${warehouseSlug}/invoices/create/purchase?${params.toString()}`,
+      `/warehouse/${warehouseSlug}/invoices/quick-create/purchase?${params.toString()}`,
     );
   };
 

@@ -66,13 +66,13 @@ export function PartnerOutstandingSection({
 
   const handleCreateSalesInvoice = (partner: PartnerWithStatsListView) => {
     router.push(
-      `/warehouse/${warehouseSlug}/invoices/create/sales?partner=${partner.id}`,
+      `/warehouse/${warehouseSlug}/invoices/create/sales?partner=${partner.id}&ledger=${partner.ledger.id}`,
     );
   };
 
   const handleCreatePurchaseInvoice = (partner: PartnerWithStatsListView) => {
     router.push(
-      `/warehouse/${warehouseSlug}/invoices/create/purchase?partner=${partner.id}`,
+      `/warehouse/${warehouseSlug}/invoices/create/purchase?partner=${partner.id}&ledger=${partner.ledger.id}`,
     );
   };
 
