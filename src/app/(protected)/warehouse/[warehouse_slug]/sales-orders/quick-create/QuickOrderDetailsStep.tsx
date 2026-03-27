@@ -5,7 +5,7 @@ import {
   IconChevronDown,
   IconCurrencyRupee,
   IconPercentage,
-  IconTruck,
+  IconHash,
 } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
 import { InputWrapper } from "@/components/ui/input-wrapper";
@@ -40,7 +40,7 @@ export interface QuickOrderFormData {
   discountType: DiscountType;
   discount: string;
   paymentTerms: string;
-  transportDetails: string;
+  transportReferenceNumber: string;
   notes: string;
   documentFile: File | null;
 }
@@ -270,13 +270,15 @@ export function QuickOrderDetailsStep({
               </div>
             </div>
 
-            {/* Transport Details */}
+            {/* Transport Reference Number */}
             <InputWrapper
               type="text"
-              placeholder="Transport details"
-              value={formData.transportDetails}
-              onChange={(e) => onChange({ transportDetails: e.target.value })}
-              icon={<IconTruck />}
+              placeholder="Transport reference number"
+              value={formData.transportReferenceNumber}
+              onChange={(e) =>
+                onChange({ transportReferenceNumber: e.target.value })
+              }
+              icon={<IconHash />}
             />
 
             {/* Notes */}

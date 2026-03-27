@@ -130,7 +130,6 @@ BEGIN
         expected_delivery_date,
         transport_reference_number,
         transport_type,
-        transport_details,
         notes,
         created_by
     )
@@ -145,7 +144,6 @@ BEGIN
         NULLIF((p_order_data->>'delivery_due_date'), '')::DATE,
         NULLIF(p_order_data->>'transport_reference_number', ''),
         NULLIF(p_order_data->>'transport_type', '')::VARCHAR(20),
-        NULLIF(p_order_data->>'transport_details', ''),
         NULLIF(p_order_data->>'notes', ''),
         COALESCE((p_order_data->>'created_by')::UUID, auth.uid())
     )
