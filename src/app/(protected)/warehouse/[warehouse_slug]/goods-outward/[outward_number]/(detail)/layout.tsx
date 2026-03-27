@@ -144,11 +144,15 @@ export default function GoodsOutwardDetailLayout({
         <div className="p-4">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className={`text-2xl font-bold ${outward.is_cancelled ? "text-gray-400" : "text-gray-900"}`}>
+              <h1
+                className={`text-2xl font-bold ${outward.is_cancelled ? "text-gray-400" : "text-gray-900"}`}
+              >
                 GO-{outward.sequence_number}
               </h1>
               {outward.is_cancelled && (
-                <Badge color="gray" variant="secondary">Cancelled</Badge>
+                <Badge color="gray" variant="secondary">
+                  Cancelled
+                </Badge>
               )}
             </div>
             <p className="text-sm text-gray-500">

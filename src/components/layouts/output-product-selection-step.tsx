@@ -21,6 +21,7 @@ import {
 } from "@/lib/query/hooks/products";
 import type { StockType } from "@/types/database/enums";
 import { ProductFormSheet } from "@/app/(protected)/warehouse/[warehouse_slug]/products/ProductFormSheet";
+import { ProductListView } from "@/types/products.types";
 
 interface OutputProductSelectionStepProps {
   selectedProductId: string | null;
@@ -84,11 +85,12 @@ export function OutputProductSelectionStep({
   const materials = attributesData?.materials || [];
   const colors = attributesData?.colors || [];
   const tags = attributesData?.tags || [];
-  const loading = productsLoading || attributesLoading || selectedProductLoading;
+  const loading =
+    productsLoading || attributesLoading || selectedProductLoading;
 
   // Combine selected product with infinite scroll results, deduplicating
   const filteredProducts = useMemo(() => {
-    const result = [];
+    const result: ProductListView[] = [];
     const seenIds = new Set<string>();
 
     // First: Add selected product (always at top)

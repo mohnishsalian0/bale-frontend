@@ -35,11 +35,7 @@ export function CompletionDetailsStep({
               completionDate: date ? dateToISOString(date) : "",
             })
           }
-          disabled={
-            minDate
-              ? (date) => date < new Date(minDate)
-              : undefined
-          }
+          disabled={minDate ? (date) => date < new Date(minDate) : undefined}
           required
         />
       </div>

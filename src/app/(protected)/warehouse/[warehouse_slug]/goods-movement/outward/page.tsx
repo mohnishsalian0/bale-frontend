@@ -175,11 +175,15 @@ export default function OutwardPage() {
                 >
                   <div className="flex-3 text-left">
                     <div className="flex items-center gap-2">
-                      <p className={`text-base font-medium ${item.isCancelled ? "text-gray-400" : "text-gray-700"}`}>
+                      <p
+                        className={`text-base font-medium ${item.isCancelled ? "text-gray-400" : "text-gray-700"}`}
+                      >
                         To {item.receiverName}
                       </p>
                       {item.isCancelled && (
-                        <Badge color="gray" variant="secondary">Cancelled</Badge>
+                        <Badge color="gray" variant="secondary">
+                          Cancelled
+                        </Badge>
                       )}
                     </div>
                     <p className="text-sm text-gray-500 mt-1">
