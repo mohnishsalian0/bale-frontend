@@ -52,7 +52,7 @@ CREATE TABLE adjustment_notes (
     total_amount DECIMAL(15,2) DEFAULT 0,
 
     -- Tally export tracking
-    tally_guid VARCHAR(100),
+    tally_guid VARCHAR(100) NOT NULL DEFAULT extensions.uuid_generate_v4(),
     exported_to_tally_at TIMESTAMPTZ,
 
     -- Warehouse snapshot (taken at adjustment note creation time)
