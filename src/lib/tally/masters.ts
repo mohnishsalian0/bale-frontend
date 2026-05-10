@@ -10,7 +10,9 @@ export interface LedgerForExport {
 
 function buildLedger(ledger: LedgerForExport): string {
   const parts: string[] = [];
-  parts.push(`          <LEDGER NAME="${escapeXml(ledger.name)}" ACTION="Create">`);
+  parts.push(
+    `          <LEDGER NAME="${escapeXml(ledger.name)}" ACTION="Create">`,
+  );
   parts.push(`            ${tag("NAME", ledger.name)}`);
 
   if (ledger.parent_group?.name) {

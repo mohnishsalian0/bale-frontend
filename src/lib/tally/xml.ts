@@ -11,7 +11,10 @@ export function escapeXml(value: string | number | null | undefined): string {
   return String(value).replace(/[&<>"']/g, (c) => XML_ESCAPE_MAP[c]);
 }
 
-export function tag(name: string, value: string | number | null | undefined): string {
+export function tag(
+  name: string,
+  value: string | number | null | undefined,
+): string {
   if (value === null || value === undefined || value === "") return "";
   return `<${name}>${escapeXml(value)}</${name}>`;
 }

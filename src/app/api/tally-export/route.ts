@@ -153,7 +153,8 @@ export async function POST(request: Request) {
 
 function normalizeInvoice(raw: unknown): InvoiceForExport | null {
   const r = raw as Record<string, unknown>;
-  if (typeof r.tally_guid !== "string" || r.tally_guid.length === 0) return null;
+  if (typeof r.tally_guid !== "string" || r.tally_guid.length === 0)
+    return null;
   return {
     id: String(r.id),
     tally_guid: r.tally_guid,
@@ -174,7 +175,8 @@ function normalizeInvoice(raw: unknown): InvoiceForExport | null {
 
 function normalizePayment(raw: unknown): PaymentForExport | null {
   const r = raw as Record<string, unknown>;
-  if (typeof r.tally_guid !== "string" || r.tally_guid.length === 0) return null;
+  if (typeof r.tally_guid !== "string" || r.tally_guid.length === 0)
+    return null;
 
   const allocationsRaw = (r.payment_allocations as unknown[]) ?? [];
   const allocations: PaymentAllocationForExport[] = allocationsRaw.map((a) => {
@@ -207,9 +209,7 @@ function normalizePayment(raw: unknown): PaymentForExport | null {
     instrument_number: (r.instrument_number as string | null) ?? null,
     transaction_id: (r.transaction_id as string | null) ?? null,
     is_cancelled: Boolean(r.is_cancelled),
-    party_ledger: partyLedger
-      ? { name: String(partyLedger.name ?? "") }
-      : null,
+    party_ledger: partyLedger ? { name: String(partyLedger.name ?? "") } : null,
     counter_ledger: counterLedger
       ? { name: String(counterLedger.name ?? "") }
       : null,
@@ -220,7 +220,8 @@ function normalizePayment(raw: unknown): PaymentForExport | null {
 
 function normalizeAdjustmentNote(raw: unknown): AdjustmentNoteForExport | null {
   const r = raw as Record<string, unknown>;
-  if (typeof r.tally_guid !== "string" || r.tally_guid.length === 0) return null;
+  if (typeof r.tally_guid !== "string" || r.tally_guid.length === 0)
+    return null;
 
   const invoiceJoin = r.invoice as Record<string, unknown> | null;
 

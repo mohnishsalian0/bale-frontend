@@ -126,7 +126,9 @@ function ledgerEntryXml(entry: LedgerEntry, indent: string): string {
       parts.push(`${indent}  <BILLALLOCATIONS.LIST>`);
       parts.push(`${indent}    ${tag("NAME", bill.name)}`);
       parts.push(`${indent}    ${tag("BILLTYPE", bill.billType)}`);
-      parts.push(`${indent}    ${tag("AMOUNT", formatTallyAmount(bill.amount))}`);
+      parts.push(
+        `${indent}    ${tag("AMOUNT", formatTallyAmount(bill.amount))}`,
+      );
       parts.push(`${indent}  </BILLALLOCATIONS.LIST>`);
     }
   }
@@ -136,7 +138,13 @@ function ledgerEntryXml(entry: LedgerEntry, indent: string): string {
 }
 
 function voucherXml(args: {
-  vchType: "Sales" | "Purchase" | "Receipt" | "Payment" | "Credit Note" | "Debit Note";
+  vchType:
+    | "Sales"
+    | "Purchase"
+    | "Receipt"
+    | "Payment"
+    | "Credit Note"
+    | "Debit Note";
   guid: string;
   date: string;
   voucherNumber: string;
@@ -338,7 +346,8 @@ function buildPaymentVoucher(payment: PaymentForExport): string | null {
 
 function buildAdjustmentVoucher(note: AdjustmentNoteForExport): string | null {
   if (note.is_cancelled) return null;
-  if (!note.party_ledger_name || !note.counter_ledger_name || !note.invoice) return null;
+  if (!note.party_ledger_name || !note.counter_ledger_name || !note.invoice)
+    return null;
 
   const isCredit = note.adjustment_type === "credit";
   const total = num(note.total_amount);
