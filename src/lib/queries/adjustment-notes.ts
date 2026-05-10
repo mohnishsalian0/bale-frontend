@@ -350,7 +350,6 @@ export async function updateAdjustmentNote(
   data: Partial<{
     reason: string;
     notes?: string;
-    attachments?: string[];
   }>,
 ): Promise<void> {
   const supabase = createClient();

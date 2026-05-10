@@ -18,6 +18,7 @@ import {
   IconTransfer,
   IconTransform,
   IconNeedleThread,
+  IconFileExport,
 } from "@tabler/icons-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -142,6 +143,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           path: `/warehouse/${warehouse.slug}/accounting/ledgers`,
           icon: IconListDetails,
           permission: "accounting.ledgers.read",
+        },
+        {
+          label: "Tally Export",
+          path: `/warehouse/${warehouse.slug}/tally-export`,
+          icon: IconFileExport,
+          permission: "accounting.tally_export.create",
         },
       ],
     },

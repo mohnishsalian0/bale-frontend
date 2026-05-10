@@ -195,7 +195,7 @@ export type Database = {
           sequence_number: number;
           slug: string;
           subtotal_amount: number | null;
-          tally_guid: string | null;
+          tally_guid: string;
           tax_type: Database["public"]["Enums"]["tax_type_enum"] | null;
           total_amount: number | null;
           total_cgst_amount: number | null;
@@ -262,7 +262,7 @@ export type Database = {
           sequence_number: number;
           slug: string;
           subtotal_amount?: number | null;
-          tally_guid?: string | null;
+          tally_guid?: string;
           tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
           total_amount?: number | null;
           total_cgst_amount?: number | null;
@@ -329,7 +329,7 @@ export type Database = {
           sequence_number?: number;
           slug?: string;
           subtotal_amount?: number | null;
-          tally_guid?: string | null;
+          tally_guid?: string;
           tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
           total_amount?: number | null;
           total_cgst_amount?: number | null;
@@ -1379,6 +1379,13 @@ export type Database = {
             referencedRelation: "companies";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "invites_role_fkey";
+            columns: ["role"];
+            isOneToOne: false;
+            referencedRelation: "roles";
+            referencedColumns: ["name"];
+          },
         ];
       };
       invoice_additional_charges: {
@@ -1760,7 +1767,7 @@ export type Database = {
           supplier_invoice_number: string | null;
           tally_export_error: string | null;
           tally_export_status: string | null;
-          tally_guid: string | null;
+          tally_guid: string;
           tax_type: Database["public"]["Enums"]["tax_type_enum"] | null;
           taxable_amount: number | null;
           total_amount: number | null;
@@ -1854,7 +1861,7 @@ export type Database = {
           supplier_invoice_number?: string | null;
           tally_export_error?: string | null;
           tally_export_status?: string | null;
-          tally_guid?: string | null;
+          tally_guid?: string;
           tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
           taxable_amount?: number | null;
           total_amount?: number | null;
@@ -1948,7 +1955,7 @@ export type Database = {
           supplier_invoice_number?: string | null;
           tally_export_error?: string | null;
           tally_export_status?: string | null;
-          tally_guid?: string | null;
+          tally_guid?: string;
           tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
           taxable_amount?: number | null;
           total_amount?: number | null;
@@ -2909,7 +2916,7 @@ export type Database = {
           search_vector: unknown;
           sequence_number: number;
           slug: string;
-          tally_guid: string | null;
+          tally_guid: string;
           tds_amount: number | null;
           tds_applicable: boolean | null;
           tds_ledger_id: string | null;
@@ -2954,7 +2961,7 @@ export type Database = {
           search_vector?: unknown;
           sequence_number: number;
           slug: string;
-          tally_guid?: string | null;
+          tally_guid?: string;
           tds_amount?: number | null;
           tds_applicable?: boolean | null;
           tds_ledger_id?: string | null;
@@ -2999,7 +3006,7 @@ export type Database = {
           search_vector?: unknown;
           sequence_number?: number;
           slug?: string;
-          tally_guid?: string | null;
+          tally_guid?: string;
           tds_amount?: number | null;
           tds_applicable?: boolean | null;
           tds_ledger_id?: string | null;

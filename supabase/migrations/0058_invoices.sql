@@ -83,7 +83,7 @@ CREATE TABLE invoices (
     supplier_invoice_date DATE, -- Supplier's bill date
 
     -- Tally export tracking
-    tally_guid VARCHAR(100),
+    tally_guid VARCHAR(100) NOT NULL DEFAULT extensions.uuid_generate_v4(),
     tally_export_status VARCHAR(20),
     tally_export_error TEXT,
     exported_to_tally_at TIMESTAMPTZ,

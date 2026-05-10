@@ -32,7 +32,7 @@ BEGIN
     SELECT id INTO v_bank_accounts_id FROM parent_groups WHERE name = 'Bank Accounts';
     SELECT id INTO v_cash_id FROM parent_groups WHERE name = 'Cash-in-Hand';
     SELECT id INTO v_indirect_expenses_id FROM parent_groups WHERE name = 'Indirect Expenses';
-    SELECT id INTO v_indirect_income_id FROM parent_groups WHERE name = 'Indirect Income';
+    SELECT id INTO v_indirect_income_id FROM parent_groups WHERE name = 'Indirect Incomes';
     SELECT id INTO v_direct_expenses_id FROM parent_groups WHERE name = 'Direct Expenses';
 
     -- Create default Sales ledger

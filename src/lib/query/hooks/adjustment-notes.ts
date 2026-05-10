@@ -124,7 +124,6 @@ export function useAdjustmentNoteMutations() {
       data: Partial<{
         reason: string;
         notes?: string;
-        attachments?: string[];
       }>;
     }) => updateAdjustmentNote(id, data),
     onSuccess: () => {

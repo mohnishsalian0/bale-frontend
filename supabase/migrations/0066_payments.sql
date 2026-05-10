@@ -67,7 +67,7 @@ CREATE TABLE payments (
     counter_ledger_name VARCHAR(200),
 
     -- Tally export tracking
-    tally_guid VARCHAR(100),
+    tally_guid VARCHAR(100) NOT NULL DEFAULT extensions.uuid_generate_v4(),
     exported_to_tally_at TIMESTAMPTZ,
 
     -- Notes and attachments
