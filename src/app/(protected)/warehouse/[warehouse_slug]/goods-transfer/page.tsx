@@ -84,7 +84,7 @@ export default function GoodsTransferPage() {
 
   // Build filters for backend
   const filters = {
-    status: selectedStatus || undefined,
+    status: (selectedStatus as TransferStatus | null) || undefined,
     from_warehouse_id: selectedFromWarehouse || undefined,
     to_warehouse_id: selectedToWarehouse || undefined,
     product_id: selectedProduct || undefined,

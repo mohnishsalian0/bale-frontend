@@ -138,9 +138,10 @@ export function InventoryProductListStep({
 
   // Calculate total quantity for a product
   const getTotalQuantity = (productId: string): number => {
-    return scannedUnits
+    const total = scannedUnits
       .filter((unit) => unit.stockUnit.product?.id === productId)
-      .reduce((total, unit) => total + unit.quantity, 0);
+      .reduce((sum, unit) => sum + unit.quantity, 0);
+    return Math.round(total * 100) / 100;
   };
 
   // Format quantity display with unit
@@ -250,7 +251,9 @@ export function InventoryProductListStep({
                 const quantityDisplay = formatQuantityDisplay(product);
                 const requestedQuantity = orderProducts[product.id];
                 const availableQuantity =
-                  product.inventory.available_quantity ?? 0;
+                  Math.round(
+                    (product.inventory.available_quantity ?? 0) * 100,
+                  ) / 100;
 
                 const unitAbbr = getMeasuringUnitAbbreviation(
                   product.measuring_unit as MeasuringUnit,

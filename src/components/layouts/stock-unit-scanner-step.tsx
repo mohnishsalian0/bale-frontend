@@ -24,6 +24,8 @@ interface StockUnitScannerStepProps {
   warehouseId: string;
   orderProducts?: Record<string, number>; // productId -> requested_quantity
   fullQuantity?: boolean; // If true, always transfer full quantity without showing quantity sheet
+  title?: string;
+  emptyMessage?: string;
 }
 
 export function StockUnitScannerStep({
@@ -32,6 +34,8 @@ export function StockUnitScannerStep({
   warehouseId,
   orderProducts = {},
   fullQuantity = false,
+  title = "Scan QR to add item",
+  emptyMessage = "Scan QR codes to add items",
 }: StockUnitScannerStepProps) {
   const [error, setError] = useState<string | null>(null);
   const [torch, setTorch] = useState(false);
@@ -49,6 +53,40 @@ export function StockUnitScannerStep({
     const productIds = Object.keys(orderProducts);
     return productIds.length > 0 ? new Set(productIds) : null;
   }, [orderProducts]);
+
+  // Aggregate scanned quantities by measuring unit for the sticky summary
+  const scannedSummary = useMemo(() => {
+    const byUnit = new Map<MeasuringUnit, number>();
+    scannedUnits.forEach((su) => {
+      const unit = su.stockUnit.product?.measuring_unit as
+        | MeasuringUnit
+        | undefined;
+      if (!unit) return;
+      byUnit.set(unit, (byUnit.get(unit) || 0) + su.quantity);
+    });
+    const parts: string[] = [];
+    const order: MeasuringUnit[] = ["metre", "yard", "kilogram", "unit"];
+    Array.from(byUnit.entries())
+      .filter(([, qty]) => qty > 0)
+      .sort(([a], [b]) => {
+        const ia = order.indexOf(a);
+        const ib = order.indexOf(b);
+        return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+      })
+      .forEach(([unit, qty]) => {
+        const rounded = Math.round(qty * 100) / 100;
+        parts.push(
+          `${rounded} ${pluralizeMeasuringUnitAbbreviation(
+            rounded,
+            getMeasuringUnitAbbreviation(unit),
+          )}`,
+        );
+      });
+    return {
+      count: scannedUnits.length,
+      formatted: parts.join(" + "),
+    };
+  }, [scannedUnits]);
 
   const handleScan = async (detectedCodes: IDetectedBarcode[]) => {
     if (paused || detectedCodes.length === 0) return;
@@ -275,7 +313,7 @@ export function StockUnitScannerStep({
           </div>
         ) : (
           <p className="absolute top-10 left-1/2 -translate-x-1/2 text-lg text-white text-center whitespace-pre z-10">
-            Scan QR to add item
+            {title}
           </p>
         )}
 
@@ -308,7 +346,7 @@ export function StockUnitScannerStep({
       <div className="flex-1">
         {scannedUnits.length === 0 ? (
           <div className="flex items-center justify-center py-12">
-            <p className="text-sm text-gray-500">Scan QR codes to add items</p>
+            <p className="text-sm text-gray-500">{emptyMessage}</p>
           </div>
         ) : (
           <div className="flex flex-col">
@@ -385,6 +423,19 @@ export function StockUnitScannerStep({
           </div>
         )}
       </div>
+
+      {/* Sticky selection summary */}
+      {scannedSummary.count > 0 && (
+        <div className="sticky bottom-0 z-10 flex items-center justify-between px-4 py-2 border-t border-b border-border bg-background text-sm">
+          <span className="text-gray-700 font-medium">
+            {scannedSummary.count}{" "}
+            {scannedSummary.count === 1 ? "unit" : "units"} selected
+          </span>
+          {scannedSummary.formatted && (
+            <span className="text-gray-500">{scannedSummary.formatted}</span>
+          )}
+        </div>
+      )}
 
       {/* Select Inventory Sheet */}
       {showInventorySheet && (
