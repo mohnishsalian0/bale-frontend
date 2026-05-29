@@ -69,23 +69,16 @@ export default function GoodsConvertDetailLayout({
 
     // If completed, calculate output and wastage
     if (convert.status === "completed" && convert.output_stock_units) {
-      const outputQuantities = new Map<MeasuringUnit, number>();
-      convert.output_stock_units.forEach((unit) => {
-        const measuringUnit = unit.product?.measuring_unit as MeasuringUnit;
-        if (measuringUnit) {
-          const qty = Number(unit.initial_quantity) || 0;
-          outputQuantities.set(
-            measuringUnit,
-            (outputQuantities.get(measuringUnit) || 0) + qty,
-          );
-        }
-      });
-      const totalOutput = formatMeasuringUnitQuantities(outputQuantities);
-
-      // Calculate wastage (from adjustments)
+      const outputMU = convert.output_product
+        .measuring_unit as MeasuringUnit;
+      const grossOutput = convert.output_stock_units.reduce(
+        (sum, unit) => sum + (Number(unit.initial_quantity) || 0),
+        0,
+      );
       const wastage = Math.abs(
         convert.wastage.reduce((sum, w) => sum + w.quantity_adjusted, 0),
       );
+      const totalOutput = `${(grossOutput - wastage).toFixed(2)} ${getMeasuringUnitAbbreviation(outputMU)}`;
 
       return { totalInput, totalOutput, wastage, isCompleted: true };
     }
@@ -206,7 +199,7 @@ export default function GoodsConvertDetailLayout({
                 </div>
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="flex gap-2 mb-2">
-                    <span className="text-xs text-gray-500">Total Output</span>
+                    <span className="text-xs text-gray-500">Net Output</span>
                   </div>
                   <p className="font-semibold text-gray-700">
                     {metrics.totalOutput}
@@ -218,7 +211,7 @@ export default function GoodsConvertDetailLayout({
                     <span className="text-xs text-gray-500">Wastage</span>
                   </div>
                   <p className="font-semibold text-yellow-700">
-                    {metrics.wastage}{" "}
+                    {(metrics.wastage ?? 0).toFixed(2)}{" "}
                     {getMeasuringUnitAbbreviation(
                       convert.output_product.measuring_unit as MeasuringUnit,
                     )}

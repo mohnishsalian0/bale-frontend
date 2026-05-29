@@ -24,7 +24,6 @@ export interface AdjustmentNoteFilters extends Record<string, unknown> {
   date_from?: string; // Date range start (YYYY-MM-DD)
   date_to?: string; // Date range end (YYYY-MM-DD)
   search_term?: string;
-  exported_to_tally?: boolean; // Filter by export status
 }
 
 // ============================================================================

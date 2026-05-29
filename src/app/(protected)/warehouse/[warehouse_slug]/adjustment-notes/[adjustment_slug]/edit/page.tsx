@@ -111,16 +111,6 @@ export default function EditAdjustmentNotePage() {
       return;
     }
 
-    if (existingAdjustmentNote.exported_to_tally_at) {
-      toast.error(
-        "Cannot edit an adjustment note that has been exported to Tally",
-      );
-      router.push(
-        `/warehouse/${warehouse_slug}/adjustment-notes/${adjustment_slug}`,
-      );
-      return;
-    }
-
     // Set selected partner from party_ledger
     const partnerId = existingAdjustmentNote.party_ledger?.partner_id || null;
     setSelectedPartnerId(partnerId);

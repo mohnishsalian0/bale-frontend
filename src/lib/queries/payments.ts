@@ -53,7 +53,6 @@ export const buildPaymentsQuery = (
         instrument_number,
         instrument_date,
         transaction_id,
-        exported_to_tally_at,
         party_ledger:ledgers!party_ledger_id(id, name),
         counter_ledger:ledgers!counter_ledger_id(id, name),
         payment_allocations!inner(
@@ -470,8 +469,7 @@ export async function deletePayment(paymentId: string): Promise<void> {
   const { error } = await supabase
     .from("payments")
     .update({ deleted_at: new Date().toISOString() })
-    .eq("id", paymentId)
-    .is("exported_to_tally_at", null);
+    .eq("id", paymentId);
 
   if (error) {
     throw error;

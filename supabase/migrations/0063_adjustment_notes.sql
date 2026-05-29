@@ -51,9 +51,11 @@ CREATE TABLE adjustment_notes (
     round_off_amount DECIMAL(15,2) DEFAULT 0,
     total_amount DECIMAL(15,2) DEFAULT 0,
 
-    -- Tally export tracking
-    tally_guid VARCHAR(100) NOT NULL DEFAULT extensions.uuid_generate_v4(),
-    exported_to_tally_at TIMESTAMPTZ,
+    -- Tally sync tracking
+    tally_sync_status tally_sync_status_enum NOT NULL DEFAULT 'pending',
+    tally_sync_error TEXT,
+    tally_synced_at TIMESTAMPTZ,
+    tally_last_attempt_at TIMESTAMPTZ,
 
     -- Warehouse snapshot (taken at adjustment note creation time)
     warehouse_name VARCHAR(200),
@@ -127,6 +129,11 @@ CREATE INDEX idx_adjustment_notes_counter_ledger ON adjustment_notes(counter_led
 CREATE INDEX idx_adjustment_notes_warehouse ON adjustment_notes(warehouse_id);
 CREATE INDEX idx_adjustment_notes_date ON adjustment_notes(company_id, adjustment_date);
 CREATE INDEX idx_adjustment_notes_sequence_number ON adjustment_notes(company_id, sequence_number);
+
+-- Tally sync: pending/failed adjustment notes awaiting push
+CREATE INDEX idx_adjustment_notes_tally_pending
+    ON adjustment_notes(company_id, adjustment_date)
+    WHERE tally_sync_status IN ('pending', 'failed') AND deleted_at IS NULL;
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES
@@ -235,7 +242,7 @@ CREATE TRIGGER trigger_reconcile_invoice_on_adjustment_change
     AFTER INSERT OR UPDATE OR DELETE ON adjustment_notes
     FOR EACH ROW EXECUTE FUNCTION trigger_invoice_reconciliation_on_adjustment();
 
--- Prevent adjustment note edit if cancelled or exported to Tally, validate cancellation
+-- Prevent adjustment note edit if cancelled, validate cancellation
 CREATE OR REPLACE FUNCTION prevent_adjustment_note_edit()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -252,12 +259,6 @@ BEGIN
         END IF;
     END IF;
 
-    -- Rule 3: Prevent editing if exported to Tally
-    IF OLD.exported_to_tally_at IS NOT NULL THEN
-        RAISE EXCEPTION 'Cannot edit adjustment note % - already exported to Tally on %',
-            OLD.adjustment_number, OLD.exported_to_tally_at::DATE;
-    END IF;
-
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -266,7 +267,7 @@ CREATE TRIGGER trigger_prevent_adjustment_note_edit
     BEFORE UPDATE ON adjustment_notes
     FOR EACH ROW EXECUTE FUNCTION prevent_adjustment_note_edit();
 
--- Prevent adjustment note deletion if cancelled or exported to Tally
+-- Prevent adjustment note deletion if cancelled
 CREATE OR REPLACE FUNCTION prevent_adjustment_note_delete()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -274,12 +275,6 @@ BEGIN
     IF OLD.is_cancelled = TRUE THEN
         RAISE EXCEPTION 'Cannot delete adjustment note % - adjustment note is cancelled. Use soft delete (deleted_at) instead',
             OLD.adjustment_number;
-    END IF;
-
-    -- Rule 2: Cannot delete if exported to Tally
-    IF OLD.exported_to_tally_at IS NOT NULL THEN
-        RAISE EXCEPTION 'Cannot delete adjustment note % - already exported to Tally on %. Use soft delete instead',
-            OLD.adjustment_number, OLD.exported_to_tally_at::DATE;
     END IF;
 
     RETURN OLD;

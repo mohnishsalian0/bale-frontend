@@ -139,11 +139,15 @@ export default function GoodsConvertPage() {
       const outputMeasuringUnit = c.output_product
         ?.measuring_unit as MeasuringUnit;
 
-      // Calculate output quantities from output stock units (only if completed)
-      const outputQuantity = (c.output_stock_units ?? []).reduce(
+      // Calculate net output (gross output - wastage) for completed converts
+      const grossOutput = (c.output_stock_units ?? []).reduce(
         (sum, unit) => sum + unit.initial_quantity,
         0,
       );
+      const wastage = Math.abs(
+        (c.wastage ?? []).reduce((sum, w) => sum + w.quantity_adjusted, 0),
+      );
+      const outputQuantity = grossOutput - wastage;
 
       return {
         id: c.id,
@@ -425,14 +429,14 @@ export default function GoodsConvertPage() {
                       <div>
                         {item.status === "completed" && (
                           <p className="text-sm font-semibold text-gray-700 text-right text-nowrap">
-                            {item.outputQuantity}{" "}
+                            {item.outputQuantity.toFixed(2)}{" "}
                             {getMeasuringUnitAbbreviation(
                               item.outputMeasuringUnit,
                             )}
                           </p>
                         )}
                         <p className="text-xs text-gray-500 text-right">
-                          {item.status === "completed" && "output"}
+                          {item.status === "completed" && "net output"}
                         </p>
                       </div>
                     </div>

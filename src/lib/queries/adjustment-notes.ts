@@ -105,15 +105,6 @@ export const buildAdjustmentNotesQuery = (
     query = query.lte("adjustment_date", filters.date_to);
   }
 
-  // Apply export status filter
-  if (filters?.exported_to_tally !== undefined) {
-    if (filters.exported_to_tally) {
-      query = query.not("exported_to_tally_at", "is", null);
-    } else {
-      query = query.is("exported_to_tally_at", null);
-    }
-  }
-
   // Apply search filter (search_vector full-text search)
   if (filters?.search_term && filters.search_term.trim() !== "") {
     query = query.textSearch("search_vector", filters.search_term.trim(), {
@@ -343,7 +334,6 @@ export async function createAdjustmentNote(
 
 /**
  * Update adjustment note (non-critical fields only)
- * Cannot update if has_payment or exported_to_tally
  */
 export async function updateAdjustmentNote(
   id: string,
@@ -414,7 +404,6 @@ export async function cancelAdjustmentNote(
 
 /**
  * Soft delete adjustment note
- * Cannot delete if exported_to_tally
  */
 export async function deleteAdjustmentNote(id: string): Promise<void> {
   const supabase = createClient();

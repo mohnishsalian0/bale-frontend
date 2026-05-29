@@ -54,7 +54,6 @@ export const buildInvoicesQuery = (
         has_payment,
         has_adjustment,
         is_cancelled,
-        exported_to_tally_at,
         invoice_items!inner(
           *,
           product:product_id(
@@ -371,7 +370,6 @@ export async function cancelInvoice(
  * Can only delete if:
  * - No payments allocated (has_payment = false)
  * - No adjustments allocated (has_adjustment = false)
- * - Not exported to Tally (exported_to_tally_at IS NULL)
  */
 export async function deleteInvoice(invoiceId: string): Promise<void> {
   const supabase = createClient();
