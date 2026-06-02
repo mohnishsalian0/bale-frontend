@@ -161,10 +161,6 @@ INSERT INTO permissions (permission_path, display_name, description, category) V
 ('accounting.payments.update', 'Update Payments', 'Edit payment vouchers', 'accounting'),
 ('accounting.payments.delete', 'Delete Payments', 'Cancel or delete payment vouchers', 'accounting');
 
--- Tally Export
-INSERT INTO permissions (permission_path, display_name, description, category) VALUES
-('accounting.tally_export.create', 'Export to Tally', 'Generate Tally-compatible ZIP of masters and vouchers', 'accounting');
-
 -- =====================================================
 -- ASSIGN PERMISSIONS TO ADMIN ROLE
 -- =====================================================

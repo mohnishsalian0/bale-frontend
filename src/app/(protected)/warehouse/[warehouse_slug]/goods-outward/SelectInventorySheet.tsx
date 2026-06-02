@@ -131,6 +131,40 @@ export function SelectInventorySheet({
     }
   };
 
+  const handleAddAllInGroup = async (stockUnitIds: string[]) => {
+    try {
+      const details = await Promise.all(
+        stockUnitIds.map((id) => getStockUnitWithProductDetail(id)),
+      );
+
+      const updated = [...scannedUnits];
+      details.forEach((detail) => {
+        const existingIndex = updated.findIndex(
+          (unit) => unit.stockUnit.id === detail.id,
+        );
+        const entry = {
+          stockUnit: toScannedStockUnit(detail),
+          quantity: detail.remaining_quantity,
+        };
+        if (existingIndex !== -1) {
+          updated[existingIndex] = entry;
+        } else {
+          updated.push(entry);
+        }
+      });
+      onScannedUnitsChange(updated);
+    } catch (error) {
+      console.error("Error adding all stock units in group:", error);
+    }
+  };
+
+  const handleRemoveAllInGroup = (stockUnitIds: string[]) => {
+    const idSet = new Set(stockUnitIds);
+    onScannedUnitsChange(
+      scannedUnits.filter((unit) => !idSet.has(unit.stockUnit.id)),
+    );
+  };
+
   const handleQuantitySheetClose = (open: boolean) => {
     setShowQuantitySheet(open);
     if (!open) {
@@ -196,6 +230,8 @@ export function SelectInventorySheet({
                 scannedUnits={scannedUnits}
                 onStockUnitSelect={handleStockUnitSelect}
                 onRemoveUnit={handleRemoveUnit}
+                onAddAllInGroup={handleAddAllInGroup}
+                onRemoveAllInGroup={handleRemoveAllInGroup}
                 fullQuantity={fullQuantity}
               />
             )}

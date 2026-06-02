@@ -67,9 +67,11 @@ CREATE TABLE ledgers (
     -- Partner linkage (for party ledgers)
     partner_id UUID REFERENCES partners(id), -- Auto-created ledger for partners
 
-    -- Tally export tracking
-    tally_guid VARCHAR(100),
-    exported_to_tally_at TIMESTAMPTZ,
+    -- Tally sync tracking
+    tally_sync_status tally_sync_status_enum NOT NULL DEFAULT 'pending',
+    tally_sync_error TEXT,
+    tally_synced_at TIMESTAMPTZ,
+    tally_last_attempt_at TIMESTAMPTZ,
 
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -91,6 +93,11 @@ CREATE INDEX idx_ledgers_ledger_type ON ledgers(company_id, ledger_type);
 CREATE INDEX idx_ledgers_partner ON ledgers(partner_id) WHERE partner_id IS NOT NULL;
 CREATE INDEX idx_ledgers_is_default ON ledgers(company_id, ledger_type, is_default) WHERE is_default = true;
 CREATE INDEX idx_ledgers_active ON ledgers(company_id, is_active) WHERE is_active = true;
+
+-- Tally sync: pending/failed party ledgers awaiting push
+CREATE INDEX idx_ledgers_tally_pending
+    ON ledgers(company_id, created_at)
+    WHERE tally_sync_status IN ('pending', 'failed') AND deleted_at IS NULL;
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES

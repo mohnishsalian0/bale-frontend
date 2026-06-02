@@ -431,7 +431,6 @@ DECLARE
     v_company_id UUID;
     v_invoice_type VARCHAR(10);
     v_is_cancelled BOOLEAN;
-    v_exported_at TIMESTAMPTZ;
     v_has_payment BOOLEAN;
     v_has_adjustment BOOLEAN;
 
@@ -456,10 +455,10 @@ BEGIN
     -- 1. Fetch and Validate Invoice
     -- =====================================================
     SELECT
-        company_id, invoice_type, is_cancelled, exported_to_tally_at,
+        company_id, invoice_type, is_cancelled,
         has_payment, has_adjustment
     INTO
-        v_company_id, v_invoice_type, v_is_cancelled, v_exported_at,
+        v_company_id, v_invoice_type, v_is_cancelled,
         v_has_payment, v_has_adjustment
     FROM invoices
     WHERE id = p_invoice_id;
@@ -471,10 +470,6 @@ BEGIN
     -- Business rule validations
     IF v_is_cancelled THEN
         RAISE EXCEPTION 'Cannot update a cancelled invoice';
-    END IF;
-
-    IF v_exported_at IS NOT NULL THEN
-        RAISE EXCEPTION 'Cannot update an invoice that has been exported to Tally';
     END IF;
 
     IF v_has_payment THEN

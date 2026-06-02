@@ -62,7 +62,8 @@ export const buildGoodsConvertsQuery = (
       output_stock_units:stock_units!fk_stock_unit_origin_convert(
         initial_quantity,
         product:products(id, measuring_unit)
-      )
+      ),
+      wastage:stock_unit_adjustments!fk_adjustment_convert(quantity_adjusted)
     `,
       { count: "exact" },
     )
@@ -154,7 +155,8 @@ export const buildGoodsConvertOutputUnitsQuery = (
       *,
       lot_number:attributes!lot_number_attribute_id(id, name, group_name),
       product:products(id, name, measuring_unit, stock_type, product_images),
-      warehouse:warehouses(id, name)
+      warehouse:warehouses(id, name),
+      adjustments:stock_unit_adjustments!stock_unit_id(id, quantity_adjusted, convert_id)
     `,
     )
     .eq("origin_convert_id", convertId)

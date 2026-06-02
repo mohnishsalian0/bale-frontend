@@ -165,11 +165,6 @@ export default function AdjustmentNoteDetailsPage({ params }: PageParams) {
               {adjustmentNote.is_cancelled && (
                 <Badge color="gray">Cancelled</Badge>
               )}
-              {adjustmentNote.exported_to_tally_at && (
-                <Badge variant="secondary" color="blue">
-                  Exported to Tally
-                </Badge>
-              )}
             </div>
             <p className="text-sm text-gray-500 mt-1">
               {adjustmentTypeLabel}
@@ -480,22 +475,6 @@ export default function AdjustmentNoteDetailsPage({ params }: PageParams) {
                 </div>
               )}
           </Section>
-
-          {/* Export Status */}
-          {adjustmentNote.exported_to_tally_at && (
-            <Section
-              title="Export Status"
-              subtitle=""
-              icon={() => <IconFileInvoice />}
-            >
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-700">Exported to Tally</span>
-                <span className="font-semibold text-gray-700">
-                  {formatAbsoluteDate(adjustmentNote.exported_to_tally_at)}
-                </span>
-              </div>
-            </Section>
-          )}
         </div>
       </div>
 

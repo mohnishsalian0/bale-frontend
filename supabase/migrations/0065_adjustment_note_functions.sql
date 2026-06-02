@@ -314,7 +314,6 @@ DECLARE
     v_company_id UUID;
     v_adjustment_type VARCHAR(10);
     v_is_cancelled BOOLEAN;
-    v_exported_at TIMESTAMP;
 
     -- Totals
     v_subtotal_amount DECIMAL(10,2) := 0;
@@ -340,8 +339,8 @@ BEGIN
     -- =====================================================
     -- 1. Fetch adjustment note and validate
     -- =====================================================
-    SELECT company_id, adjustment_type, is_cancelled, exported_to_tally_at
-    INTO v_company_id, v_adjustment_type, v_is_cancelled, v_exported_at
+    SELECT company_id, adjustment_type, is_cancelled
+    INTO v_company_id, v_adjustment_type, v_is_cancelled
     FROM adjustment_notes
     WHERE id = p_adjustment_note_id;
 
@@ -352,10 +351,6 @@ BEGIN
     -- Validate can be edited
     IF v_is_cancelled THEN
         RAISE EXCEPTION 'Cannot edit cancelled adjustment note';
-    END IF;
-
-    IF v_exported_at IS NOT NULL THEN
-        RAISE EXCEPTION 'Cannot edit adjustment note that has been exported to Tally';
     END IF;
 
     -- =====================================================

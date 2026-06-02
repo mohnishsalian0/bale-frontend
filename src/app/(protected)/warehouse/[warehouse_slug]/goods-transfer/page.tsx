@@ -64,6 +64,7 @@ export default function GoodsTransferPage() {
 
   // Get filters from URL
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  const selectedStatus = searchParams.get("status");
   const selectedFromWarehouse = searchParams.get("from_warehouse");
   const selectedToWarehouse = searchParams.get("to_warehouse");
   const selectedProduct = searchParams.get("product");
@@ -83,6 +84,7 @@ export default function GoodsTransferPage() {
 
   // Build filters for backend
   const filters = {
+    status: (selectedStatus as TransferStatus | null) || undefined,
     from_warehouse_id: selectedFromWarehouse || undefined,
     to_warehouse_id: selectedToWarehouse || undefined,
     product_id: selectedProduct || undefined,
@@ -186,6 +188,10 @@ export default function GoodsTransferPage() {
     );
   };
 
+  const handleStatusChange = (value: string) => {
+    updateFilters({ status: value });
+  };
+
   const handleFromWarehouseChange = (value: string) => {
     updateFilters({ from_warehouse: value });
   };
@@ -268,6 +274,22 @@ export default function GoodsTransferPage() {
 
       {/* Filters */}
       <div className="flex gap-3 px-4 py-4 overflow-x-auto scrollbar-hide shrink-0">
+        {/* Status Filter */}
+        <Select
+          value={selectedStatus || "all"}
+          onValueChange={handleStatusChange}
+        >
+          <SelectTrigger className="flex-shrink-0 h-10 max-w-34">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="in_transit">In Transit</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+
         {/* From Warehouse Filter */}
         <Select
           value={selectedFromWarehouse || "all"}
@@ -349,6 +371,7 @@ export default function GoodsTransferPage() {
             <p className="text-gray-600 mb-2">No transfer transactions found</p>
             <p className="text-sm text-gray-500">
               {searchQuery ||
+              selectedStatus ||
               selectedProduct ||
               selectedFromWarehouse ||
               selectedToWarehouse ||

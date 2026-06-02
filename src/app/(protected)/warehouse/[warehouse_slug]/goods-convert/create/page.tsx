@@ -304,6 +304,8 @@ export default function CreateGoodsConvertPage() {
           {currentStep === "inputUnits" && (
             <StockUnitScannerStep
               fullQuantity
+              title="Scan QR to add input stock units"
+              emptyMessage="Scan QR codes to add input stock units"
               scannedUnits={scannedInputUnits}
               onScannedUnitsChange={setScannedInputUnits}
               warehouseId={warehouse.id}

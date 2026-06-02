@@ -169,7 +169,6 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           deleted_at: string | null;
-          exported_to_tally_at: string | null;
           id: string;
           invoice_id: string;
           is_cancelled: boolean;
@@ -195,7 +194,10 @@ export type Database = {
           sequence_number: number;
           slug: string;
           subtotal_amount: number | null;
-          tally_guid: string;
+          tally_last_attempt_at: string | null;
+          tally_sync_error: string | null;
+          tally_sync_status: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at: string | null;
           tax_type: Database["public"]["Enums"]["tax_type_enum"] | null;
           total_amount: number | null;
           total_cgst_amount: number | null;
@@ -236,7 +238,6 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
-          exported_to_tally_at?: string | null;
           id?: string;
           invoice_id: string;
           is_cancelled?: boolean;
@@ -262,7 +263,10 @@ export type Database = {
           sequence_number: number;
           slug: string;
           subtotal_amount?: number | null;
-          tally_guid?: string;
+          tally_last_attempt_at?: string | null;
+          tally_sync_error?: string | null;
+          tally_sync_status?: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at?: string | null;
           tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
           total_amount?: number | null;
           total_cgst_amount?: number | null;
@@ -303,7 +307,6 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
-          exported_to_tally_at?: string | null;
           id?: string;
           invoice_id?: string;
           is_cancelled?: boolean;
@@ -329,7 +332,10 @@ export type Database = {
           sequence_number?: number;
           slug?: string;
           subtotal_amount?: number | null;
-          tally_guid?: string;
+          tally_last_attempt_at?: string | null;
+          tally_sync_error?: string | null;
+          tally_sync_status?: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at?: string | null;
           tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
           total_amount?: number | null;
           total_cgst_amount?: number | null;
@@ -1722,7 +1728,6 @@ export type Database = {
           discount_type: Database["public"]["Enums"]["discount_type_enum"];
           discount_value: number | null;
           due_date: string | null;
-          exported_to_tally_at: string | null;
           has_adjustment: boolean;
           has_payment: boolean | null;
           id: string;
@@ -1765,9 +1770,10 @@ export type Database = {
           subtotal_amount: number | null;
           supplier_invoice_date: string | null;
           supplier_invoice_number: string | null;
-          tally_export_error: string | null;
-          tally_export_status: string | null;
-          tally_guid: string;
+          tally_last_attempt_at: string | null;
+          tally_sync_error: string | null;
+          tally_sync_status: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at: string | null;
           tax_type: Database["public"]["Enums"]["tax_type_enum"] | null;
           taxable_amount: number | null;
           total_amount: number | null;
@@ -1816,7 +1822,6 @@ export type Database = {
           discount_type?: Database["public"]["Enums"]["discount_type_enum"];
           discount_value?: number | null;
           due_date?: string | null;
-          exported_to_tally_at?: string | null;
           has_adjustment?: boolean;
           has_payment?: boolean | null;
           id?: string;
@@ -1859,9 +1864,10 @@ export type Database = {
           subtotal_amount?: number | null;
           supplier_invoice_date?: string | null;
           supplier_invoice_number?: string | null;
-          tally_export_error?: string | null;
-          tally_export_status?: string | null;
-          tally_guid?: string;
+          tally_last_attempt_at?: string | null;
+          tally_sync_error?: string | null;
+          tally_sync_status?: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at?: string | null;
           tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
           taxable_amount?: number | null;
           total_amount?: number | null;
@@ -1910,7 +1916,6 @@ export type Database = {
           discount_type?: Database["public"]["Enums"]["discount_type_enum"];
           discount_value?: number | null;
           due_date?: string | null;
-          exported_to_tally_at?: string | null;
           has_adjustment?: boolean;
           has_payment?: boolean | null;
           id?: string;
@@ -1953,9 +1958,10 @@ export type Database = {
           subtotal_amount?: number | null;
           supplier_invoice_date?: string | null;
           supplier_invoice_number?: string | null;
-          tally_export_error?: string | null;
-          tally_export_status?: string | null;
-          tally_guid?: string;
+          tally_last_attempt_at?: string | null;
+          tally_sync_error?: string | null;
+          tally_sync_status?: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at?: string | null;
           tax_type?: Database["public"]["Enums"]["tax_type_enum"] | null;
           taxable_amount?: number | null;
           total_amount?: number | null;
@@ -2249,7 +2255,6 @@ export type Database = {
           created_by: string | null;
           deleted_at: string | null;
           dr_cr: Database["public"]["Enums"]["dr_cr_enum"] | null;
-          exported_to_tally_at: string | null;
           gst_applicable: boolean | null;
           gst_rate: number | null;
           gst_type: string | null;
@@ -2265,7 +2270,10 @@ export type Database = {
           parent_group_id: string;
           partner_id: string | null;
           system_name: string | null;
-          tally_guid: string | null;
+          tally_last_attempt_at: string | null;
+          tally_sync_error: string | null;
+          tally_sync_status: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at: string | null;
           tds_applicable: boolean | null;
           tds_rate: number | null;
           updated_at: string;
@@ -2279,7 +2287,6 @@ export type Database = {
           created_by?: string | null;
           deleted_at?: string | null;
           dr_cr?: Database["public"]["Enums"]["dr_cr_enum"] | null;
-          exported_to_tally_at?: string | null;
           gst_applicable?: boolean | null;
           gst_rate?: number | null;
           gst_type?: string | null;
@@ -2295,7 +2302,10 @@ export type Database = {
           parent_group_id: string;
           partner_id?: string | null;
           system_name?: string | null;
-          tally_guid?: string | null;
+          tally_last_attempt_at?: string | null;
+          tally_sync_error?: string | null;
+          tally_sync_status?: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at?: string | null;
           tds_applicable?: boolean | null;
           tds_rate?: number | null;
           updated_at?: string;
@@ -2309,7 +2319,6 @@ export type Database = {
           created_by?: string | null;
           deleted_at?: string | null;
           dr_cr?: Database["public"]["Enums"]["dr_cr_enum"] | null;
-          exported_to_tally_at?: string | null;
           gst_applicable?: boolean | null;
           gst_rate?: number | null;
           gst_type?: string | null;
@@ -2325,7 +2334,10 @@ export type Database = {
           parent_group_id?: string;
           partner_id?: string | null;
           system_name?: string | null;
-          tally_guid?: string | null;
+          tally_last_attempt_at?: string | null;
+          tally_sync_error?: string | null;
+          tally_sync_status?: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at?: string | null;
           tds_applicable?: boolean | null;
           tds_rate?: number | null;
           updated_at?: string;
@@ -2894,7 +2906,6 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           deleted_at: string | null;
-          exported_to_tally_at: string | null;
           id: string;
           instrument_bank: string | null;
           instrument_branch: string | null;
@@ -2916,7 +2927,10 @@ export type Database = {
           search_vector: unknown;
           sequence_number: number;
           slug: string;
-          tally_guid: string;
+          tally_last_attempt_at: string | null;
+          tally_sync_error: string | null;
+          tally_sync_status: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at: string | null;
           tds_amount: number | null;
           tds_applicable: boolean | null;
           tds_ledger_id: string | null;
@@ -2939,7 +2953,6 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
-          exported_to_tally_at?: string | null;
           id?: string;
           instrument_bank?: string | null;
           instrument_branch?: string | null;
@@ -2961,7 +2974,10 @@ export type Database = {
           search_vector?: unknown;
           sequence_number: number;
           slug: string;
-          tally_guid?: string;
+          tally_last_attempt_at?: string | null;
+          tally_sync_error?: string | null;
+          tally_sync_status?: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at?: string | null;
           tds_amount?: number | null;
           tds_applicable?: boolean | null;
           tds_ledger_id?: string | null;
@@ -2984,7 +3000,6 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
-          exported_to_tally_at?: string | null;
           id?: string;
           instrument_bank?: string | null;
           instrument_branch?: string | null;
@@ -3006,7 +3021,10 @@ export type Database = {
           search_vector?: unknown;
           sequence_number?: number;
           slug?: string;
-          tally_guid?: string;
+          tally_last_attempt_at?: string | null;
+          tally_sync_error?: string | null;
+          tally_sync_status?: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at?: string | null;
           tds_amount?: number | null;
           tds_applicable?: boolean | null;
           tds_ledger_id?: string | null;
@@ -3642,6 +3660,10 @@ export type Database = {
           sequence_number: number;
           show_on_catalog: boolean | null;
           stock_type: string;
+          tally_last_attempt_at: string | null;
+          tally_sync_error: string | null;
+          tally_sync_status: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at: string | null;
           tax_type: string;
           thread_count_cm: number | null;
           updated_at: string;
@@ -3670,6 +3692,10 @@ export type Database = {
           sequence_number: number;
           show_on_catalog?: boolean | null;
           stock_type: string;
+          tally_last_attempt_at?: string | null;
+          tally_sync_error?: string | null;
+          tally_sync_status?: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at?: string | null;
           tax_type?: string;
           thread_count_cm?: number | null;
           updated_at?: string;
@@ -3698,6 +3724,10 @@ export type Database = {
           sequence_number?: number;
           show_on_catalog?: boolean | null;
           stock_type?: string;
+          tally_last_attempt_at?: string | null;
+          tally_sync_error?: string | null;
+          tally_sync_status?: Database["public"]["Enums"]["tally_sync_status_enum"];
+          tally_synced_at?: string | null;
           tax_type?: string;
           thread_count_cm?: number | null;
           updated_at?: string;
@@ -4517,6 +4547,152 @@ export type Database = {
           },
         ];
       };
+      tally_sync_devices: {
+        Row: {
+          company_id: string;
+          device_fingerprint: string | null;
+          device_name: string | null;
+          id: string;
+          last_seen_at: string | null;
+          paired_at: string;
+          revoked_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          company_id?: string;
+          device_fingerprint?: string | null;
+          device_name?: string | null;
+          id?: string;
+          last_seen_at?: string | null;
+          paired_at?: string;
+          revoked_at?: string | null;
+          user_id?: string;
+        };
+        Update: {
+          company_id?: string;
+          device_fingerprint?: string | null;
+          device_name?: string | null;
+          id?: string;
+          last_seen_at?: string | null;
+          paired_at?: string;
+          revoked_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tally_sync_devices_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tally_sync_job_items: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          error_text: string | null;
+          id: string;
+          job_id: string;
+          record_id: string;
+          record_identifier: string | null;
+          record_type: Database["public"]["Enums"]["tally_sync_record_type_enum"];
+          status: Database["public"]["Enums"]["tally_sync_item_status_enum"];
+        };
+        Insert: {
+          company_id?: string;
+          created_at?: string;
+          error_text?: string | null;
+          id?: string;
+          job_id: string;
+          record_id: string;
+          record_identifier?: string | null;
+          record_type: Database["public"]["Enums"]["tally_sync_record_type_enum"];
+          status: Database["public"]["Enums"]["tally_sync_item_status_enum"];
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          error_text?: string | null;
+          id?: string;
+          job_id?: string;
+          record_id?: string;
+          record_identifier?: string | null;
+          record_type?: Database["public"]["Enums"]["tally_sync_record_type_enum"];
+          status?: Database["public"]["Enums"]["tally_sync_item_status_enum"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tally_sync_job_items_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tally_sync_job_items_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "tally_sync_jobs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tally_sync_jobs: {
+        Row: {
+          company_id: string;
+          created_by: string | null;
+          date_from: string;
+          date_to: string;
+          device_id: string;
+          finished_at: string | null;
+          id: string;
+          started_at: string;
+          status: Database["public"]["Enums"]["tally_sync_job_status_enum"];
+          totals: Json | null;
+        };
+        Insert: {
+          company_id?: string;
+          created_by?: string | null;
+          date_from: string;
+          date_to: string;
+          device_id: string;
+          finished_at?: string | null;
+          id?: string;
+          started_at?: string;
+          status?: Database["public"]["Enums"]["tally_sync_job_status_enum"];
+          totals?: Json | null;
+        };
+        Update: {
+          company_id?: string;
+          created_by?: string | null;
+          date_from?: string;
+          date_to?: string;
+          device_id?: string;
+          finished_at?: string | null;
+          id?: string;
+          started_at?: string;
+          status?: Database["public"]["Enums"]["tally_sync_job_status_enum"];
+          totals?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tally_sync_jobs_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tally_sync_jobs_device_id_fkey";
+            columns: ["device_id"];
+            isOneToOne: false;
+            referencedRelation: "tally_sync_devices";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       user_warehouses: {
         Row: {
           company_id: string;
@@ -4851,6 +5027,10 @@ export type Database = {
         };
         Returns: string;
       };
+      create_tally_sync_job: {
+        Args: { p_date_from: string; p_date_to: string; p_device_id: string };
+        Returns: string;
+      };
       create_user_from_invite: {
         Args: {
           p_auth_user_id: string;
@@ -4862,6 +5042,14 @@ export type Database = {
         Returns: string;
       };
       custom_access_auth_hook: { Args: { event: Json }; Returns: Json };
+      finalize_tally_sync_job: {
+        Args: {
+          p_job_id: string;
+          p_status: Database["public"]["Enums"]["tally_sync_job_status_enum"];
+          p_totals: Json;
+        };
+        Returns: undefined;
+      };
       generate_company_slug: {
         Args: { company_name: string };
         Returns: string;
@@ -4962,10 +5150,22 @@ export type Database = {
           to_type: string;
         }[];
       };
+      get_tally_sync_payload: {
+        Args: {
+          p_date_from: string;
+          p_date_to: string;
+          p_force_resync?: boolean;
+        };
+        Returns: Json;
+      };
       get_user_company_id: { Args: never; Returns: string };
       has_warehouse_access: {
         Args: { warehouse_id_to_check: string };
         Returns: boolean;
+      };
+      mark_tally_sync_results: {
+        Args: { p_job_id: string; p_results: Json };
+        Returns: undefined;
       };
       quick_order_with_outward: {
         Args: {
@@ -5123,6 +5323,19 @@ export type Database = {
         | "card";
       product_tax_applicability_enum: "no_tax" | "gst";
       stock_unit_status_enum: "available" | "in_transit" | "processing";
+      tally_sync_item_status_enum: "succeeded" | "failed" | "skipped";
+      tally_sync_job_status_enum:
+        | "running"
+        | "completed"
+        | "failed"
+        | "cancelled";
+      tally_sync_record_type_enum:
+        | "invoice"
+        | "payment"
+        | "adjustment"
+        | "ledger"
+        | "product";
+      tally_sync_status_enum: "pending" | "synced" | "failed";
       tax_type_enum: "no_tax" | "gst" | "igst";
       voucher_type_enum: "payment" | "receipt";
     };
@@ -5290,6 +5503,21 @@ export const Constants = {
       ],
       product_tax_applicability_enum: ["no_tax", "gst"],
       stock_unit_status_enum: ["available", "in_transit", "processing"],
+      tally_sync_item_status_enum: ["succeeded", "failed", "skipped"],
+      tally_sync_job_status_enum: [
+        "running",
+        "completed",
+        "failed",
+        "cancelled",
+      ],
+      tally_sync_record_type_enum: [
+        "invoice",
+        "payment",
+        "adjustment",
+        "ledger",
+        "product",
+      ],
+      tally_sync_status_enum: ["pending", "synced", "failed"],
       tax_type_enum: ["no_tax", "gst", "igst"],
       voucher_type_enum: ["payment", "receipt"],
     },

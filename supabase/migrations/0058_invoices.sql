@@ -82,11 +82,11 @@ CREATE TABLE invoices (
     supplier_invoice_number VARCHAR(50), -- Supplier's bill number
     supplier_invoice_date DATE, -- Supplier's bill date
 
-    -- Tally export tracking
-    tally_guid VARCHAR(100) NOT NULL DEFAULT extensions.uuid_generate_v4(),
-    tally_export_status VARCHAR(20),
-    tally_export_error TEXT,
-    exported_to_tally_at TIMESTAMPTZ,
+    -- Tally sync tracking
+    tally_sync_status tally_sync_status_enum NOT NULL DEFAULT 'pending',
+    tally_sync_error TEXT,
+    tally_synced_at TIMESTAMPTZ,
+    tally_last_attempt_at TIMESTAMPTZ,
 
     -- Warehouse snapshot (taken at invoice creation time)
     warehouse_name VARCHAR(200),
@@ -185,6 +185,11 @@ CREATE INDEX idx_invoices_source_purchase_order ON invoices(source_purchase_orde
 
 -- Full-text search index
 CREATE INDEX idx_invoices_search ON invoices USING GIN(search_vector);
+
+-- Tally sync: pending/failed invoices awaiting push
+CREATE INDEX idx_invoices_tally_pending
+    ON invoices(company_id, invoice_date)
+    WHERE tally_sync_status IN ('pending', 'failed') AND deleted_at IS NULL;
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES
@@ -322,7 +327,7 @@ CREATE TRIGGER trigger_reconcile_invoice_on_total_change
 
 -- Note: update_invoice_status() function removed - reconcile_invoice_outstanding() now handles status
 
--- Prevent invoice edit if payment exists, adjustment exists, cancelled, or exported to Tally
+-- Prevent invoice edit if payment exists, adjustment exists, or cancelled
 CREATE OR REPLACE FUNCTION prevent_invoice_edit()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -372,11 +377,6 @@ BEGIN
             RAISE EXCEPTION 'Cannot edit invoice % - adjustment notes exist. Delete adjustment notes or create new adjustment note',
                 OLD.invoice_number;
         END IF;
-
-        IF OLD.exported_to_tally_at IS NOT NULL THEN
-            RAISE EXCEPTION 'Cannot edit invoice % - already exported to Tally on %. Create adjustment note instead',
-                OLD.invoice_number, OLD.exported_to_tally_at::DATE;
-        END IF;
     END IF;
 
     RETURN NEW;
@@ -387,7 +387,7 @@ CREATE TRIGGER trigger_prevent_invoice_edit
     BEFORE UPDATE ON invoices
     FOR EACH ROW EXECUTE FUNCTION prevent_invoice_edit();
 
--- Prevent invoice deletion if payment exists, adjustment exists, cancelled, or exported to Tally
+-- Prevent invoice deletion if payment exists, adjustment exists, or cancelled
 CREATE OR REPLACE FUNCTION prevent_invoice_delete()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -407,12 +407,6 @@ BEGIN
     IF OLD.has_adjustment = TRUE THEN
         RAISE EXCEPTION 'Cannot delete invoice % - adjustment notes exist. Remove adjustment notes first',
             OLD.invoice_number;
-    END IF;
-
-    -- Rule 4: Cannot delete if exported to Tally
-    IF OLD.exported_to_tally_at IS NOT NULL THEN
-        RAISE EXCEPTION 'Cannot delete invoice % - already exported to Tally on %. Use soft delete instead',
-            OLD.invoice_number, OLD.exported_to_tally_at::DATE;
     END IF;
 
     RETURN OLD;
