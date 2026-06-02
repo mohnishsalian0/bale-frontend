@@ -32,7 +32,7 @@ BEGIN
     SELECT id INTO v_bank_accounts_id FROM parent_groups WHERE name = 'Bank Accounts';
     SELECT id INTO v_cash_id FROM parent_groups WHERE name = 'Cash-in-Hand';
     SELECT id INTO v_indirect_expenses_id FROM parent_groups WHERE name = 'Indirect Expenses';
-    SELECT id INTO v_indirect_income_id FROM parent_groups WHERE name = 'Indirect Income';
+    SELECT id INTO v_indirect_income_id FROM parent_groups WHERE name = 'Indirect Incomes';
     SELECT id INTO v_direct_expenses_id FROM parent_groups WHERE name = 'Direct Expenses';
 
     -- Create default Sales ledger
@@ -40,29 +40,29 @@ BEGIN
     VALUES (NEW.id, 'Sales', 'sales', v_sales_accounts_id, 'sales', true);
 
     -- Create Sales Return ledger (contra to Sales)
-    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type)
-    VALUES (NEW.id, 'Sales Return', 'sales_return', v_sales_accounts_id, 'sales');
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, is_default)
+    VALUES (NEW.id, 'Sales Return', 'sales_return', v_sales_accounts_id, 'sales', true);
 
     -- Create default Purchase ledger
     INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, is_default)
     VALUES (NEW.id, 'Purchase', 'purchase', v_purchase_accounts_id, 'purchase', true);
 
     -- Create Purchase Return ledger (contra to Purchase)
-    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type)
-    VALUES (NEW.id, 'Purchase Return', 'purchase_return', v_purchase_accounts_id, 'purchase');
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, is_default)
+    VALUES (NEW.id, 'Purchase Return', 'purchase_return', v_purchase_accounts_id, 'purchase', true);
 
     -- Create GST ledgers (combined for input and output)
-    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, gst_applicable, gst_rate, gst_type)
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, is_default, gst_applicable, gst_rate, gst_type)
     VALUES
-        (NEW.id, 'CGST', 'cgst', v_duties_taxes_id, 'tax', true, 0, 'CGST'),
-        (NEW.id, 'SGST', 'sgst', v_duties_taxes_id, 'tax', true, 0, 'SGST'),
-        (NEW.id, 'IGST', 'igst', v_duties_taxes_id, 'tax', true, 0, 'IGST');
+        (NEW.id, 'CGST', 'cgst', v_duties_taxes_id, 'tax', true, true, 0, 'CGST'),
+        (NEW.id, 'SGST', 'sgst', v_duties_taxes_id, 'tax', true, true, 0, 'SGST'),
+        (NEW.id, 'IGST', 'igst', v_duties_taxes_id, 'tax', true, true, 0, 'IGST');
 
     -- Create TDS/TCS ledgers
-    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, tds_applicable, tds_rate)
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, is_default, tds_applicable, tds_rate)
     VALUES
-        (NEW.id, 'TDS Payable', 'tds_payable', v_duties_taxes_id, 'tax', true, 0.1),
-        (NEW.id, 'TCS Receivable', 'tcs_receivable', v_duties_taxes_id, 'tax', true, 0.1);
+        (NEW.id, 'TDS Payable', 'tds_payable', v_duties_taxes_id, 'tax', true, true, 0.1),
+        (NEW.id, 'TCS Receivable', 'tcs_receivable', v_duties_taxes_id, 'tax', true, true, 0.1);
 
     -- Create Cash ledger
     INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, is_default)
@@ -85,8 +85,8 @@ BEGIN
         (NEW.id, 'Freight Inward', 'freight_inward', v_direct_expenses_id, 'expense', true, 5.00);
 
     -- Create round-off ledger (no GST on round-off)
-    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type)
-    VALUES (NEW.id, 'Round Off', 'round_off', v_indirect_expenses_id, 'expense');
+    INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, is_default)
+    VALUES (NEW.id, 'Round Off', 'round_off', v_indirect_expenses_id, 'expense', true);
 
     -- Create additional charge ledgers (18% GST for services)
     INSERT INTO ledgers (company_id, name, system_name, parent_group_id, ledger_type, gst_applicable, gst_rate)

@@ -160,13 +160,26 @@ export default function OutputUnitsPage({ params }: PageParams) {
               </div>
 
               {/* Quantity */}
-              <div className="text-right shrink-0">
-                <p className="text-sm font-bold text-gray-700">
-                  {stockUnit.initial_quantity}{" "}
-                  {getMeasuringUnitAbbreviation(measuringUnit)}
-                </p>
-                <p className="text-sm text-gray-500">Created</p>
-              </div>
+              {(() => {
+                const abbr = getMeasuringUnitAbbreviation(measuringUnit);
+                const initial = Number(stockUnit.initial_quantity) || 0;
+                const wastageQty = (stockUnit.adjustments ?? [])
+                  .filter((a) => a.convert_id === convert.id)
+                  .reduce((s, a) => s + Math.abs(a.quantity_adjusted), 0);
+                const netQty = initial - wastageQty;
+                return (
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-bold text-gray-700">
+                      {netQty.toFixed(2)} {abbr}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {wastageQty > 0
+                        ? `${initial.toFixed(2)} − ${wastageQty.toFixed(2)} wastage`
+                        : "Created"}
+                    </p>
+                  </div>
+                );
+              })()}
             </li>
           );
         })}

@@ -7,6 +7,7 @@ import { useGoodsOutwards } from "@/lib/query/hooks/stock-flow";
 import { PaginationWrapper } from "@/components/ui/pagination-wrapper";
 import { LoadingState } from "@/components/layouts/loading-state";
 import { ErrorState } from "@/components/layouts/error-state";
+import { Badge } from "@/components/ui/badge";
 import { formatMonthHeader, formatDateWithOrdinal } from "@/lib/utils/date";
 import { formatMeasuringUnitQuantities } from "@/lib/utils/measuring-units";
 import {
@@ -25,6 +26,7 @@ interface OutwardItem {
   quantities: Map<MeasuringUnit, number>;
   billNumber: string;
   sequenceNumber: number;
+  isCancelled: boolean;
 }
 
 interface MonthGroup {
@@ -85,6 +87,7 @@ export default function OutwardPage() {
         quantities,
         billNumber: `GO-${d.sequence_number}`,
         sequenceNumber: d.sequence_number,
+        isCancelled: d.is_cancelled || false,
       };
     });
 
@@ -165,15 +168,24 @@ export default function OutwardPage() {
                   key={item.id}
                   onClick={() =>
                     router.push(
-                      `/warehouse/${warehouse.slug}/goods-outward/${item.sequenceNumber}`,
+                      `/warehouse/${warehouse.slug}/goods-outward/${item.sequenceNumber}/details`,
                     )
                   }
                   className="flex gap-4 p-4 border-t border-dashed border-gray-300 hover:bg-gray-100 hover:cursor-pointer transition-colors"
                 >
                   <div className="flex-3 text-left">
-                    <p className="text-base font-medium text-gray-700">
-                      To {item.receiverName}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p
+                        className={`text-base font-medium ${item.isCancelled ? "text-gray-400" : "text-gray-700"}`}
+                      >
+                        To {item.receiverName}
+                      </p>
+                      {item.isCancelled && (
+                        <Badge color="gray" variant="secondary">
+                          Cancelled
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500 mt-1">
                       {item.productsSummary}
                     </p>

@@ -143,12 +143,6 @@ export default function EditPaymentPage() {
       return;
     }
 
-    if (payment.exported_to_tally_at) {
-      toast.error("Cannot edit a payment that has been exported to Tally");
-      router.push(`/warehouse/${warehouse.slug}/payments/${payment_slug}`);
-      return;
-    }
-
     // Extract partner_id from party_ledger if available
     const partnerId = payment.party_ledger?.partner_id || null;
     setSelectedPartnerId(partnerId);

@@ -6,7 +6,6 @@ import {
   IconReceipt,
   IconCalendar,
   IconNote,
-  IconFileInvoice,
   IconUsers,
   IconDownload,
 } from "@tabler/icons-react";
@@ -168,11 +167,6 @@ export default function PaymentDetailsPage({ params }: PageParams) {
               </h1>
               {payment.is_cancelled && <Badge color="gray">Cancelled</Badge>}
               <PaymentModeBadge mode={payment.payment_mode as PaymentMode} />
-              {payment.exported_to_tally_at && (
-                <Badge variant="secondary" color="blue">
-                  Exported to Tally
-                </Badge>
-              )}
             </div>
             <p className="text-sm text-gray-500 mt-1">
               {payment.voucher_type === "receipt" ? "Received" : "Paid"} on{" "}
@@ -422,22 +416,6 @@ export default function PaymentDetailsPage({ params }: PageParams) {
               </div>
             )}
           </Section>
-
-          {/* Export Status */}
-          {payment.exported_to_tally_at && (
-            <Section
-              title="Export Status"
-              subtitle=""
-              icon={() => <IconFileInvoice />}
-            >
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-700">Exported to Tally</span>
-                <span className="font-semibold text-gray-700">
-                  {formatAbsoluteDate(payment.exported_to_tally_at)}
-                </span>
-              </div>
-            </Section>
-          )}
         </div>
       </div>
 

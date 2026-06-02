@@ -4,7 +4,7 @@
 
 - **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS
 - **Database**: Supabase (PostgreSQL + Auth + Storage)
-- **Deployment**: Hostinger
+- **Deployment**: Vercel
 - **Future**: Rust + Axum backend (post-MVP)
 
 ## Key Architecture
@@ -94,8 +94,6 @@ npx supabase gen types typescript --local > src/types/database.ts
 ```bash
 # Build and export for static hosting
 npm run build
-
-# Deploy to Hostinger (via FTP/Git depending on setup)
 ```
 
 ## Project Structure

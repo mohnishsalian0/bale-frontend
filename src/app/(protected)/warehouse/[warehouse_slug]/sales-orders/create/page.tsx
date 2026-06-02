@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ProductSelectionStep } from "@/components/layouts/product-selection-step";
 import { PartnerSelectionStep } from "@/components/layouts/partner-selection-step";
@@ -34,9 +34,13 @@ type FormStep = "customer" | "products" | "details";
 
 export default function CreateSalesOrderPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
-  const [currentStep, setCurrentStep] = useState<FormStep>("customer");
+  const preselectedCustomerId = searchParams.get("customer");
+  const [currentStep, setCurrentStep] = useState<FormStep>(
+    preselectedCustomerId ? "products" : "customer",
+  );
 
   // Sales order mutations
   const { create: createOrder } = useSalesOrderMutations(warehouse.id);
@@ -47,7 +51,7 @@ export default function CreateSalesOrderPage() {
   >({});
 
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
-    null,
+    preselectedCustomerId,
   );
 
   // Hide chrome for immersive flow experience
@@ -58,7 +62,7 @@ export default function CreateSalesOrderPage() {
 
   const [formData, setFormData] = useState<OrderFormData>({
     warehouseId: warehouse.id,
-    customerId: "",
+    customerId: preselectedCustomerId || "",
     agentId: "",
     orderDate: "",
     deliveryDueDate: "",

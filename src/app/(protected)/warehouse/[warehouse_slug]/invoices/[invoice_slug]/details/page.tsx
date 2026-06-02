@@ -807,22 +807,6 @@ export default function InvoiceDetailsPage({ params }: PageParams) {
               </div>
             )}
           </Section>
-
-          {/* Export Status */}
-          {invoice.exported_to_tally_at && (
-            <Section
-              title="Export Status"
-              subtitle=""
-              icon={() => <IconFileInvoice />}
-            >
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-700">Exported to Tally</span>
-                <span className="font-semibold text-gray-700">
-                  {formatAbsoluteDate(invoice.exported_to_tally_at)}
-                </span>
-              </div>
-            </Section>
-          )}
         </div>
       </div>
 

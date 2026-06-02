@@ -725,7 +725,6 @@ export function getInvoiceActions(
     | "is_cancelled"
     | "has_payment"
     | "has_adjustment"
-    | "exported_to_tally_at"
   >,
   callbacks: InvoiceActionsCallbacks,
 ): ContextMenuItem[] {
@@ -763,30 +762,30 @@ export function getInvoiceActions(
     permission: "accounting.adjustment_notes.create",
   });
 
-  // Edit: hidden if cancelled or exported to Tally
+  // Edit: hidden if cancelled, has payment, or has adjustment
   items.push({
     label: "Edit",
     icon: IconEdit,
     onClick: callbacks.onEdit,
-    hidden:
+    hidden: !!(
       invoice.is_cancelled ||
       invoice.has_adjustment ||
-      invoice.has_payment ||
-      invoice.exported_to_tally_at !== null,
+      invoice.has_payment
+    ),
     permission: "accounting.invoices.update",
   });
 
-  // Delete: shown only if not cancelled, no payments, no adjustments, not exported
+  // Delete: shown only if not cancelled, no payments, no adjustments
   items.push({
     label: "Delete",
     icon: IconTrash,
     onClick: callbacks.onDelete,
     variant: "destructive",
-    hidden:
+    hidden: !!(
       invoice.is_cancelled ||
       invoice.has_payment ||
-      invoice.has_adjustment ||
-      invoice.exported_to_tally_at !== null,
+      invoice.has_adjustment
+    ),
     permission: "accounting.invoices.delete",
   });
 
@@ -812,19 +811,18 @@ export interface PaymentActionsCallbacks {
 }
 
 export function getPaymentActions(
-  payment: Pick<Payment, "is_cancelled" | "exported_to_tally_at">,
+  payment: Pick<Payment, "is_cancelled">,
   callbacks: PaymentActionsCallbacks,
 ): ContextMenuItem[] {
   const items: ContextMenuItem[] = [];
 
   // Primary button (flex-2): Edit
-  // Hidden if cancelled or exported to Tally
   items.push({
     label: "Edit",
     icon: IconEdit,
     onClick: callbacks.onEdit,
     variant: "outline",
-    hidden: payment.is_cancelled || payment.exported_to_tally_at !== null,
+    hidden: payment.is_cancelled,
     permission: "accounting.payments.update",
   });
 
@@ -834,7 +832,7 @@ export function getPaymentActions(
     icon: IconTrash,
     onClick: callbacks.onDelete,
     variant: "destructive",
-    hidden: payment.is_cancelled || payment.exported_to_tally_at !== null,
+    hidden: payment.is_cancelled,
     permission: "accounting.payments.delete",
   });
 
@@ -859,21 +857,18 @@ export interface AdjustmentNoteActionsCallbacks {
 }
 
 export function getAdjustmentNoteActions(
-  adjustmentNote: Pick<AdjustmentNote, "is_cancelled" | "exported_to_tally_at">,
+  adjustmentNote: Pick<AdjustmentNote, "is_cancelled">,
   callbacks: AdjustmentNoteActionsCallbacks,
 ): ContextMenuItem[] {
   const items: ContextMenuItem[] = [];
 
   // Primary button (flex-2): Edit
-  // Hidden if cancelled or exported to Tally
   items.push({
     label: "Edit",
     icon: IconEdit,
     onClick: callbacks.onEdit,
     variant: "outline",
-    hidden:
-      adjustmentNote.is_cancelled ||
-      adjustmentNote.exported_to_tally_at !== null,
+    hidden: adjustmentNote.is_cancelled,
     permission: "accounting.adjustment_notes.update",
   });
 
@@ -883,9 +878,7 @@ export function getAdjustmentNoteActions(
     icon: IconTrash,
     onClick: callbacks.onDelete,
     variant: "destructive",
-    hidden:
-      adjustmentNote.is_cancelled ||
-      adjustmentNote.exported_to_tally_at !== null,
+    hidden: adjustmentNote.is_cancelled,
     permission: "accounting.adjustment_notes.delete",
   });
 
@@ -949,7 +942,7 @@ export function getGoodsInwardActions(
     icon: IconX,
     onClick: callbacks.onCancel,
     variant: "destructive",
-    hidden: isCancelled || hasInvoice,
+    hidden: hasInvoice || isCancelled,
     permission: "inventory.goods_inward.update",
   });
 

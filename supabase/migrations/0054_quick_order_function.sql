@@ -93,7 +93,7 @@ BEGIN
             ARRAY[]::TEXT[]
         ),
         COALESCE(p_order_data->>'source', 'manual'),
-        'completed',  -- Quick sales orders are immediately completed
+        'in_progress',  -- Start as in_progress to allow outward creation and reconciliation triggers
         COALESCE((p_order_data->>'created_by')::UUID, auth.uid())
     )
     RETURNING id, sequence_number INTO v_order_id, v_sequence_number;
@@ -130,7 +130,6 @@ BEGIN
         expected_delivery_date,
         transport_reference_number,
         transport_type,
-        transport_details,
         notes,
         created_by
     )
@@ -145,7 +144,6 @@ BEGIN
         NULLIF((p_order_data->>'delivery_due_date'), '')::DATE,
         NULLIF(p_order_data->>'transport_reference_number', ''),
         NULLIF(p_order_data->>'transport_type', '')::VARCHAR(20),
-        NULLIF(p_order_data->>'transport_details', ''),
         NULLIF(p_order_data->>'notes', ''),
         COALESCE((p_order_data->>'created_by')::UUID, auth.uid())
     )
@@ -215,9 +213,10 @@ BEGIN
         END IF;
     END LOOP;
 
-    -- Update sales order to mark it has outward
+    -- Mark order as completed now that all outward work is done
+    -- (has_outward will be set automatically by reconcile_sales_order trigger)
     UPDATE sales_orders
-    SET has_outward = TRUE
+    SET status = 'completed'
     WHERE id = v_order_id;
 
     -- Return the sequence number for navigation

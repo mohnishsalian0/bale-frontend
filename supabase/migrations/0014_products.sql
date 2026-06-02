@@ -2,6 +2,12 @@
 -- Central product catalog with fabric-specific attributes
 
 -- =====================================================
+-- TALLY SYNC STATUS ENUM (shared across syncable tables)
+-- =====================================================
+
+CREATE TYPE tally_sync_status_enum AS ENUM ('pending', 'synced', 'failed');
+
+-- =====================================================
 -- PRODUCTS MASTER TABLE
 -- =====================================================
 
@@ -36,7 +42,13 @@ CREATE TABLE products (
     hsn_code VARCHAR(20),
     notes TEXT,
     product_images TEXT[], -- Array of image URLs
-    
+
+    -- Tally sync tracking
+    tally_sync_status tally_sync_status_enum NOT NULL DEFAULT 'pending',
+    tally_sync_error TEXT,
+    tally_synced_at TIMESTAMPTZ,
+    tally_last_attempt_at TIMESTAMPTZ,
+
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -90,6 +102,11 @@ CREATE INDEX idx_products_tax_type ON products(company_id, tax_type);
 
 -- Full-text search index
 CREATE INDEX idx_products_search ON products USING GIN(search_vector);
+
+-- Tally sync: pending/failed products awaiting push
+CREATE INDEX idx_products_tally_pending
+    ON products(company_id, created_at)
+    WHERE tally_sync_status IN ('pending', 'failed') AND deleted_at IS NULL;
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES

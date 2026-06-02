@@ -68,8 +68,8 @@ INSERT INTO parent_groups (name, reserved_name, category, is_system, description
 
 -- Primary Groups (Income)
 INSERT INTO parent_groups (name, reserved_name, category, is_system, description) VALUES
-('Direct Income', 'Direct Incomes', 'income', true, 'Income from core business operations'),
-('Indirect Income', 'Indirect Incomes', 'income', true, 'Income from non-core operations');
+('Direct Incomes', 'Direct Incomes', 'income', true, 'Income from core business operations'),
+('Indirect Incomes', 'Indirect Incomes', 'income', true, 'Income from non-core operations');
 
 -- Primary Groups (Expense)
 INSERT INTO parent_groups (name, reserved_name, category, is_system, description) VALUES

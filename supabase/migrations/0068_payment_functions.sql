@@ -312,11 +312,10 @@ DECLARE
     v_total_allocated DECIMAL(10,2) := 0;
     v_invoice_outstanding DECIMAL(10,2);
     v_is_cancelled BOOLEAN;
-    v_exported_at TIMESTAMP;
 BEGIN
     -- Check if payment exists and get status
-    SELECT company_id, is_cancelled, exported_to_tally_at
-    INTO v_company_id, v_is_cancelled, v_exported_at
+    SELECT company_id, is_cancelled
+    INTO v_company_id, v_is_cancelled
     FROM payments
     WHERE id = p_payment_id;
 
@@ -327,10 +326,6 @@ BEGIN
     -- Validate payment can be edited
     IF v_is_cancelled THEN
         RAISE EXCEPTION 'Cannot edit cancelled payment';
-    END IF;
-
-    IF v_exported_at IS NOT NULL THEN
-        RAISE EXCEPTION 'Cannot edit payment that has been exported to Tally';
     END IF;
 
     -- Round amounts to handle JavaScript floating point precision

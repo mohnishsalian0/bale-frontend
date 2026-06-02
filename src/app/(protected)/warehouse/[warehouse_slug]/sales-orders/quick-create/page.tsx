@@ -18,13 +18,13 @@ import { dateToISOString } from "@/lib/utils/date";
 import FormHeader from "@/components/ui/form-header";
 import FormFooter from "@/components/ui/form-footer";
 
-type FormStep = "scanner" | "customer" | "details";
+type FormStep = "customer" | "scanner" | "details";
 
 export default function QuickCreateOrderPage() {
   const router = useRouter();
   const { warehouse } = useSession();
   const { hideChrome, showChromeUI } = useAppChrome();
-  const [currentStep, setCurrentStep] = useState<FormStep>("scanner");
+  const [currentStep, setCurrentStep] = useState<FormStep>("customer");
   const [scannedUnits, setScannedUnits] = useState<ScannedStockUnit[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
     null,
@@ -50,7 +50,7 @@ export default function QuickCreateOrderPage() {
     discountType: "none",
     discount: "",
     paymentTerms: "",
-    transportDetails: "",
+    transportReferenceNumber: "",
     notes: "",
     documentFile: null,
   });
@@ -60,7 +60,7 @@ export default function QuickCreateOrderPage() {
     setSelectedCustomerId(customerId);
     // Auto-advance to next step after selection
     setTimeout(() => {
-      setCurrentStep("details");
+      setCurrentStep("scanner");
     }, 300);
   };
 
@@ -90,18 +90,18 @@ export default function QuickCreateOrderPage() {
   ]);
 
   const handleNext = () => {
-    if (currentStep === "scanner" && canProceedFromScanner) {
-      setCurrentStep("customer");
-    } else if (currentStep === "customer" && canProceedFromCustomer) {
+    if (currentStep === "customer" && canProceedFromCustomer) {
+      setCurrentStep("scanner");
+    } else if (currentStep === "scanner" && canProceedFromScanner) {
       setCurrentStep("details");
     }
   };
 
   const handleBack = () => {
     if (currentStep === "details") {
-      setCurrentStep("customer");
-    } else if (currentStep === "customer") {
       setCurrentStep("scanner");
+    } else if (currentStep === "scanner") {
+      setCurrentStep("customer");
     }
   };
 
@@ -171,7 +171,8 @@ export default function QuickCreateOrderPage() {
             ? parseFloat(detailsFormData.discount)
             : 0,
         payment_terms: detailsFormData.paymentTerms || null,
-        transport_details: detailsFormData.transportDetails || null,
+        transport_reference_number:
+          detailsFormData.transportReferenceNumber || null,
         notes: detailsFormData.notes || null,
         attachments: [],
         status: "completed",
@@ -198,7 +199,7 @@ export default function QuickCreateOrderPage() {
 
   // Calculate step number
   const stepNumber =
-    currentStep === "scanner" ? 1 : currentStep === "customer" ? 2 : 3;
+    currentStep === "customer" ? 1 : currentStep === "scanner" ? 2 : 3;
 
   return (
     <div className="h-full flex flex-col items-center">
@@ -214,19 +215,19 @@ export default function QuickCreateOrderPage() {
 
         {/* Step Content - Scrollable */}
         <div className="flex-1 flex-col overflow-y-auto flex">
-          {currentStep === "scanner" && (
-            <StockUnitScannerStep
-              scannedUnits={scannedUnits}
-              onScannedUnitsChange={setScannedUnits}
-              warehouseId={warehouse.id}
-            />
-          )}
-
           {currentStep === "customer" && (
             <PartnerSelectionStep
               partnerType="customer"
               selectedPartnerId={selectedCustomerId}
               onSelectPartner={handleSelectCustomer}
+            />
+          )}
+
+          {currentStep === "scanner" && (
+            <StockUnitScannerStep
+              scannedUnits={scannedUnits}
+              onScannedUnitsChange={setScannedUnits}
+              warehouseId={warehouse.id}
             />
           )}
 
@@ -242,7 +243,7 @@ export default function QuickCreateOrderPage() {
 
         {/* Bottom Action Bar - Fixed at bottom */}
         <FormFooter>
-          {currentStep !== "scanner" && (
+          {currentStep !== "customer" && (
             <Button
               variant="outline"
               onClick={handleBack}
@@ -252,19 +253,19 @@ export default function QuickCreateOrderPage() {
               Back
             </Button>
           )}
-          {currentStep === "scanner" && (
+          {currentStep === "customer" && (
             <Button
               onClick={handleNext}
-              disabled={!canProceedFromScanner || saving}
+              disabled={!canProceedFromCustomer || saving}
               className="flex-1"
             >
               Continue
             </Button>
           )}
-          {currentStep === "customer" && (
+          {currentStep === "scanner" && (
             <Button
               onClick={handleNext}
-              disabled={!canProceedFromCustomer || saving}
+              disabled={!canProceedFromScanner || saving}
               className="flex-1"
             >
               Continue

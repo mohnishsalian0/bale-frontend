@@ -66,9 +66,11 @@ CREATE TABLE payments (
     -- Counter ledger snapshot (taken at payment creation time)
     counter_ledger_name VARCHAR(200),
 
-    -- Tally export tracking
-    tally_guid VARCHAR(100),
-    exported_to_tally_at TIMESTAMPTZ,
+    -- Tally sync tracking
+    tally_sync_status tally_sync_status_enum NOT NULL DEFAULT 'pending',
+    tally_sync_error TEXT,
+    tally_synced_at TIMESTAMPTZ,
+    tally_last_attempt_at TIMESTAMPTZ,
 
     -- Notes and attachments
     notes TEXT,
@@ -105,6 +107,11 @@ CREATE INDEX idx_payments_party_ledger ON payments(party_ledger_id);
 CREATE INDEX idx_payments_counter_ledger ON payments(counter_ledger_id);
 CREATE INDEX idx_payments_date ON payments(company_id, payment_date);
 CREATE INDEX idx_payments_sequence_number ON payments(company_id, sequence_number);
+
+-- Tally sync: pending/failed payments awaiting push
+CREATE INDEX idx_payments_tally_pending
+    ON payments(company_id, payment_date)
+    WHERE tally_sync_status IN ('pending', 'failed') AND deleted_at IS NULL;
 
 -- =====================================================
 -- TRIGGERS FOR AUTO-UPDATES
@@ -179,7 +186,7 @@ CREATE TRIGGER trigger_calculate_payment_net_amount
     BEFORE INSERT OR UPDATE ON payments
     FOR EACH ROW EXECUTE FUNCTION calculate_payment_net_amount();
 
--- Prevent payment edit if cancelled or exported to Tally, validate cancellation
+-- Prevent payment edit if cancelled, validate cancellation
 CREATE OR REPLACE FUNCTION prevent_payment_edit()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -194,12 +201,6 @@ BEGIN
         IF NEW.cancellation_reason IS NULL OR TRIM(NEW.cancellation_reason) = '' THEN
             RAISE EXCEPTION 'Cancellation reason is required';
         END IF;
-    END IF;
-
-    -- Rule 3: Prevent editing if exported to Tally
-    IF OLD.exported_to_tally_at IS NOT NULL THEN
-        RAISE EXCEPTION 'Cannot modify payment % - already exported to Tally on %',
-            OLD.payment_number, OLD.exported_to_tally_at::DATE;
     END IF;
 
     RETURN NEW;
@@ -217,12 +218,6 @@ BEGIN
     IF OLD.is_cancelled = TRUE THEN
         RAISE EXCEPTION 'Cannot delete payment % - payment is cancelled. Use soft delete (deleted_at) instead',
             OLD.payment_number;
-    END IF;
-
-    -- Rule 2: Cannot delete if exported to Tally
-    IF OLD.exported_to_tally_at IS NOT NULL THEN
-        RAISE EXCEPTION 'Cannot delete payment % - already exported to Tally on %. Use soft delete instead',
-            OLD.payment_number, OLD.exported_to_tally_at::DATE;
     END IF;
 
     RETURN OLD;

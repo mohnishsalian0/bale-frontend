@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Image from "next/image";
 import {
@@ -8,6 +9,7 @@ import {
   IconTransferOut,
 } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
+import { useDebounce } from "@/hooks/use-debounce";
 import {
   Select,
   SelectContent,
@@ -47,8 +49,23 @@ export default function GoodsMovementLayout({
   // Get current view from pathname
   const isInwardView = pathname.endsWith("/inward");
 
+  // Local search state with debounce (avoids router.push on every keystroke)
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+  // Sync debounced search value to URL
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (debouncedSearchQuery) {
+      params.set("search", debouncedSearchQuery);
+    } else {
+      params.delete("search");
+    }
+    params.set("page", "1");
+    router.push(`${pathname}?${params.toString()}`);
+  }, [debouncedSearchQuery]);
+
   // Get filter values from URL
-  const searchQuery = searchParams.get("search") || "";
   const selectedPartner = searchParams.get("partner") || "all";
   const selectedProduct = searchParams.get("product") || "all";
   const dateFrom = searchParams.get("date_from");
@@ -97,10 +114,6 @@ export default function GoodsMovementLayout({
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  const handleSearchChange = (value: string) => {
-    updateFilters({ search: value || undefined });
-  };
-
   const handlePartnerChange = (value: string) => {
     updateFilters({ partner: value });
   };
@@ -142,7 +155,7 @@ export default function GoodsMovementLayout({
               type="text"
               placeholder="Search by bill number"
               value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pr-10"
             />
             <IconSearch className="absolute right-3 top-1/2 -translate-y-1/2 size-5 text-gray-700" />

@@ -36,6 +36,8 @@ interface StockUnitListStepProps {
   scannedUnits: ScannedStockUnit[];
   onStockUnitSelect: (stockUnitId: string) => void;
   onRemoveUnit: (stockUnitId: string) => void;
+  onAddAllInGroup?: (stockUnitIds: string[]) => void;
+  onRemoveAllInGroup?: (stockUnitIds: string[]) => void;
   fullQuantity?: boolean;
 }
 
@@ -45,6 +47,8 @@ export function StockUnitListStep({
   scannedUnits,
   onStockUnitSelect,
   onRemoveUnit,
+  onAddAllInGroup,
+  onRemoveAllInGroup,
   fullQuantity = false,
 }: StockUnitListStepProps) {
   // Fetch stock units for this product (available status only)
@@ -181,18 +185,78 @@ export function StockUnitListStep({
 
             return (
               <div key={group.id} className="border-t border-gray-200">
-                {/* Origin Header */}
-                <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-gray-100">
-                  <div className="flex items-center gap-2">
-                    <Icon className="size-4 text-gray-500" />
-                    <span className="text-sm font-semibold text-gray-700">
-                      {groupLabel}
-                    </span>
-                  </div>
-                  <span className="text-xs text-gray-500">
-                    {formatAbsoluteDate(group.date)}
-                  </span>
-                </div>
+                {(() => {
+                  const selectedIds = group.units
+                    .map((u) => u.id)
+                    .filter((id) =>
+                      scannedUnits.some((su) => su.stockUnit.id === id),
+                    );
+                  const unselectedIds = group.units
+                    .map((u) => u.id)
+                    .filter(
+                      (id) =>
+                        !scannedUnits.some((su) => su.stockUnit.id === id),
+                    );
+                  const allSelected = unselectedIds.length === 0;
+                  const noneSelected = selectedIds.length === 0;
+                  const totalQtyRaw = group.units.reduce(
+                    (sum, u) => sum + u.remaining_quantity,
+                    0,
+                  );
+                  const totalQty = Math.round(totalQtyRaw * 100) / 100;
+                  const groupUnitAbbr = pluralizeMeasuringUnitAbbreviation(
+                    totalQty,
+                    unitAbbr,
+                  );
+
+                  return (
+                    <div className="sticky top-0 z-10 flex items-start justify-between gap-3 px-4 py-2 bg-gray-100">
+                      <div className="flex flex-wrap items-center gap-x-1 gap-y-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Icon className="size-4 text-gray-500" />
+                          <span className="text-sm font-semibold text-gray-700">
+                            {groupLabel}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {formatAbsoluteDate(group.date)}
+                        </span>
+                        <span className="text-xs text-gray-500">•</span>
+                        <span className="text-xs text-gray-500">
+                          {group.units.length}{" "}
+                          {group.units.length === 1 ? "unit" : "units"}
+                        </span>
+                        <span className="text-xs text-gray-500">•</span>
+                        <span className="text-xs text-gray-500">
+                          {totalQty} {groupUnitAbbr}
+                        </span>
+                      </div>
+                      {(onAddAllInGroup || onRemoveAllInGroup) && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            if (allSelected) {
+                              onRemoveAllInGroup?.(selectedIds);
+                            } else {
+                              onAddAllInGroup?.(unselectedIds);
+                            }
+                          }}
+                          disabled={
+                            allSelected ? !onRemoveAllInGroup : !onAddAllInGroup
+                          }
+                        >
+                          {allSelected
+                            ? "Remove all"
+                            : noneSelected
+                              ? "Add all"
+                              : `Add remaining (${unselectedIds.length})`}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Stock Units */}
                 {group.units.map((unit) => {

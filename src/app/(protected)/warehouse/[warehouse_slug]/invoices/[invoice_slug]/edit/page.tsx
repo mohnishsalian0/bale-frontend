@@ -114,14 +114,6 @@ export default function EditInvoicePage() {
       return;
     }
 
-    if (existingInvoice.exported_to_tally_at) {
-      toast.error("Cannot edit an invoice that has been exported to Tally");
-      router.push(
-        `/warehouse/${warehouse.slug}/invoices/${invoice_slug}/details`,
-      );
-      return;
-    }
-
     if (existingInvoice.has_payment) {
       toast.error("Cannot edit an invoice that has payments linked");
       router.push(
