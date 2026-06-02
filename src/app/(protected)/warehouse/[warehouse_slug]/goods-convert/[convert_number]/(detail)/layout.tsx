@@ -69,8 +69,7 @@ export default function GoodsConvertDetailLayout({
 
     // If completed, calculate output and wastage
     if (convert.status === "completed" && convert.output_stock_units) {
-      const outputMU = convert.output_product
-        .measuring_unit as MeasuringUnit;
+      const outputMU = convert.output_product.measuring_unit as MeasuringUnit;
       const grossOutput = convert.output_stock_units.reduce(
         (sum, unit) => sum + (Number(unit.initial_quantity) || 0),
         0,

@@ -9,6 +9,7 @@ This plan covers v1 of that bridge: a Windows-first Electron app that authentica
 ## Scope (v1)
 
 **In scope**
+
 - Vouchers: Sales invoice, Purchase invoice, Receipt, Payment, Credit Note, Debit Note
 - Masters synced from Bale: **Partner ledgers** (`ledgers.ledger_type = 'party'`), **Stock items** (all products), **Stock units** (the 4 enum values mapped to Tally units)
 - Wire format: **XML only** (TallyPrime ≥ 4.0)
@@ -17,12 +18,14 @@ This plan covers v1 of that bridge: a Windows-first Electron app that authentica
 - Voucher identity: Bale's `invoice_number` / `adjustment_number` / `payment_number` → Tally `<VOUCHERNUMBER>`. Tally voucher types set to "Manual + Prevent Duplicates" for idempotency.
 
 **Out of scope (assumed pre-existing in Tally, verified via pre-flight)**
+
 - System ledgers: Sales Account, Purchase Account, CGST, SGST, IGST (names configurable in app settings; defaults match Tally standard)
 - Bank/Cash ledgers referenced by receipts/payments — matched by `ledgers.name`
 - Counter ledgers on invoices/adjustments (sales/purchase return accounts)
 - Stock groups — all items default to `Primary`
 
 **Explicitly deferred**
+
 - JSON wire format (TallyPrime 7.0+)
 - Scheduled/real-time sync
 - Master mapping wizard
@@ -71,6 +74,7 @@ This plan covers v1 of that bridge: a Windows-first Electron app that authentica
 ### Standardize sync state across syncable tables
 
 Edit these existing migration files in place:
+
 - `supabase/migrations/0014_products.sql`
 - `supabase/migrations/0056_ledgers.sql`
 - `supabase/migrations/0058_invoices.sql`
@@ -78,6 +82,7 @@ Edit these existing migration files in place:
 - `supabase/migrations/0066_payments.sql`
 
 In each `CREATE TABLE`:
+
 1. **Remove** any of: `tally_guid`, `tally_export_status`, `tally_export_error`, `exported_to_tally_at`.
 2. **Add** the standardized columns:
 
@@ -327,11 +332,11 @@ Each builder is a pure function: `(input) => xmlString`. Use `fast-xml-parser` f
 All four map to Tally's pre-seeded "Simple Units" — push attempts are no-ops thanks to `DupIgnoreCombine`, no extra units created.
 
 | Bale `measuring_unit` | Tally unit | Tally full name |
-|---|---|---|
-| `metre` | `m` | Metres |
-| `yard` | `yd` | Yards |
-| `kilogram` | `kg` | Kilograms |
-| `unit` | `Nos` | Numbers |
+| --------------------- | ---------- | --------------- |
+| `metre`               | `m`        | Metres          |
+| `yard`                | `yd`       | Yards           |
+| `kilogram`            | `kg`       | Kilograms       |
+| `unit`                | `Nos`      | Numbers         |
 
 Still push all 4 on first sync as a safety net (in case a customer deleted one); `DupIgnoreCombine` makes this idempotent.
 
@@ -349,13 +354,15 @@ History viewer in the web app is deferred — `tally_sync_jobs` / `tally_sync_jo
 ## Critical files to modify / create
 
 **Supabase migrations**
-- *Edit existing files in place* (pre-production):
+
+- _Edit existing files in place_ (pre-production):
   - `0014_products.sql`, `0056_ledgers.sql`, `0058_invoices.sql`, `0063_adjustment_notes.sql`, `0066_payments.sql` — add standardized `tally_sync_*` columns + partial index; remove any legacy `tally_*` columns
   - `0058_invoices.sql` — remove `exported_to_tally_at` block from `prevent_invoice_edit()`
   - Existing `companies` migration — add `tally_settings` JSONB column
-- *New file:* `supabase/migrations/<next>_tally_sync.sql` — `tally_sync_devices`, `tally_sync_jobs`, `tally_sync_job_items` tables + RLS + the 5 RPC functions
+- _New file:_ `supabase/migrations/<next>_tally_sync.sql` — `tally_sync_devices`, `tally_sync_jobs`, `tally_sync_job_items` tables + RLS + the 5 RPC functions
 
 **Web app (bale-frontend)**
+
 - `src/app/(protected)/settings/tally/page.tsx` — new (settings + connected devices, single page)
 - `src/lib/queries/tally-sync.ts` — query builders for devices
 - `src/lib/query/hooks/useTallyDevices.ts` — new hook (+ mutation hook for revoke + tally_settings update)
@@ -368,16 +375,19 @@ History viewer in the web app is deferred — `tally_sync_jobs` / `tally_sync_jo
 ## Verification
 
 **DB migrations**
+
 1. Run `npx supabase db reset` locally; confirm all migrations apply cleanly
 2. `npm run db:types`; confirm new tables in generated types
 3. Manual SQL: insert sample devices/jobs/items, verify RLS isolates across companies
 
 **Web app**
+
 1. `/settings/tally` renders, system ledger names editable, persists to `companies.tally_settings`
 2. Mock-insert a `tally_sync_devices` row → appears in Connected Devices list → Revoke button sets `revoked_at`
 3. Invoice / payment / adjustment detail pages show correct sync status badge based on `tally_sync_status`
 
 **Electron app (manual, requires TallyPrime install)**
+
 1. Install TallyPrime, create test company with GST enabled, create required system ledgers (Sales / Purchase / CGST / SGST / IGST), enable HTTP server on port 9000
 2. Sign in via Google OAuth → device row appears in web app's Connected Devices
 3. Settings: configure host/port/company → Test Connection passes pre-flight
@@ -390,6 +400,7 @@ History viewer in the web app is deferred — `tally_sync_jobs` / `tally_sync_jo
 10. Cancel mid-sync → current batch completes, job ends in `cancelled` state, partial results recorded
 
 **Cross-checks**
+
 - `Tally.imp` log content matches `tally_response_excerpt` stored per item
 - Voucher totals in Tally match Bale's `total_amount` (catch rounding issues early)
 - GSTR-1 in Tally has no "Uncertain Transactions" for synced vouchers (party state correctly drives intra/inter-state tax split)
@@ -423,29 +434,31 @@ The customer must do these one-time setup steps in TallyPrime before the desktop
 
 - **TallyPrime on Windows.** No Linux/Mac native version. Mac developers need Parallels / UTM / VMware with a Windows 10/11 VM.
 - **TallyPrime Educational Mode** runs without a license but blocks new data entry on the 1st, 2nd, and 31st of any month. For dev, set the VM clock to the 10th if you hit a block, or buy a single-user license (~₹18k/year) for the team.
-- **Add Supabase Auth → URL Configuration → Additional Redirect URLs → `bale://auth-callback`** *before* writing OAuth code, or you'll spend an hour debugging silent redirect failures.
+- **Add Supabase Auth → URL Configuration → Additional Redirect URLs → `bale://auth-callback`** _before_ writing OAuth code, or you'll spend an hour debugging silent redirect failures.
 - **Local Supabase**: `npx supabase start` runs the full stack. RPCs available at `http://127.0.0.1:54321/rest/v1/rpc/<name>` — test in Postman with the local anon key + a real user JWT.
 - **Type regeneration**: run `npm run db:types` after every migration that adds tables, columns, or RPCs so the typed Supabase client picks up the new shapes.
 
-
-
 **Phase 1 (weeks 1–2): DB + Web**
+
 - All Supabase migration edits + new sync migration + RPCs
 - Web settings page (system ledger names + Connected Devices) + status badges
 - No Electron yet — verifiable end-to-end via SQL inserts simulating Electron
 
 **Phase 2 (weeks 3–5): Electron MVP**
+
 - OAuth + device registration
 - Settings + Test Connection
 - XML builders for: partner ledger, unit, stock item, sales voucher (the smallest end-to-end path)
 - Job runner with master → voucher dependency
 
 **Phase 3 (weeks 6–7): Voucher coverage**
+
 - Purchase, Receipt, Payment, CN, DN builders
 - Tally.imp parsing and per-record error mapping
 - Cancel + retry UX
 
 **Phase 4 (week 8): Hardening**
+
 - EV code signing + auto-update (electron-updater)
 - Crash reporting (Sentry)
 - Pilot with one design-partner customer
